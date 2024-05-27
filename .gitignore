@@ -5,3 +5,6 @@
 tags
 razorpayx_integration/docs/current
 node_modules/
+
+## Build Files ###
+dist/
