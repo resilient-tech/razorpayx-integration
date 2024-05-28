@@ -1,8 +1,24 @@
 # Copyright (c) 2024, Resilient Tech and contributors
 # For license information, please see license.txt
 
-# import frappe
+import frappe
+from frappe import _
 from frappe.model.document import Document
 
+
 class RazorPayXIntegrationSetting(Document):
-	pass
+    @property
+    def api_enabled(self):
+        return bool(self.key_id and self.key_secret)
+
+    def before_save(self):
+        account_no, self.bank_name = frappe.db.get_value(
+            "Bank Account", self.bank_account, ["bank_account_no", "bank"]
+        )
+
+        if not account_no:
+            frappe.throw(
+                msg=_("Please set <i>Account Number</i> in <b>Bank Account</b>."),
+                title=_("Account Number Missing"),
+            )
+        self.account_number = account_no
