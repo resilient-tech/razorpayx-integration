@@ -1,0 +1,134 @@
+{
+ "actions": [],
+ "autoname": "field:bank_account",
+ "creation": "2024-05-13 16:06:06.578506",
+ "default_view": "List",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "disabled",
+  "account_details_section",
+  "bank_account",
+  "column_break_3gfbs",
+  "account_number",
+  "bank_name",
+  "api_details_section",
+  "api_enabled",
+  "key_id",
+  "webhook_secret",
+  "column_break_8tcki",
+  "key_secret"
+ ],
+ "fields": [
+  {
+   "fieldname": "key_id",
+   "fieldtype": "Data",
+   "label": "Key ID",
+   "reqd": 1
+  },
+  {
+   "fieldname": "key_secret",
+   "fieldtype": "Password",
+   "label": "Key Secret",
+   "reqd": 1
+  },
+  {
+   "fieldname": "api_details_section",
+   "fieldtype": "Section Break",
+   "label": "API Details"
+  },
+  {
+   "fieldname": "column_break_8tcki",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "webhook_secret",
+   "fieldtype": "Password",
+   "label": "Webhook Secret"
+  },
+  {
+   "fieldname": "account_details_section",
+   "fieldtype": "Section Break",
+   "label": "Account Details"
+  },
+  {
+   "fieldname": "account_number",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Account Number",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "bank_account",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Bank Account",
+   "options": "Bank Account",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "bank_name",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Bank Name",
+   "options": "Bank",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_3gfbs",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "api_enabled",
+   "fieldtype": "Check",
+   "is_virtual": 1,
+   "label": "API Enabled",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "disabled",
+   "fieldtype": "Check",
+   "label": "Disabled"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2024-05-28 13:18:25.163678",
+ "modified_by": "Administrator",
+ "module": "Razorpayx Integration",
+ "name": "RazorPayX Integration Setting",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "Administrator",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
