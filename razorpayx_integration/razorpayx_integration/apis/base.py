@@ -25,6 +25,8 @@ class BaseRazorPayXAPI:
 
     def __init__(self, account_name: str, *args, **kwargs):
         self.razorpayx_account = get_razorpayx_account(account_name)
+        self.authenticate_razorpayx_account()
+
         self.account_number = self.razorpayx_account.account_number
         self.auth = (
             self.razorpayx_account.key_id,
@@ -32,15 +34,24 @@ class BaseRazorPayXAPI:
         )
         self.default_headers = {}
 
-        self.authenticate_razorpayx_account()
         self.setup(*args, **kwargs)
 
     # ? How to validate razorpayx_account's API credential
-    def authenticate_razorpayx_account(self, key_id, key_secret):
+    # ? can be add to utility
+    def authenticate_razorpayx_account(self):
         """
+        Check account is enabled or not?\n
         Validate RazorPayX API credential `Id` and `Secret` for respective account.
         """
-        pass
+        if self.razorpayx_account.disabled:
+            frappe.throw(
+                msg=_(
+                    f"To use <b>{self.razorpayx_account.bank_account} account enable it first</b>"
+                ),
+                title=_("Account Is Disable"),
+            )
+
+        # todo : if credential authenticate then check `Key Authorized` field
 
     def setup(*args, **kwargs):
         # Override in subclass
