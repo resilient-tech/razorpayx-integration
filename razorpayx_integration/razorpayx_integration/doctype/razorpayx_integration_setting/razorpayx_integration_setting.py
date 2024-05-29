@@ -19,11 +19,10 @@ class RazorPayXIntegrationSetting(Document):
             )
         self.account_number = account_no
 
-    def check_api_credential(self):
+    # todo: validate API credential
+    def validate_api_credential(self):
         if not self.key_id or not self.key_secret:
             frappe.throw(
                 msg=_("Please set RazorPayX API credentials."),
                 title=_("API Credential Missing"),
             )
-            
-        

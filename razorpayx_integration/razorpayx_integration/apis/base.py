@@ -4,30 +4,58 @@ import frappe
 import requests
 from frappe import _
 
-# todo : Handle For Multiple Account !
+from razorpayx_integration.constant import (
+    BASE_URL,
+    RAZORPAYX,
+    UNSAFE_HTTP_METHODS,
+    VALID_HTTP_METHODS,
+)
+from razorpayx_integration.utils import get_razorpayx_account
 
 
+# todo: logs for API calls.
 class BaseRazorPayXAPI:
-    # todo: utils attribute
+    """
+    Base class for RazorPayX APIs.\n
+    Must need `RazorPayX Account Name` to initiate API.
+    """
+
+    # * utility attributes
     BASE_PATH = ""
 
-    # todo: details from bank_account ...
-    def __init__(self,bank_account, *args, **kwargs):
-        self.settings = get_razorpayx_settings()
-        if not is_razorpayx_api_enabled(self.settings):
-            frappe.throw(_("Please provide <b>RazorpayX API's</b> auth"))
-
-        self.auth = (self.settings.key_id, self.settings.get_password("key_secret"))
+    def __init__(self, account_name: str, *args, **kwargs):
+        self.razorpayx_account = get_razorpayx_account(account_name)
+        self.account_number = self.razorpayx_account.account_number
+        self.auth = (
+            self.razorpayx_account.key_id,
+            self.razorpayx_account.get_password("key_secret"),
+        )
         self.default_headers = {}
 
+        self.authenticate_razorpayx_account()
         self.setup(*args, **kwargs)
 
-    # todo: setup in subclass
+    # ? How to validate razorpayx_account's API credential
+    def authenticate_razorpayx_account(self, key_id, key_secret):
+        """
+        Validate RazorPayX API credential `Id` and `Secret` for respective account.
+        """
+        pass
+
     def setup(*args, **kwargs):
         # Override in subclass
         pass
 
+    # ? why multiple path_segment require? it is already string
     def get_url(self, *path_segments):
+        """
+        Generate particular API's URL by combing given path_segments.
+
+        Example:
+            if path_segments = 'contact/old' then
+            URL will `BASEURL/BASE_PATH/contact/old`
+        """
+
         path_segments = list(path_segments)
 
         if self.BASE_PATH:
@@ -38,18 +66,33 @@ class BaseRazorPayXAPI:
         )
 
     def get(self, *args, **kwargs):
+        """
+        Make `GET` HTTP request.
+        """
         return self._make_request("GET", *args, **kwargs)
 
     def delete(self, *args, **kwargs):
+        """
+        Make `DELETE` HTTP request.
+        """
         return self._make_request("DELETE", *args, **kwargs)
 
     def post(self, *args, **kwargs):
+        """
+        Make `POST` HTTP request.
+        """
         return self._make_request("POST", *args, **kwargs)
 
     def put(self, *args, **kwargs):
+        """
+        Make `PUT` HTTP request.
+        """
         return self._make_request("PUT", *args, **kwargs)
 
     def patch(self, *args, **kwargs):
+        """
+        Make `PATCH` HTTP request.
+        """
         return self._make_request("PATCH", *args, **kwargs)
 
     def _make_request(
@@ -60,6 +103,10 @@ class BaseRazorPayXAPI:
         headers: dict = None,
         json: dict = None,
     ):
+        """
+        Base for making HTTP request.\n
+        Process headers,params and data then make request and return processed response.
+        """
         method = method.upper()
         if method not in VALID_HTTP_METHODS:
             frappe.throw(_("Invalid method {0}").format(method))
@@ -107,10 +154,10 @@ class BaseRazorPayXAPI:
         error_msg = (
             response_json.get("message")
             or response_json.get("error").get("description")
-            or "Give Proper RazorpayX API Attributes"
+            or f"Give Proper {RAZORPAYX} API Attributes"
         ).title()
 
         frappe.throw(
             msg=_(error_msg),
-            title=_("RazorpayX API Failed"),
+            title=_(f"{RAZORPAYX} API Failed"),
         )
