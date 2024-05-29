@@ -7,10 +7,6 @@ from frappe.model.document import Document
 
 
 class RazorPayXIntegrationSetting(Document):
-    @property
-    def api_enabled(self):
-        return bool(self.key_id and self.key_secret)
-
     def before_save(self):
         account_no, self.bank_name = frappe.db.get_value(
             "Bank Account", self.bank_account, ["bank_account_no", "bank"]
@@ -22,3 +18,12 @@ class RazorPayXIntegrationSetting(Document):
                 title=_("Account Number Missing"),
             )
         self.account_number = account_no
+
+    def check_api_credential(self):
+        if not self.key_id or not self.key_secret:
+            frappe.throw(
+                msg=_("Please set RazorPayX API credentials."),
+                title=_("API Credential Missing"),
+            )
+            
+        

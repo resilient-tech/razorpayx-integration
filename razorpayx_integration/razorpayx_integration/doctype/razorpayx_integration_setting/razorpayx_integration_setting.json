@@ -1,6 +1,5 @@
 {
  "actions": [],
- "allow_rename": 1,
  "autoname": "format:{account_number}",
  "creation": "2024-05-13 16:06:06.578506",
  "default_view": "List",
@@ -15,7 +14,7 @@
   "account_number",
   "bank_name",
   "api_details_section",
-  "api_enabled",
+  "key_authorized",
   "key_id",
   "webhook_secret",
   "column_break_8tcki",
@@ -85,22 +84,22 @@
   },
   {
    "default": "0",
-   "fieldname": "api_enabled",
-   "fieldtype": "Check",
-   "is_virtual": 1,
-   "label": "API Enabled",
-   "read_only": 1
-  },
-  {
-   "default": "0",
    "fieldname": "disabled",
    "fieldtype": "Check",
    "label": "Disabled"
+  },
+  {
+   "default": "0",
+   "fieldname": "key_authorized",
+   "fieldtype": "Check",
+   "is_virtual": 1,
+   "label": "Key Authorized",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-05-28 17:08:15.657062",
+ "modified": "2024-05-29 11:17:10.070487",
  "modified_by": "Administrator",
  "module": "Razorpayx Integration",
  "name": "RazorPayX Integration Setting",
