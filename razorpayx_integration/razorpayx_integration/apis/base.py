@@ -165,7 +165,7 @@ class BaseRazorPayXAPI:
         error_msg = (
             response_json.get("message")
             or response_json.get("error").get("description")
-            or f"Give Proper {RAZORPAYX} API Attributes"
+            or f"There is some error occur in {RAZORPAYX} API"
         ).title()
 
         frappe.throw(

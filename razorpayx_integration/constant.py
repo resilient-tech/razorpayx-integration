@@ -5,6 +5,8 @@ RAZORPAYX = "RazorPayX"
 
 ### Constants for APIs ###
 BASE_URL = "https://api.razorpay.com/v1/"
+SECONDS_IN_A_DAY_MINUS_ONE = 86399
+
 
 VALID_HTTP_METHODS = (
     "GET",
