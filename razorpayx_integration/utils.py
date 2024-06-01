@@ -16,7 +16,7 @@ def get_razorpayx_account(account_name: str):
     return frappe.get_doc(RAZORPAYX_SETTING_DOCTYPE, account_name)
 
 
-def validate_razorpayx_contact_type(type: Literal["Employee", "Supplier"]):
+def validate_razorpayx_contact_type(type: Literal["employee", "supplier"]):
     """
     Check type is in `AUTHORIZED_CONTACT_TYPE` or not.
     If not raises an error.

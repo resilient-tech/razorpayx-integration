@@ -1,6 +1,6 @@
 {
  "actions": [],
- "autoname": "format:{account_number}",
+ "autoname": "format:{bank_account}",
  "creation": "2024-05-13 16:06:06.578506",
  "default_view": "List",
  "doctype": "DocType",
@@ -99,7 +99,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-05-29 11:17:10.070487",
+ "modified": "2024-05-31 17:20:03.562547",
  "modified_by": "Administrator",
  "module": "Razorpayx Integration",
  "name": "RazorPayX Integration Setting",

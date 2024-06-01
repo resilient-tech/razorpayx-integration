@@ -1,5 +1,3 @@
-from typing import Literal
-
 from frappe.utils import validate_email_address
 
 from razorpayx_integration.constant import (
@@ -18,9 +16,7 @@ from razorpayx_integration.utils import (
 class RazorPayXContact(BaseRazorPayXAPI):
     """
     Handle APIs for RazorPayX Contact.
-
     :param str account_name: RazorPayX account for which this contact is associate.
-
     ---
     Reference: https://razorpay.com/docs/api/x/contacts
     """
@@ -33,18 +29,16 @@ class RazorPayXContact(BaseRazorPayXAPI):
         pass
 
     ### APIs ###
-
-    def create(
-        self, name: str, type: Literal["Employee", "Supplier"], **kwargs
-    ) -> dict:
+    def create(self, **kwargs) -> dict:
         """
         Creates `RazorPayX Contact`.
 
+        :param dict json: Full details of contact to create.
         :param str name: The contact's name.
         :param str type: Must be one of ["employee", "supplier"].
         :param str email: Email address of the contact.
         :param str contact: Contact number of the contact.
-        :param str reference_id: Reference Id for contact.
+        :param str id: Reference Id for contact.
         :param str note: Additional note for the contact.
 
         :raises ValueError: If `type` is not one of ["employee", "supplier"].\n
@@ -53,31 +47,39 @@ class RazorPayXContact(BaseRazorPayXAPI):
         ```
         contact = RazorPayXContact("RAZORPAYX_BANK_ACCOUNT")
         response = contact.create(
-            "Joe Doe",
-            "Employee",
+            name="Joe Doe",
+            type="Employee",
             email="joe123@gmail.com",
             contact="7434870169",
-            reference_id="empl-02",
+            id="empl-02",
             note="New Employee",
         )
+        ---
+        json = {
+            "name"="Joe Doe",
+            "type"="Employee",
+            "email"="joe123@gmail.com",
+            "contact"="7434870169",
+            "id"="empl-02",
+            "note"="New Employee",
+        }
+
+        response = contact.create(json=json)
         ```
         ---
         Reference: https://razorpay.com/docs/api/x/contacts/create
         """
-        data = {
-            "name": name,
-            "type": RAZORPAYX_CONTACT_MAP[type],
-            "email": kwargs.get("email"),
-            "contact": kwargs.get("contact"),
-            "reference_id": kwargs.get("reference_id"),
-            "notes": (
-                {"notes_key_1": kwargs.get("note")} if kwargs.get("note") else None
-            ),
-        }
+        contact_details = self._process_request_data(kwargs)
+        return self.post(json=contact_details)
 
-        self._process_creation_data(data)
-
-        return self.post(json=data)
+    def fetch_by_id(self, id: str) -> dict:
+        """
+        Fetch the details of a specific contact by Id.
+        :param str id: `Id` of contact to fetch (Ex.`cont_hkj012yuGJ`).
+        ---
+        Reference: https://razorpay.com/docs/api/x/contacts/fetch-with-id
+        """
+        return self.get(endpoint=id)
 
     def _fetch(self, params: dict) -> list:
         """
@@ -86,6 +88,18 @@ class RazorPayXContact(BaseRazorPayXAPI):
         response = self.get(params=params)
         return response.get("items", [])
 
+    def _change_state(self, id: str, active: bool) -> dict:
+        """
+        Change the state of the contact for the given `Id`.
+
+        :param str id: `Id` of contact to make activate (Ex.`cont_hkj012yuGJ`).
+        :param bool active: Represent state. (`True`:Active,`False`:Inactive)
+        ---
+        Reference: https://razorpay.com/docs/api/x/contacts/activate-or-deactivate
+        """
+        return self.patch(endpoint=id, json={"active": active})
+
+    ### Wrappers ###
     def get_all(self, filters: dict = {}, limit: int = None) -> list[dict]:
         """
         Get all `Contacts` associate with given `RazorPayX` account if limit is not given.
@@ -106,7 +120,7 @@ class RazorPayXContact(BaseRazorPayXAPI):
             "from":"2024-01-01"
             "to":"2024-06-01"
         }
-        response=contact.get_all(filters=filters)
+        response=contact.get_all(filters)
         ```
         ---
         Note:
@@ -117,11 +131,11 @@ class RazorPayXContact(BaseRazorPayXAPI):
         Reference: https://razorpay.com/docs/api/x/contacts/fetch-all
         """
         if filters:
-            self._process_filters(filters)
+            filters = self._process_filters(filters)
 
         if limit and limit <= 100:
             filters["count"] = limit
-            return self._fetch(filters=filters)
+            return self._fetch(filters)
 
         skip = 0
         contacts = []
@@ -142,29 +156,123 @@ class RazorPayXContact(BaseRazorPayXAPI):
                     break
 
             skip += 100
-            filter["skip"] = skip
+            filters["skip"] = skip
 
         return contacts
 
+    def activate(self, id: str) -> dict:
+        """
+        Activate the contact for the given `Id` if it is deactivated.
+
+        :param str id: `Id` of contact to make activate (Ex.`cont_hkj012yuGJ`).
+        """
+        return self._change_state(id=id, active=True)
+
+    def deactivate(self, id: str) -> dict:
+        """
+        Deactivate the contact for the given `Id` if it is activated.
+
+        :param str id: `Id` of contact to make deactivate (Ex.`cont_hkj012yuGJ`).
+        """
+        return self._change_state(id=id, active=False)
+
+    def update(self, id: str, **kwargs):
+        """
+        Updates `RazorPayX Contact`.
+
+        :param str id: Contact Id of whom to update details (Ex.`cont_hkj012yuGJ`).
+        :param dict json: Full details of contact to create.
+        :param str name: The contact's name.
+        :param str type: Must be one of ["employee", "supplier"].
+        :param str email: Email address of the contact.
+        :param str contact: Contact number of the contact.
+        :param str id: Reference Id for contact.
+        :param str note: Additional note for the contact.
+
+        :raises ValueError: If `type` is not one of ["employee", "supplier"].\n
+        ---
+        Example Usage:
+        ```
+        contact = RazorPayXContact("RAZORPAYX_BANK_ACCOUNT")
+        response = contact.update(
+            id='cont_hkj012yuGJ'
+            name="Joe Doe",
+            type="Employee",
+            email="joe123@gmail.com",
+            contact="7434870169",
+            id="empl-02",
+            note="New Employee",
+        )
+        ---
+        json = {
+            "name"="Joe Doe",
+            "type"="Employee",
+            "email"="joe123@gmail.com",
+            "contact"="7434870169",
+            "id"="empl-02",
+            "note"="New Employee",
+        }
+
+        response = contact.update(id='cont_hkj012yuGJ',json=json)
+        ```
+        ---
+        Reference: https://razorpay.com/docs/api/x/contacts/update
+        """
+        filters = self._process_request_data(kwargs)
+        return self.patch(endpoint=id, json=filters)
+
     ### Helpers ###
-    def _process_creation_data(self, data: dict):
+    def _process_request_data(self, request_data: dict) -> dict:
+        json = request_data.get("json")
+        if json and isinstance(json, dict):
+            if id := json.get("id"):
+                json["reference_id"] = id
+                del json["id"]
+
+            if note := json.get("note"):
+                json["notes"] = {"notes_key_1": note}
+                del json["note"]
+
+            return self._validate_request_data(json)
+
+        process_data = {
+            "name": request_data.get("name"),
+            "type": request_data.get("type"),
+            "email": request_data.get("email"),
+            "contact": request_data.get("contact"),
+            "reference_id": request_data.get("id"),
+            "notes": (
+                {"notes_key_1": request_data.get("note")}
+                if request_data.get("note")
+                else None
+            ),
+        }
+
+        return self._validate_request_data(process_data)
+
+    def _validate_request_data(self, request_data: dict) -> dict:
         # Remove keys with None values
-        data = {key: value for key, value in data.items() if value is not None}
+        request_data = {
+            key: value for key, value in request_data.items() if value is not None
+        }
 
-        validate_razorpayx_contact_type(data.get("type"))
-
-        if email := data.get("email"):
+        if email := request_data.get("email"):
             validate_email_address(email, throw=True)
 
-    def _process_filters(self, filters: dict):
-        if email := filters.get("email"):
-            validate_email_address(email, throw=True)
-
-        if type := filters.get("type"):
+        if type := request_data.get("type"):
+            # ? can remove MAP and use directly vendor instead of supplier!
             validate_razorpayx_contact_type(type)
+            request_data["type"] = RAZORPAYX_CONTACT_MAP[type]
+
+        return request_data
+
+    def _process_filters(self, filters: dict) -> dict:
+        filters = self._validate_request_data(filters)
 
         if from_date := filters.get("from"):
             filters["from"] = get_start_of_day_epoch(from_date)
 
         if to_date := filters.get("to"):
             filters["to"] = get_end_of_day_epoch(to_date)
+
+        return filters

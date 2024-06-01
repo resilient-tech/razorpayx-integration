@@ -20,8 +20,8 @@ UNSAFE_HTTP_METHODS = ("POST", "PUT", "PATCH")
 
 
 class RAZORPAYX_CONTACT_TYPE(Enum):
-    EMPLOYEE = "Employee"
-    SUPPLIER = "Supplier"
+    EMPLOYEE = "employee"
+    SUPPLIER = "supplier"
 
 
 RAZORPAYX_CONTACT_MAP = {

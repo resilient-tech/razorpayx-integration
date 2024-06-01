@@ -138,6 +138,9 @@ class BaseRazorPayXAPI:
         try:
             response = requests.request(method, **request_args)
             response_json = response.json(object_hook=frappe._dict)
+            print("--------------------------------------------------")
+            print("Response : ")
+            print(response_json)
 
             if response.status_code != 200:
                 self.handle_failed_api_response(response_json)
