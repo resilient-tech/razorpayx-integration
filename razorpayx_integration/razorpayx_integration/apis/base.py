@@ -148,7 +148,7 @@ class BaseRazorPayXAPI:
             raise e
 
     # todo:  handle special(error) http code (specially payout process!!)
-    def handle_failed_api_response(self, response_json: dict):
+    def handle_failed_api_response(self, response_json: dict = {}):
         """
         - Error response:
             {
@@ -164,7 +164,7 @@ class BaseRazorPayXAPI:
         """
         error_msg = (
             response_json.get("message")
-            or response_json.get("error").get("description")
+            or response_json.get("error", {}).get("description")
             or f"There is some error occur in {RAZORPAYX} API"
         ).title()
 
