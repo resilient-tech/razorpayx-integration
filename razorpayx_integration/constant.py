@@ -1,5 +1,7 @@
 from enum import Enum
 
+# todo: replace Enum with strEnum
+
 RAZORPAYX_SETTING_DOCTYPE = "RazorPayX Integration Setting"
 RAZORPAYX = "RazorPayX"
 
