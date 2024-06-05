@@ -1,11 +1,10 @@
-from typing import Literal
-
 import frappe
 from frappe import _
 from frappe.utils.data import DateTimeLikeObject, get_timestamp
 
 from razorpayx_integration.constant import (
     AUTHORIZED_CONTACT_TYPE,
+    AUTHORIZED_FUND_ACCOUNT_TYPE,
     RAZORPAYX,
     RAZORPAYX_SETTING_DOCTYPE,
     SECONDS_IN_A_DAY_MINUS_ONE,
@@ -16,7 +15,7 @@ def get_razorpayx_account(account_name: str):
     return frappe.get_doc(RAZORPAYX_SETTING_DOCTYPE, account_name)
 
 
-def validate_razorpayx_contact_type(type: Literal["employee", "supplier"]):
+def validate_razorpayx_contact_type(type: str):
     """
     Check type is in `AUTHORIZED_CONTACT_TYPE` or not.
     If not raises an error.
@@ -28,6 +27,24 @@ def validate_razorpayx_contact_type(type: Literal["employee", "supplier"]):
         frappe.throw(
             msg=_(f"Invalid contact type: {type}. Must be one of : <br> {type_list}"),
             title=_(f"Invalid {RAZORPAYX} contact type"),
+            exc=ValueError,
+        )
+
+
+def validate_razorpayx_bank_account_type(type: str):
+    """
+    Check type is in `AUTHORIZED_FUND_ACCOUNT_TYPE` or not.
+    If not raises an error.
+    """
+    if type not in AUTHORIZED_FUND_ACCOUNT_TYPE:
+        type_list = (
+            "<ul>"
+            + "".join(f"<li>{t}</li>" for t in AUTHORIZED_FUND_ACCOUNT_TYPE)
+            + "</ul>"
+        )
+        frappe.throw(
+            msg=_(f"Invalid Account type: {type}. Must be one of : <br> {type_list}"),
+            title=_(f"Invalid {RAZORPAYX} Account type"),
             exc=ValueError,
         )
 

@@ -14,6 +14,7 @@ from razorpayx_integration.utils import get_razorpayx_account
 
 
 # todo: logs for API calls.
+# todo: pagination should be common (get_all())
 class BaseRazorPayXAPI:
     """
     Base class for RazorPayX APIs.\n
@@ -57,7 +58,6 @@ class BaseRazorPayXAPI:
         # Override in subclass
         pass
 
-    # ? why multiple path_segment require? it is already string
     def get_url(self, *path_segments):
         """
         Generate particular API's URL by combing given path_segments.
@@ -138,9 +138,6 @@ class BaseRazorPayXAPI:
         try:
             response = requests.request(method, **request_args)
             response_json = response.json(object_hook=frappe._dict)
-            print("--------------------------------------------------")
-            print("Response : ")
-            print(response_json)
 
             if response.status_code != 200:
                 self.handle_failed_api_response(response_json)

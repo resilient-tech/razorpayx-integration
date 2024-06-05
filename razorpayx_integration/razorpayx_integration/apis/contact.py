@@ -16,7 +16,7 @@ from razorpayx_integration.utils import (
 class RazorPayXContact(BaseRazorPayXAPI):
     """
     Handle APIs for RazorPayX Contact.
-    :param str account_name: RazorPayX account for which this contact is associate.
+    :param str account_name: RazorPayX account for which this `Contact` is associate.
     ---
     Reference: https://razorpay.com/docs/api/x/contacts
     """
@@ -35,7 +35,7 @@ class RazorPayXContact(BaseRazorPayXAPI):
 
         :param dict json: Full details of contact to create.
         :param str name: The contact's name.
-        :param str type: Must be one of ["employee", "supplier"].
+        :param str type: Must be one of ["employee", "supplier"] (if passed).
         :param str email: Email address of the contact.
         :param str contact: Contact number of the contact.
         :param str id: Reference Id for contact.
@@ -48,7 +48,7 @@ class RazorPayXContact(BaseRazorPayXAPI):
         contact = RazorPayXContact("RAZORPAYX_BANK_ACCOUNT")
         response = contact.create(
             name="Joe Doe",
-            type="Employee",
+            type="employee",
             email="joe123@gmail.com",
             contact="7434870169",
             id="empl-02",
@@ -57,7 +57,7 @@ class RazorPayXContact(BaseRazorPayXAPI):
         ---
         json = {
             "name"="Joe Doe",
-            "type"="Employee",
+            "type"="employee",
             "email"="joe123@gmail.com",
             "contact"="7434870169",
             "id"="empl-02",
@@ -67,6 +67,9 @@ class RazorPayXContact(BaseRazorPayXAPI):
         response = contact.create(json=json)
         ```
         ---
+        Note:
+            - If json passed in args, then other args will discarded.
+        ---
         Reference: https://razorpay.com/docs/api/x/contacts/create
         """
         contact_details = self._process_request_data(kwargs)
@@ -74,38 +77,21 @@ class RazorPayXContact(BaseRazorPayXAPI):
 
     def fetch_by_id(self, id: str) -> dict:
         """
-        Fetch the details of a specific contact by Id.
+        Fetch the details of a specific `Contact` by Id.
         :param str id: `Id` of contact to fetch (Ex.`cont_hkj012yuGJ`).
         ---
         Reference: https://razorpay.com/docs/api/x/contacts/fetch-with-id
         """
         return self.get(endpoint=id)
 
-    def _fetch(self, params: dict) -> list:
-        """
-        Fetch `Contacts` associate with given `RazorPayX` account.
-        """
-        response = self.get(params=params)
-        return response.get("items", [])
-
-    def _change_state(self, id: str, active: bool) -> dict:
-        """
-        Change the state of the contact for the given `Id`.
-
-        :param str id: `Id` of contact to make activate (Ex.`cont_hkj012yuGJ`).
-        :param bool active: Represent state. (`True`:Active,`False`:Inactive)
-        ---
-        Reference: https://razorpay.com/docs/api/x/contacts/activate-or-deactivate
-        """
-        return self.patch(endpoint=id, json={"active": active})
-
-    ### Wrappers ###
     def get_all(self, filters: dict = {}, limit: int = None) -> list[dict]:
         """
         Get all `Contacts` associate with given `RazorPayX` account if limit is not given.
 
         :param dict filters: Result will be filtered as given filters.
         :param int limit: The number of contacts to be retrieved (`Max Limit : 100`).
+
+        :raises ValueError: If `type` is not one of ["employee", "supplier"].\n
         ---
         Example Usage:
         ```
@@ -116,7 +102,7 @@ class RazorPayXContact(BaseRazorPayXAPI):
             "contact":"743487045",
             "reference_id":"empl_001",
             "active":1 | True,
-            "type":"Employee",
+            "type":"employee",
             "from":"2024-01-01"
             "to":"2024-06-01"
         }
@@ -124,7 +110,7 @@ class RazorPayXContact(BaseRazorPayXAPI):
         ```
         ---
         Note:
-            - Not all keys are require.
+            - Not all filters are require.
             - `active` can be int or boolean.
             - `from` and `to` can be str,date,datetime (in YYYY-MM-DD).
         ---
@@ -160,6 +146,54 @@ class RazorPayXContact(BaseRazorPayXAPI):
 
         return contacts
 
+    def update(self, id: str, **kwargs):
+        """
+        Updates `RazorPayX Contact`.
+
+        :param str id: Contact Id of whom to update details (Ex.`cont_hkj012yuGJ`).
+        :param dict json: Full details of contact to create.
+        :param str name: The contact's name.
+        :param str type: Must be one of ["employee", "supplier"] (if passed).
+        :param str email: Email address of the contact.
+        :param str contact: Contact number of the contact.
+        :param str id: Reference Id for contact.
+        :param str note: Additional note for the contact.
+
+        :raises ValueError: If `type` is not one of ["employee", "supplier"].\n
+        ---
+        Example Usage:
+        ```
+        contact = RazorPayXContact("RAZORPAYX_BANK_ACCOUNT")
+        response = contact.update(
+            id='cont_hkj012yuGJ'
+            name="Joe Doe",
+            type="employee",
+            email="joe123@gmail.com",
+            contact="7434870169",
+            id="empl-02",
+            note="New Employee",
+        )
+        ---
+        json = {
+            "name"="Joe Doe",
+            "type"="employee",
+            "email"="joe123@gmail.com",
+            "contact"="7434870169",
+            "id"="empl-02",
+            "note"="New Employee",
+        }
+
+        response = contact.update(id='cont_hkj012yuGJ',json=json)
+        ```
+        ---
+        Note:
+            - If json passed in args, then other args will discarded.
+        ---
+        Reference: https://razorpay.com/docs/api/x/contacts/update
+        """
+        filters = self._process_request_data(kwargs)
+        return self.patch(endpoint=id, json=filters)
+
     def activate(self, id: str) -> dict:
         """
         Activate the contact for the given `Id` if it is deactivated.
@@ -176,50 +210,24 @@ class RazorPayXContact(BaseRazorPayXAPI):
         """
         return self._change_state(id=id, active=False)
 
-    def update(self, id: str, **kwargs):
+    ### Bases ###
+    def _fetch(self, params: dict) -> list:
         """
-        Updates `RazorPayX Contact`.
-
-        :param str id: Contact Id of whom to update details (Ex.`cont_hkj012yuGJ`).
-        :param dict json: Full details of contact to create.
-        :param str name: The contact's name.
-        :param str type: Must be one of ["employee", "supplier"].
-        :param str email: Email address of the contact.
-        :param str contact: Contact number of the contact.
-        :param str id: Reference Id for contact.
-        :param str note: Additional note for the contact.
-
-        :raises ValueError: If `type` is not one of ["employee", "supplier"].\n
-        ---
-        Example Usage:
-        ```
-        contact = RazorPayXContact("RAZORPAYX_BANK_ACCOUNT")
-        response = contact.update(
-            id='cont_hkj012yuGJ'
-            name="Joe Doe",
-            type="Employee",
-            email="joe123@gmail.com",
-            contact="7434870169",
-            id="empl-02",
-            note="New Employee",
-        )
-        ---
-        json = {
-            "name"="Joe Doe",
-            "type"="Employee",
-            "email"="joe123@gmail.com",
-            "contact"="7434870169",
-            "id"="empl-02",
-            "note"="New Employee",
-        }
-
-        response = contact.update(id='cont_hkj012yuGJ',json=json)
-        ```
-        ---
-        Reference: https://razorpay.com/docs/api/x/contacts/update
+        Fetch `Contacts` associate with given `RazorPayX` account.
         """
-        filters = self._process_request_data(kwargs)
-        return self.patch(endpoint=id, json=filters)
+        response = self.get(params=params)
+        return response.get("items", [])
+
+    def _change_state(self, id: str, active: bool) -> dict:
+        """
+        Change the state of the `Contact` for the given Id.
+
+        :param str id: Id of `Contact` to change state (Ex.`cont_hkj012yuGJ`).
+        :param bool active: Represent state. (`True`:Active,`False`:Inactive)
+        ---
+        Reference: https://razorpay.com/docs/api/x/contacts/activate-or-deactivate
+        """
+        return self.patch(endpoint=id, json={"active": active})
 
     ### Helpers ###
     def _process_request_data(self, request_data: dict) -> dict:

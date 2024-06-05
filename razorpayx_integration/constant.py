@@ -24,6 +24,11 @@ class RAZORPAYX_CONTACT_TYPE(Enum):
     SUPPLIER = "supplier"
 
 
+class RAZORPAYX_FUND_ACCOUNT_TYPE(Enum):
+    BANK_ACCOUNT = "bank_account"
+    VPA = "vpa"
+
+
 RAZORPAYX_CONTACT_MAP = {
     RAZORPAYX_CONTACT_TYPE.EMPLOYEE.value: "employee",
     RAZORPAYX_CONTACT_TYPE.SUPPLIER.value: "vendor",
@@ -32,6 +37,11 @@ RAZORPAYX_CONTACT_MAP = {
 AUTHORIZED_CONTACT_TYPE = [
     RAZORPAYX_CONTACT_TYPE.EMPLOYEE.value,
     RAZORPAYX_CONTACT_TYPE.SUPPLIER.value,
+]
+
+AUTHORIZED_FUND_ACCOUNT_TYPE = [
+    RAZORPAYX_FUND_ACCOUNT_TYPE.BANK_ACCOUNT.value,
+    RAZORPAYX_FUND_ACCOUNT_TYPE.VPA.value,
 ]
 
 # * used also in Client Side, if you change below constants make changes in constant.js
