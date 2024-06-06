@@ -33,8 +33,8 @@ class RazorPayXContact(BaseRazorPayXAPI):
         """
         Creates `RazorPayX Contact`.
 
-        :param dict json: Full details of contact to create.
-        :param str name: The contact's name.
+        :param dict json: Full details of the contact to create.
+        :param str name: The name of the contact.
         :param str type: Must be one of ["employee", "supplier"] (if passed).
         :param str email: Email address of the contact.
         :param str contact: Contact number of the contact.
@@ -68,14 +68,14 @@ class RazorPayXContact(BaseRazorPayXAPI):
         ```
         ---
         Note:
-            - If json passed in args, then other args will discarded.
+            - If `json` passed in args, then remaining args will be discarded.
         ---
         Reference: https://razorpay.com/docs/api/x/contacts/create
         """
         contact_details = self._process_request_data(kwargs)
         return self.post(json=contact_details)
 
-    def fetch_by_id(self, id: str) -> dict:
+    def get_by_id(self, id: str) -> dict:
         """
         Fetch the details of a specific `Contact` by Id.
         :param str id: `Id` of contact to fetch (Ex.`cont_hkj012yuGJ`).
@@ -84,12 +84,12 @@ class RazorPayXContact(BaseRazorPayXAPI):
         """
         return self.get(endpoint=id)
 
-    def get_all(self, filters: dict = {}, limit: int = None) -> list[dict]:
+    def get_all(self, filters: dict = {}, count: int = None) -> list[dict]:
         """
         Get all `Contacts` associate with given `RazorPayX` account if limit is not given.
 
         :param dict filters: Result will be filtered as given filters.
-        :param int limit: The number of contacts to be retrieved (`Max Limit : 100`).
+        :param int count: The number of contacts to be retrieved.
 
         :raises ValueError: If `type` is not one of ["employee", "supplier"].\n
         ---
@@ -119,26 +119,26 @@ class RazorPayXContact(BaseRazorPayXAPI):
         if filters:
             filters = self._process_filters(filters)
 
-        if limit and limit <= 100:
-            filters["count"] = limit
+        if count and count <= 100:
+            filters["count"] = count
             return self._fetch(filters)
 
         skip = 0
         contacts = []
-        filters["count"] = 100
+        filters["count"] = 100  # max limit is 100
         filters["skip"] = 0
 
         while True:
             items = self._fetch(filters)
 
-            if items and len(items) > 0:
+            if items:
                 contacts.extend(items)
-            else:
+            elif not items or len(items) < 100:
                 break
 
-            if isinstance(limit, int):
-                limit -= len(items)
-                if limit <= 0:
+            if isinstance(count, int):
+                count -= len(items)
+                if count <= 0:
                     break
 
             skip += 100

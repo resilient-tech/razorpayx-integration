@@ -28,7 +28,6 @@ class BaseRazorPayXAPI:
         self.razorpayx_account = get_razorpayx_account(account_name)
         self.authenticate_razorpayx_account()
 
-        self.account_number = self.razorpayx_account.account_number
         self.auth = (
             self.razorpayx_account.key_id,
             self.razorpayx_account.get_password("key_secret"),

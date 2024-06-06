@@ -65,7 +65,7 @@ class RazorPayXFundAccount(BaseRazorPayXAPI):
         }
         return self._create(json=json)
 
-    def fetch_by_id(self, id: str):
+    def get_by_id(self, id: str):
         """
         Fetch the details of a specific `Fund Account` by Id.
         :param str id: `Id` of fund account to fetch (Ex.`fa_00HjHue1`).
@@ -79,7 +79,7 @@ class RazorPayXFundAccount(BaseRazorPayXAPI):
         Get all `Fund Account` associate with given `RazorPayX` account if limit is not given.
 
         :param dict filters: Result will be filtered as given filters.
-        :param int count: The number of contacts to be retrieved (`Max Limit : 100`).
+        :param int count: The number of `Fund Account` to be retrieved.
         ---
         Example Usage:
         ```
@@ -109,15 +109,15 @@ class RazorPayXFundAccount(BaseRazorPayXAPI):
 
         skip = 0
         accounts = []
-        filters["count"] = 100
+        filters["count"] = 100  # max limit is 100
         filters["skip"] = 0
 
         while True:
             items = self._fetch(filters)
 
-            if items and len(items) > 0:
+            if items:
                 accounts.extend(items)
-            else:
+            elif not items or len(items) < 100:
                 break
 
             if isinstance(count, int):
