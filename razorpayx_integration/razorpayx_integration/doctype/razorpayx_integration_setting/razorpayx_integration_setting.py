@@ -14,8 +14,10 @@ class RazorPayXIntegrationSetting(Document):
 
         if not account_no:
             frappe.throw(
-                msg=_("Please set <i>Account Number</i> in <b>Bank Account</b>."),
-                title=_("Account Number Missing"),
+                msg=_(
+                    "Please set <em>Account Number</em> in <strong>Bank Account</strong>."
+                ),
+                title=_("Account Number Is Missing"),
             )
         self.account_number = account_no
 
@@ -24,5 +26,5 @@ class RazorPayXIntegrationSetting(Document):
         if not self.key_id or not self.key_secret:
             frappe.throw(
                 msg=_("Please set RazorPayX API credentials."),
-                title=_("API Credential Missing"),
+                title=_("API Credentials Are Missing"),
             )
