@@ -3,7 +3,6 @@ from typing import Optional
 from frappe.utils.data import DateTimeLikeObject, today
 
 from razorpayx_integration.razorpayx_integration.apis.base import BaseRazorPayXAPI
-from razorpayx_integration.utils import get_end_of_day_epoch, get_start_of_day_epoch
 
 # todo: Multiple Account can more easily connect with APIs, currently for each account new object initiation require!
 
@@ -20,26 +19,33 @@ class RazorPayXTransaction(BaseRazorPayXAPI):
     BASE_PATH = "transactions"
 
     # * override base setup
-    def setup(self):
+    def setup(self, *args, **kwargs):
         self.account_number = self.razorpayx_account.account_number
 
     ### APIs ###
     def get_by_id(self, transaction_id: str) -> dict:
         """
         Fetch the details of a specific `Transaction` by Id.
-        :param str id: `Id` of fund account to fetch (Ex.`txn_jkHgLM02`).
+        :param id: `Id` of fund account to fetch (Ex.`txn_jkHgLM02`).
         ---
         Reference: https://razorpay.com/docs/api/x/transactions/fetch-with-id
         """
         return self.get(endpoint=transaction_id)
 
-    # todo: filters default should be None
-    def get_all(self, filters: dict = {}, count: Optional[int] = None) -> list[dict]:
+    def get_all(
+        self,
+        filters: Optional[dict] = None,
+        from_date: Optional[DateTimeLikeObject] = None,
+        to_date: Optional[DateTimeLikeObject] = None,
+        count: Optional[int] = None,
+    ) -> list[dict]:
         """
-        Get all `Transaction` associate with given `RazorPayX` account if limit is not given.
+        Get all `Transaction` associate with given `RazorPayX` account if count is not given.
 
-        :param dict filters: Result will be filtered as given filters.
-        :param int count: The number of `Transaction` to be retrieved.
+        :param filters: Result will be filtered as given filters.
+        :param from_date: The starting date for which transactions are to be fetched.
+        :param to_date: The ending date for which transactions are to be fetched.
+        :param count: The number of `Transaction` to be retrieved.
         ---
         Example Usage:
         ```
@@ -49,6 +55,8 @@ class RazorPayXTransaction(BaseRazorPayXAPI):
             "to":"2024-06-01"
         }
         response=fund_account.get_all(filters)
+        ---
+        response=fund_account.get_all(from_date="2024-01-01",to_date="2024-06-01",count=10)
         ```
         ---
         Note:
@@ -56,38 +64,19 @@ class RazorPayXTransaction(BaseRazorPayXAPI):
         ---
         Reference: https://razorpay.com/docs/api/x/transactions/fetch-all
         """
-        if filters:
-            filters = self._process_filters(filters)
+        if not filters:
+            filters = {}
+
+            if from_date:
+                filters["from"] = from_date
+
+            if to_date:
+                filters["to"] = to_date
 
         # account number is mandatory
         filters["account_number"] = self.account_number
 
-        if count and count <= 100:
-            filters["count"] = count
-            return self._fetch(filters)
-
-        skip = 0
-        transactions = []
-        filters["count"] = 100  # max limit is 100
-        filters["skip"] = 0
-
-        while True:
-            items = self._fetch(filters)
-
-            if items:
-                transactions.extend(items)
-            elif not items or len(items) < 100:
-                break
-
-            if isinstance(count, int):
-                count -= len(items)
-                if count <= 0:
-                    break
-
-            skip += 100
-            filters["skip"] = skip
-
-        return transactions
+        return super().get_all(filters, count)
 
     def get_transactions_for_today(self, count: Optional[int] = None):
         """
@@ -105,21 +94,3 @@ class RazorPayXTransaction(BaseRazorPayXAPI):
         """
         filters = {"from": date, "to": date}
         return self.get_all(filters=filters, count=count)
-
-    ### Bases ###
-    def _fetch(self, params: dict):
-        """
-        Fetch `Transactions` associate with given `RazorPayX` account.
-        """
-        response = self.get(params=params)
-        return response.get("items", [])
-
-    ### Helpers ###
-    def _process_filters(self, filters: dict) -> dict:
-        if from_date := filters.get("from"):
-            filters["from"] = get_start_of_day_epoch(from_date)
-
-        if to_date := filters.get("to"):
-            filters["to"] = get_end_of_day_epoch(to_date)
-
-        return filters

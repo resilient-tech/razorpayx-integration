@@ -5,26 +5,43 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 
+from razorpayx_integration.constant import RAZORPAYX
+
 
 class RazorPayXIntegrationSetting(Document):
-    def before_save(self):
-        account_no, self.bank_name = frappe.db.get_value(
+    def validate(self):
+        self.validate_bank_account()
+        self.validate_api_credential()
+
+    # ? unnecessary
+    def validate_bank_account(self):
+        bank_account_details = frappe.db.get_value(
             "Bank Account", self.bank_account, ["bank_account_no", "bank"]
         )
 
-        if not account_no:
+        if not bank_account_details:
+            frappe.throw(
+                msg=_("No details found for the selected Bank Account: {0}").format(
+                    frappe.bold(self.bank_account)
+                ),
+                title=_("Invalid Bank Account"),
+            )
+
+        if (
+            bank_account_details[0] != self.account_number
+            or bank_account_details[1] != self.bank_name
+        ):
             frappe.throw(
                 msg=_(
-                    "Please set <em>Account Number</em> in <strong>Bank Account</strong>."
-                ),
-                title=_("Account Number Is Missing"),
+                    "Given bank account details do not match the selected Bank Account: {0}"
+                ).format(frappe.bold(self.bank_account)),
+                title=_("Invalid Bank Account Details"),
             )
-        self.account_number = account_no
 
-    # todo: validate API credential
+    # todo: validate API credential (Are actually razorpayx credentials or not?)
     def validate_api_credential(self):
         if not self.key_id or not self.key_secret:
             frappe.throw(
-                msg=_("Please set RazorPayX API credentials."),
+                msg=_("Please set {0} API credentials.").format(RAZORPAYX),
                 title=_("API Credentials Are Missing"),
             )

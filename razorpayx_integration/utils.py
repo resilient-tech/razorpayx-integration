@@ -11,30 +11,38 @@ from razorpayx_integration.constant import (
 )
 
 
+# todo: check account is enable or not and API credentials are authorized or not!
 def get_razorpayx_account(account_name: str):
     return frappe.get_doc(RAZORPAYX_SETTING_DOCTYPE, account_name)
 
 
+# todo: can use Literal?
 def validate_razorpayx_contact_type(type: str):
     """
-    Check type is in `AUTHORIZED_CONTACT_TYPE` or not.
-    If not raises an error.
+    Check if the given type is in the list of authorized contact types.\n
+
+    :param type: The type of contact to be validated.
+    :raises ValueError: If the given type is not in the authorized contact types list.
     """
     if type not in AUTHORIZED_CONTACT_TYPE:
         type_list = (
             "<ul>" + "".join(f"<li>{t}</li>" for t in AUTHORIZED_CONTACT_TYPE) + "</ul>"
         )
         frappe.throw(
-            msg=_(f"Invalid contact type: {type}. Must be one of : <br> {type_list}"),
-            title=_(f"Invalid {RAZORPAYX} contact type"),
+            msg=_("Invalid contact type: {0}. Must be one of : <br> {1}").format(
+                type, type_list
+            ),
+            title=_("Invalid {0} Contact Type").format(RAZORPAYX),
             exc=ValueError,
         )
 
 
-def validate_razorpayx_bank_account_type(type: str):
+def validate_razorpayx_fund_account_type(type: str):
     """
-    Check type is in `AUTHORIZED_FUND_ACCOUNT_TYPE` or not.
-    If not raises an error.
+    Check if the given type is in the list of authorized fund account types.\n
+
+    :param type: The type of fund account to be validated.
+    :raises ValueError: If the given type is not in the authorized fund account types list.
     """
     if type not in AUTHORIZED_FUND_ACCOUNT_TYPE:
         type_list = (
@@ -43,8 +51,10 @@ def validate_razorpayx_bank_account_type(type: str):
             + "</ul>"
         )
         frappe.throw(
-            msg=_(f"Invalid Account type: {type}. Must be one of : <br> {type_list}"),
-            title=_(f"Invalid {RAZORPAYX} Account type"),
+            msg=_("Invalid Account type: {0}. Must be one of : <br> {1}").format(
+                type, type_list
+            ),
+            title=_("Invalid {0} Fund Account type").format(RAZORPAYX),
             exc=ValueError,
         )
 

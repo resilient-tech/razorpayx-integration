@@ -1,20 +1,26 @@
+from typing import Optional
 from urllib.parse import urljoin
 
-import frappe
 import requests
+
+import frappe
 from frappe import _
+from frappe.app import UNSAFE_HTTP_METHODS
 
 from razorpayx_integration.constant import (
-    BASE_URL,
     RAZORPAYX,
-    UNSAFE_HTTP_METHODS,
-    VALID_HTTP_METHODS,
+    RAZORPAYX_BASE_URL,
+    RAZORPAYX_SUPPORTED_HTTP_METHODS,
 )
-from razorpayx_integration.utils import get_razorpayx_account
-
+from razorpayx_integration.utils import (
+    get_end_of_day_epoch,
+    get_razorpayx_account,
+    get_start_of_day_epoch,
+)
 
 # todo: logs for API calls.
-# todo: pagination should be common (get_all())
+
+
 class BaseRazorPayXAPI:
     """
     Base class for RazorPayX APIs.\n
@@ -45,15 +51,15 @@ class BaseRazorPayXAPI:
         """
         if self.razorpayx_account.disabled:
             frappe.throw(
-                msg=_(
-                    f"To use <b>{self.razorpayx_account.bank_account} account enable it first</b>"
+                msg=_("To use {0} account, please enable it first!").format(
+                    frappe.bold(self.razorpayx_account.bank_account)
                 ),
                 title=_("Account Is Disable"),
             )
 
         # todo : if credential authenticate then check `Key Authorized` field
 
-    def setup(*args, **kwargs):
+    def setup(self, *args, **kwargs):
         # Override in subclass
         pass
 
@@ -63,7 +69,7 @@ class BaseRazorPayXAPI:
 
         Example:
             if path_segments = 'contact/old' then
-            URL will `BASEURL/BASE_PATH/contact/old`
+            URL will `RAZORPAYX_BASE_URL/BASE_PATH/contact/old`
         """
 
         path_segments = list(path_segments)
@@ -72,7 +78,8 @@ class BaseRazorPayXAPI:
             path_segments.insert(0, self.BASE_PATH)
 
         return urljoin(
-            BASE_URL, "/".join(segment.strip("/") for segment in path_segments)
+            RAZORPAYX_BASE_URL,
+            "/".join(segment.strip("/") for segment in path_segments),
         )
 
     def get(self, *args, **kwargs):
@@ -105,6 +112,62 @@ class BaseRazorPayXAPI:
         """
         return self._make_request("PATCH", *args, **kwargs)
 
+    def get_all(
+        self, filters: Optional[dict] = None, count: Optional[int] = None
+    ) -> list[dict]:
+        """
+        Fetches all data of given RazorPayX account for specific API.
+
+        :param filters: Filters for fetching filtered response.
+        :param count: Total number of item to be fetched.If not given fetches all.
+        """
+        if filters:
+            self._clean_request_filters(filters)
+            self._set_epoch_time_for_date_filters(filters)
+            self.validate_and_process_request_filters(filters)
+
+        else:
+            filters = {}
+
+        if isinstance(count, int) and count <= 0:
+            frappe.throw(
+                _("Count can't be {0}").format(frappe.bold(count)),
+                title=_("Invalid Count To Fetch Data"),
+            )
+
+        if count and count <= 100:
+            filters["count"] = count
+            return self._fetch(filters)
+
+        if count is None:
+            FETCH_ALL_ITEMS = True
+        else:
+            FETCH_ALL_ITEMS = False
+
+        result = []
+        filters["count"] = 100  # max limit is 100
+        filters["skip"] = 0
+
+        while True:
+            items = self._fetch(filters)
+
+            if items and isinstance(items, list):
+                result.extend(items)
+            else:
+                break
+
+            if len(items) < 100:
+                break
+
+            if not FETCH_ALL_ITEMS:
+                count -= len(items)
+                if count <= 0:
+                    break
+
+            filters["skip"] += 100
+
+        return result
+
     def _make_request(
         self,
         method: str,
@@ -118,7 +181,7 @@ class BaseRazorPayXAPI:
         Process headers,params and data then make request and return processed response.
         """
         method = method.upper()
-        if method not in VALID_HTTP_METHODS:
+        if method not in RAZORPAYX_SUPPORTED_HTTP_METHODS:
             frappe.throw(_("Invalid method {0}").format(method))
 
         request_args = frappe._dict(
@@ -138,7 +201,7 @@ class BaseRazorPayXAPI:
             response = requests.request(method, **request_args)
             response_json = response.json(object_hook=frappe._dict)
 
-            if response.status_code != 200:
+            if response.status_code >= 400:
                 self.handle_failed_api_response(response_json)
 
             return response_json
@@ -146,28 +209,64 @@ class BaseRazorPayXAPI:
         except Exception as e:
             raise e
 
+    def _fetch(self, params: dict) -> list:
+        """
+        Fetches `items` from the API response based on the given parameters.
+        """
+        response = self.get(params=params)
+        return response.get("items", [])
+
+    def _clean_request_filters(self, filters: dict):
+        """
+        Cleans the request filters by removing any key-value pairs where the value is falsy.
+        """
+        keys_to_delete = [key for key, value in filters.items() if not value]
+
+        for key in keys_to_delete:
+            del filters[key]
+
+    def _set_epoch_time_for_date_filters(self, filters: dict):
+        """
+        Converts `from` and `to` date filters to epoch time.
+        """
+        if from_date := filters.get("from"):
+            filters["from"] = get_start_of_day_epoch(from_date)
+
+        if to_date := filters.get("to"):
+            filters["to"] = get_end_of_day_epoch(to_date)
+
+    def validate_and_process_request_filters(self, filters: dict):
+        # override in sub class
+        # validate and process filters except date filters (from,to)
+        pass
+
     # todo:  handle special(error) http code (specially payout process!!)
-    def handle_failed_api_response(self, response_json: dict = {}):
+    def handle_failed_api_response(self, response_json: Optional[dict] = None):
         """
-        - Error response:
-            {
-                "error": {
-                    "code": "SERVER_ERROR",
-                    "description": "Server Is Down",
-                    "source": "NA",
-                    "step": "NA",
-                    "reason": "NA",
-                    "metadata": {}
-                }
+        Handle failed API response from RazorPayX.
+
+        Error response format:
+        {
+            "error": {
+                "code": "SERVER_ERROR",
+                "description": "Server Is Down",
+                "source": "NA",
+                "step": "NA",
+                "reason": "NA",
+                "metadata": {}
             }
+        }
         """
-        error_msg = (
-            response_json.get("message")
-            or response_json.get("error", {}).get("description")
-            or f"There is some error occur in {RAZORPAYX} API"
-        ).title()
+        error_msg = "There is some error in <strong>RazorPayX</strong>"
+
+        if response_json:
+            error_msg = (
+                response_json.get("message")
+                or response_json.get("error", {}).get("description")
+                or error_msg
+            ).title()
 
         frappe.throw(
             msg=_(error_msg),
-            title=_(f"{RAZORPAYX} API Failed"),
+            title=_("{0} API Failed").format(RAZORPAYX),
         )

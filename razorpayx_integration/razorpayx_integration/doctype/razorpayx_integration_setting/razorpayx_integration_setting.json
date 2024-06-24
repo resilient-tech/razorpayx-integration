@@ -53,6 +53,7 @@
    "label": "Account Details"
   },
   {
+   "fetch_from": "bank_account.bank_account_no",
    "fieldname": "account_number",
    "fieldtype": "Data",
    "in_list_view": 1,
@@ -70,6 +71,7 @@
    "unique": 1
   },
   {
+   "fetch_from": "bank_account.bank",
    "fieldname": "bank_name",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -99,7 +101,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-05-31 17:20:03.562547",
+ "modified": "2024-06-21 11:29:13.205492",
  "modified_by": "Administrator",
  "module": "Razorpayx Integration",
  "name": "RazorPayX Integration Setting",
