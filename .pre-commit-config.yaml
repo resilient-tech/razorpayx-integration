@@ -23,7 +23,7 @@ repos:
           # Ignore any files that might contain jinja / bundles
           exclude: |
             (?x)^(
-                ucraft_am/public/dist/.*|
+                razorpayx_integration/public/dist/.*|
                 cypress/.*|
                 .*node_modules.*|
                 .*boilerplate.*
@@ -38,7 +38,7 @@ repos:
           # Ignore any files that might contain jinja / bundles
           exclude: |
             (?x)^(
-                ucraft_am/public/dist/.*|
+                razorpayx_integration/public/dist/.*|
                 cypress/.*|
                 .*node_modules.*|
                 .*boilerplate.*
