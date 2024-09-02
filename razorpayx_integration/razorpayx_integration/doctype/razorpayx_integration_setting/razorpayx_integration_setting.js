@@ -1,6 +1,7 @@
 // Copyright (c) 2024, Resilient Tech and contributors
 // For license information, please see license.txt
 
+// todo: Whole logic will change cause Now data will be fetched from Bank Account instead of RazorPayX Integration Setting (Bank Account Details)
 frappe.ui.form.on("RazorPayX Integration Setting", {
 	setup: function (frm) {
 		frm.set_query("bank_account", function () {
@@ -28,6 +29,7 @@ frappe.ui.form.on("RazorPayX Integration Setting", {
 	refresh: function (frm) {
 		if (frm.is_new() || frm.doc.status === "disabled") return;
 
+		// todo: changes (if last sync date is not set then ask for `from date`)
 		frm.add_custom_button(__("{0} Sync Bank Transactions", [frappe.utils.icon("refresh")]), () =>
 			prompt_for_transactions_sync_date(frm)
 		);
@@ -51,6 +53,7 @@ function prompt_for_transactions_sync_date(frm) {
 	);
 }
 
+// todo: throw an error if fails (also do not freeze the screen)
 async function sync_bank_transactions(frm, from_date) {
 	const params = {
 		method: "razorpayx_integration.razorpayx_integration.utils.transaction.sync_bank_transactions",
