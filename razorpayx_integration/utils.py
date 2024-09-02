@@ -1,6 +1,9 @@
+from datetime import datetime
+from typing import Union
+
 import frappe
 from frappe import _
-from frappe.utils.data import DateTimeLikeObject, get_timestamp
+from frappe.utils import DateTimeLikeObject, add_to_date, get_timestamp, getdate
 
 from razorpayx_integration.constant import (
     AUTHORIZED_CONTACT_TYPE,
@@ -14,6 +17,14 @@ from razorpayx_integration.constant import (
 # todo: check account is enable or not and API credentials are authorized or not!
 def get_razorpayx_account(account_name: str):
     return frappe.get_doc(RAZORPAYX_SETTING_DOCTYPE, account_name)
+
+
+def get_enabled_razorpayx_accounts() -> list[str]:
+    return frappe.get_all(
+        RAZORPAYX_SETTING_DOCTYPE,
+        filters={"disabled": 0},
+        pluck="name",
+    )
 
 
 # todo: can use Literal?
@@ -97,3 +108,46 @@ def get_end_of_day_epoch(date: DateTimeLikeObject = None) -> int:
         - Unix timestamp refers to `2024-05-30 11:59:59 PM`
     """
     return int(get_timestamp(date)) + SECONDS_IN_A_DAY_MINUS_ONE
+
+
+def get_str_datetime_from_epoch(epoch_time: int) -> str:
+    """
+    Get Local datetime from Epoch Time.\n
+    Format: yyyy-mm-dd HH:MM:SS
+    """
+    return datetime.fromtimestamp(epoch_time).strftime("%Y-%m-%d %H:%M:%S")
+
+
+def yesterday():
+    """
+    Get the date of yesterday from the current date.
+    """
+    return add_to_date(getdate(), days=-1)
+
+
+def rupees_to_paisa(amount: Union[float, int]) -> int:
+    """
+    Convert the given amount in Rupees to Paisa.
+
+    :param amount: The amount in Rupees to be converted to Paisa.
+
+    Example:
+    ```
+    rupees_to_paisa(100) ==> 10000
+    ```
+    """
+    return amount * 100
+
+
+def paisa_to_rupees(amount: int) -> int:
+    """
+    Convert the given amount in Paisa to Rupees.
+
+    :param amount: The amount in Paisa to be converted to Rupees.
+
+    Example:
+    ```
+    paisa_to_rupees(10000) ==> 100
+    ```
+    """
+    return amount / 100

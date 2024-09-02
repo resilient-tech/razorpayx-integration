@@ -18,7 +18,9 @@
   "key_id",
   "webhook_secret",
   "column_break_8tcki",
-  "key_secret"
+  "key_secret",
+  "transaction_section",
+  "last_synced"
  ],
  "fields": [
   {
@@ -97,11 +99,22 @@
    "is_virtual": 1,
    "label": "Key Authorized",
    "read_only": 1
+  },
+  {
+   "fieldname": "transaction_section",
+   "fieldtype": "Section Break",
+   "label": "Transaction"
+  },
+  {
+   "fieldname": "last_synced",
+   "fieldtype": "Datetime",
+   "label": "Last Synced",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-06-21 11:29:13.205492",
+ "modified": "2024-06-26 13:23:23.580508",
  "modified_by": "Administrator",
  "module": "Razorpayx Integration",
  "name": "RazorPayX Integration Setting",

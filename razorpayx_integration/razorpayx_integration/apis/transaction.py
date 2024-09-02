@@ -1,6 +1,6 @@
 from typing import Optional
 
-from frappe.utils.data import DateTimeLikeObject, today
+from frappe.utils import DateTimeLikeObject, today
 
 from razorpayx_integration.razorpayx_integration.apis.base import BaseRazorPayXAPI
 

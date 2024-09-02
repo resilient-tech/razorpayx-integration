@@ -16,4 +16,50 @@ frappe.ui.form.on("RazorPayX Integration Setting", {
 			);
 		}
 	},
+	refresh: function (frm) {
+		if (frm.is_new() || frm.doc.status === "disabled") return;
+
+		frm.add_custom_button(__("{0} Sync Bank Transactions", [frappe.utils.icon("refresh")]), () =>
+			prompt_for_transactions_sync_date(frm)
+		);
+	},
 });
+
+function prompt_for_transactions_sync_date(frm) {
+	frappe.prompt(
+		[
+			{
+				label: "From Date",
+				fieldname: "from_date",
+				fieldtype: "Date",
+				reqd: 1,
+				max_date: new Date(frappe.datetime.get_today()),
+			},
+		],
+		(values) => sync_bank_transactions(frm, values.from_date),
+		"Sync Bank Transactions",
+		"Sync"
+	);
+}
+
+async function sync_bank_transactions(frm, from_date) {
+	const params = {
+		method: "razorpayx_integration.razorpayx_integration.utils.transaction.sync_bank_transactions",
+		args: {
+			bank_account: frm.doc.bank_account,
+			from_date: from_date,
+		},
+		freeze: true,
+		freeze_message: __("Synchronizing Bank Transaction From {0}", [
+			razorpayx_integration.get_date_in_user_fmt(from_date),
+		]),
+	};
+
+	const response = await frappe.call(params);
+
+	if (!response.message) {
+		frappe.show_alert({ message: __("Synchronization failed. Please try again."), indicator: "red" });
+	} else {
+		frappe.show_alert({ message: __("Synchronization completed successfully."), indicator: "green" });
+	}
+}

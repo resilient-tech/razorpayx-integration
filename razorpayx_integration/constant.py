@@ -1,7 +1,9 @@
 from enum import StrEnum
 
 RAZORPAYX_SETTING_DOCTYPE = "RazorPayX Integration Setting"
+BANK_TRANSACTION_DOCTYPE = "Bank Transaction"
 RAZORPAYX = "RazorPayX"
+BUG_REPORT_URL = "https://github.com/resilient-tech/razorpayx_integration/issues/new"
 
 ### Constants for APIs ###
 RAZORPAYX_BASE_URL = "https://api.razorpay.com/v1/"
