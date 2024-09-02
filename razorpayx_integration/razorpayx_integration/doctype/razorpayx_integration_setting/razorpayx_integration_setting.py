@@ -10,33 +10,7 @@ from razorpayx_integration.constant import RAZORPAYX
 
 class RazorPayXIntegrationSetting(Document):
     def validate(self):
-        self.validate_bank_account()
         self.validate_api_credential()
-
-    # ? unnecessary
-    def validate_bank_account(self):
-        bank_account_details = frappe.db.get_value(
-            "Bank Account", self.bank_account, ["bank_account_no", "bank"]
-        )
-
-        if not bank_account_details:
-            frappe.throw(
-                msg=_("No details found for the selected Bank Account: {0}").format(
-                    frappe.bold(self.bank_account)
-                ),
-                title=_("Invalid Bank Account"),
-            )
-
-        if (
-            bank_account_details[0] != self.account_number
-            or bank_account_details[1] != self.bank_name
-        ):
-            frappe.throw(
-                msg=_(
-                    "Given bank account details do not match the selected Bank Account: {0}"
-                ).format(frappe.bold(self.bank_account)),
-                title=_("Invalid Bank Account Details"),
-            )
 
     # todo: validate API credential (Are actually razorpayx credentials or not?)
     def validate_api_credential(self):
@@ -45,3 +19,19 @@ class RazorPayXIntegrationSetting(Document):
                 msg=_("Please set {0} API credentials.").format(RAZORPAYX),
                 title=_("API Credentials Are Missing"),
             )
+
+    @property
+    def company(self):
+        return frappe.db.get_value("Bank Account", self.bank_account, "company")
+
+    @property
+    def bank_name(self):
+        return frappe.db.get_value("Bank Account", self.bank_account, "bank")
+
+    @property
+    def account_number(self):
+        return frappe.db.get_value("Bank Account", self.bank_account, "bank_account_no")
+
+    @property
+    def ifsc_code(self):
+        return frappe.db.get_value("Bank Account", self.bank_account, "branch_code")

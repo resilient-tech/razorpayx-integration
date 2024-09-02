@@ -10,8 +10,10 @@
   "disabled",
   "account_details_section",
   "bank_account",
-  "column_break_3gfbs",
   "account_number",
+  "ifsc_code",
+  "column_break_3gfbs",
+  "company",
   "bank_name",
   "api_details_section",
   "key_authorized",
@@ -20,7 +22,13 @@
   "column_break_8tcki",
   "key_secret",
   "transaction_section",
-  "last_synced"
+  "last_synced",
+  "payment_section",
+  "pay_on_submit",
+  "template_section",
+  "success_email_template",
+  "column_break_rsvjn",
+  "failure_email_template"
  ],
  "fields": [
   {
@@ -55,12 +63,11 @@
    "label": "Account Details"
   },
   {
-   "fetch_from": "bank_account.bank_account_no",
    "fieldname": "account_number",
    "fieldtype": "Data",
    "in_list_view": 1,
+   "is_virtual": 1,
    "label": "Account Number",
-   "mandatory_depends_on": "eval:doc.account_number",
    "read_only": 1
   },
   {
@@ -73,12 +80,11 @@
    "unique": 1
   },
   {
-   "fetch_from": "bank_account.bank",
    "fieldname": "bank_name",
    "fieldtype": "Link",
    "in_list_view": 1,
+   "is_virtual": 1,
    "label": "Bank Name",
-   "mandatory_depends_on": "eval:doc.bank_name",
    "options": "Bank",
    "read_only": 1
   },
@@ -110,11 +116,58 @@
    "fieldtype": "Datetime",
    "label": "Last Synced",
    "read_only": 1
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "is_virtual": 1,
+   "label": "Company",
+   "options": "Company",
+   "read_only": 1
+  },
+  {
+   "fieldname": "payment_section",
+   "fieldtype": "Section Break",
+   "label": "Payment"
+  },
+  {
+   "default": "0",
+   "fieldname": "pay_on_submit",
+   "fieldtype": "Check",
+   "label": "Make Payment On Submit Of Payment Entry"
+  },
+  {
+   "fieldname": "ifsc_code",
+   "fieldtype": "Data",
+   "is_virtual": 1,
+   "label": "IFSC Code",
+   "read_only": 1
+  },
+  {
+   "fieldname": "template_section",
+   "fieldtype": "Section Break",
+   "label": "Template"
+  },
+  {
+   "fieldname": "success_email_template",
+   "fieldtype": "Link",
+   "label": "Success Email Template",
+   "options": "Email Template"
+  },
+  {
+   "fieldname": "column_break_rsvjn",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "failure_email_template",
+   "fieldtype": "Link",
+   "label": "Failure Email Template",
+   "options": "Email Template"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-06-26 13:23:23.580508",
+ "modified": "2024-09-02 16:49:31.956876",
  "modified_by": "Administrator",
  "module": "Razorpayx Integration",
  "name": "RazorPayX Integration Setting",

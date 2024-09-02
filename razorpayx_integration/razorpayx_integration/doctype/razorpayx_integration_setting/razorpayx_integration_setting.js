@@ -2,6 +2,14 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on("RazorPayX Integration Setting", {
+	setup: function (frm) {
+		frm.set_query("bank_account", function () {
+			return {
+				filters: { is_company_account: 1 },
+			};
+		});
+	},
+
 	onload: function (frm) {
 		if (frm.is_new()) {
 			frm.set_intro(
@@ -16,6 +24,7 @@ frappe.ui.form.on("RazorPayX Integration Setting", {
 			);
 		}
 	},
+
 	refresh: function (frm) {
 		if (frm.is_new() || frm.doc.status === "disabled") return;
 
