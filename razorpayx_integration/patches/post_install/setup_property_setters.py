@@ -17,14 +17,6 @@ PROPERTY_SETTERS = [
         "value": 1,
         "property_type": "Check",
     },
-    {
-        "doctype_or_docfield": "DocField",
-        "doctype": "Bank Account",
-        "fieldname": "bank_account_no",
-        "property": "reqd",
-        "value": 1,
-        "property_type": "Check",
-    },
 ]
 
 
