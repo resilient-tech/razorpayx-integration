@@ -1,7 +1,6 @@
 // Copyright (c) 2024, Resilient Tech and contributors
 // For license information, please see license.txt
 
-// todo: Whole logic will change cause Now data will be fetched from Bank Account instead of RazorPayX Integration Setting (Bank Account Details)
 frappe.ui.form.on("RazorPayX Integration Setting", {
 	setup: function (frm) {
 		frm.set_query("bank_account", function () {
@@ -9,21 +8,25 @@ frappe.ui.form.on("RazorPayX Integration Setting", {
 				filters: { is_company_account: 1 },
 			};
 		});
+
+		// fetching virtual fields
+		frm.add_fetch("bank_account", "company", "company");
+		frm.add_fetch("bank_account", "bank", "bank");
 	},
 
 	onload: function (frm) {
-		if (frm.is_new()) {
-			frm.set_intro(
-				__(
-					`Get RazorPayX API's Key <strong>Id</strong> and <strong>Secret</strong> from
-						<a target="_blank" href="https://x.razorpay.com/settings/developer-controls">
-							here {0}
-						</a>
-					if not available.`,
-					[frappe.utils.icon("link-url")]
-				)
-			);
-		}
+		if (!frm.is_new()) return;
+
+		frm.set_intro(
+			__(
+				`Get RazorPayX API's Key <strong>Id</strong> and <strong>Secret</strong> from
+					<a target="_blank" href="https://x.razorpay.com/settings/developer-controls">
+						here {0}
+					</a>
+				if not available.`,
+				[frappe.utils.icon("link-url")]
+			)
+		);
 	},
 
 	refresh: function (frm) {
@@ -33,6 +36,16 @@ frappe.ui.form.on("RazorPayX Integration Setting", {
 		frm.add_custom_button(__("{0} Sync Bank Transactions", [frappe.utils.icon("refresh")]), () =>
 			prompt_for_transactions_sync_date(frm)
 		);
+
+		frm.trigger("remove_customer_identifier_description");
+	},
+
+	remove_customer_identifier_description: function (frm) {
+		const field = frm.get_field("customer_identifier");
+
+		if (field.get_value()) {
+			field.set_description("");
+		}
 	},
 });
 

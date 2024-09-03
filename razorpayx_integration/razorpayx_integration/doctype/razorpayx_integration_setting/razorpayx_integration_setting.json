@@ -1,7 +1,7 @@
 {
  "actions": [],
  "autoname": "format:{bank_account}",
- "creation": "2024-05-13 16:06:06.578506",
+ "creation": "2024-09-02 18:17:16.899797",
  "default_view": "List",
  "doctype": "DocType",
  "editable_grid": 1,
@@ -10,11 +10,10 @@
   "disabled",
   "account_details_section",
   "bank_account",
-  "account_number",
-  "ifsc_code",
+  "customer_identifier",
   "column_break_3gfbs",
   "company",
-  "bank_name",
+  "bank",
   "api_details_section",
   "key_authorized",
   "key_id",
@@ -63,14 +62,6 @@
    "label": "Account Details"
   },
   {
-   "fieldname": "account_number",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "is_virtual": 1,
-   "label": "Account Number",
-   "read_only": 1
-  },
-  {
    "fieldname": "bank_account",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -78,15 +69,6 @@
    "options": "Bank Account",
    "reqd": 1,
    "unique": 1
-  },
-  {
-   "fieldname": "bank_name",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "is_virtual": 1,
-   "label": "Bank Name",
-   "options": "Bank",
-   "read_only": 1
   },
   {
    "fieldname": "column_break_3gfbs",
@@ -137,13 +119,6 @@
    "label": "Make Payment On Submit Of Payment Entry"
   },
   {
-   "fieldname": "ifsc_code",
-   "fieldtype": "Data",
-   "is_virtual": 1,
-   "label": "IFSC Code",
-   "read_only": 1
-  },
-  {
    "fieldname": "template_section",
    "fieldtype": "Section Break",
    "label": "Template"
@@ -163,11 +138,27 @@
    "fieldtype": "Link",
    "label": "Failure Email Template",
    "options": "Email Template"
+  },
+  {
+   "fieldname": "bank",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "is_virtual": 1,
+   "label": "Bank",
+   "options": "Bank",
+   "read_only": 1
+  },
+  {
+   "description": "Log in to your\n<a href=\"https://x.razorpay.com/auth/?intent=current_account\" rel=\"noopener\" target=\"_blank\"><strong>RazorpayX Dashboard</strong></a>\nand go to <strong>My Account &amp; Settings \u2192 Banking \u2192 Customer Identifier</strong>.",
+   "fieldname": "customer_identifier",
+   "fieldtype": "Data",
+   "label": "Customer Identifier",
+   "reqd": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-09-02 16:49:31.956876",
+ "modified": "2024-09-03 12:46:56.308586",
  "modified_by": "Administrator",
  "module": "Razorpayx Integration",
  "name": "RazorPayX Integration Setting",

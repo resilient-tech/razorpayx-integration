@@ -10,10 +10,11 @@ from razorpayx_integration.constant import RAZORPAYX
 
 class RazorPayXIntegrationSetting(Document):
     def validate(self):
-        self.validate_api_credential()
+        # todo: verify customer_identifier is valid or not ??
+        self.validate_api_credentials()
 
     # todo: validate API credential (Are actually razorpayx credentials or not?)
-    def validate_api_credential(self):
+    def validate_api_credentials(self):
         if not self.key_id or not self.key_secret:
             frappe.throw(
                 msg=_("Please set {0} API credentials.").format(RAZORPAYX),
@@ -25,13 +26,5 @@ class RazorPayXIntegrationSetting(Document):
         return frappe.db.get_value("Bank Account", self.bank_account, "company")
 
     @property
-    def bank_name(self):
+    def bank(self):
         return frappe.db.get_value("Bank Account", self.bank_account, "bank")
-
-    @property
-    def account_number(self):
-        return frappe.db.get_value("Bank Account", self.bank_account, "bank_account_no")
-
-    @property
-    def ifsc_code(self):
-        return frappe.db.get_value("Bank Account", self.bank_account, "branch_code")

@@ -20,6 +20,7 @@ class RazorPayXTransaction(BaseRazorPayXAPI):
 
     # * override base setup
     def setup(self, *args, **kwargs):
+        # todo: changes it is now Customer Identifier ...
         self.account_number = self.razorpayx_account.account_number
 
     ### APIs ###
