@@ -12,6 +12,8 @@ frappe.ui.form.on("RazorPayX Integration Setting", {
 		// fetching virtual fields
 		frm.add_fetch("bank_account", "company", "company");
 		frm.add_fetch("bank_account", "bank", "bank");
+		frm.add_fetch("bank_account", "bank_account_no", "account_number");
+		frm.add_fetch("bank_account", "branch_code", "ifsc_code");
 	},
 
 	onload: function (frm) {
@@ -36,16 +38,6 @@ frappe.ui.form.on("RazorPayX Integration Setting", {
 		frm.add_custom_button(__("{0} Sync Bank Transactions", [frappe.utils.icon("refresh")]), () =>
 			prompt_for_transactions_sync_date(frm)
 		);
-
-		frm.trigger("remove_customer_identifier_description");
-	},
-
-	remove_customer_identifier_description: function (frm) {
-		const field = frm.get_field("customer_identifier");
-
-		if (field.get_value()) {
-			field.set_description("");
-		}
 	},
 });
 

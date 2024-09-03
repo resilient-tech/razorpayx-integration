@@ -10,7 +10,8 @@
   "disabled",
   "account_details_section",
   "bank_account",
-  "customer_identifier",
+  "account_number",
+  "ifsc_code",
   "column_break_3gfbs",
   "company",
   "bank",
@@ -149,16 +150,23 @@
    "read_only": 1
   },
   {
-   "description": "Log in to your\n<a href=\"https://x.razorpay.com/auth/?intent=current_account\" rel=\"noopener\" target=\"_blank\"><strong>RazorpayX Dashboard</strong></a>\nand go to <strong>My Account &amp; Settings \u2192 Banking \u2192 Customer Identifier</strong>.",
-   "fieldname": "customer_identifier",
+   "fieldname": "account_number",
    "fieldtype": "Data",
-   "label": "Customer Identifier",
-   "reqd": 1
+   "is_virtual": 1,
+   "label": "Account Number",
+   "read_only": 1
+  },
+  {
+   "fieldname": "ifsc_code",
+   "fieldtype": "Data",
+   "is_virtual": 1,
+   "label": "IFSC Code",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-09-03 12:46:56.308586",
+ "modified": "2024-09-03 15:54:43.439051",
  "modified_by": "Administrator",
  "module": "Razorpayx Integration",
  "name": "RazorPayX Integration Setting",
