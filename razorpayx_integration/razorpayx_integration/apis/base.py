@@ -9,7 +9,7 @@ from frappe.app import UNSAFE_HTTP_METHODS
 
 from razorpayx_integration.constant import (
     RAZORPAYX,
-    RAZORPAYX_BASE_URL,
+    RAZORPAYX_BASE_API_URL,
     RAZORPAYX_SUPPORTED_HTTP_METHODS,
 )
 from razorpayx_integration.utils import (
@@ -78,7 +78,7 @@ class BaseRazorPayXAPI:
             path_segments.insert(0, self.BASE_PATH)
 
         return urljoin(
-            RAZORPAYX_BASE_URL,
+            RAZORPAYX_BASE_API_URL,
             "/".join(segment.strip("/") for segment in path_segments),
         )
 
@@ -209,6 +209,7 @@ class BaseRazorPayXAPI:
         except Exception as e:
             raise e
 
+    # todo:  also accept endpoint,headers
     def _fetch(self, params: dict) -> list:
         """
         Fetches `items` from the API response based on the given parameters.

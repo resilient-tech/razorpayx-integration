@@ -6,7 +6,7 @@ RAZORPAYX = "RazorPayX"
 BUG_REPORT_URL = "https://github.com/resilient-tech/razorpayx_integration/issues/new"
 
 ### Constants for APIs ###
-RAZORPAYX_BASE_URL = "https://api.razorpay.com/v1/"
+RAZORPAYX_BASE_API_URL = "https://api.razorpay.com/v1/"
 SECONDS_IN_A_DAY_MINUS_ONE = 86399  # use for to get day's end epoch time
 
 
@@ -39,3 +39,23 @@ class RAZORPAYX_FUND_ACCOUNT_TYPE(BaseEnum):
 class RAZORPAYX_PAYOUT_MODE(BaseEnum):
     NEFT = "NEFT"
     RTGS = "RTGS"
+
+
+class RAZORPAYX_PAYOUT_PURPOSE(BaseEnum):
+    CASHBACK = "cashback"
+    PAYOUT = "payout"
+    REFUND = "refund"
+    SALARY = "salary"
+    UTILITY_BILL = "utility_bill"
+    VENDOR_BILL = "vendor_bill"
+
+
+class RAZORPAYX_PAYOUT_STATUS(BaseEnum):
+    QUEUED = "queued"
+    PENDING = "pending"  # if RazorpayX workflow is enabled
+    REJECTED = "rejected"  # if RazorpayX workflow is enabled
+    PROCESSING = "processing"
+    PROCESSED = "processed"
+    CANCELLED = "cancelled"
+    REVERSED = "reversed"
+    FAILED = "failed"
