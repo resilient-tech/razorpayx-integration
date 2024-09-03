@@ -6,9 +6,9 @@ from frappe import _
 from frappe.utils import DateTimeLikeObject, add_to_date, get_timestamp, getdate
 
 from razorpayx_integration.constant import (
-    AUTHORIZED_CONTACT_TYPE,
-    AUTHORIZED_FUND_ACCOUNT_TYPE,
     RAZORPAYX,
+    RAZORPAYX_CONTACT_TYPE,
+    RAZORPAYX_FUND_ACCOUNT_TYPE,
     RAZORPAYX_SETTING_DOCTYPE,
     SECONDS_IN_A_DAY_MINUS_ONE,
 )
@@ -27,7 +27,6 @@ def get_enabled_razorpayx_accounts() -> list[str]:
     )
 
 
-# todo: can use Literal?
 def validate_razorpayx_contact_type(type: str):
     """
     Check if the given type is in the list of authorized contact types.\n
@@ -35,12 +34,14 @@ def validate_razorpayx_contact_type(type: str):
     :param type: The type of contact to be validated.
     :raises ValueError: If the given type is not in the authorized contact types list.
     """
-    if type not in AUTHORIZED_CONTACT_TYPE:
+    if not RAZORPAYX_CONTACT_TYPE.has_value(type):
         type_list = (
-            "<ul>" + "".join(f"<li>{t}</li>" for t in AUTHORIZED_CONTACT_TYPE) + "</ul>"
+            "<ul>"
+            + "".join(f"<li>{t.value}</li>" for t in RAZORPAYX_CONTACT_TYPE)
+            + "</ul>"
         )
         frappe.throw(
-            msg=_("Invalid contact type: {0}. Must be one of : <br> {1}").format(
+            msg=_("Invalid contact type: {0}. <br> Must be one of : <br> {1}").format(
                 type, type_list
             ),
             title=_("Invalid {0} Contact Type").format(RAZORPAYX),
@@ -55,10 +56,10 @@ def validate_razorpayx_fund_account_type(type: str):
     :param type: The type of fund account to be validated.
     :raises ValueError: If the given type is not in the authorized fund account types list.
     """
-    if type not in AUTHORIZED_FUND_ACCOUNT_TYPE:
+    if not RAZORPAYX_FUND_ACCOUNT_TYPE.has_value(type):
         type_list = (
             "<ul>"
-            + "".join(f"<li>{t}</li>" for t in AUTHORIZED_FUND_ACCOUNT_TYPE)
+            + "".join(f"<li>{t.value}</li>" for t in RAZORPAYX_FUND_ACCOUNT_TYPE)
             + "</ul>"
         )
         frappe.throw(

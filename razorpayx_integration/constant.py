@@ -1,4 +1,4 @@
-from enum import StrEnum
+from enum import Enum
 
 RAZORPAYX_SETTING_DOCTYPE = "RazorPayX Integration Setting"
 BANK_TRANSACTION_DOCTYPE = "Bank Transaction"
@@ -19,33 +19,23 @@ RAZORPAYX_SUPPORTED_HTTP_METHODS = (
 )
 
 
-# ? can be remove
-class RAZORPAYX_CONTACT_TYPE(StrEnum):
+class BaseEnum(Enum):
+    @classmethod
+    def has_value(cls, value):
+        return value in cls._value2member_map_
+
+
+class RAZORPAYX_CONTACT_TYPE(BaseEnum):
     EMPLOYEE = "employee"
     SUPPLIER = "vendor"
     CUSTOMER = "customer"
 
 
-class RAZORPAYX_FUND_ACCOUNT_TYPE(StrEnum):
+class RAZORPAYX_FUND_ACCOUNT_TYPE(BaseEnum):
     BANK_ACCOUNT = "bank_account"
     VPA = "vpa"
 
 
-class RAZORPAYX_PAYOUT_MODE(StrEnum):
+class RAZORPAYX_PAYOUT_MODE(BaseEnum):
     NEFT = "NEFT"
     RTGS = "RTGS"
-
-
-AUTHORIZED_CONTACT_TYPE = (
-    RAZORPAYX_CONTACT_TYPE.EMPLOYEE,
-    RAZORPAYX_CONTACT_TYPE.SUPPLIER,
-    RAZORPAYX_CONTACT_TYPE.CUSTOMER,
-)
-
-AUTHORIZED_FUND_ACCOUNT_TYPE = (
-    RAZORPAYX_FUND_ACCOUNT_TYPE.BANK_ACCOUNT,
-    RAZORPAYX_FUND_ACCOUNT_TYPE.VPA,
-)
-
-# * used also in Client Side, if you change below constants make changes in constant.js
-SYNC_SUCCESS_RESPONSE = "success"
