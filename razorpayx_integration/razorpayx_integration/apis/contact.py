@@ -2,7 +2,6 @@ from typing import Optional, Union
 
 from frappe.utils import validate_email_address
 
-from razorpayx_integration.constant import RAZORPAYX_CONTACT_MAP
 from razorpayx_integration.razorpayx_integration.apis.base import BaseRazorPayXAPI
 from razorpayx_integration.utils import validate_razorpayx_contact_type
 
@@ -229,9 +228,7 @@ class RazorPayXContact(BaseRazorPayXAPI):
             validate_email_address(email, throw=True)
 
         if type := request.get("type"):
-            # ? can remove MAP and use directly vendor instead of supplier!
             validate_razorpayx_contact_type(type)
-            request["type"] = RAZORPAYX_CONTACT_MAP[type]
 
-    def validate_and_process_request_filters(self, filters: dict) -> dict:
+    def validate_and_process_request_filters(self, filters: dict):
         self.validate_email_and_type_of_contact(filters)

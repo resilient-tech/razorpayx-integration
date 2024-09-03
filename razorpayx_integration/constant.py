@@ -22,7 +22,8 @@ RAZORPAYX_SUPPORTED_HTTP_METHODS = (
 # ? can be remove
 class RAZORPAYX_CONTACT_TYPE(StrEnum):
     EMPLOYEE = "employee"
-    SUPPLIER = "supplier"
+    SUPPLIER = "vendor"
+    CUSTOMER = "customer"
 
 
 class RAZORPAYX_FUND_ACCOUNT_TYPE(StrEnum):
@@ -30,15 +31,15 @@ class RAZORPAYX_FUND_ACCOUNT_TYPE(StrEnum):
     VPA = "vpa"
 
 
-# ? is it necessary or direct use vendor?
-RAZORPAYX_CONTACT_MAP = {
-    RAZORPAYX_CONTACT_TYPE.EMPLOYEE: "employee",
-    RAZORPAYX_CONTACT_TYPE.SUPPLIER: "vendor",
-}
+class RAZORPAYX_PAYOUT_MODE(StrEnum):
+    NEFT = "NEFT"
+    RTGS = "RTGS"
+
 
 AUTHORIZED_CONTACT_TYPE = (
     RAZORPAYX_CONTACT_TYPE.EMPLOYEE,
     RAZORPAYX_CONTACT_TYPE.SUPPLIER,
+    RAZORPAYX_CONTACT_TYPE.CUSTOMER,
 )
 
 AUTHORIZED_FUND_ACCOUNT_TYPE = (
