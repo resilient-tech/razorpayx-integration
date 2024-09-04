@@ -13,6 +13,7 @@ from razorpayx_integration.razorpayx_integration.apis.transaction import (
 from razorpayx_integration.utils import get_str_datetime_from_epoch, paisa_to_rupees
 
 
+# todo: this file need to be refactor and optimize
 @frappe.whitelist()
 def sync_bank_transactions(bank_account: str, from_date: DateTimeLikeObject):
     frappe.has_permission(RAZORPAYX_SETTING_DOCTYPE, bank_account, throw=True)

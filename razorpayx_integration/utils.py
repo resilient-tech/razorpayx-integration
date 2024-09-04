@@ -9,14 +9,19 @@ from razorpayx_integration.constant import (
     RAZORPAYX,
     RAZORPAYX_CONTACT_TYPE,
     RAZORPAYX_FUND_ACCOUNT_TYPE,
+    RAZORPAYX_PAYOUT_MODE,
+    RAZORPAYX_PAYOUT_STATUS,
     RAZORPAYX_SETTING_DOCTYPE,
     SECONDS_IN_A_DAY_MINUS_ONE,
 )
 
 
-# todo: check account is enable or not and API credentials are authorized or not!
-def get_razorpayx_account(account_name: str):
-    return frappe.get_doc(RAZORPAYX_SETTING_DOCTYPE, account_name)
+def get_razorpayx_integration_account_details(razorpayx_account_name: str):
+    return frappe.get_doc(RAZORPAYX_SETTING_DOCTYPE, razorpayx_account_name)
+
+
+def get_associate_razorpayx_account(paid_from_account: str) -> str:
+    return frappe.db.get_value("Bank Account", {"account": paid_from_account}, "name")
 
 
 def get_enabled_razorpayx_accounts() -> list[str]:
@@ -29,10 +34,7 @@ def get_enabled_razorpayx_accounts() -> list[str]:
 
 def validate_razorpayx_contact_type(type: str):
     """
-    Check if the given type is in the list of authorized contact types.\n
-
-    :param type: The type of contact to be validated.
-    :raises ValueError: If the given type is not in the authorized contact types list.
+    :raises ValueError: If the type is not valid.
     """
     if not RAZORPAYX_CONTACT_TYPE.has_value(type):
         type_list = (
@@ -51,10 +53,7 @@ def validate_razorpayx_contact_type(type: str):
 
 def validate_razorpayx_fund_account_type(type: str):
     """
-    Check if the given type is in the list of authorized fund account types.\n
-
-    :param type: The type of fund account to be validated.
-    :raises ValueError: If the given type is not in the authorized fund account types list.
+    :raises ValueError: If the type is not valid.
     """
     if not RAZORPAYX_FUND_ACCOUNT_TYPE.has_value(type):
         type_list = (
@@ -63,10 +62,48 @@ def validate_razorpayx_fund_account_type(type: str):
             + "</ul>"
         )
         frappe.throw(
-            msg=_("Invalid Account type: {0}. Must be one of : <br> {1}").format(
+            msg=_("Invalid Account type: {0}. <br> Must be one of : <br> {1}").format(
                 type, type_list
             ),
             title=_("Invalid {0} Fund Account type").format(RAZORPAYX),
+            exc=ValueError,
+        )
+
+
+def validate_razorpayx_payout_mode(mode: str):
+    """
+    :raises ValueError: If the mode is not valid.
+    """
+    if not RAZORPAYX_PAYOUT_MODE.has_value(mode):
+        mode_list = (
+            "<ul>"
+            + "".join(f"<li>{t.value}</li>" for t in RAZORPAYX_PAYOUT_MODE)
+            + "</ul>"
+        )
+        frappe.throw(
+            msg=_("Invalid Payout mode: {0}.<br> Must be one of : <br> {1}").format(
+                mode, mode_list
+            ),
+            title=_("Invalid {0} Payout mode").format(RAZORPAYX),
+            exc=ValueError,
+        )
+
+
+def validate_razorpayx_payout_status(status: str):
+    """
+    :raises ValueError: If the status is not valid.
+    """
+    if not RAZORPAYX_PAYOUT_STATUS.has_value(status):
+        status_list = (
+            "<ul>"
+            + "".join(f"<li>{t.value}</li>" for t in RAZORPAYX_PAYOUT_STATUS)
+            + "</ul>"
+        )
+        frappe.throw(
+            msg=_("Invalid Payout status: {0}.<br> Must be one of : <br> {1}").format(
+                status, status_list
+            ),
+            title=_("Invalid {0} Payout status").format(RAZORPAYX),
             exc=ValueError,
         )
 

@@ -9,6 +9,7 @@ BUG_REPORT_URL = "https://github.com/resilient-tech/razorpayx_integration/issues
 RAZORPAYX_BASE_API_URL = "https://api.razorpay.com/v1/"
 SECONDS_IN_A_DAY_MINUS_ONE = 86399  # use for to get day's end epoch time
 
+RAZORPAYX_SUPPORTED_CURRENCY = "INR"
 
 RAZORPAYX_SUPPORTED_HTTP_METHODS = (
     "GET",
@@ -23,6 +24,10 @@ class BaseEnum(Enum):
     @classmethod
     def has_value(cls, value):
         return value in cls._value2member_map_
+
+    @classmethod
+    def values(cls):
+        return [member.value for member in cls]
 
 
 class RAZORPAYX_CONTACT_TYPE(BaseEnum):
@@ -39,15 +44,13 @@ class RAZORPAYX_FUND_ACCOUNT_TYPE(BaseEnum):
 class RAZORPAYX_PAYOUT_MODE(BaseEnum):
     NEFT = "NEFT"
     RTGS = "RTGS"
+    UPI = "UPI"
 
 
 class RAZORPAYX_PAYOUT_PURPOSE(BaseEnum):
-    CASHBACK = "cashback"
-    PAYOUT = "payout"
-    REFUND = "refund"
-    SALARY = "salary"
-    UTILITY_BILL = "utility_bill"
-    VENDOR_BILL = "vendor_bill"
+    CUSTOMER = "refund"
+    EMPLOYEE = "salary"
+    SUPPLIER = "vendor_bill"
 
 
 class RAZORPAYX_PAYOUT_STATUS(BaseEnum):

@@ -2,10 +2,12 @@ from typing import Optional, Union
 
 from frappe.utils import validate_email_address
 
+from razorpayx_integration.constant import RAZORPAYX_CONTACT_TYPE
 from razorpayx_integration.razorpayx_integration.apis.base import BaseRazorPayXAPI
 from razorpayx_integration.utils import validate_razorpayx_contact_type
 
 # todo : use composite API, If composite APIs working properly fine then no need of this API
+# todo: this need to be refactor and optimize
 
 
 class RazorPayXContact(BaseRazorPayXAPI):
@@ -30,13 +32,13 @@ class RazorPayXContact(BaseRazorPayXAPI):
 
         :param dict json: Full details of the contact to create.
         :param str name: The name of the contact.
-        :param str type: Must be one of ["employee", "supplier"] (if specified).
+        :param str type: Contact's ERPNext DocType.
         :param str email: Email address of the contact.
         :param str contact: Contact number of the contact.
         :param str id: Reference Id for contact.
         :param str note: Additional note for the contact.
 
-        :raises ValueError: If `type` is not one of ["employee", "supplier"].\n
+        :raises ValueError: If `type` is not valid.\n
         ---
         Example Usage:
         ```
@@ -87,7 +89,7 @@ class RazorPayXContact(BaseRazorPayXAPI):
         :param filters: Result will be filtered as given filters.
         :param count: The number of contacts to be retrieved.
 
-        :raises ValueError: If `type` is not one of ["employee", "supplier"].\n
+        :raises ValueError: If `type` is not valid.\n
         ---
         Example Usage:
         ```
@@ -106,7 +108,6 @@ class RazorPayXContact(BaseRazorPayXAPI):
         ```
         ---
         Note:
-            - Not all filters are require.
             - `active` can be int or boolean.
             - `from` and `to` can be str,date,datetime (in YYYY-MM-DD).
         ---
@@ -121,13 +122,13 @@ class RazorPayXContact(BaseRazorPayXAPI):
         :param id: Contact Id of whom to update details (Ex.`cont_hkj012yuGJ`).
         :param dict json: Full details of contact to create.
         :param str name: The contact's name.
-        :param str type: Must be one of ["employee", "supplier"] (if passed).
+        :param str type: Contact's ERPNext DocType.
         :param str email: Email address of the contact.
         :param str contact: Contact number of the contact.
         :param str id: Reference Id for contact.
         :param str note: Additional note for the contact.
 
-        :raises ValueError: If `type` is not one of ["employee", "supplier"].\n
+        :raises ValueError: If `type` is not valid.\n
         ---
         Example Usage:
         ```
@@ -228,7 +229,9 @@ class RazorPayXContact(BaseRazorPayXAPI):
             validate_email_address(email, throw=True)
 
         if type := request.get("type"):
-            validate_razorpayx_contact_type(type)
+            # Razorpayx does not support `supplier` type contact
+            request["type"] = RAZORPAYX_CONTACT_TYPE[type.upper()].value
+            validate_razorpayx_contact_type(request["type"])
 
     def validate_and_process_request_filters(self, filters: dict):
         self.validate_email_and_type_of_contact(filters)

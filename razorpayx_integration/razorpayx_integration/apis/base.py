@@ -14,7 +14,7 @@ from razorpayx_integration.constant import (
 )
 from razorpayx_integration.utils import (
     get_end_of_day_epoch,
-    get_razorpayx_account,
+    get_razorpayx_integration_account_details,
     get_start_of_day_epoch,
 )
 
@@ -30,8 +30,10 @@ class BaseRazorPayXAPI:
     # * utility attributes
     BASE_PATH = ""
 
-    def __init__(self, account_name: str, *args, **kwargs):
-        self.razorpayx_account = get_razorpayx_account(account_name)
+    def __init__(self, razorpayx_account_name: str, *args, **kwargs):
+        self.razorpayx_account = get_razorpayx_integration_account_details(
+            razorpayx_account_name
+        )
         self.authenticate_razorpayx_account()
 
         self.auth = (

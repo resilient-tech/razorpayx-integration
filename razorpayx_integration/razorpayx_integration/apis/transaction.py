@@ -9,8 +9,8 @@ from razorpayx_integration.razorpayx_integration.apis.base import BaseRazorPayXA
 
 class RazorPayXTransaction(BaseRazorPayXAPI):
     """
-    Handle APIs for `Transaction` which are RazorPayX  accounts.
-    :param str account_name: RazorPayX account for which this `Transaction` is associate.
+    Handle APIs for `Bank Transaction` which are RazorPayX  accounts.
+    :param account_name: RazorPayX account for which this `Transaction` is associate.
     ---
     Reference: https://razorpay.com/docs/api/x/transactions/
     """
@@ -20,7 +20,6 @@ class RazorPayXTransaction(BaseRazorPayXAPI):
 
     # * override base setup
     def setup(self, *args, **kwargs):
-        # todo: changes it is now Customer Identifier ...
         self.account_number = self.razorpayx_account.account_number
 
     ### APIs ###
