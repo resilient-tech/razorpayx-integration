@@ -10,13 +10,10 @@ from frappe.app import UNSAFE_HTTP_METHODS
 from razorpayx_integration.constant import (
     RAZORPAYX,
     RAZORPAYX_BASE_API_URL,
+    RAZORPAYX_SETTING_DOCTYPE,
     RAZORPAYX_SUPPORTED_HTTP_METHODS,
 )
-from razorpayx_integration.utils import (
-    get_end_of_day_epoch,
-    get_razorpayx_integration_account_details,
-    get_start_of_day_epoch,
-)
+from razorpayx_integration.utils import get_end_of_day_epoch, get_start_of_day_epoch
 
 # todo: logs for API calls.
 
@@ -31,9 +28,10 @@ class BaseRazorPayXAPI:
     BASE_PATH = ""
 
     def __init__(self, razorpayx_account_name: str, *args, **kwargs):
-        self.razorpayx_account = get_razorpayx_integration_account_details(
-            razorpayx_account_name
+        self.razorpayx_account = frappe.get_doc(
+            RAZORPAYX_SETTING_DOCTYPE, razorpayx_account_name
         )
+
         self.authenticate_razorpayx_account()
 
         self.auth = (
@@ -56,10 +54,14 @@ class BaseRazorPayXAPI:
                 msg=_("To use {0} account, please enable it first!").format(
                     frappe.bold(self.razorpayx_account.bank_account)
                 ),
-                title=_("Account Is Disable"),
+                title=_("RazorPayX Integration Account Is Disable"),
             )
 
-        # todo : if credential authenticate then check `Key Authorized` field
+        if not self.razorpayx_account.key_id or not self.razorpayx_account.key_secret:
+            frappe.throw(
+                msg=_("Please set {0} API credentials.").format(RAZORPAYX),
+                title=_("API Credentials Are Missing"),
+            )
 
     def setup(self, *args, **kwargs):
         # Override in subclass

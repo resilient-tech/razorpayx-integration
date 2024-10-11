@@ -1,5 +1,6 @@
+import json
 from datetime import datetime
-from typing import Union
+from typing import Optional, Union
 
 import frappe
 from frappe import _
@@ -16,12 +17,31 @@ from razorpayx_integration.constant import (
 )
 
 
-def get_razorpayx_integration_account_details(razorpayx_account_name: str):
-    return frappe.get_doc(RAZORPAYX_SETTING_DOCTYPE, razorpayx_account_name)
+@frappe.whitelist()
+def get_associate_razorpayx_account(
+    paid_from_account: str, fieldname: Union[list, str, None] = None
+) -> Optional[dict]:
+    frappe.has_permission(RAZORPAYX_SETTING_DOCTYPE)
 
+    if not fieldname:
+        fieldname = "name"
+    elif isinstance(fieldname, str):
+        fieldname = json.loads(fieldname)
 
-def get_associate_razorpayx_account(paid_from_account: str) -> str:
-    return frappe.db.get_value("Bank Account", {"account": paid_from_account}, "name")
+    bank_account = frappe.db.get_value(
+        "Bank Account", {"account": paid_from_account}, "name"
+    )
+
+    if not bank_account:
+        return
+
+    return frappe.db.get_value(
+        RAZORPAYX_SETTING_DOCTYPE,
+        {"bank_account": bank_account},
+        fieldname,
+        as_dict=True,
+        debug=True,
+    )
 
 
 def get_enabled_razorpayx_accounts() -> list[str]:

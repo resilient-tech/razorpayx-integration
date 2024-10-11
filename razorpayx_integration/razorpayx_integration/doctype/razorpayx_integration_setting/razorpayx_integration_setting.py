@@ -35,3 +35,6 @@ class RazorPayXIntegrationSetting(Document):
     @property
     def ifsc_code(self):
         return frappe.db.get_value("Bank Account", self.bank_account, "branch_code")
+
+
+# get razorpayx account
