@@ -8,7 +8,7 @@ from frappe.permissions import (
     update_permission_property,
 )
 
-from razorpayx_integration.constant import BUG_REPORT_URL, RAZORPAYX_SETTING_DOCTYPE
+from razorpayx_integration.constants import BUG_REPORT_URL, RAZORPAYX_SETTING_DOCTYPE
 
 INTEGRATION_MANAGER_PERMISSION_LEVEL = 7
 

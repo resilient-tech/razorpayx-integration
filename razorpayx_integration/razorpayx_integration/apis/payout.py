@@ -1,7 +1,7 @@
 from typing import Optional
 from uuid import uuid4 as generate_idempotency_key
 
-from razorpayx_integration.constant import (
+from razorpayx_integration.constants import (
     RAZORPAYX_CONTACT_TYPE,
     RAZORPAYX_FUND_ACCOUNT_TYPE,
     RAZORPAYX_PAYOUT_PURPOSE,

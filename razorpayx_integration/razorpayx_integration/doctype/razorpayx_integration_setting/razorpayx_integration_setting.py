@@ -5,7 +5,7 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 
-from razorpayx_integration.constant import RAZORPAYX
+from razorpayx_integration.constants import RAZORPAYX
 
 
 class RazorPayXIntegrationSetting(Document):

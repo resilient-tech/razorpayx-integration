@@ -6,7 +6,7 @@ import frappe
 from frappe import _
 from frappe.utils import DateTimeLikeObject, add_to_date, get_timestamp, getdate
 
-from razorpayx_integration.constant import (
+from razorpayx_integration.constants import (
     RAZORPAYX,
     RAZORPAYX_CONTACT_TYPE,
     RAZORPAYX_FUND_ACCOUNT_TYPE,
