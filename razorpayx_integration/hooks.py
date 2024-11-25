@@ -15,5 +15,5 @@ scheduler_events = {
 }
 
 doctype_js = {
-    "Payment Entry": "razorpayx_integration/scripts/payment_entry.js",
+    "Payment Entry": "razorpayx_integration/client_overrides/payment_entry.js",
 }
