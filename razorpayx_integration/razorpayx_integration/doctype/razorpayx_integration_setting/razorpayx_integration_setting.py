@@ -19,22 +19,3 @@ class RazorPayXIntegrationSetting(Document):
                 msg=_("Please set {0} API credentials.").format(RAZORPAYX),
                 title=_("API Credentials Are Missing"),
             )
-
-    @property
-    def company(self):
-        return frappe.db.get_value("Bank Account", self.bank_account, "company")
-
-    @property
-    def bank(self):
-        return frappe.db.get_value("Bank Account", self.bank_account, "bank")
-
-    @property
-    def account_number(self):
-        return frappe.db.get_value("Bank Account", self.bank_account, "bank_account_no")
-
-    @property
-    def ifsc_code(self):
-        return frappe.db.get_value("Bank Account", self.bank_account, "branch_code")
-
-
-# get razorpayx account
