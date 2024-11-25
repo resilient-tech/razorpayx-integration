@@ -1,0 +1,201 @@
+{
+ "actions": [],
+ "autoname": "format:{bank_account}",
+ "creation": "2024-09-02 18:17:16.899797",
+ "default_view": "List",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "disabled",
+  "account_details_section",
+  "bank_account",
+  "account_number",
+  "ifsc_code",
+  "column_break_3gfbs",
+  "company",
+  "bank",
+  "api_details_section",
+  "key_authorized",
+  "key_id",
+  "webhook_secret",
+  "column_break_8tcki",
+  "key_secret",
+  "transaction_section",
+  "last_synced",
+  "payment_section",
+  "pay_on_submit",
+  "template_section",
+  "success_email_template",
+  "column_break_rsvjn",
+  "failure_email_template"
+ ],
+ "fields": [
+  {
+   "fieldname": "key_id",
+   "fieldtype": "Data",
+   "label": "Key ID",
+   "reqd": 1
+  },
+  {
+   "fieldname": "key_secret",
+   "fieldtype": "Password",
+   "label": "Key Secret",
+   "reqd": 1
+  },
+  {
+   "fieldname": "api_details_section",
+   "fieldtype": "Section Break",
+   "label": "API Details"
+  },
+  {
+   "fieldname": "column_break_8tcki",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "webhook_secret",
+   "fieldtype": "Password",
+   "label": "Webhook Secret"
+  },
+  {
+   "fieldname": "account_details_section",
+   "fieldtype": "Section Break",
+   "label": "Account Details"
+  },
+  {
+   "fieldname": "bank_account",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Bank Account",
+   "options": "Bank Account",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "column_break_3gfbs",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "disabled",
+   "fieldtype": "Check",
+   "label": "Disabled"
+  },
+  {
+   "default": "0",
+   "fieldname": "key_authorized",
+   "fieldtype": "Check",
+   "is_virtual": 1,
+   "label": "Key Authorized",
+   "read_only": 1
+  },
+  {
+   "fieldname": "transaction_section",
+   "fieldtype": "Section Break",
+   "label": "Transaction"
+  },
+  {
+   "fieldname": "last_synced",
+   "fieldtype": "Datetime",
+   "label": "Last Synced",
+   "read_only": 1
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "is_virtual": 1,
+   "label": "Company",
+   "options": "Company",
+   "read_only": 1
+  },
+  {
+   "fieldname": "payment_section",
+   "fieldtype": "Section Break",
+   "label": "Payment"
+  },
+  {
+   "default": "0",
+   "fieldname": "pay_on_submit",
+   "fieldtype": "Check",
+   "label": "Make Payment On Submit Of Payment Entry"
+  },
+  {
+   "fieldname": "template_section",
+   "fieldtype": "Section Break",
+   "label": "Template"
+  },
+  {
+   "fieldname": "success_email_template",
+   "fieldtype": "Link",
+   "label": "Success Email Template",
+   "options": "Email Template"
+  },
+  {
+   "fieldname": "column_break_rsvjn",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "failure_email_template",
+   "fieldtype": "Link",
+   "label": "Failure Email Template",
+   "options": "Email Template"
+  },
+  {
+   "fieldname": "bank",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "is_virtual": 1,
+   "label": "Bank",
+   "options": "Bank",
+   "read_only": 1
+  },
+  {
+   "fieldname": "account_number",
+   "fieldtype": "Data",
+   "is_virtual": 1,
+   "label": "Account Number",
+   "read_only": 1
+  },
+  {
+   "fieldname": "ifsc_code",
+   "fieldtype": "Data",
+   "is_virtual": 1,
+   "label": "IFSC Code",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2024-09-03 15:54:43.439051",
+ "modified_by": "Administrator",
+ "module": "Razorpayx Integration",
+ "name": "RazorPayX Integration Setting",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "Administrator",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
