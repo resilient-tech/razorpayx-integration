@@ -24,6 +24,10 @@ select = [
     "RUF",
 ]
 
+ignore = [
+    "E501", # line too long
+]
+
 typing-modules = ["frappe.types.DF"]
 
 [tool.ruff.format]
