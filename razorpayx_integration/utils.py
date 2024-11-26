@@ -1,6 +1,5 @@
 import json
 from datetime import datetime
-from typing import Optional, Union
 
 import frappe
 from frappe import _
@@ -19,8 +18,8 @@ from razorpayx_integration.constants import (
 
 @frappe.whitelist()
 def get_associate_razorpayx_account(
-    paid_from_account: str, fieldname: Union[list, str, None] = None
-) -> Optional[dict]:
+    paid_from_account: str, fieldname: list | str | None = None
+) -> dict | None:
     frappe.has_permission(RAZORPAYX_SETTING_DOCTYPE)
 
     if not fieldname:
@@ -183,7 +182,7 @@ def yesterday():
     return add_to_date(getdate(), days=-1)
 
 
-def rupees_to_paisa(amount: Union[float, int]) -> int:
+def rupees_to_paisa(amount: float | int) -> int:
     """
     Convert the given amount in Rupees to Paisa.
 

@@ -1,5 +1,3 @@
-from typing import Optional, Union
-
 from razorpayx_integration.constants import RAZORPAYX_FUND_ACCOUNT_TYPE
 from razorpayx_integration.razorpayx_integration.apis.base import BaseRazorPayXAPI
 from razorpayx_integration.utils import validate_razorpayx_fund_account_type
@@ -74,7 +72,7 @@ class RazorPayXFundAccount(BaseRazorPayXAPI):
         return self.get(endpoint=id)
 
     def get_all(
-        self, filters: Optional[dict] = None, count: Optional[int] = None
+        self, filters: dict | None = None, count: int | None = None
     ) -> list[dict]:
         """
         Get all `Fund Account` associate with given `RazorPayX` account if limit is not given.
@@ -120,7 +118,7 @@ class RazorPayXFundAccount(BaseRazorPayXAPI):
         return self._change_state(id=id, active=False)
 
     ### Bases ###
-    def _change_state(self, id: str, active: Union[bool, int]) -> dict:
+    def _change_state(self, id: str, active: bool | int) -> dict:
         """
         Change the state of the `Fund Account` for the given Id.
 

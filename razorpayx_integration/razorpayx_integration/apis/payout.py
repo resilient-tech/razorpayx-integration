@@ -1,4 +1,3 @@
-from typing import Optional
 from uuid import uuid4 as generate_idempotency_key
 
 from razorpayx_integration.constants import (
@@ -52,7 +51,7 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         return self.get(endpoint=payout_id)
 
     def get_all(
-        self, filters: Optional[dict] = None, count: Optional[int] = None
+        self, filters: dict | None = None, count: int | None = None
     ) -> list[dict]:
         """
         Get all `Payouts` associate with given `RazorPayX` account if limit is not given.
@@ -132,8 +131,8 @@ class RazorPayXPayout(BaseRazorPayXAPI):
     def _map_payout_request(
         self,
         data: dict,
-        fund_account_id: Optional[str] = None,
-        party_account_type: Optional[str] = None,
+        fund_account_id: str | None = None,
+        party_account_type: str | None = None,
     ) -> dict:
         """
         Map the request data to RazorPayX Payout API's required format.
