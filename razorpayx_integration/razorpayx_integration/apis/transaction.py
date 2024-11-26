@@ -1,5 +1,3 @@
-from typing import Optional
-
 from frappe.utils import DateTimeLikeObject, today
 
 from razorpayx_integration.razorpayx_integration.apis.base import BaseRazorPayXAPI
@@ -34,10 +32,10 @@ class RazorPayXTransaction(BaseRazorPayXAPI):
 
     def get_all(
         self,
-        filters: Optional[dict] = None,
-        from_date: Optional[DateTimeLikeObject] = None,
-        to_date: Optional[DateTimeLikeObject] = None,
-        count: Optional[int] = None,
+        filters: dict | None = None,
+        from_date: DateTimeLikeObject | None = None,
+        to_date: DateTimeLikeObject | None = None,
+        count: int | None = None,
     ) -> list[dict]:
         """
         Get all `Transaction` associate with given `RazorPayX` account if count is not given.
@@ -78,7 +76,7 @@ class RazorPayXTransaction(BaseRazorPayXAPI):
 
         return super().get_all(filters, count)
 
-    def get_transactions_for_today(self, count: Optional[int] = None):
+    def get_transactions_for_today(self, count: int | None = None):
         """
         Get all transactions for today associate with given `RazorPayX` account.
         """
@@ -86,7 +84,7 @@ class RazorPayXTransaction(BaseRazorPayXAPI):
         return self.get_all(filters=filters, count=count)
 
     def get_transactions_for_date(
-        self, date: DateTimeLikeObject, count: Optional[int] = None
+        self, date: DateTimeLikeObject, count: int | None = None
     ):
         """
         Get all transactions for specific date associate with given `RazorPayX` account.

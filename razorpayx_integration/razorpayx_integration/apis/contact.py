@@ -1,5 +1,3 @@
-from typing import Optional, Union
-
 from frappe.utils import validate_email_address
 
 from razorpayx_integration.constants import RAZORPAYX_CONTACT_TYPE
@@ -81,7 +79,7 @@ class RazorPayXContact(BaseRazorPayXAPI):
         return self.get(endpoint=id)
 
     def get_all(
-        self, filters: Optional[dict] = None, count: Optional[int] = None
+        self, filters: dict | None = None, count: int | None = None
     ) -> list[dict]:
         """
         Get all `Contacts` associate with given `RazorPayX` account if limit is not given.
@@ -178,7 +176,7 @@ class RazorPayXContact(BaseRazorPayXAPI):
         return self._change_state(id=id, active=False)
 
     ### Bases ###
-    def _change_state(self, id: str, active: Union[bool, int]) -> dict:
+    def _change_state(self, id: str, active: bool | int) -> dict:
         """
         Change the state of the `Contact` for the given Id.
 

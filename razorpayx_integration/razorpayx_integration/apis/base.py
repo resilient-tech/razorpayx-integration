@@ -1,4 +1,3 @@
-from typing import Optional
 from urllib.parse import urljoin
 
 import frappe
@@ -116,7 +115,7 @@ class BaseRazorPayXAPI:
         return self._make_request("PATCH", *args, **kwargs)
 
     def get_all(
-        self, filters: Optional[dict] = None, count: Optional[int] = None
+        self, filters: dict | None = None, count: int | None = None
     ) -> list[dict]:
         """
         Fetches all data of given RazorPayX account for specific API.
@@ -175,9 +174,9 @@ class BaseRazorPayXAPI:
         self,
         method: str,
         endpoint: str = "",
-        params: dict = None,
-        headers: dict = None,
-        json: dict = None,
+        params: dict | None = None,
+        headers: dict | None = None,
+        json: dict | None = None,
     ):
         """
         Base for making HTTP request.\n
@@ -222,7 +221,8 @@ class BaseRazorPayXAPI:
 
     def _clean_request_filters(self, filters: dict):
         """
-        Cleans the request filters by removing any key-value pairs where the value is falsy.
+        Cleans the request filters by removing any key-value pairs where
+        the value is falsy.
         """
         keys_to_delete = [key for key, value in filters.items() if not value]
 
@@ -245,7 +245,7 @@ class BaseRazorPayXAPI:
         pass
 
     # todo:  handle special(error) http code (specially payout process!!)
-    def handle_failed_api_response(self, response_json: Optional[dict] = None):
+    def handle_failed_api_response(self, response_json: dict | None = None):
         """
         Handle failed API response from RazorPayX.
 

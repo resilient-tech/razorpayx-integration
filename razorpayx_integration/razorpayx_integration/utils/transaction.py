@@ -1,5 +1,3 @@
-from typing import Optional
-
 import frappe
 from frappe.utils import DateTimeLikeObject, now_datetime
 
@@ -27,7 +25,7 @@ def sync_bank_transactions(bank_account: str, from_date: DateTimeLikeObject):
 def sync_razorpayx_bank_transactions(
     account: str,
     from_date: DateTimeLikeObject,
-    to_date: Optional[DateTimeLikeObject] = None,
+    to_date: DateTimeLikeObject | None = None,
 ):
     try:
         # getting all transactions from razorpayx according to date range
@@ -49,9 +47,8 @@ def sync_razorpayx_bank_transactions(
 
             except KeyError:
                 frappe.log_error(
-                    message=("Transaction Data: \n {0} \n\n {1}").format(
-                        frappe.as_json(transaction, indent=4),
-                        frappe.get_traceback(),
+                    message=(
+                        f"Transaction Data: \n {frappe.as_json(transaction, indent=4)} \n\n {frappe.get_traceback()}"
                     ),
                     title="Key Missing in Transaction Data",
                 )
@@ -59,13 +56,10 @@ def sync_razorpayx_bank_transactions(
 
             except Exception:
                 frappe.log_error(
-                    message=("Transaction Data: \n {0} \n\n {1}").format(
-                        frappe.as_json(transaction, indent=4),
-                        frappe.get_traceback(),
+                    message=(
+                        f"Transaction Data: \n {frappe.as_json(transaction, indent=4)} \n\n {frappe.get_traceback()}"
                     ),
-                    title=("Failed to Save Transaction: {0}").format(
-                        transaction.get("id")
-                    ),
+                    title=(f"Failed to Save Transaction: { transaction.get('id')}"),
                 )
                 continue
 
@@ -78,16 +72,14 @@ def sync_razorpayx_bank_transactions(
     except Exception:
         frappe.log_error(
             message=frappe.get_traceback(),
-            title=("Failed to Sync RazorPayX Transactions for Account: {0}").format(
-                account
-            ),
+            title=(f"Failed to Sync RazorPayX Transactions for Account: {account}"),
         )
 
 
 def get_razorpayx_transactions(
     account: str,
     from_date: DateTimeLikeObject,
-    to_date: Optional[DateTimeLikeObject] = None,
+    to_date: DateTimeLikeObject | None = None,
 ):
     filters = {"from": from_date}
 
@@ -119,7 +111,7 @@ def get_mapped_razorpayx_transaction(transaction: dict, **kwargs) -> dict:
     def format_notes(notes):
         if isinstance(notes, dict):
             return "\n".join(notes.values())
-        elif isinstance(notes, (list, tuple)):
+        elif isinstance(notes, list | tuple):
             return "\n".join(notes)
         return notes
 
