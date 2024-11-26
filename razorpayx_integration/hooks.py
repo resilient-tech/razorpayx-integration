@@ -14,7 +14,3 @@ app_include_js = "razorpayx_integration.bundle.js"
 scheduler_events = {
     "daily": ["razorpayx_integration.scheduler_events.fetch_daily_transactions.execute"]
 }
-
-doctype_js = {
-    "Payment Entry": "razorpayx_integration/client_overrides/payment_entry.js",
-}
