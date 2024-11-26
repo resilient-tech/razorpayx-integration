@@ -17,7 +17,7 @@ def before_uninstall():
     except Exception as e:
         click.secho(
             (
-                f"Uninstallation of {APP_NAME} failed due to an error."
+                f"\nUninstallation of {APP_NAME} failed due to an error."
                 "Please try re-uninstalling the app or "
                 f"report the issue on {BUG_REPORT_URL} if not resolved."
             ),
@@ -25,4 +25,4 @@ def before_uninstall():
         )
         raise e
 
-    click.secho(f"Thank you for using {APP_NAME}!", fg="green")
+    click.secho(f"\nThank you for using {APP_NAME}!", fg="green")
