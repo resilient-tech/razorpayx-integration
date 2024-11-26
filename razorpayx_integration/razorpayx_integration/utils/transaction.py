@@ -3,7 +3,7 @@ from typing import Optional
 import frappe
 from frappe.utils import DateTimeLikeObject, now_datetime
 
-from razorpayx_integration.constant import (
+from razorpayx_integration.constants import (
     BANK_TRANSACTION_DOCTYPE,
     RAZORPAYX_SETTING_DOCTYPE,
 )

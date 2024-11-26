@@ -1,6 +1,6 @@
 from typing import Optional, Union
 
-from razorpayx_integration.constant import RAZORPAYX_FUND_ACCOUNT_TYPE
+from razorpayx_integration.constants import RAZORPAYX_FUND_ACCOUNT_TYPE
 from razorpayx_integration.razorpayx_integration.apis.base import BaseRazorPayXAPI
 from razorpayx_integration.utils import validate_razorpayx_fund_account_type
 
