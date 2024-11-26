@@ -26,6 +26,8 @@ select = [
 
 ignore = [
     "E501", # line too long
+    "F403", # can't detect undefined names from * import
+    "F405", # can't detect undefined names from * import
 ]
 
 typing-modules = ["frappe.types.DF"]
