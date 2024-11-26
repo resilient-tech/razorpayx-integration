@@ -1,9 +1,8 @@
 from typing import Optional
 from urllib.parse import urljoin
 
-import requests
-
 import frappe
+import requests
 from frappe import _
 from frappe.app import UNSAFE_HTTP_METHODS
 
