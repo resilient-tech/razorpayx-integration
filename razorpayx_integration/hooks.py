@@ -7,6 +7,7 @@ app_license = "MIT"
 required_apps = ["frappe/erpnext"]
 
 after_install = "razorpayx_integration.install.after_install"
+before_uninstall = "razorpayx_integration.uninstall.before_uninstall"
 
 app_include_js = "razorpayx_integration.bundle.js"
 
