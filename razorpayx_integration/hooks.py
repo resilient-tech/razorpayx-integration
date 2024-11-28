@@ -14,3 +14,5 @@ app_include_js = "razorpayx_integration.bundle.js"
 scheduler_events = {
     "daily": ["razorpayx_integration.scheduler_events.fetch_daily_transactions.execute"]
 }
+
+export_python_type_annotations = True

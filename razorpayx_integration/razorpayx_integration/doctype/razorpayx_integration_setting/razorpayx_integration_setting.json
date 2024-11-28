@@ -15,7 +15,7 @@
   "column_break_8tcki",
   "webhook_secret",
   "key_authorized",
-  "transaction_tab",
+  "account_tab",
   "account_details_section",
   "bank_account",
   "company_account",
@@ -25,11 +25,21 @@
   "bank",
   "ifsc_code",
   "account_number",
-  "payment_mode_section",
+  "transaction_section",
+  "last_synced",
+  "payments_tab",
+  "actions_section",
+  "auto_generate_entries",
+  "enable_automatic_payments",
+  "payment_mode_section_1",
+  "column_break_yrhb",
   "manual_mode",
-  "column_break_tgpx",
   "automatic_mode",
-  "automatic_payment_sec",
+  "column_break_tgpx",
+  "link_mode",
+  "section_break_olac",
+  "payment_threshold",
+  "automatic_payment_days_sec",
   "pay_on_monday",
   "pay_on_friday",
   "column_break_bwor",
@@ -40,8 +50,14 @@
   "pay_on_sunday",
   "column_break_bdvg",
   "pay_on_thursday",
-  "transaction_section",
-  "last_synced",
+  "payouts_tab",
+  "payout_priority_section",
+  "payouts_by",
+  "prioritize_due_date",
+  "column_break_dimb",
+  "order_to_pay",
+  "section_break_zqto",
+  "fail_on_insufficient",
   "templates_tab",
   "email_templates_section",
   "confirmation_mail",
@@ -191,26 +207,15 @@
    "label": "API"
   },
   {
-   "fieldname": "payment_mode_section",
-   "fieldtype": "Section Break",
-   "label": "Payment Mode"
-  },
-  {
    "fieldname": "manual_mode",
    "fieldtype": "Link",
    "label": "Manual",
    "no_copy": 1,
-   "options": "Mode of Payment",
-   "read_only": 1
+   "options": "Mode of Payment"
   },
   {
    "fieldname": "column_break_tgpx",
    "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "transaction_tab",
-   "fieldtype": "Tab Break",
-   "label": "Transaction"
   },
   {
    "fieldname": "templates_tab",
@@ -251,16 +256,11 @@
    "options": "Email Template"
   },
   {
+   "depends_on": "eval: doc.enable_automatic_payments",
    "fieldname": "automatic_mode",
    "fieldtype": "Link",
    "label": "Automatic",
-   "options": "Mode of Payment",
-   "read_only": 1
-  },
-  {
-   "fieldname": "automatic_payment_sec",
-   "fieldtype": "Section Break",
-   "label": "Days for Automatic Payment"
+   "options": "Mode of Payment"
   },
   {
    "default": "0",
@@ -315,11 +315,118 @@
    "fieldname": "pay_on_sunday",
    "fieldtype": "Check",
    "label": "Sunday"
+  },
+  {
+   "fieldname": "payments_tab",
+   "fieldtype": "Tab Break",
+   "label": "Payments"
+  },
+  {
+   "fieldname": "actions_section",
+   "fieldtype": "Section Break",
+   "label": "Actions"
+  },
+  {
+   "default": "0",
+   "description": "Only one account is allowed to be generated per company.",
+   "fieldname": "auto_generate_entries",
+   "fieldtype": "Check",
+   "label": "Auto Generate Payment Entries"
+  },
+  {
+   "default": "0",
+   "fieldname": "enable_automatic_payments",
+   "fieldtype": "Check",
+   "label": "Enable Automatic Payments"
+  },
+  {
+   "description": "A link will be sent to the party, and the party will fill in their details. Then, the payment will be automatically processed to the party.",
+   "fieldname": "link_mode",
+   "fieldtype": "Link",
+   "label": "Link",
+   "no_copy": 1,
+   "options": "Mode of Payment"
+  },
+  {
+   "depends_on": "eval: doc.enable_automatic_payments",
+   "fieldname": "section_break_olac",
+   "fieldtype": "Section Break",
+   "label": "Automatic Payment Settings"
+  },
+  {
+   "description": "Payments beyond this threshold will not be paid automatically.",
+   "fieldname": "payment_threshold",
+   "fieldtype": "Currency",
+   "label": "Payment Threshold",
+   "mandatory_depends_on": "eval: doc.enable_automatic_payments"
+  },
+  {
+   "depends_on": "eval: doc.enable_automatic_payments",
+   "fieldname": "automatic_payment_days_sec",
+   "fieldtype": "Section Break"
+  },
+  {
+   "description": "Currently Not Implemented",
+   "fieldname": "payouts_tab",
+   "fieldtype": "Tab Break",
+   "label": "Payouts"
+  },
+  {
+   "fieldname": "payout_priority_section",
+   "fieldtype": "Section Break",
+   "label": "Payout Priority"
+  },
+  {
+   "fieldname": "payouts_by",
+   "fieldtype": "Select",
+   "label": "Payouts By",
+   "options": "By Invoices\nBy Party"
+  },
+  {
+   "fieldname": "column_break_dimb",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "order_to_pay",
+   "fieldtype": "Select",
+   "label": "Order to Pay",
+   "options": "By Ascending\nBy Descending"
+  },
+  {
+   "fieldname": "section_break_zqto",
+   "fieldtype": "Section Break"
+  },
+  {
+   "default": "0",
+   "description": "By default, it will be queued, and when it gets sufficient funds, it will process automatically.",
+   "fieldname": "fail_on_insufficient",
+   "fieldtype": "Check",
+   "label": "Fail Payouts on Insufficient Balance"
+  },
+  {
+   "default": "0",
+   "fieldname": "prioritize_due_date",
+   "fieldtype": "Check",
+   "label": "Prioritize Due Date"
+  },
+  {
+   "fieldname": "payment_mode_section_1",
+   "fieldtype": "Section Break",
+   "label": "Payment Mode"
+  },
+  {
+   "fieldname": "column_break_yrhb",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "account_tab",
+   "fieldtype": "Tab Break",
+   "label": "Account"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-11-27 11:39:51.881736",
+ "modified": "2024-11-28 12:43:19.913095",
  "modified_by": "Administrator",
  "module": "Razorpayx Integration",
  "name": "RazorPayX Integration Setting",

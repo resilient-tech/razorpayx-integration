@@ -7,8 +7,55 @@ from frappe.model.document import Document
 
 from razorpayx_integration.constants import RAZORPAYX
 
+# TODO: add documentation tab to the doctype
+# TODO: Payout settings implementation
+
 
 class RazorPayXIntegrationSetting(Document):
+    # begin: auto-generated types
+    # This code is auto-generated. Do not modify anything in this block.
+
+    from typing import TYPE_CHECKING
+
+    if TYPE_CHECKING:
+        from frappe.types import DF
+
+        account_number: DF.Data | None
+        auto_generate_entries: DF.Check
+        automatic_mode: DF.Link | None
+        balance: DF.Currency
+        balance_mail: DF.Link | None
+        bank: DF.Link | None
+        bank_account: DF.Link
+        company: DF.Link | None
+        company_account: DF.Link | None
+        confirmation_mail: DF.Link | None
+        disabled: DF.Check
+        enable_automatic_payments: DF.Check
+        fail_on_insufficient: DF.Check
+        failure_mail: DF.Link | None
+        ifsc_code: DF.Data | None
+        key_authorized: DF.Check
+        key_id: DF.Data
+        key_secret: DF.Password
+        last_synced: DF.Datetime | None
+        link_mode: DF.Link | None
+        manual_mode: DF.Link | None
+        order_to_pay: DF.Literal["By Ascending", "By Descending"]
+        pay_on_friday: DF.Check
+        pay_on_monday: DF.Check
+        pay_on_saturday: DF.Check
+        pay_on_sunday: DF.Check
+        pay_on_thursday: DF.Check
+        pay_on_tuesday: DF.Check
+        pay_on_wednesday: DF.Check
+        payment_threshold: DF.Currency
+        payouts_by: DF.Literal["By Invoices", "By Party"]
+        prioritize_due_date: DF.Check
+        success_mail: DF.Link | None
+        webhook_secret: DF.Password | None
+
+    # end: auto-generated types
     def validate(self):
         self.validate_api_credentials()
 
