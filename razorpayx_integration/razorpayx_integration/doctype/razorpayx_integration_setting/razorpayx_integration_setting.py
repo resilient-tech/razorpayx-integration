@@ -19,3 +19,11 @@ class RazorPayXIntegrationSetting(Document):
                 msg=_("Please set {0} API credentials.").format(RAZORPAYX),
                 title=_("API Credentials Are Missing"),
             )
+
+
+# Time for creation and payment with checkbox (description) for payment entry.
+# Payout settings. To determine which invoices to pay.
+# 1. Payment Entry Creation: By Party / By Invoice
+# 2. Sequence: By Posting Date / By Due Date: (relevant for insufficent funds)
+# 3. Enqueue payout if insufficent funds. If this is not checked, don't submit the payment entry as long as funds are not available.
+# Documentation HTML. RTGS / NEFT.
