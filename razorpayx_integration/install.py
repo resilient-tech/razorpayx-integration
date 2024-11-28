@@ -18,7 +18,7 @@ def after_install():
     except Exception as e:
         click.secho(
             (
-                f"\nInstallation of {APP_NAME} failed due to an error."
+                f"\nInstallation of {APP_NAME} failed due to an error. "
                 "Please try re-installing the app or "
                 f"report the issue on {BUG_REPORT_URL} if not resolved."
             ),

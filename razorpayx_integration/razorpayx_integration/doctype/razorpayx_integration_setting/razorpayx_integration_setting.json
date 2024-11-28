@@ -1,7 +1,7 @@
 {
  "actions": [],
  "autoname": "format:{bank_account}",
- "creation": "2024-09-02 18:17:16.899797",
+ "creation": "2024-11-28 17:05:21.010259",
  "default_view": "List",
  "doctype": "DocType",
  "editable_grid": 1,
@@ -426,7 +426,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-11-28 12:43:19.913095",
+ "modified": "2024-11-28 17:05:54.454319",
  "modified_by": "Administrator",
  "module": "Razorpayx Integration",
  "name": "RazorPayX Integration Setting",
@@ -439,7 +439,7 @@
    "email": 1,
    "print": 1,
    "read": 1,
-   "role": "System Manager",
+   "role": "Administrator",
    "share": 1,
    "write": 1
   },
@@ -447,9 +447,11 @@
    "create": 1,
    "delete": 1,
    "email": 1,
+   "export": 1,
    "print": 1,
    "read": 1,
-   "role": "Administrator",
+   "report": 1,
+   "role": "RazorpayX Payments Manager",
    "share": 1,
    "write": 1
   }

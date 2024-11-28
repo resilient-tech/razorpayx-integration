@@ -26,6 +26,7 @@ select = [
 
 ignore = [
     "E501", # line too long
+    "F401", # module imported but unused
     "F403", # can't detect undefined names from * import
     "F405", # can't detect undefined names from * import
 ]
