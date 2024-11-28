@@ -5,7 +5,7 @@ from razorpayx_integration.hooks import app_title as APP_NAME
 from razorpayx_integration.setup import (
     make_custom_fields,
     make_property_setters,
-    make_role_and_permissions,
+    make_roles_and_permissions,
 )
 
 
@@ -13,7 +13,7 @@ def after_install():
     try:
         make_custom_fields()
         make_property_setters()
-        make_role_and_permissions()
+        make_roles_and_permissions()
 
     except Exception as e:
         click.secho(

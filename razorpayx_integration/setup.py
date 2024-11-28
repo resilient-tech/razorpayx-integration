@@ -33,8 +33,7 @@ def make_property_setters():
         frappe.make_property_setter(property_setter)
 
 
-def make_role_and_permissions():
-    # todo: make role and permissions
+def make_roles_and_permissions():
     click.secho(f"\nCreating Role and Permissions for {APP_NAME}...", fg="blue")
 
     # creating a roles
