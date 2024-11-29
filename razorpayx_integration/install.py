@@ -6,6 +6,7 @@ from razorpayx_integration.setup import (
     make_custom_fields,
     make_property_setters,
     make_roles_and_permissions,
+    make_workflows,
 )
 
 
@@ -14,6 +15,7 @@ def after_install():
         make_custom_fields()
         make_property_setters()
         make_roles_and_permissions()
+        make_workflows()
 
     except Exception as e:
         click.secho(
