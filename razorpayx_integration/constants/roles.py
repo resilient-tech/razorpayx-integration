@@ -1,3 +1,4 @@
+from razorpayx_integration.constants import RAZORPAYX
 from razorpayx_integration.constants import (
     RAZORPAYX_SETTING_DOCTYPE as RAZORPAYX_DOCTYPE,
 )
@@ -9,9 +10,9 @@ BASIC_PERMISSIONS = ["select", "read"]
 
 
 class ROLE_PROFILE(BaseEnum):
-    BANK_ACC_MANAGER = "RazorpayX Bank Account Manager"
-    BANK_ACC_USER = "RazorpayX Bank Account User"
-    PAYMENTS_MANAGER = "RazorpayX Payments Manager"
+    BANK_ACC_MANAGER = f"{RAZORPAYX} Bank Account Manager"
+    BANK_ACC_USER = f"{RAZORPAYX} Bank Account User"
+    PAYMENTS_MANAGER = f"{RAZORPAYX} Payments Manager"
 
 
 # todo: can be more efficient and more roles and permissions can be added

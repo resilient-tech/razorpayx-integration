@@ -9,3 +9,11 @@ class BaseEnum(Enum):
     @classmethod
     def values(cls):
         return [member.value for member in cls]
+
+    @classmethod
+    def names(cls):
+        return [member.name for member in cls]
+
+    @classmethod
+    def data(cls):
+        return {member.name: member.value for member in cls}
