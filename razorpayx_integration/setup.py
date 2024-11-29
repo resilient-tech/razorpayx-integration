@@ -50,6 +50,7 @@ def make_roles_and_permissions():
         except frappe.DuplicateEntryError:
             pass
 
+    # TODO Make it more efficient and robust
     # setting up custom permissions
     setup_custom_permissions()
 
