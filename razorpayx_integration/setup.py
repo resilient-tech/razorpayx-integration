@@ -11,12 +11,9 @@ from frappe.permissions import (
     update_permission_property as update_permission,
 )
 
-from razorpayx_integration.constants import (
-    CUSTOM_FIELDS,
-    CUSTOM_PERMISSIONS,
-    PROPERTY_SETTERS,
-    ROLES,
-)
+from razorpayx_integration.constants.custom_fields import CUSTOM_FIELDS
+from razorpayx_integration.constants.property_setters import PROPERTY_SETTERS
+from razorpayx_integration.constants.role import CUSTOM_PERMISSIONS, ROLES
 from razorpayx_integration.hooks import app_title as APP_NAME
 
 
