@@ -53,11 +53,8 @@
   "payouts_tab",
   "payout_priority_section",
   "payouts_by",
-  "prioritize_due_date",
   "column_break_dimb",
   "order_to_pay",
-  "section_break_zqto",
-  "fail_on_insufficient",
   "templates_tab",
   "email_templates_section",
   "confirmation_mail",
@@ -390,24 +387,7 @@
    "fieldname": "order_to_pay",
    "fieldtype": "Select",
    "label": "Order to Pay",
-   "options": "By Ascending\nBy Descending"
-  },
-  {
-   "fieldname": "section_break_zqto",
-   "fieldtype": "Section Break"
-  },
-  {
-   "default": "0",
-   "description": "By default, it will be queued, and when it gets sufficient funds, it will process automatically.",
-   "fieldname": "fail_on_insufficient",
-   "fieldtype": "Check",
-   "label": "Fail Payouts on Insufficient Balance"
-  },
-  {
-   "default": "0",
-   "fieldname": "prioritize_due_date",
-   "fieldtype": "Check",
-   "label": "Prioritize Due Date"
+   "options": "Posting Date\nDue Date"
   },
   {
    "fieldname": "payment_mode_section_1",
@@ -426,7 +406,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-11-28 17:05:54.454319",
+ "modified": "2024-11-29 16:18:06.894289",
  "modified_by": "Administrator",
  "module": "Razorpayx Integration",
  "name": "RazorPayX Integration Setting",

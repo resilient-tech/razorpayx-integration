@@ -32,7 +32,6 @@ class RazorPayXIntegrationSetting(Document):
         confirmation_mail: DF.Link | None
         disabled: DF.Check
         enable_automatic_payments: DF.Check
-        fail_on_insufficient: DF.Check
         failure_mail: DF.Link | None
         ifsc_code: DF.Data | None
         key_authorized: DF.Check
@@ -41,7 +40,7 @@ class RazorPayXIntegrationSetting(Document):
         last_synced: DF.Datetime | None
         link_mode: DF.Link | None
         manual_mode: DF.Link | None
-        order_to_pay: DF.Literal["By Ascending", "By Descending"]
+        order_to_pay: DF.Literal["Posting Date", "Due Date"]
         pay_on_friday: DF.Check
         pay_on_monday: DF.Check
         pay_on_saturday: DF.Check
@@ -51,7 +50,6 @@ class RazorPayXIntegrationSetting(Document):
         pay_on_wednesday: DF.Check
         payment_threshold: DF.Currency
         payouts_by: DF.Literal["By Invoices", "By Party"]
-        prioritize_due_date: DF.Check
         success_mail: DF.Link | None
         webhook_secret: DF.Password | None
 
