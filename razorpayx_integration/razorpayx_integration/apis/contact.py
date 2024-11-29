@@ -1,6 +1,6 @@
 from frappe.utils import validate_email_address
 
-from razorpayx_integration.constants import RAZORPAYX_CONTACT_TYPE
+from razorpayx_integration.constants.payouts import RAZORPAYX_CONTACT_TYPE
 from razorpayx_integration.razorpayx_integration.apis.base import BaseRazorPayXAPI
 from razorpayx_integration.utils import validate_razorpayx_contact_type
 

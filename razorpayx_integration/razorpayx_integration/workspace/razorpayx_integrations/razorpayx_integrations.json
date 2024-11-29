@@ -12,7 +12,7 @@
  "is_hidden": 0,
  "label": "RazorPayX Integrations",
  "links": [],
- "modified": "2024-06-04 12:03:58.587862",
+ "modified": "2024-11-28 17:03:00.072339",
  "modified_by": "Administrator",
  "module": "Razorpayx Integration",
  "name": "RazorPayX Integrations",
@@ -21,7 +21,11 @@
  "parent_page": "",
  "public": 1,
  "quick_lists": [],
- "roles": [],
+ "roles": [
+  {
+   "role": "RazorpayX Payments Manager"
+  }
+ ],
  "sequence_id": 20.0,
  "shortcuts": [
   {

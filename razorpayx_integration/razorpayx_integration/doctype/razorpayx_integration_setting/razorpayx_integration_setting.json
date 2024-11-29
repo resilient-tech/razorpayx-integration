@@ -1,40 +1,81 @@
 {
  "actions": [],
  "autoname": "format:{bank_account}",
- "creation": "2024-09-02 18:17:16.899797",
+ "creation": "2024-11-28 17:05:21.010259",
  "default_view": "List",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "api_tab",
   "disabled",
+  "api_details_section",
+  "key_id",
+  "key_secret",
+  "column_break_8tcki",
+  "webhook_secret",
+  "key_authorized",
+  "account_tab",
   "account_details_section",
   "bank_account",
-  "account_number",
-  "ifsc_code",
-  "column_break_3gfbs",
+  "company_account",
   "company",
+  "balance",
+  "column_break_3gfbs",
   "bank",
-  "api_details_section",
-  "key_authorized",
-  "key_id",
-  "webhook_secret",
-  "column_break_8tcki",
-  "key_secret",
+  "ifsc_code",
+  "account_number",
   "transaction_section",
-  "last_synced"
+  "last_synced",
+  "payments_tab",
+  "actions_section",
+  "auto_generate_entries",
+  "enable_automatic_payments",
+  "payment_mode_section_1",
+  "column_break_yrhb",
+  "manual_mode",
+  "automatic_mode",
+  "column_break_tgpx",
+  "link_mode",
+  "section_break_olac",
+  "payment_threshold",
+  "automatic_payment_days_sec",
+  "pay_on_monday",
+  "pay_on_friday",
+  "column_break_bwor",
+  "pay_on_tuesday",
+  "pay_on_saturday",
+  "column_break_dojo",
+  "pay_on_wednesday",
+  "pay_on_sunday",
+  "column_break_bdvg",
+  "pay_on_thursday",
+  "payouts_tab",
+  "payout_priority_section",
+  "payouts_by",
+  "column_break_dimb",
+  "order_to_pay",
+  "templates_tab",
+  "email_templates_section",
+  "confirmation_mail",
+  "balance_mail",
+  "column_break_ummy",
+  "success_mail",
+  "failure_mail"
  ],
  "fields": [
   {
    "fieldname": "key_id",
    "fieldtype": "Data",
    "label": "Key ID",
+   "no_copy": 1,
    "reqd": 1
   },
   {
    "fieldname": "key_secret",
    "fieldtype": "Password",
    "label": "Key Secret",
+   "no_copy": 1,
    "reqd": 1
   },
   {
@@ -49,7 +90,8 @@
   {
    "fieldname": "webhook_secret",
    "fieldtype": "Password",
-   "label": "Webhook Secret"
+   "label": "Webhook Secret",
+   "no_copy": 1
   },
   {
    "fieldname": "account_details_section",
@@ -61,6 +103,8 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Bank Account",
+   "link_filters": "[[\"Bank Account\",\"is_company_account\",\"=\",1]]",
+   "no_copy": 1,
    "options": "Bank Account",
    "reqd": 1,
    "unique": 1
@@ -73,7 +117,10 @@
    "default": "0",
    "fieldname": "disabled",
    "fieldtype": "Check",
-   "label": "Disabled"
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Disabled",
+   "no_copy": 1
   },
   {
    "default": "0",
@@ -81,54 +128,285 @@
    "fieldtype": "Check",
    "is_virtual": 1,
    "label": "Key Authorized",
+   "no_copy": 1,
    "read_only": 1
   },
   {
    "fieldname": "transaction_section",
-   "fieldtype": "Section Break",
-   "label": "Transaction"
+   "fieldtype": "Section Break"
   },
   {
+   "description": "Syncing <strong>Bank Transactions </strong>",
    "fieldname": "last_synced",
    "fieldtype": "Datetime",
    "label": "Last Synced",
+   "no_copy": 1,
    "read_only": 1
   },
   {
+   "depends_on": "eval: doc.bank_account",
+   "fetch_from": "bank_account.company",
    "fieldname": "company",
    "fieldtype": "Link",
-   "is_virtual": 1,
    "label": "Company",
+   "no_copy": 1,
    "options": "Company",
    "read_only": 1
   },
   {
+   "fetch_from": "bank_account.bank",
    "fieldname": "bank",
    "fieldtype": "Link",
    "in_list_view": 1,
-   "is_virtual": 1,
    "label": "Bank",
+   "no_copy": 1,
    "options": "Bank",
    "read_only": 1
   },
   {
+   "fetch_from": "bank_account.bank_account_no",
    "fieldname": "account_number",
    "fieldtype": "Data",
-   "is_virtual": 1,
    "label": "Account Number",
+   "no_copy": 1,
    "read_only": 1
   },
   {
+   "fetch_from": "bank_account.branch_code",
    "fieldname": "ifsc_code",
    "fieldtype": "Data",
-   "is_virtual": 1,
    "label": "IFSC Code",
+   "no_copy": 1,
    "read_only": 1
+  },
+  {
+   "fetch_from": "bank_account.account",
+   "fieldname": "company_account",
+   "fieldtype": "Link",
+   "label": "Company Account",
+   "no_copy": 1,
+   "options": "Account",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval: doc.bank_account",
+   "fieldname": "balance",
+   "fieldtype": "Currency",
+   "is_virtual": 1,
+   "label": "Balance",
+   "no_copy": 1,
+   "non_negative": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "api_tab",
+   "fieldtype": "Tab Break",
+   "label": "API"
+  },
+  {
+   "fieldname": "manual_mode",
+   "fieldtype": "Link",
+   "label": "Manual",
+   "no_copy": 1,
+   "options": "Mode of Payment"
+  },
+  {
+   "fieldname": "column_break_tgpx",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "templates_tab",
+   "fieldtype": "Tab Break",
+   "label": "Templates"
+  },
+  {
+   "fieldname": "email_templates_section",
+   "fieldtype": "Section Break",
+   "label": "Email Templates"
+  },
+  {
+   "fieldname": "confirmation_mail",
+   "fieldtype": "Link",
+   "label": "Confirmation Mail",
+   "options": "Email Template"
+  },
+  {
+   "fieldname": "balance_mail",
+   "fieldtype": "Link",
+   "label": "Insufficient Balance Mail",
+   "options": "Email Template"
+  },
+  {
+   "fieldname": "column_break_ummy",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "success_mail",
+   "fieldtype": "Link",
+   "label": "Success Mail",
+   "options": "Email Template"
+  },
+  {
+   "fieldname": "failure_mail",
+   "fieldtype": "Link",
+   "label": "Failure Mail",
+   "options": "Email Template"
+  },
+  {
+   "depends_on": "eval: doc.enable_automatic_payments",
+   "fieldname": "automatic_mode",
+   "fieldtype": "Link",
+   "label": "Automatic",
+   "options": "Mode of Payment"
+  },
+  {
+   "default": "0",
+   "fieldname": "pay_on_monday",
+   "fieldtype": "Check",
+   "label": "Monday"
+  },
+  {
+   "default": "0",
+   "fieldname": "pay_on_tuesday",
+   "fieldtype": "Check",
+   "label": "Tuesday"
+  },
+  {
+   "fieldname": "column_break_bwor",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "pay_on_wednesday",
+   "fieldtype": "Check",
+   "label": "Wednesday"
+  },
+  {
+   "default": "0",
+   "fieldname": "pay_on_thursday",
+   "fieldtype": "Check",
+   "label": "Thursday"
+  },
+  {
+   "fieldname": "column_break_dojo",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "pay_on_friday",
+   "fieldtype": "Check",
+   "label": "Friday"
+  },
+  {
+   "default": "0",
+   "fieldname": "pay_on_saturday",
+   "fieldtype": "Check",
+   "label": "Saturday"
+  },
+  {
+   "fieldname": "column_break_bdvg",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "pay_on_sunday",
+   "fieldtype": "Check",
+   "label": "Sunday"
+  },
+  {
+   "fieldname": "payments_tab",
+   "fieldtype": "Tab Break",
+   "label": "Payments"
+  },
+  {
+   "fieldname": "actions_section",
+   "fieldtype": "Section Break",
+   "label": "Actions"
+  },
+  {
+   "default": "0",
+   "description": "Only one account is allowed to be generated per company.",
+   "fieldname": "auto_generate_entries",
+   "fieldtype": "Check",
+   "label": "Auto Generate Payment Entries"
+  },
+  {
+   "default": "0",
+   "fieldname": "enable_automatic_payments",
+   "fieldtype": "Check",
+   "label": "Enable Automatic Payments"
+  },
+  {
+   "description": "A link will be sent to the party, and the party will fill in their details. Then, the payment will be automatically processed to the party.",
+   "fieldname": "link_mode",
+   "fieldtype": "Link",
+   "label": "Link",
+   "no_copy": 1,
+   "options": "Mode of Payment"
+  },
+  {
+   "depends_on": "eval: doc.enable_automatic_payments",
+   "fieldname": "section_break_olac",
+   "fieldtype": "Section Break",
+   "label": "Automatic Payment Settings"
+  },
+  {
+   "description": "Payments beyond this threshold will not be paid automatically.",
+   "fieldname": "payment_threshold",
+   "fieldtype": "Currency",
+   "label": "Payment Threshold",
+   "mandatory_depends_on": "eval: doc.enable_automatic_payments"
+  },
+  {
+   "depends_on": "eval: doc.enable_automatic_payments",
+   "fieldname": "automatic_payment_days_sec",
+   "fieldtype": "Section Break"
+  },
+  {
+   "description": "Currently Not Implemented",
+   "fieldname": "payouts_tab",
+   "fieldtype": "Tab Break",
+   "label": "Payouts"
+  },
+  {
+   "fieldname": "payout_priority_section",
+   "fieldtype": "Section Break",
+   "label": "Payout Priority"
+  },
+  {
+   "fieldname": "payouts_by",
+   "fieldtype": "Select",
+   "label": "Payouts By",
+   "options": "By Invoices\nBy Party"
+  },
+  {
+   "fieldname": "column_break_dimb",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "order_to_pay",
+   "fieldtype": "Select",
+   "label": "Order to Pay",
+   "options": "Posting Date\nDue Date"
+  },
+  {
+   "fieldname": "payment_mode_section_1",
+   "fieldtype": "Section Break",
+   "label": "Payment Mode"
+  },
+  {
+   "fieldname": "column_break_yrhb",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "account_tab",
+   "fieldtype": "Tab Break",
+   "label": "Account"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-11-25 18:20:56.980108",
+ "modified": "2024-11-29 16:18:06.894289",
  "modified_by": "Administrator",
  "module": "Razorpayx Integration",
  "name": "RazorPayX Integration Setting",
@@ -141,7 +419,7 @@
    "email": 1,
    "print": 1,
    "read": 1,
-   "role": "System Manager",
+   "role": "Administrator",
    "share": 1,
    "write": 1
   },
@@ -149,9 +427,11 @@
    "create": 1,
    "delete": 1,
    "email": 1,
+   "export": 1,
    "print": 1,
    "read": 1,
-   "role": "Administrator",
+   "report": 1,
+   "role": "RazorpayX Payments Manager",
    "share": 1,
    "write": 1
   }

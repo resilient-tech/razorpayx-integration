@@ -1,21 +1,10 @@
 // Copyright (c) 2024, Resilient Tech and contributors
 // For license information, please see license.txt
 
+// todo: query for payment mode
+// todo:  HTNl block for NEFT and RTGS details
+
 frappe.ui.form.on("RazorPayX Integration Setting", {
-	setup: function (frm) {
-		frm.set_query("bank_account", function () {
-			return {
-				filters: { is_company_account: 1 },
-			};
-		});
-
-		// fetching virtual fields
-		frm.add_fetch("bank_account", "company", "company");
-		frm.add_fetch("bank_account", "bank", "bank");
-		frm.add_fetch("bank_account", "bank_account_no", "account_number");
-		frm.add_fetch("bank_account", "branch_code", "ifsc_code");
-	},
-
 	onload: function (frm) {
 		if (!frm.is_new()) return;
 
