@@ -10,7 +10,14 @@ PROPERTY_SETTERS = [
         "property": "default",
         "property_type": "Data",
         "value": 1,
-    }
+    },
+    {
+        "doctype": "Bank Account",
+        "fieldname": "disabled",
+        "property": "depends_on",
+        "property_type": "Data",
+        "value": "eval: !doc.__islocal",
+    },
 ]
 
 for doctype, fields in STANDARD_FIELDS_TO_HIDE.items():
