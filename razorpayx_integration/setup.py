@@ -112,8 +112,8 @@ def make_workflow_states():
             "modified_by",
         ],
         [
-            [state, state, style, get_datetime(), get_datetime(), user, user]
-            for state, style in WORKFLOW_STATES.data().items()
+            [state[0], state[0], state[1], get_datetime(), get_datetime(), user, user]
+            for _, state in WORKFLOW_STATES.data().items()
         ],
         ignore_duplicates=True,
     )

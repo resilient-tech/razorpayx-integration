@@ -2,6 +2,10 @@ from enum import Enum
 
 
 class BaseEnum(Enum):
+    """
+    Note: Only use when all keys have unique values
+    """
+
     @classmethod
     def has_value(cls, value):
         return value in cls._value2member_map_
