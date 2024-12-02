@@ -59,6 +59,7 @@ WORKFLOWS = [
                 "update_value": 0,
                 "allow_edit": ROLE_PROFILE.BANK_ACC_MANAGER.value,
             },
+            # other fields updated with server script: [`is_default`]
         ],
         "transitions": [
             {
