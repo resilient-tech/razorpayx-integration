@@ -16,3 +16,9 @@ scheduler_events = {
 }
 
 export_python_type_annotations = True
+
+doc_events = {
+    "Bank Account": {
+        "validate": "razorpayx_integration.razorpayx_integration.server_overrides.bank_account.validate"
+    }
+}

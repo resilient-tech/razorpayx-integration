@@ -3,6 +3,8 @@ STANDARD_FIELDS_TO_HIDE = {
     "Employee": ["bank_name", "bank_ac_no", "iban"],
 }
 
+# TODO: Do not allow Bank Account user to edit the disabled and is_default fields
+# TODO: permissions + address and contacts?
 PROPERTY_SETTERS = [
     {
         "doctype": "Bank Account",
@@ -10,13 +12,6 @@ PROPERTY_SETTERS = [
         "property": "default",
         "property_type": "Data",
         "value": 1,
-    },
-    {
-        "doctype": "Bank Account",
-        "fieldname": "disabled",
-        "property": "depends_on",
-        "property_type": "Data",
-        "value": "eval: !doc.__islocal",
     },
 ]
 
