@@ -22,6 +22,7 @@ WORKFLOW_STATES = {
 }
 
 # TODO: Payment Entry Workflow remaining
+# * Note: Workflow not allowed to update multiple fields, if required then use server script
 WORKFLOWS = [
     {
         "workflow_name": "RazorpayX Bank Account Workflow",
@@ -52,24 +53,10 @@ WORKFLOWS = [
                 "allow_edit": ROLE_PROFILE.BANK_ACC_MANAGER.value,
             },
             {
-                "state": WORKFLOW_STATES["Rejected"][0],
-                "doc_status": 0,
-                "update_field": "is_default",
-                "update_value": 0,
-                "allow_edit": ROLE_PROFILE.BANK_ACC_MANAGER.value,
-            },
-            {
                 "state": WORKFLOW_STATES["Approved"][0],
                 "doc_status": 0,
                 "update_field": "disabled",
                 "update_value": 0,
-                "allow_edit": ROLE_PROFILE.BANK_ACC_MANAGER.value,
-            },
-            {
-                "state": WORKFLOW_STATES["Approved"][0],
-                "doc_status": 0,
-                "update_field": "is_default",
-                "update_value": 1,
                 "allow_edit": ROLE_PROFILE.BANK_ACC_MANAGER.value,
             },
         ],
