@@ -9,6 +9,7 @@ class WORKFLOW_ACTIONS(BaseEnum):
     Reject = "Reject"
     Review = "Review"
     Submit = "Submit"
+    Cancel = "Cancel"
 
 
 # TODO: Payment Entry Workflow State remaining
@@ -19,6 +20,8 @@ WORKFLOW_STATES = {
     "Draft": ["Draft", "Warning"],
     "Rejected": ["Rejected", "Danger"],
     "Submitted": ["Submitted", "Primary"],
+    "Pending Approval": ["Pending Approval", "Warning"],
+    "Cancelled": ["Cancelled", "Danger"],
 }
 
 # TODO: Payment Entry Workflow remaining
@@ -41,7 +44,7 @@ WORKFLOWS = [
                 "allow_edit": ROLE_PROFILE.BANK_ACC_MANAGER.value,
             },
             {
-                "state": WORKFLOW_STATES["Pending"][0],
+                "state": WORKFLOW_STATES["Pending Approval"][0],
                 "doc_status": 0,
                 "allow_edit": ROLE_PROFILE.BANK_ACC_MANAGER.value,
             },
@@ -77,7 +80,7 @@ WORKFLOWS = [
             {
                 "state": WORKFLOW_STATES["Submitted"][0],
                 "action": WORKFLOW_ACTIONS.Review.value,
-                "next_state": WORKFLOW_STATES["Pending"][0],
+                "next_state": WORKFLOW_STATES["Pending Approval"][0],
                 "allowed": ROLE_PROFILE.BANK_ACC_MANAGER.value,
             },
             {
@@ -87,15 +90,21 @@ WORKFLOWS = [
                 "allowed": ROLE_PROFILE.BANK_ACC_MANAGER.value,
             },
             {
-                "state": WORKFLOW_STATES["Pending"][0],
+                "state": WORKFLOW_STATES["Pending Approval"][0],
                 "action": WORKFLOW_ACTIONS.Reject.value,
                 "next_state": WORKFLOW_STATES["Rejected"][0],
                 "allowed": ROLE_PROFILE.BANK_ACC_MANAGER.value,
             },
             {
-                "state": WORKFLOW_STATES["Pending"][0],
+                "state": WORKFLOW_STATES["Pending Approval"][0],
                 "action": WORKFLOW_ACTIONS.Approve.value,
                 "next_state": WORKFLOW_STATES["Approved"][0],
+                "allowed": ROLE_PROFILE.BANK_ACC_MANAGER.value,
+            },
+            {
+                "state": WORKFLOW_STATES["Approved"][0],
+                "action": WORKFLOW_ACTIONS.Cancel.value,
+                "next_state": WORKFLOW_STATES["Cancelled"][0],
                 "allowed": ROLE_PROFILE.BANK_ACC_MANAGER.value,
             },
         ],
