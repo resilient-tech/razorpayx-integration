@@ -34,9 +34,8 @@
   "payment_mode_section_1",
   "column_break_yrhb",
   "manual_mode",
-  "automatic_mode",
   "column_break_tgpx",
-  "link_mode",
+  "automatic_mode",
   "section_break_olac",
   "payment_threshold",
   "automatic_payment_days_sec",
@@ -56,12 +55,16 @@
   "column_break_dimb",
   "order_to_pay",
   "templates_tab",
-  "email_templates_section",
-  "confirmation_mail",
-  "balance_mail",
+  "company_email_templates_section",
+  "reponsible_email",
+  "section_break_zujy",
+  "before_payment_template",
   "column_break_ummy",
-  "success_mail",
-  "failure_mail"
+  "after_payment_template",
+  "party_email_templates_section",
+  "invoice_level_email_template",
+  "column_break_rtkf",
+  "party_level_email_template"
  ],
  "fields": [
   {
@@ -103,7 +106,6 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Bank Account",
-   "link_filters": "[[\"Bank Account\",\"is_company_account\",\"=\",1]]",
    "no_copy": 1,
    "options": "Bank Account",
    "reqd": 1,
@@ -220,37 +222,8 @@
    "label": "Templates"
   },
   {
-   "fieldname": "email_templates_section",
-   "fieldtype": "Section Break",
-   "label": "Email Templates"
-  },
-  {
-   "fieldname": "confirmation_mail",
-   "fieldtype": "Link",
-   "label": "Confirmation Mail",
-   "options": "Email Template"
-  },
-  {
-   "fieldname": "balance_mail",
-   "fieldtype": "Link",
-   "label": "Insufficient Balance Mail",
-   "options": "Email Template"
-  },
-  {
    "fieldname": "column_break_ummy",
    "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "success_mail",
-   "fieldtype": "Link",
-   "label": "Success Mail",
-   "options": "Email Template"
-  },
-  {
-   "fieldname": "failure_mail",
-   "fieldtype": "Link",
-   "label": "Failure Mail",
-   "options": "Email Template"
   },
   {
    "depends_on": "eval: doc.enable_automatic_payments",
@@ -337,14 +310,6 @@
    "label": "Enable Automatic Payments"
   },
   {
-   "description": "A link will be sent to the party, and the party will fill in their details. Then, the payment will be automatically processed to the party.",
-   "fieldname": "link_mode",
-   "fieldtype": "Link",
-   "label": "Link",
-   "no_copy": 1,
-   "options": "Mode of Payment"
-  },
-  {
    "depends_on": "eval: doc.enable_automatic_payments",
    "fieldname": "section_break_olac",
    "fieldtype": "Section Break",
@@ -374,6 +339,7 @@
    "label": "Payout Priority"
   },
   {
+   "default": "By Invoices",
    "fieldname": "payouts_by",
    "fieldtype": "Select",
    "label": "Payouts By",
@@ -384,10 +350,11 @@
    "fieldtype": "Column Break"
   },
   {
+   "default": "Due Date",
    "fieldname": "order_to_pay",
    "fieldtype": "Select",
    "label": "Order to Pay",
-   "options": "Posting Date\nDue Date"
+   "options": "Due Date\nPosting Date"
   },
   {
    "fieldname": "payment_mode_section_1",
@@ -402,11 +369,60 @@
    "fieldname": "account_tab",
    "fieldtype": "Tab Break",
    "label": "Account"
+  },
+  {
+   "fieldname": "before_payment_template",
+   "fieldtype": "Link",
+   "label": "Report Before Payments",
+   "options": "Email Template"
+  },
+  {
+   "fieldname": "after_payment_template",
+   "fieldtype": "Link",
+   "label": "Report After Payments",
+   "options": "Email Template"
+  },
+  {
+   "fieldname": "section_break_zujy",
+   "fieldtype": "Section Break"
+  },
+  {
+   "description": "Reports will be emailed to this email id.",
+   "fieldname": "reponsible_email",
+   "fieldtype": "Data",
+   "label": "Responsible Email",
+   "options": "Email"
+  },
+  {
+   "fieldname": "column_break_rtkf",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "invoice_level_email_template",
+   "fieldtype": "Link",
+   "label": "Payments By Invoice Level",
+   "options": "Email Template"
+  },
+  {
+   "fieldname": "party_level_email_template",
+   "fieldtype": "Link",
+   "label": "Payments By Party Level",
+   "options": "Email Template"
+  },
+  {
+   "fieldname": "company_email_templates_section",
+   "fieldtype": "Section Break",
+   "label": "Company Email Templates"
+  },
+  {
+   "fieldname": "party_email_templates_section",
+   "fieldtype": "Section Break",
+   "label": "Party Email Templates"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-11-29 16:18:06.894289",
+ "modified": "2024-12-03 13:17:12.845307",
  "modified_by": "Administrator",
  "module": "Razorpayx Integration",
  "name": "RazorPayX Integration Setting",
