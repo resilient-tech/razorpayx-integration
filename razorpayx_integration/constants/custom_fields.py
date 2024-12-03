@@ -1,5 +1,14 @@
 from razorpayx_integration.constants.payouts import RAZORPAYX_PAYOUT_MODE
 
+# TODO: add in different parties
+BLOCK_AUTO_PAYMENT = {
+    "fieldname": "block_auto_payment",
+    "label": "Block Auto Payment",
+    "fieldtype": "Check",
+    "description": "Auto payment will be blocked for this party for <strong>RazorpayX</strong>",
+}
+
+
 CUSTOM_FIELDS = {
     "Bank Transaction": [
         {
@@ -55,5 +64,14 @@ CUSTOM_FIELDS = {
             "depends_on": "eval: !doc.is_company_account && doc.payment_mode === 'UPI'",
             "placeholder": "Eg. 90876543@okicici",
         },
+    ],
+    "Customer": [
+        {**BLOCK_AUTO_PAYMENT, "insert_after": "payment_terms"},
+    ],
+    "Supplier": [
+        {**BLOCK_AUTO_PAYMENT, "insert_after": "payment_terms"},
+    ],
+    "Employee": [
+        {**BLOCK_AUTO_PAYMENT, "insert_after": "bank_name"},
     ],
 }
