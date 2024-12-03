@@ -9,6 +9,7 @@ from razorpayx_integration.constants.workflows import WORKFLOW_STATES
 
 # TODO: reset payment details if `is_company_account` is checked ?
 # TODO: after `Rejected` / `Approved` workflow state, make form read-only ?
+# TODO: fetch mobile number and email to `party_contact` and `party_email` respectively
 class BankAccount(_BankAccount):
     def validate(self):
         if hasattr(_BankAccount, "validate"):
