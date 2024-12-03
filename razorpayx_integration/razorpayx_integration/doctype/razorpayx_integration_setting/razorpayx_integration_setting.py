@@ -21,26 +21,26 @@ class RazorPayXIntegrationSetting(Document):
         from frappe.types import DF
 
         account_number: DF.Data | None
+        after_payment_template: DF.Link | None
         auto_generate_entries: DF.Check
         automatic_mode: DF.Link | None
         balance: DF.Currency
-        balance_mail: DF.Link | None
         bank: DF.Link | None
         bank_account: DF.Link
+        before_payment_template: DF.Link | None
         company: DF.Link | None
         company_account: DF.Link | None
-        confirmation_mail: DF.Link | None
         disabled: DF.Check
         enable_automatic_payments: DF.Check
-        failure_mail: DF.Link | None
         ifsc_code: DF.Data | None
+        invoice_level_email_template: DF.Link | None
         key_authorized: DF.Check
         key_id: DF.Data
         key_secret: DF.Password
         last_synced: DF.Datetime | None
-        link_mode: DF.Link | None
         manual_mode: DF.Link | None
-        order_to_pay: DF.Literal["Posting Date", "Due Date"]
+        order_to_pay: DF.Literal["Due Date", "Posting Date"]
+        party_level_email_template: DF.Link | None
         pay_on_friday: DF.Check
         pay_on_monday: DF.Check
         pay_on_saturday: DF.Check
@@ -50,7 +50,7 @@ class RazorPayXIntegrationSetting(Document):
         pay_on_wednesday: DF.Check
         payment_threshold: DF.Currency
         payouts_by: DF.Literal["By Invoices", "By Party"]
-        success_mail: DF.Link | None
+        reponsible_email: DF.Data | None
         webhook_secret: DF.Password | None
 
     # end: auto-generated types
