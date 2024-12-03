@@ -13,9 +13,9 @@ class RAZORPAYX_FUND_ACCOUNT_TYPE(BaseEnum):
 
 
 class RAZORPAYX_PAYOUT_MODE(BaseEnum):
-    NEFT = "NEFT"
-    RTGS = "RTGS"
+    Bank = "NEFT/RTGS"  # NEFT/RTGS will be decided based on the amount at payout time
     UPI = "UPI"
+    LINK = "Link"
 
 
 class RAZORPAYX_PAYOUT_PURPOSE(BaseEnum):
