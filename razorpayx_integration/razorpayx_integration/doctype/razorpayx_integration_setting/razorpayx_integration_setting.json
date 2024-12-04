@@ -27,44 +27,9 @@
   "account_number",
   "transaction_section",
   "last_synced",
-  "payments_tab",
-  "actions_section",
-  "auto_generate_entries",
-  "enable_automatic_payments",
-  "payment_mode_section_1",
-  "column_break_yrhb",
-  "manual_mode",
-  "column_break_tgpx",
-  "automatic_mode",
-  "section_break_olac",
-  "payment_threshold",
-  "automatic_payment_days_sec",
-  "pay_on_monday",
-  "pay_on_friday",
-  "column_break_bwor",
-  "pay_on_tuesday",
-  "pay_on_saturday",
-  "column_break_dojo",
-  "pay_on_wednesday",
-  "pay_on_sunday",
-  "column_break_bdvg",
-  "pay_on_thursday",
-  "payouts_tab",
-  "payout_priority_section",
-  "payouts_by",
-  "column_break_dimb",
-  "order_to_pay",
   "templates_tab",
-  "company_email_templates_section",
-  "reponsible_email",
-  "section_break_zujy",
-  "before_payment_template",
-  "column_break_ummy",
-  "after_payment_template",
   "party_email_templates_section",
-  "invoice_level_email_template",
-  "column_break_rtkf",
-  "party_level_email_template"
+  "payment_success_template"
  ],
  "fields": [
   {
@@ -206,15 +171,9 @@
    "label": "API"
   },
   {
-   "fieldname": "manual_mode",
-   "fieldtype": "Link",
-   "label": "Manual",
-   "no_copy": 1,
-   "options": "Mode of Payment"
-  },
-  {
-   "fieldname": "column_break_tgpx",
-   "fieldtype": "Column Break"
+   "fieldname": "account_tab",
+   "fieldtype": "Tab Break",
+   "label": "Account"
   },
   {
    "fieldname": "templates_tab",
@@ -222,207 +181,20 @@
    "label": "Templates"
   },
   {
-   "fieldname": "column_break_ummy",
-   "fieldtype": "Column Break"
-  },
-  {
-   "depends_on": "eval: doc.enable_automatic_payments",
-   "fieldname": "automatic_mode",
-   "fieldtype": "Link",
-   "label": "Automatic",
-   "options": "Mode of Payment"
-  },
-  {
-   "default": "0",
-   "fieldname": "pay_on_monday",
-   "fieldtype": "Check",
-   "label": "Monday"
-  },
-  {
-   "default": "0",
-   "fieldname": "pay_on_tuesday",
-   "fieldtype": "Check",
-   "label": "Tuesday"
-  },
-  {
-   "fieldname": "column_break_bwor",
-   "fieldtype": "Column Break"
-  },
-  {
-   "default": "0",
-   "fieldname": "pay_on_wednesday",
-   "fieldtype": "Check",
-   "label": "Wednesday"
-  },
-  {
-   "default": "0",
-   "fieldname": "pay_on_thursday",
-   "fieldtype": "Check",
-   "label": "Thursday"
-  },
-  {
-   "fieldname": "column_break_dojo",
-   "fieldtype": "Column Break"
-  },
-  {
-   "default": "0",
-   "fieldname": "pay_on_friday",
-   "fieldtype": "Check",
-   "label": "Friday"
-  },
-  {
-   "default": "0",
-   "fieldname": "pay_on_saturday",
-   "fieldtype": "Check",
-   "label": "Saturday"
-  },
-  {
-   "fieldname": "column_break_bdvg",
-   "fieldtype": "Column Break"
-  },
-  {
-   "default": "0",
-   "fieldname": "pay_on_sunday",
-   "fieldtype": "Check",
-   "label": "Sunday"
-  },
-  {
-   "fieldname": "payments_tab",
-   "fieldtype": "Tab Break",
-   "label": "Payments"
-  },
-  {
-   "fieldname": "actions_section",
-   "fieldtype": "Section Break",
-   "label": "Actions"
-  },
-  {
-   "default": "0",
-   "description": "Only one account is allowed to be generated per company.",
-   "fieldname": "auto_generate_entries",
-   "fieldtype": "Check",
-   "label": "Auto Generate Payment Entries"
-  },
-  {
-   "default": "0",
-   "fieldname": "enable_automatic_payments",
-   "fieldtype": "Check",
-   "label": "Enable Automatic Payments"
-  },
-  {
-   "depends_on": "eval: doc.enable_automatic_payments",
-   "fieldname": "section_break_olac",
-   "fieldtype": "Section Break",
-   "label": "Automatic Payment Settings"
-  },
-  {
-   "description": "Payments beyond this threshold will not be paid automatically.",
-   "fieldname": "payment_threshold",
-   "fieldtype": "Currency",
-   "label": "Payment Threshold",
-   "mandatory_depends_on": "eval: doc.enable_automatic_payments"
-  },
-  {
-   "depends_on": "eval: doc.enable_automatic_payments",
-   "fieldname": "automatic_payment_days_sec",
-   "fieldtype": "Section Break"
-  },
-  {
-   "description": "Currently Not Implemented",
-   "fieldname": "payouts_tab",
-   "fieldtype": "Tab Break",
-   "label": "Payouts"
-  },
-  {
-   "fieldname": "payout_priority_section",
-   "fieldtype": "Section Break",
-   "label": "Payout Priority"
-  },
-  {
-   "default": "By Invoices",
-   "fieldname": "payouts_by",
-   "fieldtype": "Select",
-   "label": "Payouts By",
-   "options": "By Invoices\nBy Party"
-  },
-  {
-   "fieldname": "column_break_dimb",
-   "fieldtype": "Column Break"
-  },
-  {
-   "default": "Due Date",
-   "fieldname": "order_to_pay",
-   "fieldtype": "Select",
-   "label": "Order to Pay",
-   "options": "Due Date\nPosting Date"
-  },
-  {
-   "fieldname": "payment_mode_section_1",
-   "fieldtype": "Section Break",
-   "label": "Payment Mode"
-  },
-  {
-   "fieldname": "column_break_yrhb",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "account_tab",
-   "fieldtype": "Tab Break",
-   "label": "Account"
-  },
-  {
-   "fieldname": "before_payment_template",
-   "fieldtype": "Link",
-   "label": "Report Before Payments",
-   "options": "Email Template"
-  },
-  {
-   "fieldname": "after_payment_template",
-   "fieldtype": "Link",
-   "label": "Report After Payments",
-   "options": "Email Template"
-  },
-  {
-   "fieldname": "section_break_zujy",
-   "fieldtype": "Section Break"
-  },
-  {
-   "description": "Reports will be emailed to this email id.",
-   "fieldname": "reponsible_email",
-   "fieldtype": "Data",
-   "label": "Responsible Email",
-   "options": "Email"
-  },
-  {
-   "fieldname": "column_break_rtkf",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "invoice_level_email_template",
-   "fieldtype": "Link",
-   "label": "Payments By Invoice Level",
-   "options": "Email Template"
-  },
-  {
-   "fieldname": "party_level_email_template",
-   "fieldtype": "Link",
-   "label": "Payments By Party Level",
-   "options": "Email Template"
-  },
-  {
-   "fieldname": "company_email_templates_section",
-   "fieldtype": "Section Break",
-   "label": "Company Email Templates"
-  },
-  {
    "fieldname": "party_email_templates_section",
    "fieldtype": "Section Break",
    "label": "Party Email Templates"
+  },
+  {
+   "fieldname": "payment_success_template",
+   "fieldtype": "Link",
+   "label": "On Payment Success",
+   "options": "Email Template"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-12-03 13:17:12.845307",
+ "modified": "2024-12-04 16:07:40.349694",
  "modified_by": "Administrator",
  "module": "Razorpayx Integration",
  "name": "RazorPayX Integration Setting",
