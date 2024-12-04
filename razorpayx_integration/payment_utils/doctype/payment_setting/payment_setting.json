@@ -1,0 +1,285 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2024-12-04 14:42:27.902987",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "account_tab",
+  "disabled",
+  "section_break_drmq",
+  "bank_account",
+  "balance",
+  "column_break_pzyt",
+  "company",
+  "payments_tab",
+  "actions_perm_section",
+  "auto_generate_entries",
+  "payment_threshold",
+  "column_break_cmbf",
+  "enable_automatic_payments",
+  "days_sections",
+  "automate_on_monday",
+  "automate_on_friday",
+  "column_break_waeu",
+  "automate_on_tuesday",
+  "automate_on_saturday",
+  "column_break_szcn",
+  "automate_on_wednesday",
+  "automate_on_sunday",
+  "column_break_fjvk",
+  "automate_on_thursday",
+  "payouts_tab",
+  "payout_priority_section",
+  "payouts_by",
+  "column_break_ntgc",
+  "order_to_pay",
+  "templates_tab",
+  "company_email_templates_section",
+  "report_before_auto_payments",
+  "column_break_bhwn",
+  "report_after_auto_payments",
+  "party_email_templates_section",
+  "payment_success_template"
+ ],
+ "fields": [
+  {
+   "default": "0",
+   "fieldname": "auto_generate_entries",
+   "fieldtype": "Check",
+   "label": "Auto Generate Payment Entries"
+  },
+  {
+   "default": "0",
+   "fieldname": "enable_automatic_payments",
+   "fieldtype": "Check",
+   "label": "Enable Automatic Payments"
+  },
+  {
+   "fieldname": "actions_perm_section",
+   "fieldtype": "Section Break",
+   "label": "Actions and Permissions"
+  },
+  {
+   "fieldname": "column_break_cmbf",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval: doc.auto_generate_entries || doc.enable_automatic_payments ",
+   "fieldname": "days_sections",
+   "fieldtype": "Section Break",
+   "label": "Days for Automation"
+  },
+  {
+   "default": "0",
+   "fieldname": "automate_on_monday",
+   "fieldtype": "Check",
+   "label": "Monday"
+  },
+  {
+   "default": "0",
+   "fieldname": "automate_on_friday",
+   "fieldtype": "Check",
+   "label": "Friday"
+  },
+  {
+   "fieldname": "column_break_waeu",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "automate_on_tuesday",
+   "fieldtype": "Check",
+   "label": "Tuesday"
+  },
+  {
+   "default": "0",
+   "fieldname": "automate_on_saturday",
+   "fieldtype": "Check",
+   "label": "Saturday"
+  },
+  {
+   "fieldname": "column_break_szcn",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "automate_on_wednesday",
+   "fieldtype": "Check",
+   "label": "Wednesday"
+  },
+  {
+   "default": "0",
+   "fieldname": "automate_on_sunday",
+   "fieldtype": "Check",
+   "label": "Sunday"
+  },
+  {
+   "fieldname": "column_break_fjvk",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "automate_on_thursday",
+   "fieldtype": "Check",
+   "label": "Thursday"
+  },
+  {
+   "depends_on": "eval: doc.enable_automatic_payments",
+   "description": "Payments beyond this threshold will not be paid automatically.",
+   "fieldname": "payment_threshold",
+   "fieldtype": "Currency",
+   "label": "Payment Threshold",
+   "mandatory_depends_on": "eval: doc.enable_automatic_payments"
+  },
+  {
+   "fieldname": "account_tab",
+   "fieldtype": "Tab Break",
+   "label": "Account",
+   "no_copy": 1
+  },
+  {
+   "description": "<strong>API</strong> details will be fetched from Integration Settings.",
+   "fieldname": "bank_account",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Bank Account",
+   "no_copy": 1,
+   "options": "Bank Account",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "payments_tab",
+   "fieldtype": "Tab Break",
+   "label": "Payments"
+  },
+  {
+   "fieldname": "column_break_pzyt",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "bank_account.company",
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Company",
+   "no_copy": 1,
+   "options": "Company",
+   "read_only": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "balance",
+   "fieldtype": "Currency",
+   "is_virtual": 1,
+   "label": "Balance",
+   "non_negative": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "payouts_tab",
+   "fieldtype": "Tab Break",
+   "label": "Payouts"
+  },
+  {
+   "default": "Invoices",
+   "fieldname": "payouts_by",
+   "fieldtype": "Select",
+   "label": "Payouts by",
+   "options": "Invoices\nParty"
+  },
+  {
+   "fieldname": "column_break_ntgc",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Due Date",
+   "fieldname": "order_to_pay",
+   "fieldtype": "Select",
+   "label": "Order to Pay",
+   "options": "Due Date\nPosting Date"
+  },
+  {
+   "fieldname": "templates_tab",
+   "fieldtype": "Tab Break",
+   "label": "Templates"
+  },
+  {
+   "fieldname": "payout_priority_section",
+   "fieldtype": "Section Break",
+   "label": "Payout Priority"
+  },
+  {
+   "fieldname": "company_email_templates_section",
+   "fieldtype": "Section Break",
+   "label": "Company Email Templates"
+  },
+  {
+   "depends_on": "eval: doc.enable_automatic_payments",
+   "fieldname": "report_before_auto_payments",
+   "fieldtype": "Link",
+   "label": "Report Before Auto Payments",
+   "options": "Email Template"
+  },
+  {
+   "fieldname": "column_break_bhwn",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval: doc.enable_automatic_payments",
+   "fieldname": "report_after_auto_payments",
+   "fieldtype": "Link",
+   "label": "Report After Auto Payments",
+   "options": "Email Template"
+  },
+  {
+   "fieldname": "party_email_templates_section",
+   "fieldtype": "Section Break",
+   "label": "Party Email Templates"
+  },
+  {
+   "depends_on": "eval: doc.enable_automatic_payments",
+   "fieldname": "payment_success_template",
+   "fieldtype": "Link",
+   "label": "On Payment Success",
+   "options": "Email Template"
+  },
+  {
+   "default": "0",
+   "fieldname": "disabled",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Disabled"
+  },
+  {
+   "fieldname": "section_break_drmq",
+   "fieldtype": "Section Break"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2024-12-04 16:02:02.919263",
+ "modified_by": "Administrator",
+ "module": "Payment Utils",
+ "name": "Payment Setting",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
