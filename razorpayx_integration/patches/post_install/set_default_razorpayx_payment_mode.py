@@ -10,6 +10,6 @@ def execute():
 
     BA = frappe.qb.DocType("Bank Account")
 
-    frappe.qb.update(BA).set("payment_mode", RAZORPAYX_PAYOUT_MODE.Bank.value).where(
+    frappe.qb.update(BA).set("payment_mode", RAZORPAYX_PAYOUT_MODE.BANK.value).where(
         BA.is_company_account == 0
     ).where(BA.payment_mode.isnull()).run()

@@ -1,5 +1,7 @@
 from enum import Enum
 
+import frappe
+
 
 class BaseEnum(Enum):
     """
@@ -33,3 +35,30 @@ class BaseEnum(Enum):
         Return a dictionary of all the names(keys) and values.
         """
         return {member.name: member.value for member in cls}
+
+    @classmethod
+    def values_as_string(cls, sep: str = "\n") -> str:
+        """
+        Return the value as a string with the separator.
+
+        :param sep: Separator to join the values.
+        """
+        return sep.join(cls.values())
+
+    @classmethod
+    def names_as_string(cls, sep: str = "\n") -> str:
+        """
+        Return the names(keys) as a string with the separator.
+
+        :param sep: Separator to join the names.
+        """
+        return sep.join(cls.names())
+
+    @classmethod
+    def scrubbed_values(cls) -> list:
+        """
+        Returns scrubbed values.
+
+        Eg. `Not Initiated` -> `not_initiated`
+        """
+        return [frappe.scrub(member.value) for member in cls]
