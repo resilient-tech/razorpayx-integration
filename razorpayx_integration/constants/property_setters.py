@@ -1,10 +1,9 @@
 STANDARD_FIELDS_TO_HIDE = {
-    "Bank Transaction": ["transaction_id"],
     "Employee": ["bank_name", "bank_ac_no", "iban"],  # ? Correct
 }
 
 # TODO: Do not allow Bank Account user to edit the disabled and is_default fields
-# TODO: permissions + address and contacts?
+# TODO: Permissions (permlevel)
 PROPERTY_SETTERS = [
     {
         "doctype": "Bank Account",
