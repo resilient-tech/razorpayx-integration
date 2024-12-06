@@ -1,16 +1,29 @@
-STANDARD_FIELDS_TO_HIDE = {
-    "Employee": ["bank_name", "bank_ac_no", "iban"],  # ? Correct
-}
+from razorpayx_integration.constants.roles import ROLE_PROFILES
 
-# TODO: Do not allow Bank Account user to edit the disabled and is_default fields
-# TODO: Permissions (permlevel)
+STANDARD_FIELDS_TO_HIDE = {"Employee": ["bank_name", "bank_ac_no", "iban"]}
+
 PROPERTY_SETTERS = [
+    # BANK ACCOUNT
     {
         "doctype": "Bank Account",
         "fieldname": "disabled",
         "property": "default",
         "property_type": "Data",
         "value": 1,
+    },
+    {
+        "doctype": "Bank Account",
+        "fieldname": "disabled",
+        "property": "permlevel",
+        "property_type": "Int",
+        "value": ROLE_PROFILES["Bank Acc Manager"]["permlevel"],
+    },
+    {
+        "doctype": "Bank Account",
+        "fieldname": "is_default",
+        "property": "permlevel",
+        "property_type": "Int",
+        "value": ROLE_PROFILES["Bank Acc Manager"]["permlevel"],
     },
 ]
 
