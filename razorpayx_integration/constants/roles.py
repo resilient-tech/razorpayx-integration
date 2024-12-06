@@ -1,51 +1,54 @@
-from razorpayx_integration.constants import RAZORPAYX
-from razorpayx_integration.constants import (
-    RAZORPAYX_SETTING_DOCTYPE as RAZORPAYX_DOCTYPE,
+from razorpayx_integration.constants import RAZORPAYX_SETTING_DOCTYPE
+from razorpayx_integration.payment_utils.constants.roles import (
+    PERMISSIONS,
 )
-from razorpayx_integration.constants.enums import BaseEnum
+from razorpayx_integration.payment_utils.constants.roles import (
+    ROLE_PROFILES as PAYMENT_PROFILE,
+)
 
-MANGER_PERMISSIONS = ["select", "read", "create", "write", "delete", "email"]
-USER_PERMISSIONS = ["read", "create", "write"]
-BASIC_PERMISSIONS = ["select", "read"]
+ROLE_PROFILES = {
+    "Bank Acc Manager": {
+        "role_name": "Bank Account Manager",
+        "permlevel": 7,  # default
+    },
+    "Bank Acc User": {
+        "role_name": "Bank Account User",
+        "permlevel": 0,  # default
+    },
+}
 
 
-class ROLE_PROFILE(BaseEnum):
-    BANK_ACC_MANAGER = f"{RAZORPAYX} Bank Account Manager"
-    BANK_ACC_USER = f"{RAZORPAYX} Bank Account User"
-    PAYMENTS_MANAGER = f"{RAZORPAYX} Payments Manager"
-
-
-# todo: can be more efficient and more roles and permissions can be added
 ROLES = [
+    # RazorpayX integration related roles
     {
-        "doctypes": ["Bank Account"],
-        "role_name": ROLE_PROFILE.BANK_ACC_MANAGER.value,
-        "permlevel": 0,
-        "permissions": MANGER_PERMISSIONS,
+        "doctype": RAZORPAYX_SETTING_DOCTYPE,
+        "role_name": PAYMENT_PROFILE["Payment Manger"]["role_name"],
+        "permlevel": PAYMENT_PROFILE["Payment Manger"]["permlevel"],
+        "permissions": PERMISSIONS["Manager"],
     },
     {
-        "doctypes": ["Bank Account"],
-        "role_name": ROLE_PROFILE.BANK_ACC_USER.value,
-        "permlevel": 0,
-        "permissions": USER_PERMISSIONS,
+        "doctype": "Bank Account",
+        "role_name": ROLE_PROFILES["Bank Acc Manager"]["role_name"],
+        "permlevel": ROLE_PROFILES["Bank Acc Manager"]["permlevel"],
+        "permissions": PERMISSIONS["Manager"],
     },
     {
-        "doctypes": ["Bank"],
-        "role_name": ROLE_PROFILE.BANK_ACC_USER.value,
-        "permlevel": 0,
-        "permissions": BASIC_PERMISSIONS,
+        "doctype": "Bank Account",
+        "role_name": ROLE_PROFILES["Bank Acc User"]["role_name"],
+        "permlevel": ROLE_PROFILES["Bank Acc User"]["permlevel"],
+        "permissions": PERMISSIONS["User"],
     },
     {
-        "doctypes": ["Bank"],
-        "role_name": ROLE_PROFILE.BANK_ACC_MANAGER.value,
+        "doctype": "Bank",
+        "role_name": ROLE_PROFILES["Bank Acc Manager"]["role_name"],
         "permlevel": 0,
-        "permissions": BASIC_PERMISSIONS,
+        "permissions": PERMISSIONS["Basic"],
     },
     {
-        "doctypes": [RAZORPAYX_DOCTYPE],
-        "role_name": ROLE_PROFILE.PAYMENTS_MANAGER.value,
+        "doctype": "Bank",
+        "role_name": ROLE_PROFILES["Bank Acc User"]["role_name"],
         "permlevel": 0,
-        "permissions": MANGER_PERMISSIONS,
+        "permissions": PERMISSIONS["Basic"],
     },
 ]
 
@@ -54,6 +57,6 @@ CUSTOM_PERMISSIONS = [
         "module": "razorpayx_integration",
         "dt": "doctype",
         "dn": "razorpayx_integration_setting",
-        "doctype": RAZORPAYX_DOCTYPE,
+        "doctype": RAZORPAYX_SETTING_DOCTYPE,
     }
 ]
