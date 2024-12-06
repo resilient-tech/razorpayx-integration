@@ -6,6 +6,8 @@ from razorpayx_integration.payment_utils.constants.roles import (
     ROLE_PROFILES as PAYMENT_PROFILE,
 )
 
+PAYMENT_PERM_LEVEL = 7
+
 ROLE_PROFILES = {
     "Bank Acc Manager": {
         "role_name": "Bank Account Manager",
@@ -50,6 +52,12 @@ ROLES = [
         "permlevel": 0,
         "permissions": PERMISSIONS["Basic"],
     },
+    {
+        "doctype": "Payment Entry",
+        "role_name": PAYMENT_PROFILE["Payment Manger"]["role_name"],
+        "permlevel": PAYMENT_PERM_LEVEL,
+        "permissions": PERMISSIONS["Manager"],
+    }
 ]
 
 CUSTOM_PERMISSIONS = [

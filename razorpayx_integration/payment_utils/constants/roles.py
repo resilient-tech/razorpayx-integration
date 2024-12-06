@@ -29,7 +29,19 @@ ROLES = [
         "role_name": get_role_name("Payment Manger"),
         "permlevel": get_permlevel("Payment Manger"),
         "permissions": PERMISSIONS["Manager"],
-    }
+    },
+    {
+        "doctype": "Bank Account",
+        "role_name": get_role_name("Payment Manger"),
+        "permlevel": get_permlevel("Payment Manger"),
+        "permissions": PERMISSIONS["Basic"],
+    },
+    {
+        "doctype": "Email Template",
+        "role_name": get_role_name("Payment Manger"),
+        "permlevel": get_permlevel("Payment Manger"),
+        "permissions": PERMISSIONS["Basic"],
+    },
 ]
 
 CUSTOM_PERMISSIONS = [
