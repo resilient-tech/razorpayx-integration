@@ -1,4 +1,4 @@
-from razorpayx_integration.constants.roles import ROLE_PROFILES
+from razorpayx_integration.payment_utils.constants.roles import ROLE_PROFILES
 
 STANDARD_FIELDS_TO_HIDE = {"Employee": ["bank_name", "bank_ac_no", "iban"]}
 

@@ -1,4 +1,4 @@
-from razorpayx_integration.constants.enums import BaseEnum
+from razorpayx_integration.payment_utils.constants.enums import BaseEnum
 
 
 class RAZORPAYX_CONTACT_TYPE(BaseEnum):

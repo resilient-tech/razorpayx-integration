@@ -1,4 +1,6 @@
-from razorpayx_integration.constants.roles import ROLE_PROFILES as BANK_ROLE_PROFILES
+from razorpayx_integration.payment_utils.constants.roles import (
+    ROLE_PROFILES as BANK_ROLE_PROFILES,
+)
 from razorpayx_integration.payment_utils.constants.roles import (
     ROLE_PROFILES as PAYMENT_ROLE_PROFILES,
 )
