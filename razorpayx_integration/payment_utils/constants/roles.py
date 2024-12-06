@@ -1,4 +1,10 @@
 from razorpayx_integration.payment_utils.constants import SETTING_DOCTYPE
+from razorpayx_integration.payment_utils.constants.enums import BaseEnum
+
+
+class ROLE_PROFILES(BaseEnum):
+    Auto_Payment_Manager = "Auto Payment Manager"
+
 
 PERMISSIONS = {
     "Manager": ["select", "read", "create", "write", "delete", "email"],
@@ -6,40 +12,24 @@ PERMISSIONS = {
     "Basic": ["select", "read"],
 }
 
-ROLE_PROFILES = {
-    "Payment Manger": {
-        "role_name": "Payment Manager",
-        "permlevel": 0,  # default
-    }
-}
-
-
-# to make code readable
-def get_role_name(profile_name: str) -> str:
-    return ROLE_PROFILES[profile_name]["role_name"]
-
-
-def get_permlevel(profile_name: str) -> int:
-    return ROLE_PROFILES[profile_name]["permlevel"]
-
 
 ROLES = [
     {
         "doctype": SETTING_DOCTYPE,
-        "role_name": get_role_name("Payment Manger"),
-        "permlevel": get_permlevel("Payment Manger"),
+        "role_name": ROLE_PROFILES.Auto_Payment_Manager.value,
+        "permlevel": 0,
         "permissions": PERMISSIONS["Manager"],
     },
     {
         "doctype": "Bank Account",
-        "role_name": get_role_name("Payment Manger"),
-        "permlevel": get_permlevel("Payment Manger"),
+        "role_name": ROLE_PROFILES.Auto_Payment_Manager.value,
+        "permlevel": 0,
         "permissions": PERMISSIONS["Basic"],
     },
     {
         "doctype": "Email Template",
-        "role_name": get_role_name("Payment Manger"),
-        "permlevel": get_permlevel("Payment Manger"),
+        "role_name": ROLE_PROFILES.Auto_Payment_Manager.value,
+        "permlevel": 0,
         "permissions": PERMISSIONS["Basic"],
     },
 ]
