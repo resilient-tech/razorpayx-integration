@@ -1,32 +1,14 @@
-from razorpayx_integration.constants.enums import BaseEnum
-from razorpayx_integration.constants.roles import ROLE_PROFILE
+from razorpayx_integration.constants.roles import ROLE_PROFILES as BANK_ROLE_PROFILES
+from razorpayx_integration.payment_utils.constants.roles import (
+    ROLE_PROFILES as PAYMENT_ROLE_PROFILES,
+)
+from razorpayx_integration.payment_utils.constants.workflows import (
+    WORKFLOW_ACTIONS,
+    WORKFLOW_STATES,
+)
 
-
-# TODO: Payment Entry Workflow Action remaining
-class WORKFLOW_ACTIONS(BaseEnum):
-    Approve = "Approve"
-    Hold = "Hold"
-    Reject = "Reject"
-    Review = "Review"
-    Submit = "Submit"
-    Cancel = "Cancel"
-
-
-# TODO: Payment Entry Workflow State remaining
-# * Note: Enum can't be used here as the values are not unique
-WORKFLOW_STATES = {
-    "Approved": ["Approved", "Success"],
-    "Pending": ["Pending", "Warning"],
-    "Draft": ["Draft", "Warning"],
-    "Rejected": ["Rejected", "Danger"],
-    "Submitted": ["Submitted", "Primary"],
-    "Pending Approval": ["Pending Approval", "Warning"],
-    "Cancelled": ["Cancelled", "Danger"],
-}
-
-# TODO: Payment Entry Workflow remaining
-# * Note: Workflow not allowed to update multiple fields, if required then use server script
 WORKFLOWS = [
+    ########### 1. Bank Account ###########
     {
         "workflow_name": "RazorpayX Bank Account Workflow",
         "document_type": "Bank Account",
@@ -34,80 +16,170 @@ WORKFLOWS = [
         "send_email": True,
         "states": [
             {
-                "state": WORKFLOW_STATES["Draft"][0],
+                "state": WORKFLOW_STATES.Draft.value,
                 "doc_status": 0,
-                "allow_edit": ROLE_PROFILE.BANK_ACC_USER.value,
+                "allow_edit": BANK_ROLE_PROFILES.BANK_ACC_USER.value,
             },
             {
-                "state": WORKFLOW_STATES["Submitted"][0],
+                "state": WORKFLOW_STATES.Submitted.value,
                 "doc_status": 0,
-                "allow_edit": ROLE_PROFILE.BANK_ACC_MANAGER.value,
+                "allow_edit": BANK_ROLE_PROFILES.BANK_ACC_MANAGER.value,
             },
             {
-                "state": WORKFLOW_STATES["Pending Approval"][0],
+                "state": WORKFLOW_STATES.Pending_Approval.value,
                 "doc_status": 0,
-                "allow_edit": ROLE_PROFILE.BANK_ACC_MANAGER.value,
+                "allow_edit": BANK_ROLE_PROFILES.BANK_ACC_MANAGER.value,
             },
             {
-                "state": WORKFLOW_STATES["Rejected"][0],
+                "state": WORKFLOW_STATES.Rejected.value,
                 "doc_status": 0,
                 "update_field": "disabled",
                 "update_value": 1,
-                "allow_edit": ROLE_PROFILE.BANK_ACC_MANAGER.value,
+                "allow_edit": BANK_ROLE_PROFILES.BANK_ACC_MANAGER.value,
             },
             {
-                "state": WORKFLOW_STATES["Approved"][0],
+                "state": WORKFLOW_STATES.Approved.value,
                 "doc_status": 0,
                 "update_field": "disabled",
                 "update_value": 0,
-                "allow_edit": ROLE_PROFILE.BANK_ACC_MANAGER.value,
+                "allow_edit": BANK_ROLE_PROFILES.BANK_ACC_MANAGER.value,
             },
             # other fields updated with server script: [`is_default`]
         ],
         "transitions": [
             {
-                "state": WORKFLOW_STATES["Draft"][0],
+                "state": WORKFLOW_STATES.Draft.value,
                 "action": WORKFLOW_ACTIONS.Submit.value,
-                "next_state": WORKFLOW_STATES["Submitted"][0],
-                "allowed": ROLE_PROFILE.BANK_ACC_USER.value,
+                "next_state": WORKFLOW_STATES.Submitted.value,
+                "allowed": BANK_ROLE_PROFILES.BANK_ACC_USER.value,
             },
             {
-                "state": WORKFLOW_STATES["Submitted"][0],
+                "state": WORKFLOW_STATES.Submitted.value,
                 "action": WORKFLOW_ACTIONS.Reject.value,
-                "next_state": WORKFLOW_STATES["Rejected"][0],
-                "allowed": ROLE_PROFILE.BANK_ACC_MANAGER.value,
+                "next_state": WORKFLOW_STATES.Rejected.value,
+                "allowed": BANK_ROLE_PROFILES.BANK_ACC_MANAGER.value,
             },
             {
-                "state": WORKFLOW_STATES["Submitted"][0],
+                "state": WORKFLOW_STATES.Submitted.value,
                 "action": WORKFLOW_ACTIONS.Review.value,
-                "next_state": WORKFLOW_STATES["Pending Approval"][0],
-                "allowed": ROLE_PROFILE.BANK_ACC_MANAGER.value,
+                "next_state": WORKFLOW_STATES.Pending_Approval.value,
+                "allowed": BANK_ROLE_PROFILES.BANK_ACC_MANAGER.value,
             },
             {
-                "state": WORKFLOW_STATES["Submitted"][0],
+                "state": WORKFLOW_STATES.Submitted.value,
                 "action": WORKFLOW_ACTIONS.Approve.value,
-                "next_state": WORKFLOW_STATES["Approved"][0],
-                "allowed": ROLE_PROFILE.BANK_ACC_MANAGER.value,
+                "next_state": WORKFLOW_STATES.Approved.value,
+                "allowed": BANK_ROLE_PROFILES.BANK_ACC_MANAGER.value,
             },
             {
-                "state": WORKFLOW_STATES["Pending Approval"][0],
+                "state": WORKFLOW_STATES.Pending_Approval.value,
                 "action": WORKFLOW_ACTIONS.Reject.value,
-                "next_state": WORKFLOW_STATES["Rejected"][0],
-                "allowed": ROLE_PROFILE.BANK_ACC_MANAGER.value,
+                "next_state": WORKFLOW_STATES.Rejected.value,
+                "allowed": BANK_ROLE_PROFILES.BANK_ACC_MANAGER.value,
             },
             {
-                "state": WORKFLOW_STATES["Pending Approval"][0],
+                "state": WORKFLOW_STATES.Pending_Approval.value,
                 "action": WORKFLOW_ACTIONS.Approve.value,
-                "next_state": WORKFLOW_STATES["Approved"][0],
-                "allowed": ROLE_PROFILE.BANK_ACC_MANAGER.value,
-            },
-            {
-                "state": WORKFLOW_STATES["Approved"][0],
-                "action": WORKFLOW_ACTIONS.Cancel.value,
-                "next_state": WORKFLOW_STATES["Cancelled"][0],
-                "allowed": ROLE_PROFILE.BANK_ACC_MANAGER.value,
+                "next_state": WORKFLOW_STATES.Approved.value,
+                "allowed": BANK_ROLE_PROFILES.BANK_ACC_MANAGER.value,
             },
         ],
-        "workflow_state_field": "workflow_state",
-    }
+        "workflow_state_field": "razorpayx_workflow_state",
+    },
+    ########### 2. Payment Entry ###########
+    {
+        "workflow_name": "RazorpayX Payment Entry Workflow",
+        "document_type": "Payment Entry",
+        "is_active": True,  # All other workflows become inactive on this DocType
+        "send_email": True,
+        "states": [
+            {
+                "state": WORKFLOW_STATES.Draft.value,
+                "doc_status": 0,
+                "allow_edit": PAYMENT_ROLE_PROFILES.Auto_Payment_Manager.value,
+            },
+            {
+                "state": WORKFLOW_STATES.Submitted.value,
+                "doc_status": 1,
+                "allow_edit": PAYMENT_ROLE_PROFILES.Auto_Payment_Manager.value,
+            },
+            {
+                "state": WORKFLOW_STATES.Pending_Approval.value,
+                "doc_status": 1,
+                "allow_edit": PAYMENT_ROLE_PROFILES.Auto_Payment_Manager.value,
+            },
+            {
+                "state": WORKFLOW_STATES.Approved.value,
+                "doc_status": 1,
+                "allow_edit": PAYMENT_ROLE_PROFILES.Auto_Payment_Manager.value,
+            },
+            {
+                "state": WORKFLOW_STATES.Cancelled.value,
+                "doc_status": 2,
+                "allow_edit": PAYMENT_ROLE_PROFILES.Auto_Payment_Manager.value,
+            },
+            {
+                "state": WORKFLOW_STATES.Rejected.value,
+                "doc_status": 2,
+                "allow_edit": PAYMENT_ROLE_PROFILES.Auto_Payment_Manager.value,
+            },
+        ],
+        "transitions": [
+            {
+                "state": WORKFLOW_STATES.Draft.value,
+                "action": WORKFLOW_ACTIONS.Submit.value,
+                "next_state": WORKFLOW_STATES.Submitted.value,
+                "allowed": PAYMENT_ROLE_PROFILES.Auto_Payment_Manager.value,
+            },
+            {
+                "state": WORKFLOW_STATES.Submitted.value,
+                "action": WORKFLOW_ACTIONS.Review.value,
+                "next_state": WORKFLOW_STATES.Pending_Approval.value,
+                "allowed": PAYMENT_ROLE_PROFILES.Auto_Payment_Manager.value,
+            },
+            {
+                "state": WORKFLOW_STATES.Pending_Approval.value,
+                "action": WORKFLOW_ACTIONS.Approve.value,
+                "next_state": WORKFLOW_STATES.Approved.value,
+                "allowed": PAYMENT_ROLE_PROFILES.Auto_Payment_Manager.value,
+            },
+            {
+                "state": WORKFLOW_STATES.Pending_Approval.value,
+                "action": WORKFLOW_ACTIONS.Reject.value,
+                "next_state": WORKFLOW_STATES.Rejected.value,
+                "allowed": PAYMENT_ROLE_PROFILES.Auto_Payment_Manager.value,
+            },
+            {
+                "state": WORKFLOW_STATES.Pending_Approval.value,
+                "action": WORKFLOW_ACTIONS.Cancel.value,
+                "next_state": WORKFLOW_STATES.Cancelled.value,
+                "allowed": PAYMENT_ROLE_PROFILES.Auto_Payment_Manager.value,
+            },
+            {
+                "state": WORKFLOW_STATES.Submitted.value,
+                "action": WORKFLOW_ACTIONS.Approve.value,
+                "next_state": WORKFLOW_STATES.Approved.value,
+                "allowed": PAYMENT_ROLE_PROFILES.Auto_Payment_Manager.value,
+            },
+            {
+                "state": WORKFLOW_STATES.Submitted.value,
+                "action": WORKFLOW_ACTIONS.Reject.value,
+                "next_state": WORKFLOW_STATES.Rejected.value,
+                "allowed": PAYMENT_ROLE_PROFILES.Auto_Payment_Manager.value,
+            },
+            {
+                "state": WORKFLOW_STATES.Submitted.value,
+                "action": WORKFLOW_ACTIONS.Cancel.value,
+                "next_state": WORKFLOW_STATES.Cancelled.value,
+                "allowed": PAYMENT_ROLE_PROFILES.Auto_Payment_Manager.value,
+            },
+            {
+                "state": WORKFLOW_STATES.Approved.value,
+                "action": WORKFLOW_ACTIONS.Cancel.value,
+                "next_state": WORKFLOW_STATES.Cancelled.value,
+                "allowed": PAYMENT_ROLE_PROFILES.Auto_Payment_Manager.value,
+            },
+        ],
+        "workflow_state_field": "razorpayx_workflow_state",
+    },
 ]
