@@ -12,7 +12,9 @@ before_uninstall = "razorpayx_integration.uninstall.before_uninstall"
 app_include_js = "razorpayx_integration.bundle.js"
 
 scheduler_events = {
-    "daily": ["razorpayx_integration.scheduler_events.fetch_daily_transactions.execute"]
+    "daily": [
+        "razorpayx_integration.payment_utils.scheduler_events.fetch_daily_transactions.execute"
+    ]
 }
 
 export_python_type_annotations = True
