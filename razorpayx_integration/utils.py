@@ -5,12 +5,12 @@ import frappe
 from frappe import _
 from frappe.utils import DateTimeLikeObject, add_to_date, get_timestamp, getdate
 
-from razorpayx_integration.constants import (
+from razorpayx_integration.razorpayx_integration.constants import (
     RAZORPAYX,
     RAZORPAYX_SETTING_DOCTYPE,
     SECONDS_IN_A_DAY_MINUS_ONE,
 )
-from razorpayx_integration.constants.payouts import (
+from razorpayx_integration.razorpayx_integration.constants.payouts import (
     RAZORPAYX_CONTACT_TYPE,
     RAZORPAYX_FUND_ACCOUNT_TYPE,
     RAZORPAYX_PAYOUT_MODE,

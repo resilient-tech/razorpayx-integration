@@ -5,7 +5,7 @@ import requests
 from frappe import _
 from frappe.app import UNSAFE_HTTP_METHODS
 
-from razorpayx_integration.constants import (
+from razorpayx_integration.razorpayx_integration.constants import (
     RAZORPAYX,
     RAZORPAYX_BASE_API_URL,
     RAZORPAYX_SETTING_DOCTYPE,

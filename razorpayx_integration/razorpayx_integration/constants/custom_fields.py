@@ -10,9 +10,11 @@ Note:
         ...
 """
 
-from razorpayx_integration.constants import RAZORPAYX_SETTING_DOCTYPE
 from razorpayx_integration.payment_utils.constants.roles import (
     DEFAULT_PERM_LEVELS as PAYMENT_PERM_LEVELS,
+)
+from razorpayx_integration.razorpayx_integration.constants import (
+    RAZORPAYX_SETTING_DOCTYPE,
 )
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
     RAZORPAYX_PAYOUT_MODE,

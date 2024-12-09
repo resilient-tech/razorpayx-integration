@@ -8,7 +8,9 @@ from razorpayx_integration.razorpayx_integration.apis.base import BaseRazorPayXA
 class RazorPayXTransaction(BaseRazorPayXAPI):
     """
     Handle APIs for `Bank Transaction` which are RazorPayX  accounts.
+
     :param account_name: RazorPayX account for which this `Transaction` is associate.
+
     ---
     Reference: https://razorpay.com/docs/api/x/transactions/
     """

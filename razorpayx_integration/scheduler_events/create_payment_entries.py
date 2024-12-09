@@ -1,7 +1,9 @@
 import frappe
 from frappe.query_builder import Case
 
-from razorpayx_integration.constants import RAZORPAYX_SETTING_DOCTYPE
+from razorpayx_integration.razorpayx_integration.constants import (
+    RAZORPAYX_SETTING_DOCTYPE,
+)
 
 
 def execute():
