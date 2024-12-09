@@ -1,6 +1,8 @@
 from razorpayx_integration.constants.payouts import RAZORPAYX_FUND_ACCOUNT_TYPE
 from razorpayx_integration.razorpayx_integration.apis.base import BaseRazorPayXAPI
-from razorpayx_integration.utils import validate_razorpayx_fund_account_type
+from razorpayx_integration.razorpayx_integration.utils.validation import (
+    validate_razorpayx_fund_account_type,
+)
 
 # todo : use composite API, If composite APIs working properly fine then no need of this API
 # todo: this need to be refactor and optimize
