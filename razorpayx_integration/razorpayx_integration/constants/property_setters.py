@@ -1,4 +1,6 @@
-from razorpayx_integration.payment_utils.constants.roles import ROLE_PROFILES
+from razorpayx_integration.razorpayx_integration.constants.roles import (
+    DEFAULT_PERM_LEVELS as BANK_ACC_PERM_LEVELS,
+)
 
 STANDARD_FIELDS_TO_HIDE = {"Employee": ["bank_name", "bank_ac_no", "iban"]}
 
@@ -16,14 +18,14 @@ PROPERTY_SETTERS = [
         "fieldname": "disabled",
         "property": "permlevel",
         "property_type": "Int",
-        "value": ROLE_PROFILES["Bank Acc Manager"]["permlevel"],
+        "value": BANK_ACC_PERM_LEVELS.BANK_ACC_MANAGER.value,
     },
     {
         "doctype": "Bank Account",
         "fieldname": "is_default",
         "property": "permlevel",
         "property_type": "Int",
-        "value": ROLE_PROFILES["Bank Acc Manager"]["permlevel"],
+        "value": BANK_ACC_PERM_LEVELS.BANK_ACC_MANAGER.value,
     },
 ]
 

@@ -11,11 +11,13 @@ Note:
 """
 
 from razorpayx_integration.constants import RAZORPAYX_SETTING_DOCTYPE
-from razorpayx_integration.constants.payouts import (
+from razorpayx_integration.payment_utils.constants.roles import (
+    DEFAULT_PERM_LEVELS as PAYMENT_PERM_LEVELS,
+)
+from razorpayx_integration.razorpayx_integration.constants.payouts import (
     RAZORPAYX_PAYOUT_MODE,
     RAZORPAYX_PAYOUT_STATUS,
 )
-from razorpayx_integration.constants.roles import PAYMENT_PERM_LEVEL, ROLE_PROFILES
 
 CUSTOM_FIELDS = {
     "Bank Account": [
@@ -68,7 +70,7 @@ CUSTOM_FIELDS = {
             "options": "Phone",
             "depends_on": "eval: doc.contact_person",
             "read_only": 1,
-            "permlevel": PAYMENT_PERM_LEVEL,
+            "permlevel": PAYMENT_PERM_LEVELS.PAYMENT_MANAGER.value,
         },
         {
             "fieldname": "razorpayx_payment_section",
@@ -76,7 +78,7 @@ CUSTOM_FIELDS = {
             "fieldtype": "Section Break",
             "insert_after": "contact_mobile",
             "depends_on": "eval: (doc.payment_type=='Pay' && doc.mode_of_payment!='Cash' && doc.paid_from && doc.party)",
-            "permlevel": PAYMENT_PERM_LEVEL,
+            "permlevel": PAYMENT_PERM_LEVELS.PAYMENT_MANAGER.value,
         },
         {
             "fieldname": "razorpayx_account",
@@ -87,7 +89,7 @@ CUSTOM_FIELDS = {
             "print_hide": 1,
             "read_only": 1,
             "hidden": 1,
-            "permlevel": PAYMENT_PERM_LEVEL,
+            "permlevel": PAYMENT_PERM_LEVELS.PAYMENT_MANAGER.value,
         },
         {
             "fieldname": "razorpayx_payment_mode",
@@ -97,7 +99,7 @@ CUSTOM_FIELDS = {
             "fetch_from": "party_bank_account.razorpayx_payment_mode",
             "depends_on": "eval: doc.razorpayx_account && doc.party_bank_account",
             "mandatory_depends_on": "eval:doc.razorpayx_account && doc.party_bank_account",
-            "permlevel": PAYMENT_PERM_LEVEL,
+            "permlevel": PAYMENT_PERM_LEVELS.PAYMENT_MANAGER.value,
         },
         {
             "fieldname": "pay_instantaneous",
@@ -107,13 +109,13 @@ CUSTOM_FIELDS = {
             "fetch_from": "party_bank_account.razorpayx_payment_mode",
             "depends_on": f"eval: doc.razorpayx_account && doc.razorpayx_payment_mode === '{RAZORPAYX_PAYOUT_MODE.BANK.value}'",
             "description": "Payment will be done with <strong>IMPS</strong> mode.",
-            "permlevel": PAYMENT_PERM_LEVEL,
+            "permlevel": PAYMENT_PERM_LEVELS.PAYMENT_MANAGER.value,
         },
         {
             "fieldname": "razorpayx_payment_cb",
             "fieldtype": "Column Break",
             "insert_after": "pay_instantaneous",
-            "permlevel": PAYMENT_PERM_LEVEL,
+            "permlevel": PAYMENT_PERM_LEVELS.PAYMENT_MANAGER.value,
         },
         {
             "fieldname": "payment_desc",
@@ -122,7 +124,7 @@ CUSTOM_FIELDS = {
             "insert_after": "razorpayx_payment_cb",
             "depends_on": "eval: doc.razorpayx_account",
             "mandatory_depends_on": "eval: doc.razorpayx_account",
-            "permlevel": PAYMENT_PERM_LEVEL,
+            "permlevel": PAYMENT_PERM_LEVELS.PAYMENT_MANAGER.value,
         },
         {
             "fieldname": "razorpayx_payment_status",
@@ -133,7 +135,7 @@ CUSTOM_FIELDS = {
             "default": RAZORPAYX_PAYOUT_STATUS.NOT_INITIATED.value,
             "depends_on": "eval: (doc.razorpayx_account && doc.creation)",
             "read_only": 1,
-            "permlevel": PAYMENT_PERM_LEVEL,
+            "permlevel": PAYMENT_PERM_LEVELS.PAYMENT_MANAGER.value,
         },
     ],
 }
