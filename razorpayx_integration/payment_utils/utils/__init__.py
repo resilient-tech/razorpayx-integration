@@ -100,6 +100,9 @@ def paisa_to_rupees(amount: int) -> int:
 
 
 ################# SETUPS #################
+
+
+### After Install Setup ###
 def make_roles_and_permissions(roles: list[dict]):
     """
     Make roles and permissions for the given roles.
@@ -252,3 +255,41 @@ def make_workflow_actions(actions: list[str]):
         documents,
         ignore_duplicates=True,
     )
+
+
+### Before Uninstall Setup ###
+def delete_custom_fields(custom_fields: dict):
+    for doctype, fields in custom_fields.items():
+        frappe.db.delete(
+            "Custom Field",
+            {
+                "fieldname": ("in", [field["fieldname"] for field in fields]),
+                "dt": doctype,
+            },
+        )
+
+        frappe.clear_cache(doctype=doctype)
+
+
+def delete_property_setters(property_setters: list[dict]):
+    field_map = {
+        "doctype": "doc_type",
+        "fieldname": "field_name",
+    }
+
+    for property_setter in property_setters:
+        for key, fieldname in field_map.items():
+            if key in property_setter:
+                property_setter[fieldname] = property_setter.pop(key)
+
+        frappe.db.delete("Property Setter", property_setter)
+
+
+def delete_role_and_permissions():
+    # TODO: How to delete roles? On deleting roles, what about the permissions? is it deleted automatically?
+    pass
+
+
+def delete_workflows():
+    # TODO: how to delete workflow related data? Or we should not delete it? only delete workflow not states and actions?
+    pass
