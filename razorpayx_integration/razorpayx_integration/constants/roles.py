@@ -62,12 +62,3 @@ ROLES = [
         "permissions": PERMISSIONS["Manager"],
     },
 ]
-
-CUSTOM_PERMISSIONS = [
-    {
-        "module": "razorpayx_integration",
-        "dt": "doctype",
-        "dn": "razorpayx_integration_setting",
-        "doctype": RAZORPAYX_SETTING_DOCTYPE,
-    }
-]

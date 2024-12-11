@@ -37,12 +37,3 @@ ROLES = [
         "permissions": PERMISSIONS["Basic"],
     },
 ]
-
-CUSTOM_PERMISSIONS = [
-    {
-        "module": "payment_utils",
-        "dt": "doctype",
-        "dn": "payment_setting",
-        "doctype": SETTING_DOCTYPE,
-    }
-]
