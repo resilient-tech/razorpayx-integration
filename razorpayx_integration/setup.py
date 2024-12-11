@@ -85,6 +85,7 @@ def update_roles_and_permissions():
 def make_workflows():
     click.secho(f"\nCreating Workflows for {APP_NAME}...", fg="blue")
 
+    # TODO: general should be here ...
     make_workflow_states()
     make_workflow_actions()
 
