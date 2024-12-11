@@ -178,7 +178,7 @@ def apply_roles_to_doctype(roles: list[dict]):
 
 def make_workflows(workflows: list[dict]):
     """
-    Create workflows with the given states and actions.
+    Create workflows.
 
     :param workflows: List of workflows
 
