@@ -31,7 +31,6 @@ def get_associate_razorpayx_account(
         {"bank_account": bank_account},
         fieldname,
         as_dict=True,
-        debug=True,
     )
 
 
