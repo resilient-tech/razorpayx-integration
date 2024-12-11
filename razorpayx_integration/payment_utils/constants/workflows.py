@@ -1,9 +1,9 @@
 """
 Workflows details like actions, states, workflow doctype are defined here.
 
-Which are common for all the payment related doctypes.
+Which are common for all the payments.
 
-Note: ⚠️ Do not define `Actions` and `States` somewhere else.
+Note: ⚠️ If `Actions` and `States` define elsewhere, then make sure to create them before creating workflows.
 """
 
 from razorpayx_integration.payment_utils.constants.enums import BaseEnum
