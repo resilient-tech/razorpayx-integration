@@ -1,9 +1,17 @@
 from datetime import datetime
 
+import frappe
 from frappe import _
-from frappe.utils import DateTimeLikeObject, add_to_date, get_timestamp, getdate
+from frappe.permissions import add_permission, update_permission_property
+from frappe.utils import (
+    DateTimeLikeObject,
+    add_to_date,
+    get_datetime,
+    get_timestamp,
+    getdate,
+)
 
-from razorpayx_integration.razorpayx_integration.constants import (
+from razorpayx_integration.constants import (
     SECONDS_IN_A_DAY_MINUS_ONE,
 )
 
@@ -89,3 +97,158 @@ def paisa_to_rupees(amount: int) -> int:
     ```
     """
     return amount / 100
+
+
+################# SETUPS #################
+def make_roles_and_permissions(roles: list[dict]):
+    """
+    Make roles and permissions for the given roles.
+
+    Apply roles to the doctypes with the given permissions.
+
+    Structure of the `roles` list:
+    ```py
+    [
+        {
+            "doctype": "DocType",
+            "role_name": "Role Name",
+            "permlevel": PERMLEVEL,
+            "permissions": ["read", "write", "create", "delete", "submit" ...],
+        },
+        ...,
+    ]
+    """
+    create_roles(list({role["role_name"] for role in roles}))
+    apply_roles_to_doctype(roles)
+
+
+def create_roles(role_names: list[str]):
+    """
+    Create roles with the given names.
+
+    If the role already exists, it will be skipped.
+
+    :param role_names: List of role names to be created.
+
+    Note: `Desk Access` is set to `1` for all the roles.
+    """
+    for role_name in role_names:
+        try:
+            frappe.get_doc(
+                {
+                    "doctype": "Role",
+                    "role_name": role_name,
+                    "desk_access": 1,
+                }
+            ).save()
+
+        except frappe.DuplicateEntryError:
+            pass
+
+
+def apply_roles_to_doctype(roles: list[dict]):
+    """
+    Apply roles to the doctypes with the given permissions.
+
+    :param roles: List of roles with permissions.
+
+    Structure of the `roles` list:
+    ```py
+    [
+        {
+            "doctype": "DocType",
+            "role_name": "Role Name",
+            "permlevel": PERMLEVEL,
+            "permissions": ["read", "write", "create", "delete", "submit" ...],
+        },
+        ...,
+    ]
+    ```
+    """
+    for role in roles:
+        doctype, role_name, permlevel, permissions = role.values()
+
+        # Adding role to the doctype
+        add_permission(doctype, role_name, permlevel)
+
+        # Updating permissions (types) for the roles in the doctype
+        for permission in permissions:
+            update_permission_property(doctype, role_name, permlevel, permission, 1)
+
+
+def make_workflows(workflows: list[dict]):
+    """
+    Create workflows with the given states and actions.
+
+    :param workflows: List of workflows
+
+    Note: Duplicate workflows will be skipped.
+    """
+    for workflow in workflows:
+        try:
+            doc = frappe.new_doc("Workflow")
+            doc.update(workflow)
+            doc.save()
+        except frappe.DuplicateEntryError:
+            pass
+
+
+def make_workflow_states(states: dict):
+    """
+    Create workflow states.
+
+    :param states: {state_name: style}
+    """
+    user = frappe.session.user or "Administrator"
+
+    fields = [
+        "name",
+        "workflow_state_name",
+        "style",
+        "creation",
+        "modified",
+        "owner",
+        "modified_by",
+    ]
+
+    documents = [
+        [state, state, style, get_datetime(), get_datetime(), user, user]
+        for state, style in states.items()
+    ]
+
+    frappe.db.bulk_insert(
+        "Workflow State",
+        fields,
+        documents,
+        ignore_duplicates=True,
+    )
+
+
+def make_workflow_actions(actions: list[str]):
+    """
+    Create workflow actions.
+
+    :param actions: list of action names
+    """
+    user = frappe.session.user or "Administrator"
+
+    fields = [
+        "name",
+        "workflow_action_name",
+        "creation",
+        "modified",
+        "owner",
+        "modified_by",
+    ]
+
+    documents = [
+        [action, action, get_datetime(), get_datetime(), user, user]
+        for action in actions
+    ]
+
+    frappe.db.bulk_insert(
+        "Workflow Action Master",
+        fields,
+        documents,
+        ignore_duplicates=True,
+    )
