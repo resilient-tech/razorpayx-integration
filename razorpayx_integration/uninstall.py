@@ -1,21 +1,13 @@
 import click
 
+from razorpayx_integration.constants import BUG_REPORT_URL
 from razorpayx_integration.hooks import app_title as APP_NAME
-from razorpayx_integration.razorpayx_integration.constants import BUG_REPORT_URL
-from razorpayx_integration.setup import (
-    delete_custom_fields,
-    delete_property_setters,
-    delete_role_and_permissions,
-    delete_workflow,
-)
+from razorpayx_integration.setup import delete_customizations
 
 
 def before_uninstall():
     try:
-        delete_custom_fields()
-        delete_property_setters()
-        delete_role_and_permissions()
-        delete_workflow()
+        delete_customizations()
     except Exception as e:
         click.secho(
             (

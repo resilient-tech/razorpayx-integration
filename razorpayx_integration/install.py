@@ -1,24 +1,16 @@
 import click
 import frappe
 
+from razorpayx_integration.constants import BUG_REPORT_URL
 from razorpayx_integration.hooks import app_title as APP_NAME
-from razorpayx_integration.razorpayx_integration.constants import BUG_REPORT_URL
-from razorpayx_integration.setup import (
-    make_custom_fields,
-    make_property_setters,
-    make_roles_and_permissions,
-    make_workflows,
-)
+from razorpayx_integration.setup import setup_customizations
 
 POST_INSTALL_PATCHES = ("set_default_razorpayx_payment_mode",)
 
 
 def after_install():
     try:
-        make_custom_fields()
-        make_property_setters()
-        make_roles_and_permissions()
-        make_workflows()
+        setup_customizations()
 
     except Exception as e:
         click.secho(
@@ -34,6 +26,7 @@ def after_install():
     click.secho(f"\nThank you for installing {APP_NAME}!", fg="green")
 
 
+# TODO: verify this function
 def run_post_install_patches():
     click.secho(f"\nRunning post-install patches for {APP_NAME}...", fg="yellow")
 
