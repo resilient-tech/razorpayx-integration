@@ -2,6 +2,10 @@ import frappe
 from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
 
 from razorpayx_integration.payment_utils.utils import (
+    delete_custom_fields,
+    delete_property_setters,
+    delete_role_and_permissions,
+    delete_workflows,
     make_roles_and_permissions,
     make_workflows,
 )
@@ -31,3 +35,22 @@ def make_razorpayx_property_setters():
 
 def make_razorpayx_workflow():
     make_workflows(WORKFLOWS)
+
+
+################### Before Uninstall Setup ###################
+def delete_razorpayx_custom_fields():
+    delete_custom_fields(CUSTOM_FIELDS)
+
+
+def delete_razorpayx_property_setters():
+    delete_property_setters(PROPERTY_SETTERS)
+
+
+def delete_razorpayx_role_and_permissions():
+    # TODO
+    delete_role_and_permissions(ROLES)
+
+
+def delete_razorpayx_workflows():
+    # TODO
+    delete_workflows(WORKFLOWS)
