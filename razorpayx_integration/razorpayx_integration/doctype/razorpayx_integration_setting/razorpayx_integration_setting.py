@@ -5,7 +5,7 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 
-from razorpayx_integration.razorpayx_integration.constants import RAZORPAYX
+from razorpayx_integration.constants import RAZORPAYX
 
 # TODO: add documentation tab to the doctype
 # TODO: Payout settings implementation

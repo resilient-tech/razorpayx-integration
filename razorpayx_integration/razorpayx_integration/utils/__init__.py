@@ -3,9 +3,7 @@ import json
 import frappe
 from frappe import _
 
-from razorpayx_integration.razorpayx_integration.constants import (
-    RAZORPAYX_SETTING_DOCTYPE,
-)
+from razorpayx_integration.constants import RAZORPAYX_SETTING_DOCTYPE
 
 
 @frappe.whitelist()

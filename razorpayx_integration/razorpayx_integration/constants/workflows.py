@@ -38,7 +38,7 @@ WORKFLOWS = [
                 "state": WORKFLOW_STATES.REJECTED.value,
                 "doc_status": 0,
                 "update_field": "disabled",
-                "update_value": 0,
+                "update_value": 1,
                 "allow_edit": BANK_ROLE_PROFILES.BANK_ACC_MANAGER.value,
             },
             {

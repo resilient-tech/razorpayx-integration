@@ -46,6 +46,7 @@ class RazorPayXTransaction(BaseRazorPayXAPI):
         :param from_date: The starting date for which transactions are to be fetched.
         :param to_date: The ending date for which transactions are to be fetched.
         :param count: The number of `Transaction` to be retrieved.
+
         ---
         Example Usage:
         ```
@@ -58,9 +59,12 @@ class RazorPayXTransaction(BaseRazorPayXAPI):
         ---
         response=fund_account.get_all(from_date="2024-01-01",to_date="2024-06-01",count=10)
         ```
+
         ---
+
         Note:
             - `from` and `to` can be str,date,datetime (in YYYY-MM-DD).
+
         ---
         Reference: https://razorpay.com/docs/api/x/transactions/fetch-all
         """

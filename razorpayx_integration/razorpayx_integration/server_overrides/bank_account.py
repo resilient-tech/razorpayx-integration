@@ -4,7 +4,9 @@ from erpnext.accounts.doctype.bank_account.bank_account import (
     BankAccount as _BankAccount,
 )
 
-from razorpayx_integration.constants.workflows import WORKFLOW_STATES
+from razorpayx_integration.razorpayx_integration.constants.workflows import (
+    WORKFLOW_STATES,
+)
 
 
 # TODO: reset payment details if `is_company_account` is checked ?
@@ -24,7 +26,10 @@ class BankAccount(_BankAccount):
         - Rejected: Make the `Bank Account` non-default
         - Approved: Make the `Bank Account` default
         """
-        if self.workflow_state == WORKFLOW_STATES["Rejected"][0]:
+        if self.workflow_state in (
+            WORKFLOW_STATES.REJECTED.value,
+            WORKFLOW_STATES.CANCELLED.value,
+        ):
             self.is_default = 0
-        elif self.workflow_state == WORKFLOW_STATES["Approved"][0]:
+        elif self.workflow_state == WORKFLOW_STATES.APPROVED.value:
             self.is_default = 1

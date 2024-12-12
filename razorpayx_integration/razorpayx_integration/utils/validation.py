@@ -1,7 +1,7 @@
 import frappe
 from frappe import _
 
-from razorpayx_integration.razorpayx_integration.constants import RAZORPAYX
+from razorpayx_integration.constants import RAZORPAYX
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
     RAZORPAYX_CONTACT_TYPE,
     RAZORPAYX_FUND_ACCOUNT_TYPE,
