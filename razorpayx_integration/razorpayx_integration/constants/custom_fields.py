@@ -57,7 +57,7 @@ CUSTOM_FIELDS = {
             "fieldtype": "Link",
             "insert_after": "upi_id",
             "options": "Contact",
-            "depends_on": f"eval: doc.razorpayx_payment_mode === '{RAZORPAYX_PAYOUT_MODE.LINK.value}'",
+            "depends_on": f"eval: doc.party_type && doc.party && doc.razorpayx_payment_mode === '{RAZORPAYX_PAYOUT_MODE.LINK.value}'",
             "description": "Contact to whom the payment link will be sent.",
         },
     ],
