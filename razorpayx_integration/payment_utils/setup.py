@@ -37,7 +37,9 @@ def make_payment_utils_property_setters():
 
 def make_payment_utils_workflow():
     """
-    Note: ⚠️ All workflow `states` and `actions` also created here. So, no need to create them separately again.
+    Note: ⚠️ All `Payment Utils` workflow `states` and `actions` also created here.
+
+    So, no need to create them separately again.
     """
 
     # create states
