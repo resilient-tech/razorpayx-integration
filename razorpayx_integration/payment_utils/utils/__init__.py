@@ -285,11 +285,11 @@ def delete_property_setters(property_setters: list[dict]):
         frappe.db.delete("Property Setter", property_setter)
 
 
-def delete_role_and_permissions():
+def delete_role_and_permissions(roles):
     # TODO: How to delete roles? On deleting roles, what about the permissions? is it deleted automatically?
     pass
 
 
-def delete_workflows():
+def delete_workflows(workflows):
     # TODO: how to delete workflow related data? Or we should not delete it? only delete workflow not states and actions?
     pass
