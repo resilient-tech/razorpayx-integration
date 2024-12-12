@@ -16,21 +16,24 @@ from razorpayx_integration.payment_utils.constants.roles import (
 class ROLE_PROFILES(BaseEnum):
     BANK_ACC_MANAGER = "Bank Account Manager"
     BANK_ACC_USER = "Bank Account User"
+    RAZORPAYX_MANAGER = "RazorpayX Integration Manager"
 
 
 class DEFAULT_PERM_LEVELS(BaseEnum):
     BANK_ACC_MANAGER = 7
     BANK_ACC_USER = 0
+    RAZORPAYX_MANAGER = 0
 
 
 ROLES = [
     # RazorpayX integration related roles
     {
         "doctype": RAZORPAYX_SETTING_DOCTYPE,
-        "role_name": PAYMENT_PROFILES.PAYMENT_MANAGER.value,
+        "role_name": PAYMENT_PROFILES.AUTO_PAYMENTS_MANAGER.value,
         "permlevel": 0,
         "permissions": PERMISSIONS["Manager"],
     },
+    ## Bank Account ##
     {
         "doctype": "Bank Account",
         "role_name": ROLE_PROFILES.BANK_ACC_MANAGER.value,
@@ -44,6 +47,13 @@ ROLES = [
         "permissions": PERMISSIONS["User"],
     },
     {
+        "doctype": "Bank Account",
+        "role_name": ROLE_PROFILES.RAZORPAYX_MANAGER.value,
+        "permlevel": 0,
+        "permissions": PERMISSIONS["Basic"],
+    },
+    ## Bank ##
+    {
         "doctype": "Bank",
         "role_name": ROLE_PROFILES.BANK_ACC_MANAGER.value,
         "permlevel": 0,
@@ -56,9 +66,23 @@ ROLES = [
         "permissions": PERMISSIONS["Basic"],
     },
     {
+        "doctype": "Bank",
+        "role_name": ROLE_PROFILES.RAZORPAYX_MANAGER.value,
+        "permlevel": 0,
+        "permissions": PERMISSIONS["Basic"],
+    },
+    ## Payment Entry ##
+    {
         "doctype": "Payment Entry",
-        "role_name": PAYMENT_PROFILES.PAYMENT_MANAGER.value,
-        "permlevel": PAYMENT_PERM_LEVELS.PAYMENT_MANAGER.value,
+        "role_name": PAYMENT_PROFILES.AUTO_PAYMENTS_MANAGER.value,
+        "permlevel": PAYMENT_PERM_LEVELS.AUTO_PAYMENTS_MANAGER.value,
         "permissions": PERMISSIONS["Manager"],
+    },
+    ## Email Template ##
+    {
+        "doctype": "Email Template",
+        "role_name": ROLE_PROFILES.RAZORPAYX_MANAGER.value,
+        "permlevel": 0,
+        "permissions": PERMISSIONS["User"],
     },
 ]

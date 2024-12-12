@@ -26,10 +26,10 @@ class BankAccount(_BankAccount):
         - Rejected: Make the `Bank Account` non-default
         - Approved: Make the `Bank Account` default
         """
-        if self.workflow_state in (
+        if self.razorpayx_workflow_state in (
             WORKFLOW_STATES.REJECTED.value,
             WORKFLOW_STATES.CANCELLED.value,
         ):
             self.is_default = 0
-        elif self.workflow_state == WORKFLOW_STATES.APPROVED.value:
+        elif self.razorpayx_workflow_state == WORKFLOW_STATES.APPROVED.value:
             self.is_default = 1

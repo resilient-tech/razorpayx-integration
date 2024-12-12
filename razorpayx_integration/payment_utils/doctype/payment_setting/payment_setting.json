@@ -260,7 +260,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-12-04 16:02:02.919263",
+ "modified": "2024-12-12 16:27:03.615033",
  "modified_by": "Administrator",
  "module": "Payment Utils",
  "name": "Payment Setting",
@@ -274,7 +274,7 @@
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "System Manager",
+   "role": "Auto Payments Manager",
    "share": 1,
    "write": 1
   }

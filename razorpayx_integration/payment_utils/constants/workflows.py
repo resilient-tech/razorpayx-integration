@@ -16,6 +16,7 @@ class WORKFLOW_ACTIONS(BaseEnum):
     REVIEW = "Review"
     SUBMIT = "Submit"
     CANCEL = "Cancel"
+    REQUEST_APPROVAL = "Request Approval"
 
 
 class WORKFLOW_STATES(BaseEnum):
@@ -31,7 +32,7 @@ class WORKFLOW_STATES(BaseEnum):
 STATES_COLORS = {
     WORKFLOW_STATES.APPROVED.value: "Success",
     WORKFLOW_STATES.PENDING.value: "Warning",
-    WORKFLOW_STATES.DRAFT.value: "Warning",
+    WORKFLOW_STATES.DRAFT.value: "Danger",
     WORKFLOW_STATES.REJECTED.value: "Danger",
     WORKFLOW_STATES.SUBMITTED.value: "Primary",
     WORKFLOW_STATES.PENDING_APPROVAL.value: "Warning",
