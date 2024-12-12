@@ -2,10 +2,13 @@
 Fetch Daily Transactions from RazorPayX and save it in ERPNext.
 """
 
+from razorpayx_integration.payment_utils.utils import yesterday
+from razorpayx_integration.razorpayx_integration.utils import (
+    get_enabled_razorpayx_accounts,
+)
 from razorpayx_integration.razorpayx_integration.utils.transaction import (
     sync_razorpayx_bank_transactions,
 )
-from razorpayx_integration.utils import get_enabled_razorpayx_accounts, yesterday
 
 
 def execute():

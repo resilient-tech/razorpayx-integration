@@ -194,7 +194,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-12-04 16:07:40.349694",
+ "modified": "2024-12-12 16:41:39.616523",
  "modified_by": "Administrator",
  "module": "Razorpayx Integration",
  "name": "RazorPayX Integration Setting",
@@ -219,7 +219,7 @@
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "RazorpayX Payments Manager",
+   "role": "RazorpayX Integration Manager",
    "share": 1,
    "write": 1
   }

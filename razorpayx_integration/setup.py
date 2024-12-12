@@ -1,182 +1,77 @@
 import click
-import frappe
-from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
-from frappe.permissions import (
-    add_permission,
-)
-from frappe.permissions import (
-    setup_custom_perms as update_custom_perms,
-)
-from frappe.permissions import (
-    update_permission_property as update_permission,
-)
-from frappe.utils import get_datetime
 
-from razorpayx_integration.constants.custom_fields import CUSTOM_FIELDS
-from razorpayx_integration.constants.property_setters import PROPERTY_SETTERS
-from razorpayx_integration.constants.roles import CUSTOM_PERMISSIONS, ROLES
-from razorpayx_integration.constants.workflows import (
-    WORKFLOW_ACTIONS,
-    WORKFLOW_STATES,
-    WORKFLOWS,
-)
 from razorpayx_integration.hooks import app_title as APP_NAME
+from razorpayx_integration.payment_utils.setup import *
+from razorpayx_integration.razorpayx_integration.setup import *
 
 
 ##### After Install Setup #####
+def setup_customizations():
+    make_roles_and_permissions()
+    make_custom_fields()
+    make_property_setters()
+    make_workflows()
+
+
+def make_roles_and_permissions():
+    click.secho(f"\nCreating Roles and Permissions for {APP_NAME}...", fg="blue")
+
+    make_payment_utils_roles_and_permissions()
+    make_razorpayx_roles_and_permissions()
+
+
 def make_custom_fields():
     click.secho(f"\nCreating Custom Fields for {APP_NAME}...", fg="blue")
-    create_custom_fields(CUSTOM_FIELDS)
+
+    make_payment_utils_custom_fields()
+    make_razorpayx_custom_fields()
 
 
 def make_property_setters():
     click.secho(f"\nCreating Property Setters for {APP_NAME}...", fg="blue")
-    for property_setter in PROPERTY_SETTERS:
-        frappe.make_property_setter(property_setter)
 
-
-def make_roles_and_permissions():
-    click.secho(f"\nCreating Role and Permissions for {APP_NAME}...", fg="blue")
-
-    # creating a roles
-    for role in ROLES:
-        try:
-            frappe.get_doc(
-                {
-                    "doctype": "Role",
-                    "role_name": role["role_name"],
-                    "desk_access": 1,
-                },
-            ).save()
-
-        except frappe.DuplicateEntryError:
-            pass
-
-    # TODO Make it more efficient and robust
-    # setting up custom permissions
-    setup_custom_permissions()
-
-    # setting up roles and permissions
-    update_roles_and_permissions()
-
-
-def setup_custom_permissions():
-    for custom_permission in CUSTOM_PERMISSIONS:
-        frappe.reload_doc(
-            module=custom_permission["module"],
-            dt=custom_permission["dt"],
-            dn=custom_permission["dn"],
-        )
-
-        update_custom_perms(custom_permission["doctype"])
-
-
-def update_roles_and_permissions():
-    for role in ROLES:
-        doctypes, role_name, permlevel, permissions = role.values()
-
-        for doctype in doctypes:
-            add_permission(doctype, role_name, permlevel)
-
-            for permission in permissions:
-                update_permission(doctype, role_name, permlevel, permission, 1)
+    make_payment_utils_property_setters()
+    make_razorpayx_property_setters()
 
 
 def make_workflows():
     click.secho(f"\nCreating Workflows for {APP_NAME}...", fg="blue")
 
-    make_workflow_states()
-    make_workflow_actions()
-
-    for workflow in WORKFLOWS:
-        try:
-            doc = frappe.new_doc("Workflow")
-            doc.update(workflow)
-            doc.save()
-        except frappe.DuplicateEntryError:
-            pass
-
-
-def make_workflow_states():
-    user = frappe.session.user or "Administrator"
-
-    frappe.db.bulk_insert(
-        "Workflow State",
-        [
-            "name",
-            "workflow_state_name",
-            "style",
-            "creation",
-            "modified",
-            "owner",
-            "modified_by",
-        ],
-        [
-            [state[0], state[0], state[1], get_datetime(), get_datetime(), user, user]
-            for _, state in WORKFLOW_STATES.items()
-        ],
-        ignore_duplicates=True,
-    )
-
-
-def make_workflow_actions():
-    user = frappe.session.user or "Administrator"
-
-    frappe.db.bulk_insert(
-        "Workflow Action Master",
-        [
-            "name",
-            "workflow_action_name",
-            "creation",
-            "modified",
-            "owner",
-            "modified_by",
-        ],
-        [
-            [action, action, get_datetime(), get_datetime(), user, user]
-            for action in WORKFLOW_ACTIONS.values()
-        ],
-        ignore_duplicates=True,
-    )
+    make_payment_utils_workflows()
+    make_razorpayx_workflows()
 
 
 ##### Before Uninstall Setup #####
+def delete_customizations():
+    delete_workflows()
+    delete_custom_fields()
+    delete_property_setters()
+    delete_role_and_permissions()
+
+
 def delete_custom_fields():
-    click.secho(f"\nDeleting custom fields of {APP_NAME}...", fg="blue")
+    click.secho(f"\nDeleting Custom Fields of {APP_NAME}...", fg="blue")
 
-    for doctype, fields in CUSTOM_FIELDS.items():
-        frappe.db.delete(
-            "Custom Field",
-            {
-                "fieldname": ("in", [field["fieldname"] for field in fields]),
-                "dt": doctype,
-            },
-        )
-
-        frappe.clear_cache(doctype=doctype)
+    delete_razorpayx_custom_fields()
+    delete_payment_utils_custom_fields()
 
 
 def delete_property_setters():
-    click.secho(f"\nDeleting property setters off {APP_NAME}...", fg="blue")
+    click.secho(f"\nDeleting Property Setters off {APP_NAME}...", fg="blue")
 
-    field_map = {
-        "doctype": "doc_type",
-        "fieldname": "field_name",
-    }
+    delete_razorpayx_property_setters()
+    delete_payment_utils_property_setters()
 
-    for property_setter in PROPERTY_SETTERS:
-        for key, fieldname in field_map.items():
-            if key in property_setter:
-                property_setter[fieldname] = property_setter.pop(key)
 
-        frappe.db.delete("Property Setter", property_setter)
+def delete_workflows():
+    click.secho(f"\nDeleting Workflows of {APP_NAME}...", fg="blue")
+
+    delete_razorpayx_workflows()
+    delete_payment_utils_workflows()
 
 
 def delete_role_and_permissions():
-    # todo: delete role and permissions
-    pass
+    click.secho(f"\nDeleting Roles and Permissions of {APP_NAME}...", fg="blue")
 
-
-def delete_workflow():
-    # todo: delete workflow
-    pass
+    delete_razorpayx_role_and_permissions()
+    delete_payment_utils_role_and_permissions()

@@ -2,20 +2,22 @@ import frappe
 from frappe.utils import DateTimeLikeObject, now_datetime
 
 from razorpayx_integration.constants import (
-    BANK_TRANSACTION_DOCTYPE,
     RAZORPAYX_SETTING_DOCTYPE,
+)
+from razorpayx_integration.payment_utils.utils import (
+    get_str_datetime_from_epoch,
+    paisa_to_rupees,
 )
 from razorpayx_integration.razorpayx_integration.apis.transaction import (
     RazorPayXTransaction,
 )
-from razorpayx_integration.utils import get_str_datetime_from_epoch, paisa_to_rupees
 
 
 # todo: this file need to be refactor and optimize
 @frappe.whitelist()
 def sync_bank_transactions(bank_account: str, from_date: DateTimeLikeObject):
     frappe.has_permission(RAZORPAYX_SETTING_DOCTYPE, bank_account, throw=True)
-    frappe.has_permission(BANK_TRANSACTION_DOCTYPE, throw=True)
+    frappe.has_permission("Bank Transaction", throw=True)
 
     return sync_razorpayx_bank_transactions(
         bank_account, from_date
@@ -93,7 +95,7 @@ def get_razorpayx_transactions(
 # ? make more efficient by using ignore duplicates
 def get_existing_transactions(bank_account: str):
     return frappe.get_all(
-        BANK_TRANSACTION_DOCTYPE,
+        "Bank Transaction",
         fields="transaction_id",
         filters={"bank_account": bank_account},
         pluck="transaction_id",
@@ -116,7 +118,7 @@ def get_mapped_razorpayx_transaction(transaction: dict, **kwargs) -> dict:
         return notes
 
     mapped_transaction = {
-        "doctype": BANK_TRANSACTION_DOCTYPE,
+        "doctype": "Bank Transaction",
         "transaction_id": transaction["id"],
         "date": get_str_datetime_from_epoch(transaction["created_at"]),
         "deposit": paisa_to_rupees(transaction["credit"]),

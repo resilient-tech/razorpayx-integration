@@ -1,0 +1,295 @@
+from datetime import datetime
+
+import frappe
+from frappe import _
+from frappe.permissions import add_permission, update_permission_property
+from frappe.utils import (
+    DateTimeLikeObject,
+    add_to_date,
+    get_datetime,
+    get_timestamp,
+    getdate,
+)
+
+from razorpayx_integration.constants import (
+    SECONDS_IN_A_DAY_MINUS_ONE,
+)
+
+
+def get_start_of_day_epoch(date: DateTimeLikeObject = None) -> int:
+    """
+    Return the Unix timestamp (seconds since Epoch) for the start of the given `date`.\n
+    If `date` is None, the current date's start of day timestamp is returned.
+
+    :param date: A date string in "YYYY-MM-DD" format or a (datetime,date) object.
+    :return: Unix timestamp for the start of the given date.
+    ---
+    Example:
+    ```
+    get_start_of_day_epoch("2024-05-30") ==> 1717007400
+    get_start_of_day_epoch(datetime(2024, 5, 30)) ==> 1717007400
+    ```
+    ---
+    Note:
+        - Unix timestamp refers to `2024-05-30 12:00:00 AM`
+    """
+    return int(get_timestamp(date))
+
+
+def get_end_of_day_epoch(date: DateTimeLikeObject = None) -> int:
+    """
+    Return the Unix timestamp (seconds since Epoch) for the end of the given `date`.\n
+    If `date` is None, the current date's end of day timestamp is returned.
+
+    :param date: A date string in "YYYY-MM-DD" format or a (datetime,date) object.
+    :return: Unix timestamp for the end of the given date.
+    ---
+    Example:
+    ```
+    get_end_of_day_epoch("2024-05-30") ==> 1717093799
+    get_end_of_day_epoch(datetime(2024, 5, 30)) ==> 1717093799
+    ```
+    ---
+    Note:
+        - Unix timestamp refers to `2024-05-30 11:59:59 PM`
+    """
+    return int(get_timestamp(date)) + SECONDS_IN_A_DAY_MINUS_ONE
+
+
+def get_str_datetime_from_epoch(epoch_time: int) -> str:
+    """
+    Get Local datetime from Epoch Time.\n
+    Format: yyyy-mm-dd HH:MM:SS
+    """
+    return datetime.fromtimestamp(epoch_time).strftime("%Y-%m-%d %H:%M:%S")
+
+
+def yesterday():
+    """
+    Get the date of yesterday from the current date.
+    """
+    return add_to_date(getdate(), days=-1)
+
+
+def rupees_to_paisa(amount: float | int) -> int:
+    """
+    Convert the given amount in Rupees to Paisa.
+
+    :param amount: The amount in Rupees to be converted to Paisa.
+
+    Example:
+    ```
+    rupees_to_paisa(100) ==> 10000
+    ```
+    """
+    return amount * 100
+
+
+def paisa_to_rupees(amount: int) -> int:
+    """
+    Convert the given amount in Paisa to Rupees.
+
+    :param amount: The amount in Paisa to be converted to Rupees.
+
+    Example:
+    ```
+    paisa_to_rupees(10000) ==> 100
+    ```
+    """
+    return amount / 100
+
+
+################# SETUPS #################
+
+
+### After Install Setup ###
+def make_roles_and_permissions(roles: list[dict]):
+    """
+    Make roles and permissions for the given roles.
+
+    Apply roles to the doctypes with the given permissions.
+
+    Structure of the `roles` list:
+    ```py
+    [
+        {
+            "doctype": "DocType",
+            "role_name": "Role Name",
+            "permlevel": PERMLEVEL,
+            "permissions": ["read", "write", "create", "delete", "submit" ...],
+        },
+        ...,
+    ]
+    """
+    create_roles(list({role["role_name"] for role in roles}))
+    apply_roles_to_doctype(roles)
+
+
+def create_roles(role_names: list[str]):
+    """
+    Create roles with the given names.
+
+    If the role already exists, it will be skipped.
+
+    :param role_names: List of role names to be created.
+
+    Note: `Desk Access` is set to `1` for all the roles.
+    """
+    for role_name in role_names:
+        try:
+            frappe.get_doc(
+                {
+                    "doctype": "Role",
+                    "role_name": role_name,
+                    "desk_access": 1,
+                }
+            ).save()
+
+        except frappe.DuplicateEntryError:
+            pass
+
+
+def apply_roles_to_doctype(roles: list[dict]):
+    """
+    Apply roles to the doctypes with the given permissions.
+
+    :param roles: List of roles with permissions.
+
+    Structure of the `roles` list:
+    ```py
+    [
+        {
+            "doctype": "DocType",
+            "role_name": "Role Name",
+            "permlevel": PERMLEVEL,
+            "permissions": ["read", "write", "create", "delete", "submit" ...],
+        },
+        ...,
+    ]
+    ```
+    """
+    for role in roles:
+        doctype, role_name, permlevel, permissions = role.values()
+
+        # Adding role to the doctype
+        add_permission(doctype, role_name, permlevel)
+
+        # Updating permissions (types) for the roles in the doctype
+        for permission in permissions:
+            update_permission_property(doctype, role_name, permlevel, permission, 1)
+
+
+def make_workflows(workflows: list[dict]):
+    """
+    Create workflows.
+
+    :param workflows: List of workflows
+
+    Note: Duplicate workflows will be skipped.
+    """
+    for workflow in workflows:
+        try:
+            doc = frappe.new_doc("Workflow")
+            doc.update(workflow)
+            doc.save()
+        except frappe.DuplicateEntryError:
+            pass
+
+
+def make_workflow_states(states: dict):
+    """
+    Create workflow states.
+
+    :param states: {state_name: style}
+    """
+    user = frappe.session.user or "Administrator"
+
+    fields = [
+        "name",
+        "workflow_state_name",
+        "style",
+        "creation",
+        "modified",
+        "owner",
+        "modified_by",
+    ]
+
+    documents = [
+        [state, state, style, get_datetime(), get_datetime(), user, user]
+        for state, style in states.items()
+    ]
+
+    frappe.db.bulk_insert(
+        "Workflow State",
+        fields,
+        documents,
+        ignore_duplicates=True,
+    )
+
+
+def make_workflow_actions(actions: list[str]):
+    """
+    Create workflow actions.
+
+    :param actions: list of action names
+    """
+    user = frappe.session.user or "Administrator"
+
+    fields = [
+        "name",
+        "workflow_action_name",
+        "creation",
+        "modified",
+        "owner",
+        "modified_by",
+    ]
+
+    documents = [
+        [action, action, get_datetime(), get_datetime(), user, user]
+        for action in actions
+    ]
+
+    frappe.db.bulk_insert(
+        "Workflow Action Master",
+        fields,
+        documents,
+        ignore_duplicates=True,
+    )
+
+
+### Before Uninstall Setup ###
+def delete_custom_fields(custom_fields: dict):
+    for doctype, fields in custom_fields.items():
+        frappe.db.delete(
+            "Custom Field",
+            {
+                "fieldname": ("in", [field["fieldname"] for field in fields]),
+                "dt": doctype,
+            },
+        )
+
+        frappe.clear_cache(doctype=doctype)
+
+
+def delete_property_setters(property_setters: list[dict]):
+    field_map = {
+        "doctype": "doc_type",
+        "fieldname": "field_name",
+    }
+
+    for property_setter in property_setters:
+        for key, fieldname in field_map.items():
+            if key in property_setter:
+                property_setter[fieldname] = property_setter.pop(key)
+
+        frappe.db.delete("Property Setter", property_setter)
+
+
+def delete_role_and_permissions(roles):
+    # TODO: How to delete roles? On deleting roles, what about the permissions? is it deleted automatically?
+    pass
+
+
+def delete_workflows(workflows):
+    # TODO: how to delete workflow related data? Or we should not delete it? only delete workflow not states and actions?
+    pass
