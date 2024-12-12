@@ -11,6 +11,7 @@ POST_INSTALL_PATCHES = ("set_default_razorpayx_payment_mode",)
 def after_install():
     try:
         setup_customizations()
+        run_post_install_patches()
 
     except Exception as e:
         click.secho(
