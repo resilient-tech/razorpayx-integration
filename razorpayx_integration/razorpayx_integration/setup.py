@@ -33,7 +33,7 @@ def make_razorpayx_property_setters():
         frappe.make_property_setter(property_setter)
 
 
-def make_razorpayx_workflow():
+def make_razorpayx_workflows():
     make_workflows(WORKFLOWS)
 
 

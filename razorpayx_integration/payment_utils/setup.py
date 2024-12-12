@@ -39,7 +39,7 @@ def make_payment_utils_property_setters():
         frappe.make_property_setter(property_setter)
 
 
-def make_payment_utils_workflow():
+def make_payment_utils_workflows():
     """
     Note: ⚠️ All `Payment Utils` workflow `states` and `actions` also created here.
 
