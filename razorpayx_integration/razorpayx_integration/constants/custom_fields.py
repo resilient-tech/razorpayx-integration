@@ -26,7 +26,7 @@ CUSTOM_FIELDS = {
             "label": "RazorpayX Payment Details",
             "fieldtype": "Section Break",
             "insert_after": "bank_account_no",
-            "depends_on": "eval: !doc.is_company_account",
+            "depends_on": "eval: !doc.is_company_account && doc.party_type && doc.party",
         },
         {
             "fieldname": "razorpayx_payment_mode",
@@ -57,7 +57,7 @@ CUSTOM_FIELDS = {
             "fieldtype": "Link",
             "insert_after": "upi_id",
             "options": "Contact",
-            "depends_on": f"eval: doc.party_type && doc.party && doc.razorpayx_payment_mode === '{RAZORPAYX_PAYOUT_MODE.LINK.value}'",
+            "depends_on": f"eval: doc.razorpayx_payment_mode === '{RAZORPAYX_PAYOUT_MODE.LINK.value}'",
             "description": "Contact to whom the payment link will be sent.",
         },
     ],
@@ -77,7 +77,7 @@ CUSTOM_FIELDS = {
             "label": "RazorpayX Payment",
             "fieldtype": "Section Break",
             "insert_after": "contact_mobile",
-            "depends_on": "eval: doc.payment_type=='Pay' && doc.mode_of_payment!='Cash' && doc.paid_from && doc.party",
+            "depends_on": "eval: doc.make_online_payment",
             "permlevel": PAYMENT_PERM_LEVELS.AUTO_PAYMENTS_MANAGER.value,
         },
         {

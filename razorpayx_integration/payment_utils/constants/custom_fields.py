@@ -10,6 +10,10 @@ Note:
         ...
 """
 
+from razorpayx_integration.payment_utils.constants.roles import (
+    DEFAULT_PERM_LEVELS as PERM_LEVELS,
+)
+
 # TODO: permission level are left to add
 
 BLOCK_AUTO_PAYMENT = {
@@ -40,5 +44,16 @@ CUSTOM_FIELDS = {
     ],
     "Employee": [
         {**BLOCK_AUTO_PAYMENT, "insert_after": "bank_name"},
+    ],
+    "Payment Entry": [
+        {
+            "fieldname": "make_online_payment",
+            "label": "Make Online Payment",
+            "fieldtype": "Check",
+            "insert_after": "payment_order_status",
+            "depends_on": "eval: doc.payment_type=='Pay' && doc.mode_of_payment!='Cash' && doc.paid_from && doc.party",
+            "description": "Make online payment using <strong>Payments Integration</strong>",
+            "permlevel": PERM_LEVELS.AUTO_PAYMENTS_MANAGER.value,
+        },
     ],
 }
