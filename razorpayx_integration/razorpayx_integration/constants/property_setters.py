@@ -5,21 +5,49 @@ from razorpayx_integration.razorpayx_integration.constants.payouts import (
 STANDARD_FIELDS_TO_HIDE = {"Employee": ["bank_name", "bank_ac_no", "iban"]}
 
 # PE mandatory fields on `make_online_payment`
-PE_MANDATORY_FIELDS_ON_RAZORPAYX = [
-    "party_type",
-    "party",
-    "bank_account",
+PE_MANDATORY_FIELDS_FOR_PAYMENT = [
+    "bank_account",  # Company Bank Account
     "party_bank_account",
 ]
 
 PROPERTY_SETTERS = [
+    ## Payment Entry ##
     {
         "doctype": "Payment Entry",
         "fieldname": "contact_person",
         "property": "mandatory_depends_on",
         "property_type": "Data",
         "value": f"eval: doc.make_online_payment && doc.razorpayx_payment_mode === '{RAZORPAYX_PAYOUT_MODE.LINK.value}'",
-    }
+    },
+    ## Bank Account ##
+    {
+        "doctype": "Bank Account",
+        "fieldname": "online_payment_mode",
+        "property": "options",
+        "property_type": "Data",
+        "value": RAZORPAYX_PAYOUT_MODE.values_as_string(),
+    },
+    {
+        "doctype": "Bank Account",
+        "fieldname": "online_payment_mode",
+        "property": "default",
+        "property_type": "Data",
+        "value": RAZORPAYX_PAYOUT_MODE.BANK.value,
+    },
+    {
+        "doctype": "Bank Account",
+        "fieldname": "upi_id",
+        "property": "depends_on",
+        "property_type": "Data",
+        "value": f"eval: doc.online_payment_mode === '{RAZORPAYX_PAYOUT_MODE.UPI.value}'",
+    },
+    {
+        "doctype": "Bank Account",
+        "fieldname": "contact_to_pay",
+        "property": "depends_on",
+        "property_type": "Data",
+        "value": f"eval: doc.online_payment_mode === '{RAZORPAYX_PAYOUT_MODE.LINK.value}'",
+    },
 ]
 
 for doctype, fields in STANDARD_FIELDS_TO_HIDE.items():
@@ -34,7 +62,7 @@ for doctype, fields in STANDARD_FIELDS_TO_HIDE.items():
             }
         )
 
-for field in PE_MANDATORY_FIELDS_ON_RAZORPAYX:
+for field in PE_MANDATORY_FIELDS_FOR_PAYMENT:
     PROPERTY_SETTERS.append(
         {
             "doctype": "Payment Entry",

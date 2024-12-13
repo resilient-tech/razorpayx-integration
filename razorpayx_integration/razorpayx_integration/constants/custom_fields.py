@@ -18,53 +18,12 @@ from razorpayx_integration.razorpayx_integration.constants.payouts import (
 )
 
 CUSTOM_FIELDS = {
-    "Bank Account": [
+    "Payment Entry": [
         {
             "fieldname": "razorpayx_payment_section",
             "label": "RazorpayX Payment Details",
             "fieldtype": "Section Break",
-            "insert_after": "bank_account_no",
-            "depends_on": "eval: !doc.is_company_account && doc.party_type && doc.party",
-        },
-        {
-            "fieldname": "razorpayx_payment_mode",
-            "label": "RazorpayX Payment Mode",
-            "fieldtype": "Select",
-            "insert_after": "razorpayx_payment_section",
-            "options": RAZORPAYX_PAYOUT_MODE.values_as_string(),
-            "default": RAZORPAYX_PAYOUT_MODE.BANK.value,
-        },
-        {
-            "fieldname": "payment_id_cb",
-            "fieldtype": "Column Break",
-            "insert_after": "razorpayx_payment_mode",
-        },
-        # For `UPI` payment mode
-        {
-            "fieldname": "upi_id",
-            "label": "UPI ID",
-            "fieldtype": "Data",
-            "insert_after": "payment_id_cb",
-            "placeholder": "Eg. 90876543@okicici",
-            "depends_on": f"eval: doc.razorpayx_payment_mode === '{RAZORPAYX_PAYOUT_MODE.UPI.value}'",
-        },
-        # For `Link` payment mode
-        {
-            "fieldname": "contact_to_pay",
-            "label": "Contact to Pay",
-            "fieldtype": "Link",
-            "insert_after": "upi_id",
-            "options": "Contact",
-            "depends_on": f"eval: doc.razorpayx_payment_mode === '{RAZORPAYX_PAYOUT_MODE.LINK.value}'",
-            "description": "Contact to whom the payment link will be sent.",
-        },
-    ],
-    "Payment Entry": [
-        {
-            "fieldname": "razorpayx_payment_section",
-            "label": "RazorpayX Payment",
-            "fieldtype": "Section Break",
-            "insert_after": "make_online_payment",  ## Insert After `Make Online Payment` field
+            "insert_after": "make_online_payment",  ## Insert After `Make Online Payment` field (Payment Utils Custom Field)
             "depends_on": "eval: doc.make_online_payment",
             "permlevel": PERMISSION_LEVELS.AUTO_PAYMENTS_MANAGER.value,
         },
@@ -84,7 +43,7 @@ CUSTOM_FIELDS = {
             "label": "RazorpayX Payment Mode",
             "fieldtype": "Data",
             "insert_after": "razorpayx_account",
-            "fetch_from": "party_bank_account.razorpayx_payment_mode",
+            "fetch_from": "party_bank_account.online_payment_mode",
             "depends_on": "eval: doc.razorpayx_account && doc.party_bank_account",
             "mandatory_depends_on": "eval:doc.razorpayx_account && doc.party_bank_account",
             "permlevel": PERMISSION_LEVELS.AUTO_PAYMENTS_MANAGER.value,

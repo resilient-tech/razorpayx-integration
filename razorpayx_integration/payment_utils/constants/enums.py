@@ -3,6 +3,7 @@ from enum import Enum
 import frappe
 
 
+# TODO: make enum name singular
 class BaseEnum(Enum):
     """
     ⚠️ Only use when all keys have unique values
