@@ -9,13 +9,4 @@ frappe.ui.form.on("Bank Account", {
 			};
 		});
 	},
-
-	refresh: function (frm) {
-		const workflow_state = frm.doc?.razorpayx_workflow_state;
-		const final_states = ["Approved", "Cancelled", "Rejected"];
-
-		if (final_states.includes(workflow_state)) {
-			frm.disable_form();
-		}
-	},
 });

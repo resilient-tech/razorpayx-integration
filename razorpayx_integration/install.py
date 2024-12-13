@@ -5,10 +5,7 @@ from razorpayx_integration.constants import BUG_REPORT_URL
 from razorpayx_integration.hooks import app_title as APP_NAME
 from razorpayx_integration.setup import setup_customizations
 
-POST_INSTALL_PATCHES = (
-    "set_default_razorpayx_payment_mode",
-    "approve_existing_bank_account",
-)
+POST_INSTALL_PATCHES = ()
 
 
 def after_install():
@@ -32,6 +29,8 @@ def after_install():
 
 # TODO: verify this function
 def run_post_install_patches():
+    if not POST_INSTALL_PATCHES:
+        return
     click.secho(f"\nRunning post-install patches for {APP_NAME}...", fg="yellow")
 
     if not frappe.db.exists("Company", {"country": "India"}):

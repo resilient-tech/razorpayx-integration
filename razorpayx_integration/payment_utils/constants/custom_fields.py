@@ -10,12 +10,18 @@ Note:
         ...
 """
 
+from razorpayx_integration.payment_utils.constants.enums import BaseEnum
 from razorpayx_integration.payment_utils.constants.roles import (
     DEFAULT_PERM_LEVELS as PERM_LEVELS,
 )
 
-# TODO: permission level are left to add
 
+# TODO: ? or make doctype for this
+class PAYMENT_INTEGRATIONS(BaseEnum):
+    RAZORPAYX = "RazorpayX"
+
+
+# TODO: permission level are left to add
 BLOCK_AUTO_PAYMENT = {
     "fieldname": "block_auto_payment",
     "label": "Block Auto Payment",
@@ -47,12 +53,34 @@ CUSTOM_FIELDS = {
     ],
     "Payment Entry": [
         {
+            "fieldname": "online_payment_section",
+            "label": "Online Payment Details",
+            "fieldtype": "Section Break",
+            "insert_after": "party_section",
+            "depends_on": "eval: doc.payment_type=='Pay' && doc.mode_of_payment!='Cash' && doc.paid_from && doc.party && doc.party_bank_account",
+            "permlevel": PERM_LEVELS.AUTO_PAYMENTS_MANAGER.value,
+        },
+        {
             "fieldname": "make_online_payment",
             "label": "Make Online Payment",
             "fieldtype": "Check",
-            "insert_after": "payment_order_status",
-            "depends_on": "eval: doc.payment_type=='Pay' && doc.mode_of_payment!='Cash' && doc.paid_from && doc.party",
+            "insert_after": "online_payment_section",
             "description": "Make online payment using <strong>Payments Integration</strong>",
+            "permlevel": PERM_LEVELS.AUTO_PAYMENTS_MANAGER.value,
+        },
+        {
+            "fieldname": "online_payment_cb",
+            "fieldtype": "Column Break",
+            "insert_after": "make_online_payment",
+            "permlevel": PERM_LEVELS.AUTO_PAYMENTS_MANAGER.value,
+        },
+        {
+            "fieldname": "online_payment_integration",
+            "label": "Payment Integration",
+            "fieldtype": "Select",
+            "insert_after": "online_payment_cb",
+            "options": PAYMENT_INTEGRATIONS.values_as_string(),
+            "default": PAYMENT_INTEGRATIONS.RAZORPAYX.value,
             "permlevel": PERM_LEVELS.AUTO_PAYMENTS_MANAGER.value,
         },
     ],

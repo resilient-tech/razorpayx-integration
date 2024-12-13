@@ -1,3 +1,4 @@
+from razorpayx_integration.payment_utils.constants.enums import BaseEnum
 from razorpayx_integration.payment_utils.constants.roles import (
     ROLE_PROFILES as PAYMENT_ROLE_PROFILES,
 )
@@ -9,6 +10,12 @@ from razorpayx_integration.razorpayx_integration.constants.roles import (
     ROLE_PROFILES as BANK_ROLE_PROFILES,
 )
 
+
+class FRAPPE_ROLES(BaseEnum):
+    ALL = "All"
+    SYSTEM_MANAGER = "System Manager"
+
+
 # ? can use `ALL` instead of `BANK_ROLE_PROFILES.BANK_ACC_USER.value` to allow all roles
 # TODO: more efficient and robust
 WORKFLOWS = [
@@ -16,13 +23,13 @@ WORKFLOWS = [
     {
         "workflow_name": "RazorpayX Bank Account Workflow",
         "document_type": "Bank Account",
-        "is_active": True,  # All other workflows become inactive on this DocType
+        "is_active": False,
         "send_email": True,
         "states": [
             {
                 "state": WORKFLOW_STATES.DRAFT.value,
                 "doc_status": 0,
-                "allow_edit": "All",
+                "allow_edit": FRAPPE_ROLES.ALL.value,
             },
             {
                 "state": WORKFLOW_STATES.DRAFT.value,
@@ -44,23 +51,22 @@ WORKFLOWS = [
                 "doc_status": 0,
                 "update_field": "disabled",
                 "update_value": 1,
-                "allow_edit": BANK_ROLE_PROFILES.BANK_ACC_MANAGER.value,
+                "allow_edit": FRAPPE_ROLES.SYSTEM_MANAGER.value,
             },
             {
                 "state": WORKFLOW_STATES.CANCELLED.value,
                 "doc_status": 0,
                 "update_field": "disabled",
                 "update_value": 1,
-                "allow_edit": BANK_ROLE_PROFILES.BANK_ACC_MANAGER.value,
+                "allow_edit": FRAPPE_ROLES.SYSTEM_MANAGER.value,
             },
             {
                 "state": WORKFLOW_STATES.APPROVED.value,
                 "doc_status": 0,
                 "update_field": "disabled",
                 "update_value": 0,
-                "allow_edit": BANK_ROLE_PROFILES.BANK_ACC_MANAGER.value,
+                "allow_edit": FRAPPE_ROLES.SYSTEM_MANAGER.value,
             },
-            # other fields updated with server script: [`is_default`]
         ],
         "transitions": [
             {
@@ -102,7 +108,7 @@ WORKFLOWS = [
                 "state": WORKFLOW_STATES.APPROVED.value,
                 "action": WORKFLOW_ACTIONS.CANCEL.value,
                 "next_state": WORKFLOW_STATES.CANCELLED.value,
-                "allowed": BANK_ROLE_PROFILES.BANK_ACC_MANAGER.value,
+                "allowed": FRAPPE_ROLES.SYSTEM_MANAGER.value,
                 "allow_self_approval": True,
             },
         ],
@@ -112,13 +118,13 @@ WORKFLOWS = [
     {
         "workflow_name": "RazorpayX Payment Entry Workflow",
         "document_type": "Payment Entry",
-        "is_active": True,  # All other workflows become inactive on this DocType
+        "is_active": False,
         "send_email": True,
         "states": [
             {
                 "state": WORKFLOW_STATES.DRAFT.value,
                 "doc_status": 0,
-                "allow_edit": "All",
+                "allow_edit": FRAPPE_ROLES.ALL.value,
             },
             {
                 "state": WORKFLOW_STATES.DRAFT.value,
@@ -133,17 +139,17 @@ WORKFLOWS = [
             {
                 "state": WORKFLOW_STATES.REJECTED.value,
                 "doc_status": 0,
-                "allow_edit": PAYMENT_ROLE_PROFILES.AUTO_PAYMENTS_MANAGER.value,
+                "allow_edit": FRAPPE_ROLES.SYSTEM_MANAGER.value,
             },
             {
                 "state": WORKFLOW_STATES.APPROVED.value,
                 "doc_status": 1,
-                "allow_edit": PAYMENT_ROLE_PROFILES.AUTO_PAYMENTS_MANAGER.value,
+                "allow_edit": FRAPPE_ROLES.SYSTEM_MANAGER.value,
             },
             {
                 "state": WORKFLOW_STATES.CANCELLED.value,
                 "doc_status": 2,
-                "allow_edit": PAYMENT_ROLE_PROFILES.AUTO_PAYMENTS_MANAGER.value,
+                "allow_edit": FRAPPE_ROLES.SYSTEM_MANAGER.value,
             },
         ],
         "transitions": [
@@ -179,7 +185,7 @@ WORKFLOWS = [
                 "state": WORKFLOW_STATES.APPROVED.value,
                 "action": WORKFLOW_ACTIONS.CANCEL.value,
                 "next_state": WORKFLOW_STATES.CANCELLED.value,
-                "allowed": PAYMENT_ROLE_PROFILES.AUTO_PAYMENTS_MANAGER.value,
+                "allowed": FRAPPE_ROLES.SYSTEM_MANAGER.value,
                 "allow_self_approval": True,
             },
         ],

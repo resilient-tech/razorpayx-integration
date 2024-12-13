@@ -6,7 +6,7 @@ from razorpayx_integration.razorpayx_integration.constants.workflows import (
     WORKFLOW_STATES,
 )
 
-rejected_states = [
+REJECTED_STATES = [
     WORKFLOW_STATES.REJECTED.value,
     WORKFLOW_STATES.CANCELLED.value,
 ]
@@ -14,21 +14,6 @@ rejected_states = [
 
 def validate(doc, method=None):
     validate_rejected_states(doc)
-    toggle_default(doc)
-
-
-# TODO: making default is good choice ?
-def toggle_default(doc):
-    """
-    Make the `Bank Account` default based on workflow state.
-
-    - Rejected | Cancelled: Make the `Bank Account` non-default
-    - Approved: Make the `Bank Account` default
-    """
-    if doc.razorpayx_workflow_state in rejected_states:
-        doc.is_default = 0
-    elif doc.razorpayx_workflow_state == WORKFLOW_STATES.APPROVED.value:
-        doc.is_default = 1
 
 
 def validate_rejected_states(doc):
@@ -39,7 +24,7 @@ def validate_rejected_states(doc):
     """
     previous_doc = doc.get_doc_before_save() or frappe._dict()
 
-    if previous_doc.razorpayx_workflow_state not in rejected_states:
+    if previous_doc.razorpayx_workflow_state not in REJECTED_STATES:
         return
 
     frappe.throw(title=_("Invalid Operation"), msg=_("Cannot Update Bank Account"))
