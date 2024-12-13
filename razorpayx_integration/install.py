@@ -1,7 +1,7 @@
 import click
 import frappe
 
-from razorpayx_integration.constants import BANK_PAYMENTS_INTEGRATIONS, BUG_REPORT_URL
+from razorpayx_integration.constants import BUG_REPORT_URL
 from razorpayx_integration.hooks import app_title as APP_NAME
 from razorpayx_integration.payment_utils.setup import create_bank_payments_integrations
 from razorpayx_integration.setup import setup_customizations
@@ -12,7 +12,6 @@ POST_INSTALL_PATCHES = ()
 def after_install():
     try:
         setup_customizations()
-        create_fixtures()
         run_post_install_patches()
 
     except Exception as e:
@@ -27,12 +26,6 @@ def after_install():
         raise e
 
     click.secho(f"\nThank you for installing {APP_NAME}!!\n", fg="green")
-
-
-def create_fixtures():
-    click.secho(f"\nCreating fixtures for {APP_NAME}...", fg="yellow")
-
-    create_bank_payments_integrations(BANK_PAYMENTS_INTEGRATIONS)
 
 
 def run_post_install_patches():

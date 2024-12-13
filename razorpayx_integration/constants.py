@@ -19,8 +19,3 @@ class SUPPORTED_HTTP_METHODS(BaseEnum):
 
 RAZORPAYX_BASE_API_URL = "https://api.razorpay.com/v1/"
 SECONDS_IN_A_DAY = 86400  # use for to get day's end epoch time
-
-### Fixtures ###
-BANK_PAYMENTS_INTEGRATIONS = [
-    {"integration_name": RAZORPAYX, "website_url": "https://x.razorpay.com/"}
-]

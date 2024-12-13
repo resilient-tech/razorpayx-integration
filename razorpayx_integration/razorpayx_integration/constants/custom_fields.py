@@ -76,8 +76,8 @@ CUSTOM_FIELDS = {
             "fieldname": "razorpayx_payment_section",
             "label": "RazorpayX Payment",
             "fieldtype": "Section Break",
-            "insert_after": "bank_payment_integration",  ## Insert After `Bank Payment Integration` field
-            "depends_on": f"eval: doc.make_online_payment && doc.bank_payment_integration === '{RAZORPAYX}'",
+            "insert_after": "make_online_payment",  ## Insert After `Make Online Payment` field
+            "depends_on": "eval: doc.make_online_payment",
             "permlevel": PAYMENT_PERM_LEVELS.AUTO_PAYMENTS_MANAGER.value,
         },
         {

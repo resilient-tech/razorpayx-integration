@@ -19,7 +19,7 @@ PROPERTY_SETTERS = [
         "fieldname": "contact_person",
         "property": "mandatory_depends_on",
         "property_type": "Data",
-        "value": f"eval: doc.make_online_payment && bank_payment_integration === '{RAZORPAYX}' && doc.razorpayx_payment_mode === '{RAZORPAYX_PAYOUT_MODE.LINK.value}'",
+        "value": f"eval: doc.make_online_payment && doc.razorpayx_payment_mode === '{RAZORPAYX_PAYOUT_MODE.LINK.value}'",
     }
 ]
 
@@ -42,6 +42,6 @@ for field in PE_MANDATORY_FIELDS_ON_RAZORPAYX:
             "fieldname": field,
             "property": "mandatory_depends_on",
             "property_type": "Data",
-            "value": f"eval: doc.make_online_payment && bank_payment_integration === '{RAZORPAYX}'",
+            "value": "eval: doc.make_online_payment",
         }
     )

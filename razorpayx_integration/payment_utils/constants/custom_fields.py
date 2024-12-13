@@ -10,7 +10,6 @@ Note:
         ...
 """
 
-from razorpayx_integration.payment_utils.constants import INTEGRATION_DOCTYPE
 from razorpayx_integration.payment_utils.constants.roles import (
     DEFAULT_PERM_LEVELS as PERM_LEVELS,
 )
@@ -60,22 +59,6 @@ CUSTOM_FIELDS = {
             "fieldtype": "Check",
             "insert_after": "online_payment_section",
             "description": "Make online payment using <strong>Payments Integration</strong>",
-            "permlevel": PERM_LEVELS.AUTO_PAYMENTS_MANAGER.value,
-        },
-        {
-            "fieldname": "online_payment_cb",
-            "fieldtype": "Column Break",
-            "insert_after": "make_online_payment",
-            "permlevel": PERM_LEVELS.AUTO_PAYMENTS_MANAGER.value,
-        },
-        {
-            "fieldname": "bank_payment_integration",
-            "label": "Bank Payment Integration",
-            "fieldtype": "Link",
-            "insert_after": "online_payment_cb",
-            "options": INTEGRATION_DOCTYPE,
-            "depends_on": "eval: doc.make_online_payment",
-            "mandatory_depends_on": "eval: doc.make_online_payment",
             "permlevel": PERM_LEVELS.AUTO_PAYMENTS_MANAGER.value,
         },
     ],
