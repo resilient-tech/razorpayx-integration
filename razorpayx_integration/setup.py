@@ -1,3 +1,10 @@
+"""
+⚠️ Notes:
+- Always first customize the `Payment Utils` and then other Integrations.
+- Always first delete the other Integrations and then `Payment Utils`.
+
+"""
+
 import click
 
 from razorpayx_integration.hooks import app_title as APP_NAME
