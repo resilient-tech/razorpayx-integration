@@ -7,7 +7,7 @@ frappe.ui.form.on("RazorPayX Integration Setting", {
 			return {
 				filters: {
 					is_company_account: 1,
-					razorpayx_workflow_state: "Approved",
+					disabled: 0,
 				},
 			};
 		});

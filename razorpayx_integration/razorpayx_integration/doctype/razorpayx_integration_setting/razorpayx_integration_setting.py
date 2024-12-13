@@ -63,7 +63,11 @@ class RazorPayXIntegrationSetting(Document):
                 title=_("Invalid Bank Account"),
             )
 
-        if bank_account.razorpayx_workflow_state != WORKFLOW_STATES.APPROVED.value:
+        # ! ERROR: Maybe fails
+        if (
+            bank_account.razorpayx_workflow_state
+            and bank_account.razorpayx_workflow_state != WORKFLOW_STATES.APPROVED.value
+        ):
             frappe.throw(
                 msg=_("Bank Account is not approved. Please approve it first."),
                 title=_("Invalid Bank Account"),
