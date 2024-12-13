@@ -1,11 +1,10 @@
-from razorpayx_integration.constants import RAZORPAYX
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
     RAZORPAYX_PAYOUT_MODE,
 )
 
 STANDARD_FIELDS_TO_HIDE = {"Employee": ["bank_name", "bank_ac_no", "iban"]}
 
-# PE mandatory fields on `make_online_payment` and Integration is `RazorpayX`
+# PE mandatory fields on `make_online_payment`
 PE_MANDATORY_FIELDS_ON_RAZORPAYX = [
     "party_type",
     "party",
