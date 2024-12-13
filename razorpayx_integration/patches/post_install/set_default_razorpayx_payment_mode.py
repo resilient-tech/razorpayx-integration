@@ -4,7 +4,6 @@ from razorpayx_integration.razorpayx_integration.constants.payouts import (
     RAZORPAYX_PAYOUT_MODE,
 )
 
-# TODO: How to Approved existing Company Bank Account? To be used in Integration.
 
 def execute():
     """

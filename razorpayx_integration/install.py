@@ -5,7 +5,10 @@ from razorpayx_integration.constants import BUG_REPORT_URL
 from razorpayx_integration.hooks import app_title as APP_NAME
 from razorpayx_integration.setup import setup_customizations
 
-POST_INSTALL_PATCHES = ("set_default_razorpayx_payment_mode",)
+POST_INSTALL_PATCHES = (
+    "set_default_razorpayx_payment_mode",
+    "approve_existing_bank_account",
+)
 
 
 def after_install():
@@ -24,7 +27,7 @@ def after_install():
         )
         raise e
 
-    click.secho(f"\nThank you for installing {APP_NAME}!", fg="green")
+    click.secho(f"\nThank you for installing {APP_NAME}!!\n", fg="green")
 
 
 # TODO: verify this function
