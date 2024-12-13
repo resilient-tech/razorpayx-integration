@@ -11,17 +11,13 @@ rejected_states = [
     WORKFLOW_STATES.CANCELLED.value,
 ]
 
-final_states = [
-    WORKFLOW_STATES.APPROVED.value,
-    *rejected_states,
-]
-
 
 def validate(doc, method=None):
-    validate_final_states(doc)
+    validate_rejected_states(doc)
     toggle_default(doc)
 
 
+# TODO: making default is good choice ?
 def toggle_default(doc):
     """
     Make the `Bank Account` default based on workflow state.
@@ -35,15 +31,15 @@ def toggle_default(doc):
         doc.is_default = 1
 
 
-def validate_final_states(doc):
+def validate_rejected_states(doc):
     """
-    Throws an error if the `Bank Account` is in final states and the user tries to update it.
+    Throws an error if the `Bank Account` is in rejected states and the user tries to update it.
 
-    - Final states: `Approved`, `Rejected`, `Cancelled`
+    - Rejected states: `Rejected`, `Cancelled`
     """
     previous_doc = doc.get_doc_before_save() or frappe._dict()
 
-    if previous_doc.razorpayx_workflow_state not in final_states:
+    if previous_doc.razorpayx_workflow_state not in rejected_states:
         return
 
     frappe.throw(title=_("Invalid Operation"), msg=_("Cannot Update Bank Account"))
