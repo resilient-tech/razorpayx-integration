@@ -4,6 +4,7 @@ from razorpayx_integration.razorpayx_integration.constants.payouts import (
     RAZORPAYX_PAYOUT_MODE,
 )
 
+# TODO: How to Approved existing Company Bank Account? To be used in Integration.
 
 def execute():
     """
@@ -14,8 +15,8 @@ def execute():
 
     (
         frappe.qb.update(BA)
-        .set("payment_mode", RAZORPAYX_PAYOUT_MODE.BANK.value)
+        .set(BA.razorpayx_payment_mode, RAZORPAYX_PAYOUT_MODE.BANK.value)
         .where(BA.is_company_account == 0)
-        .where(BA.payment_mode.isnull())
+        .where(BA.razorpayx_payment_mode.isnull())
         .run()
     )
