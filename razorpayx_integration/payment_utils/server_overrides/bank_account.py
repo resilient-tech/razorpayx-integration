@@ -3,12 +3,12 @@ import frappe
 from frappe import _
 
 from razorpayx_integration.payment_utils.constants.workflows import (
-    WORKFLOW_STATES,
+    WORKFLOW_STATE,
 )
 
 REJECTED_STATES = [
-    WORKFLOW_STATES.REJECTED.value,
-    WORKFLOW_STATES.CANCELLED.value,
+    WORKFLOW_STATE.REJECTED.value,
+    WORKFLOW_STATE.CANCELLED.value,
 ]
 
 

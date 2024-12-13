@@ -9,7 +9,7 @@ from razorpayx_integration.constants import (
     RAZORPAYX,
     RAZORPAYX_BASE_API_URL,
     RAZORPAYX_SETTING_DOCTYPE,
-    SUPPORTED_HTTP_METHODS,
+    SUPPORTED_HTTP_METHOD,
 )
 from razorpayx_integration.payment_utils.utils import (
     get_end_of_day_epoch,
@@ -91,31 +91,31 @@ class BaseRazorPayXAPI:
         """
         Make `GET` HTTP request.
         """
-        return self._make_request(SUPPORTED_HTTP_METHODS.GET.value, *args, **kwargs)
+        return self._make_request(SUPPORTED_HTTP_METHOD.GET.value, *args, **kwargs)
 
     def delete(self, *args, **kwargs):
         """
         Make `DELETE` HTTP request.
         """
-        return self._make_request(SUPPORTED_HTTP_METHODS.DELETE.value, *args, **kwargs)
+        return self._make_request(SUPPORTED_HTTP_METHOD.DELETE.value, *args, **kwargs)
 
     def post(self, *args, **kwargs):
         """
         Make `POST` HTTP request.
         """
-        return self._make_request(SUPPORTED_HTTP_METHODS.POST.value, *args, **kwargs)
+        return self._make_request(SUPPORTED_HTTP_METHOD.POST.value, *args, **kwargs)
 
     def put(self, *args, **kwargs):
         """
         Make `PUT` HTTP request.
         """
-        return self._make_request(SUPPORTED_HTTP_METHODS.PUT.value, *args, **kwargs)
+        return self._make_request(SUPPORTED_HTTP_METHOD.PUT.value, *args, **kwargs)
 
     def patch(self, *args, **kwargs):
         """
         Make `PATCH` HTTP request.
         """
-        return self._make_request(SUPPORTED_HTTP_METHODS.PATCH.value, *args, **kwargs)
+        return self._make_request(SUPPORTED_HTTP_METHOD.PATCH.value, *args, **kwargs)
 
     def get_all(
         self, filters: dict | None = None, count: int | None = None
@@ -186,7 +186,7 @@ class BaseRazorPayXAPI:
         Process headers,params and data then make request and return processed response.
         """
         method = method.upper()
-        if method not in SUPPORTED_HTTP_METHODS.values():
+        if method not in SUPPORTED_HTTP_METHOD.values():
             frappe.throw(_("Invalid method {0}").format(method))
 
         request_args = frappe._dict(

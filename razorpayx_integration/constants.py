@@ -9,7 +9,7 @@ RAZORPAYX_SUPPORTED_CURRENCY = "INR"
 
 
 ### Constants for APIs ###
-class SUPPORTED_HTTP_METHODS(BaseEnum):
+class SUPPORTED_HTTP_METHOD(BaseEnum):
     GET = "GET"
     DELETE = "DELETE"
     POST = "POST"

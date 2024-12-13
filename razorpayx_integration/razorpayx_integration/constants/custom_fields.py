@@ -11,7 +11,7 @@ Note:
 """
 
 from razorpayx_integration.constants import RAZORPAYX_SETTING_DOCTYPE
-from razorpayx_integration.payment_utils.constants.roles import PERMISSION_LEVELS
+from razorpayx_integration.payment_utils.constants.roles import PERMISSION_LEVEL
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
     RAZORPAYX_PAYOUT_MODE,
     RAZORPAYX_PAYOUT_STATUS,
@@ -25,7 +25,7 @@ CUSTOM_FIELDS = {
             "fieldtype": "Section Break",
             "insert_after": "make_online_payment",  ## Insert After `Make Online Payment` field (Payment Utils Custom Field)
             "depends_on": "eval: doc.make_online_payment",
-            "permlevel": PERMISSION_LEVELS.AUTO_PAYMENTS_MANAGER.value,
+            "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
         },
         {
             "fieldname": "razorpayx_account",
@@ -36,7 +36,7 @@ CUSTOM_FIELDS = {
             "print_hide": 1,
             "read_only": 1,
             "hidden": 1,
-            "permlevel": PERMISSION_LEVELS.AUTO_PAYMENTS_MANAGER.value,
+            "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
         },
         {
             "fieldname": "razorpayx_payment_mode",
@@ -46,7 +46,7 @@ CUSTOM_FIELDS = {
             "fetch_from": "party_bank_account.online_payment_mode",
             "depends_on": "eval: doc.razorpayx_account && doc.party_bank_account",
             "mandatory_depends_on": "eval:doc.razorpayx_account && doc.party_bank_account",
-            "permlevel": PERMISSION_LEVELS.AUTO_PAYMENTS_MANAGER.value,
+            "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
             "read_only": 1,
         },
         {
@@ -56,13 +56,13 @@ CUSTOM_FIELDS = {
             "insert_after": "razorpayx_payment_mode",
             "depends_on": f"eval: doc.razorpayx_account && doc.razorpayx_payment_mode === '{RAZORPAYX_PAYOUT_MODE.BANK.value}'",
             "description": "Payment will be done with <strong>IMPS</strong> mode.",
-            "permlevel": PERMISSION_LEVELS.AUTO_PAYMENTS_MANAGER.value,
+            "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
         },
         {
             "fieldname": "razorpayx_payment_cb",
             "fieldtype": "Column Break",
             "insert_after": "pay_instantaneous",
-            "permlevel": PERMISSION_LEVELS.AUTO_PAYMENTS_MANAGER.value,
+            "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
         },
         {
             "fieldname": "razorpayx_payment_desc",
@@ -70,7 +70,7 @@ CUSTOM_FIELDS = {
             "fieldtype": "Data",
             "insert_after": "razorpayx_payment_cb",
             "depends_on": "eval: doc.razorpayx_account",
-            "permlevel": PERMISSION_LEVELS.AUTO_PAYMENTS_MANAGER.value,
+            "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
         },
         {
             "fieldname": "razorpayx_payment_status",
@@ -84,7 +84,7 @@ CUSTOM_FIELDS = {
             "allow_on_submit": 1,
             "in_list_view": 1,
             "in_standard_filter": 1,
-            "permlevel": PERMISSION_LEVELS.AUTO_PAYMENTS_MANAGER.value,
+            "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
         },
     ],
 }

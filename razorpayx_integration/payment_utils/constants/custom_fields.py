@@ -11,7 +11,7 @@ Note:
 """
 
 from razorpayx_integration.payment_utils.constants.payouts import PAYOUT_MODE
-from razorpayx_integration.payment_utils.constants.roles import PERMISSION_LEVELS
+from razorpayx_integration.payment_utils.constants.roles import PERMISSION_LEVEL
 
 # TODO: permission level are left to add
 BLOCK_AUTO_PAYMENT = {
@@ -85,7 +85,7 @@ CUSTOM_FIELDS = {
             "options": "Phone",
             "depends_on": "eval: doc.contact_person",
             "read_only": 1,
-            "permlevel": PERMISSION_LEVELS.AUTO_PAYMENTS_MANAGER.value,
+            "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
         },
         {
             "fieldname": "online_payment_section",
@@ -93,7 +93,7 @@ CUSTOM_FIELDS = {
             "fieldtype": "Section Break",
             "insert_after": "contact_email",
             "depends_on": "eval: doc.payment_type=='Pay' && doc.mode_of_payment!='Cash'",
-            "permlevel": PERMISSION_LEVELS.AUTO_PAYMENTS_MANAGER.value,
+            "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
         },
         {
             "fieldname": "make_online_payment",
@@ -101,7 +101,7 @@ CUSTOM_FIELDS = {
             "fieldtype": "Check",
             "insert_after": "online_payment_section",
             "description": "Make online payment using <strong>Payments Integration</strong>",
-            "permlevel": PERMISSION_LEVELS.AUTO_PAYMENTS_MANAGER.value,
+            "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
         },
     ],
     "Customer": [

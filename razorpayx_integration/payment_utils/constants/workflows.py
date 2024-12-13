@@ -8,12 +8,12 @@ Note: ⚠️ If `Actions` and `States` define elsewhere, then make sure to creat
 
 from razorpayx_integration.payment_utils.constants.enums import BaseEnum
 from razorpayx_integration.payment_utils.constants.roles import (
-    FRAPPE_ROLE_PROFILES,
-    ROLE_PROFILES,
+    FRAPPE_ROLE_PROFILE,
+    ROLE_PROFILE,
 )
 
 
-class WORKFLOW_ACTIONS(BaseEnum):
+class WORKFLOW_ACTION(BaseEnum):
     APPROVE = "Approve"
     HOLD = "Hold"
     REJECT = "Reject"
@@ -23,7 +23,7 @@ class WORKFLOW_ACTIONS(BaseEnum):
     REQUEST_APPROVAL = "Request Approval"
 
 
-class WORKFLOW_STATES(BaseEnum):
+class WORKFLOW_STATE(BaseEnum):
     APPROVED = "Approved"
     PENDING = "Pending"
     DRAFT = "Draft"
@@ -34,13 +34,13 @@ class WORKFLOW_STATES(BaseEnum):
 
 
 STATES_COLORS = {
-    WORKFLOW_STATES.APPROVED.value: "Success",
-    WORKFLOW_STATES.PENDING.value: "Warning",
-    WORKFLOW_STATES.DRAFT.value: "Danger",
-    WORKFLOW_STATES.REJECTED.value: "Danger",
-    WORKFLOW_STATES.SUBMITTED.value: "Primary",
-    WORKFLOW_STATES.PENDING_APPROVAL.value: "Warning",
-    WORKFLOW_STATES.CANCELLED.value: "Danger",
+    WORKFLOW_STATE.APPROVED.value: "Success",
+    WORKFLOW_STATE.PENDING.value: "Warning",
+    WORKFLOW_STATE.DRAFT.value: "Danger",
+    WORKFLOW_STATE.REJECTED.value: "Danger",
+    WORKFLOW_STATE.SUBMITTED.value: "Primary",
+    WORKFLOW_STATE.PENDING_APPROVAL.value: "Warning",
+    WORKFLOW_STATE.CANCELLED.value: "Danger",
 }
 
 DEFAULT_WORKFLOW_STATE_FIELD = "payment_integration_workflow_state"
@@ -55,88 +55,88 @@ WORKFLOWS = [
         "send_email": True,
         "states": [
             {
-                "state": WORKFLOW_STATES.DRAFT.value,
+                "state": WORKFLOW_STATE.DRAFT.value,
                 "doc_status": 0,
-                "allow_edit": FRAPPE_ROLE_PROFILES.ALL.value,
+                "allow_edit": FRAPPE_ROLE_PROFILE.ALL.value,
             },
             {
-                "state": WORKFLOW_STATES.DRAFT.value,
+                "state": WORKFLOW_STATE.DRAFT.value,
                 "doc_status": 0,
-                "allow_edit": ROLE_PROFILES.BANK_ACC_USER.value,
+                "allow_edit": ROLE_PROFILE.BANK_ACC_USER.value,
             },
             {
-                "state": WORKFLOW_STATES.DRAFT.value,
+                "state": WORKFLOW_STATE.DRAFT.value,
                 "doc_status": 0,
-                "allow_edit": ROLE_PROFILES.BANK_ACC_MANAGER.value,
+                "allow_edit": ROLE_PROFILE.BANK_ACC_MANAGER.value,
             },
             {
-                "state": WORKFLOW_STATES.PENDING_APPROVAL.value,
+                "state": WORKFLOW_STATE.PENDING_APPROVAL.value,
                 "doc_status": 0,
-                "allow_edit": ROLE_PROFILES.BANK_ACC_MANAGER.value,
+                "allow_edit": ROLE_PROFILE.BANK_ACC_MANAGER.value,
             },
             {
-                "state": WORKFLOW_STATES.REJECTED.value,
-                "doc_status": 0,
-                "update_field": "disabled",
-                "update_value": 1,
-                "allow_edit": FRAPPE_ROLE_PROFILES.SYSTEM_MANAGER.value,
-            },
-            {
-                "state": WORKFLOW_STATES.CANCELLED.value,
+                "state": WORKFLOW_STATE.REJECTED.value,
                 "doc_status": 0,
                 "update_field": "disabled",
                 "update_value": 1,
-                "allow_edit": FRAPPE_ROLE_PROFILES.SYSTEM_MANAGER.value,
+                "allow_edit": FRAPPE_ROLE_PROFILE.SYSTEM_MANAGER.value,
             },
             {
-                "state": WORKFLOW_STATES.APPROVED.value,
+                "state": WORKFLOW_STATE.CANCELLED.value,
+                "doc_status": 0,
+                "update_field": "disabled",
+                "update_value": 1,
+                "allow_edit": FRAPPE_ROLE_PROFILE.SYSTEM_MANAGER.value,
+            },
+            {
+                "state": WORKFLOW_STATE.APPROVED.value,
                 "doc_status": 0,
                 "update_field": "disabled",
                 "update_value": 0,
-                "allow_edit": FRAPPE_ROLE_PROFILES.SYSTEM_MANAGER.value,
+                "allow_edit": FRAPPE_ROLE_PROFILE.SYSTEM_MANAGER.value,
             },
         ],
         "transitions": [
             {
-                "state": WORKFLOW_STATES.DRAFT.value,
-                "action": WORKFLOW_ACTIONS.REQUEST_APPROVAL.value,
-                "next_state": WORKFLOW_STATES.PENDING_APPROVAL.value,
-                "allowed": ROLE_PROFILES.BANK_ACC_USER.value,
+                "state": WORKFLOW_STATE.DRAFT.value,
+                "action": WORKFLOW_ACTION.REQUEST_APPROVAL.value,
+                "next_state": WORKFLOW_STATE.PENDING_APPROVAL.value,
+                "allowed": ROLE_PROFILE.BANK_ACC_USER.value,
                 "allow_self_approval": True,
             },
             {
-                "state": WORKFLOW_STATES.DRAFT.value,
-                "action": WORKFLOW_ACTIONS.REQUEST_APPROVAL.value,
-                "next_state": WORKFLOW_STATES.PENDING_APPROVAL.value,
-                "allowed": ROLE_PROFILES.BANK_ACC_MANAGER.value,
+                "state": WORKFLOW_STATE.DRAFT.value,
+                "action": WORKFLOW_ACTION.REQUEST_APPROVAL.value,
+                "next_state": WORKFLOW_STATE.PENDING_APPROVAL.value,
+                "allowed": ROLE_PROFILE.BANK_ACC_MANAGER.value,
                 "allow_self_approval": True,
             },
             {
-                "state": WORKFLOW_STATES.DRAFT.value,
-                "action": WORKFLOW_ACTIONS.REQUEST_APPROVAL.value,
-                "next_state": WORKFLOW_STATES.PENDING_APPROVAL.value,
+                "state": WORKFLOW_STATE.DRAFT.value,
+                "action": WORKFLOW_ACTION.REQUEST_APPROVAL.value,
+                "next_state": WORKFLOW_STATE.PENDING_APPROVAL.value,
                 "allowed": "All",
                 "allow_self_approval": True,
             },
             {
-                "state": WORKFLOW_STATES.PENDING_APPROVAL.value,
-                "action": WORKFLOW_ACTIONS.REJECT.value,
-                "next_state": WORKFLOW_STATES.REJECTED.value,
-                "allowed": ROLE_PROFILES.BANK_ACC_MANAGER.value,
+                "state": WORKFLOW_STATE.PENDING_APPROVAL.value,
+                "action": WORKFLOW_ACTION.REJECT.value,
+                "next_state": WORKFLOW_STATE.REJECTED.value,
+                "allowed": ROLE_PROFILE.BANK_ACC_MANAGER.value,
                 "allow_self_approval": True,
             },
             {
-                "state": WORKFLOW_STATES.PENDING_APPROVAL.value,
-                "action": WORKFLOW_ACTIONS.APPROVE.value,
-                "next_state": WORKFLOW_STATES.APPROVED.value,
-                "allowed": ROLE_PROFILES.BANK_ACC_MANAGER.value,
+                "state": WORKFLOW_STATE.PENDING_APPROVAL.value,
+                "action": WORKFLOW_ACTION.APPROVE.value,
+                "next_state": WORKFLOW_STATE.APPROVED.value,
+                "allowed": ROLE_PROFILE.BANK_ACC_MANAGER.value,
                 "allow_self_approval": True,
             },
             {
-                "state": WORKFLOW_STATES.APPROVED.value,
-                "action": WORKFLOW_ACTIONS.CANCEL.value,
-                "next_state": WORKFLOW_STATES.CANCELLED.value,
-                "allowed": FRAPPE_ROLE_PROFILES.SYSTEM_MANAGER.value,
+                "state": WORKFLOW_STATE.APPROVED.value,
+                "action": WORKFLOW_ACTION.CANCEL.value,
+                "next_state": WORKFLOW_STATE.CANCELLED.value,
+                "allowed": FRAPPE_ROLE_PROFILE.SYSTEM_MANAGER.value,
                 "allow_self_approval": True,
             },
         ],
@@ -150,70 +150,70 @@ WORKFLOWS = [
         "send_email": True,
         "states": [
             {
-                "state": WORKFLOW_STATES.DRAFT.value,
+                "state": WORKFLOW_STATE.DRAFT.value,
                 "doc_status": 0,
-                "allow_edit": FRAPPE_ROLE_PROFILES.ALL.value,
+                "allow_edit": FRAPPE_ROLE_PROFILE.ALL.value,
             },
             {
-                "state": WORKFLOW_STATES.DRAFT.value,
+                "state": WORKFLOW_STATE.DRAFT.value,
                 "doc_status": 0,
-                "allow_edit": ROLE_PROFILES.AUTO_PAYMENTS_MANAGER.value,
+                "allow_edit": ROLE_PROFILE.AUTO_PAYMENTS_MANAGER.value,
             },
             {
-                "state": WORKFLOW_STATES.PENDING_APPROVAL.value,
+                "state": WORKFLOW_STATE.PENDING_APPROVAL.value,
                 "doc_status": 0,
-                "allow_edit": ROLE_PROFILES.AUTO_PAYMENTS_MANAGER.value,
+                "allow_edit": ROLE_PROFILE.AUTO_PAYMENTS_MANAGER.value,
             },
             {
-                "state": WORKFLOW_STATES.REJECTED.value,
+                "state": WORKFLOW_STATE.REJECTED.value,
                 "doc_status": 0,
-                "allow_edit": FRAPPE_ROLE_PROFILES.SYSTEM_MANAGER.value,
+                "allow_edit": FRAPPE_ROLE_PROFILE.SYSTEM_MANAGER.value,
             },
             {
-                "state": WORKFLOW_STATES.APPROVED.value,
+                "state": WORKFLOW_STATE.APPROVED.value,
                 "doc_status": 1,
-                "allow_edit": FRAPPE_ROLE_PROFILES.SYSTEM_MANAGER.value,
+                "allow_edit": FRAPPE_ROLE_PROFILE.SYSTEM_MANAGER.value,
             },
             {
-                "state": WORKFLOW_STATES.CANCELLED.value,
+                "state": WORKFLOW_STATE.CANCELLED.value,
                 "doc_status": 2,
-                "allow_edit": FRAPPE_ROLE_PROFILES.SYSTEM_MANAGER.value,
+                "allow_edit": FRAPPE_ROLE_PROFILE.SYSTEM_MANAGER.value,
             },
         ],
         "transitions": [
             {
-                "state": WORKFLOW_STATES.DRAFT.value,
-                "action": WORKFLOW_ACTIONS.REQUEST_APPROVAL.value,
-                "next_state": WORKFLOW_STATES.PENDING_APPROVAL.value,
+                "state": WORKFLOW_STATE.DRAFT.value,
+                "action": WORKFLOW_ACTION.REQUEST_APPROVAL.value,
+                "next_state": WORKFLOW_STATE.PENDING_APPROVAL.value,
                 "allowed": "All",
                 "allow_self_approval": True,
             },
             {
-                "state": WORKFLOW_STATES.DRAFT.value,
-                "action": WORKFLOW_ACTIONS.REQUEST_APPROVAL.value,
-                "next_state": WORKFLOW_STATES.PENDING_APPROVAL.value,
-                "allowed": ROLE_PROFILES.AUTO_PAYMENTS_MANAGER.value,
+                "state": WORKFLOW_STATE.DRAFT.value,
+                "action": WORKFLOW_ACTION.REQUEST_APPROVAL.value,
+                "next_state": WORKFLOW_STATE.PENDING_APPROVAL.value,
+                "allowed": ROLE_PROFILE.AUTO_PAYMENTS_MANAGER.value,
                 "allow_self_approval": True,
             },
             {
-                "state": WORKFLOW_STATES.PENDING_APPROVAL.value,
-                "action": WORKFLOW_ACTIONS.APPROVE.value,
-                "next_state": WORKFLOW_STATES.APPROVED.value,
-                "allowed": ROLE_PROFILES.AUTO_PAYMENTS_MANAGER.value,
+                "state": WORKFLOW_STATE.PENDING_APPROVAL.value,
+                "action": WORKFLOW_ACTION.APPROVE.value,
+                "next_state": WORKFLOW_STATE.APPROVED.value,
+                "allowed": ROLE_PROFILE.AUTO_PAYMENTS_MANAGER.value,
                 "allow_self_approval": True,
             },
             {
-                "state": WORKFLOW_STATES.PENDING_APPROVAL.value,
-                "action": WORKFLOW_ACTIONS.REJECT.value,
-                "next_state": WORKFLOW_STATES.REJECTED.value,
-                "allowed": ROLE_PROFILES.AUTO_PAYMENTS_MANAGER.value,
+                "state": WORKFLOW_STATE.PENDING_APPROVAL.value,
+                "action": WORKFLOW_ACTION.REJECT.value,
+                "next_state": WORKFLOW_STATE.REJECTED.value,
+                "allowed": ROLE_PROFILE.AUTO_PAYMENTS_MANAGER.value,
                 "allow_self_approval": True,
             },
             {
-                "state": WORKFLOW_STATES.APPROVED.value,
-                "action": WORKFLOW_ACTIONS.CANCEL.value,
-                "next_state": WORKFLOW_STATES.CANCELLED.value,
-                "allowed": FRAPPE_ROLE_PROFILES.SYSTEM_MANAGER.value,
+                "state": WORKFLOW_STATE.APPROVED.value,
+                "action": WORKFLOW_ACTION.CANCEL.value,
+                "next_state": WORKFLOW_STATE.CANCELLED.value,
+                "allowed": FRAPPE_ROLE_PROFILE.SYSTEM_MANAGER.value,
                 "allow_self_approval": True,
             },
         ],
