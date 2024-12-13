@@ -14,7 +14,6 @@
   "key_secret",
   "column_break_8tcki",
   "webhook_secret",
-  "key_authorized",
   "account_tab",
   "account_details_section",
   "bank_account",
@@ -86,15 +85,6 @@
    "in_standard_filter": 1,
    "label": "Disabled",
    "no_copy": 1
-  },
-  {
-   "default": "0",
-   "fieldname": "key_authorized",
-   "fieldtype": "Check",
-   "is_virtual": 1,
-   "label": "Key Authorized",
-   "no_copy": 1,
-   "read_only": 1
   },
   {
    "depends_on": "eval: doc.bank_account",
@@ -180,7 +170,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-12-13 11:38:06.337461",
+ "modified": "2024-12-13 12:21:31.711976",
  "modified_by": "Administrator",
  "module": "Razorpayx Integration",
  "name": "RazorPayX Integration Setting",

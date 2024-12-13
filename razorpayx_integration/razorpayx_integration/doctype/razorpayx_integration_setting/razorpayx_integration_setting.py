@@ -26,7 +26,6 @@ class RazorPayXIntegrationSetting(Document):
         company_account: DF.Link | None
         disabled: DF.Check
         ifsc_code: DF.Data | None
-        key_authorized: DF.Check
         key_id: DF.Data
         key_secret: DF.Password
         payment_success_template: DF.Link | None
