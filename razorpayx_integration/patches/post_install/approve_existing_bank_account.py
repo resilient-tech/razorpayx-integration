@@ -13,5 +13,6 @@ def execute():
     (
         frappe.qb.update(BA)
         .set(BA.razorpayx_workflow_state, WORKFLOW_STATES.APPROVED.value)
+        .where(BA.disabled == 0)
         .run()
     )
