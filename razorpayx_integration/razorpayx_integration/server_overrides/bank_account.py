@@ -6,8 +6,6 @@ from razorpayx_integration.razorpayx_integration.constants.workflows import (
     WORKFLOW_STATES,
 )
 
-# TODO: After Approve, only allow `disabled` and `is_default` to be updated.
-
 rejected_states = [
     WORKFLOW_STATES.REJECTED.value,
     WORKFLOW_STATES.CANCELLED.value,
