@@ -13,7 +13,7 @@ class FRAPPE_ROLE_PROFILES(BaseEnum):
     SYSTEM_MANAGER = "System Manager"
 
 
-class DEFAULT_PERM_LEVELS(BaseEnum):
+class PERMISSION_LEVELS(BaseEnum):
     BANK_ACC_MANAGER = 7
     BANK_ACC_USER = 0
     AUTO_PAYMENTS_MANAGER = 7
@@ -57,7 +57,7 @@ ROLES = [
     {
         "doctype": "Bank Account",
         "role_name": ROLE_PROFILES.BANK_ACC_MANAGER.value,
-        "permlevel": DEFAULT_PERM_LEVELS.BANK_ACC_MANAGER.value,
+        "permlevel": PERMISSION_LEVELS.BANK_ACC_MANAGER.value,
         "permissions": PERMISSIONS["Manager"],
     },
     {
