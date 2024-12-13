@@ -19,6 +19,20 @@ PROPERTY_SETTERS = [
         "property_type": "Data",
         "value": f"eval: doc.make_online_payment && doc.razorpayx_payment_mode === '{RAZORPAYX_PAYOUT_MODE.LINK.value}'",
     },
+    {
+        "doctype": "Payment Entry",
+        "fieldname": "contact_person",
+        "property": "fetch_from",
+        "property_type": "Data",
+        "value": "party_bank_account.contact_to_pay",
+    },
+    {
+        "doctype": "Payment Entry",
+        "fieldname": "contact_person",
+        "property": "fetch_if_empty",
+        "property_type": "Check",
+        "value": 1,
+    },
     ## Bank Account ##
     {
         "doctype": "Bank Account",
