@@ -5,7 +5,7 @@ from razorpayx_integration.constants import BUG_REPORT_URL
 from razorpayx_integration.hooks import app_title as APP_NAME
 from razorpayx_integration.setup import setup_customizations
 
-POST_INSTALL_PATCHES = ()
+POST_INSTALL_PATCHES = ("set_default_razorpayx_payment_mode",)
 
 # TODO: post install patches to set  default value `NEFT/RTGS` for PAYOUT_MODE
 
