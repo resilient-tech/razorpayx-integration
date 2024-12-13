@@ -3,10 +3,11 @@ import frappe
 
 from razorpayx_integration.constants import BUG_REPORT_URL
 from razorpayx_integration.hooks import app_title as APP_NAME
-from razorpayx_integration.payment_utils.setup import create_bank_payments_integrations
 from razorpayx_integration.setup import setup_customizations
 
 POST_INSTALL_PATCHES = ()
+
+# TODO: post install patches to set  default value `NEFT/RTGS` for PAYOUT_MODE
 
 
 def after_install():

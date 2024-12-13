@@ -9,7 +9,7 @@ PROPERTY_SETTERS = [
     {
         "doctype": "Payment Entry",
         "fieldname": "reference_date",
-        "property": "options",
+        "property": "default",
         "property_type": "Data",
         "value": "Today",
     },

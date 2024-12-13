@@ -61,7 +61,7 @@ CUSTOM_FIELDS = {
         {
             "fieldname": "razorpayx_payment_cb",
             "fieldtype": "Column Break",
-            "insert_after": "pay_instantaneous",
+            "insert_after": "razorpayx_pay_instantaneously",
             "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
         },
         {
@@ -76,7 +76,7 @@ CUSTOM_FIELDS = {
             "fieldname": "razorpayx_payment_status",
             "label": "Payment Status",
             "fieldtype": "Select",
-            "insert_after": "payment_desc",
+            "insert_after": "razorpayx_payment_desc",
             "options": RAZORPAYX_PAYOUT_STATUS.values_as_string(),
             "default": RAZORPAYX_PAYOUT_STATUS.NOT_INITIATED.value,
             "depends_on": "eval: doc.razorpayx_account && doc.creation",
