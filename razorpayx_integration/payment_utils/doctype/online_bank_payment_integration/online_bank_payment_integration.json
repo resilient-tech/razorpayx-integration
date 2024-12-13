@@ -1,0 +1,66 @@
+{
+ "actions": [],
+ "autoname": "field:integration_name",
+ "creation": "2024-12-13 17:31:17.753424",
+ "description": "Details of payment aggregator and processor to help frappe apps to make online payments",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "integration_name",
+  "website_url"
+ ],
+ "fields": [
+  {
+   "fieldname": "integration_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Integration Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "website_url",
+   "fieldtype": "Data",
+   "label": "Website URL"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2024-12-13 17:50:26.940797",
+ "modified_by": "Administrator",
+ "module": "Payment Utils",
+ "name": "Online Bank Payment Integration",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Auto Payments Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "integration_name"
+}
