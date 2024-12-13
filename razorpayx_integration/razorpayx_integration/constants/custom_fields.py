@@ -123,7 +123,6 @@ CUSTOM_FIELDS = {
             "fieldtype": "Data",
             "insert_after": "razorpayx_payment_cb",
             "depends_on": "eval: doc.razorpayx_account",
-            "mandatory_depends_on": "eval: doc.razorpayx_account",
             "permlevel": PAYMENT_PERM_LEVELS.AUTO_PAYMENTS_MANAGER.value,
         },
         {
@@ -136,6 +135,8 @@ CUSTOM_FIELDS = {
             "depends_on": "eval: doc.razorpayx_account && doc.creation",
             "read_only": 1,
             "allow_on_submit": 1,
+            "in_list_view": 1,
+            "in_standard_filter": 1,
             "permlevel": PAYMENT_PERM_LEVELS.AUTO_PAYMENTS_MANAGER.value,
         },
     ],
