@@ -14,12 +14,12 @@ app_include_js = "razorpayx_integration.bundle.js"
 export_python_type_annotations = True
 
 doctype_js = {
-    "Bank Account": "razorpayx_integration/client_overrides/bank_account.js",
+    "Bank Account": "payment_utils/client_overrides/bank_account.js",
     "Payment Entry": "razorpayx_integration/client_overrides/payment_entry.js",
 }
 
 doc_events = {
     "Bank Account": {
-        "validate": "razorpayx_integration.razorpayx_integration.server_overrides.bank_account.validate"
+        "validate": "razorpayx_integration.payment_utils.server_overrides.bank_account.validate"
     }
 }

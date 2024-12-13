@@ -2,7 +2,7 @@
 import frappe
 from frappe import _
 
-from razorpayx_integration.razorpayx_integration.constants.workflows import (
+from razorpayx_integration.payment_utils.constants.workflows import (
     WORKFLOW_STATES,
 )
 
@@ -12,8 +12,6 @@ REJECTED_STATES = [
 ]
 
 
-# TODO: move to utils
-# TODO: depends on workflpw is on or not
 def validate(doc, method=None):
     validate_rejected_states(doc)
 
