@@ -2,6 +2,17 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on("RazorPayX Integration Setting", {
+	setup: function (frm) {
+		frm.set_query("bank_account", function () {
+			return {
+				filters: {
+					is_company_account: 1,
+					razorpayx_workflow_state: "Approved",
+				},
+			};
+		});
+	},
+
 	onload: function (frm) {
 		if (!frm.is_new()) return;
 
