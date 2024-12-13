@@ -51,7 +51,7 @@ CUSTOM_FIELDS = {
             "label": "Online Payment Details",
             "fieldtype": "Section Break",
             "insert_after": "contact_email",
-            "depends_on": "eval: doc.payment_type=='Pay' && doc.mode_of_payment!='Cash' && doc.paid_from && doc.party && doc.party_bank_account",
+            "depends_on": "eval: doc.payment_type=='Pay' && doc.mode_of_payment!='Cash'",
             "permlevel": PERM_LEVELS.AUTO_PAYMENTS_MANAGER.value,
         },
         {

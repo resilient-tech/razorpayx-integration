@@ -64,7 +64,7 @@ CUSTOM_FIELDS = {
     "Payment Entry": [
         {
             "fieldname": "contact_mobile",
-            "label": "Contact Mobile",
+            "label": "Mobile",
             "fieldtype": "Data",
             "insert_after": "contact_person",
             "options": "Phone",
@@ -76,7 +76,7 @@ CUSTOM_FIELDS = {
             "fieldname": "razorpayx_payment_section",
             "label": "RazorpayX Payment",
             "fieldtype": "Section Break",
-            "insert_after": "online_payment_integration",  ## Insert After `Online Payment Integration` field
+            "insert_after": "bank_payment_integration",  ## Insert After `Bank Payment Integration` field
             "depends_on": f"eval: doc.make_online_payment && doc.bank_payment_integration === '{RAZORPAYX}'",
             "permlevel": PAYMENT_PERM_LEVELS.AUTO_PAYMENTS_MANAGER.value,
         },
