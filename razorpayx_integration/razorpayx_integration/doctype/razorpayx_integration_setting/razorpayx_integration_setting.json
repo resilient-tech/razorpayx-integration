@@ -25,8 +25,6 @@
   "bank",
   "ifsc_code",
   "account_number",
-  "transaction_section",
-  "last_synced",
   "templates_tab",
   "party_email_templates_section",
   "payment_success_template"
@@ -95,18 +93,6 @@
    "fieldtype": "Check",
    "is_virtual": 1,
    "label": "Key Authorized",
-   "no_copy": 1,
-   "read_only": 1
-  },
-  {
-   "fieldname": "transaction_section",
-   "fieldtype": "Section Break"
-  },
-  {
-   "description": "Syncing <strong>Bank Transactions </strong>",
-   "fieldname": "last_synced",
-   "fieldtype": "Datetime",
-   "label": "Last Synced",
    "no_copy": 1,
    "read_only": 1
   },
@@ -194,7 +180,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-12-12 16:41:39.616523",
+ "modified": "2024-12-13 11:38:06.337461",
  "modified_by": "Administrator",
  "module": "Razorpayx Integration",
  "name": "RazorPayX Integration Setting",

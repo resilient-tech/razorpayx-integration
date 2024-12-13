@@ -31,7 +31,6 @@ class RazorPayXIntegrationSetting(Document):
         key_authorized: DF.Check
         key_id: DF.Data
         key_secret: DF.Password
-        last_synced: DF.Datetime | None
         payment_success_template: DF.Link | None
         webhook_secret: DF.Password | None
 
