@@ -10,7 +10,7 @@ Note:
         ...
 """
 
-from razorpayx_integration.constants import RAZORPAYX_SETTING_DOCTYPE
+from razorpayx_integration.constants import RAZORPAYX, RAZORPAYX_SETTING_DOCTYPE
 from razorpayx_integration.payment_utils.constants.roles import (
     DEFAULT_PERM_LEVELS as PAYMENT_PERM_LEVELS,
 )
@@ -66,7 +66,7 @@ CUSTOM_FIELDS = {
             "fieldname": "contact_mobile",
             "label": "Contact Mobile",
             "fieldtype": "Data",
-            "insert_after": "contact_email",
+            "insert_after": "contact_person",
             "options": "Phone",
             "depends_on": "eval: doc.contact_person",
             "read_only": 1,
@@ -76,8 +76,8 @@ CUSTOM_FIELDS = {
             "fieldname": "razorpayx_payment_section",
             "label": "RazorpayX Payment",
             "fieldtype": "Section Break",
-            "insert_after": "contact_mobile",
-            "depends_on": "eval: doc.make_online_payment",
+            "insert_after": "online_payment_integration",  ## Insert After `Online Payment Integration` field
+            "depends_on": f"eval: doc.make_online_payment && doc.bank_payment_integration === '{RAZORPAYX}'",
             "permlevel": PAYMENT_PERM_LEVELS.AUTO_PAYMENTS_MANAGER.value,
         },
         {

@@ -1,20 +1,26 @@
-RAZORPAYX_SETTING_DOCTYPE = "RazorPayX Integration Setting"
-RAZORPAYX = "RazorPayX"
+from razorpayx_integration.payment_utils.constants.enums import BaseEnum
+
 BUG_REPORT_URL = "https://github.com/resilient-tech/razorpayx_integration/issues/new"
 
-### Constants for APIs ###
-RAZORPAYX_BASE_API_URL = "https://api.razorpay.com/v1/"
-
-# TODO: instead say SECONDS_IN_A_DAY and then -1 when needed
-SECONDS_IN_A_DAY_MINUS_ONE = 86399  # use for to get day's end epoch time
-
+### Constants for RazorpayX Integration ###
+RAZORPAYX = "RazorPayX"
+RAZORPAYX_SETTING_DOCTYPE = "RazorPayX Integration Setting"
 RAZORPAYX_SUPPORTED_CURRENCY = "INR"
 
-# TODO: make it enum
-RAZORPAYX_SUPPORTED_HTTP_METHODS = (
-    "GET",
-    "DELETE",
-    "POST",
-    "PUT",
-    "PATCH",
-)
+
+### Constants for APIs ###
+class SUPPORTED_HTTP_METHODS(BaseEnum):
+    GET = "GET"
+    DELETE = "DELETE"
+    POST = "POST"
+    PUT = "PUT"
+    PATCH = "PATCH"
+
+
+RAZORPAYX_BASE_API_URL = "https://api.razorpay.com/v1/"
+SECONDS_IN_A_DAY = 86400  # use for to get day's end epoch time
+
+### Fixtures ###
+BANK_PAYMENTS_INTEGRATIONS = [
+    {"integration_name": RAZORPAYX, "website_url": "https://x.razorpay.com/"}
+]

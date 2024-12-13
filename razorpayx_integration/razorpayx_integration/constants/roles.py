@@ -1,6 +1,7 @@
 from razorpayx_integration.constants import (
     RAZORPAYX_SETTING_DOCTYPE,
 )
+from razorpayx_integration.payment_utils.constants import INTEGRATION_DOCTYPE
 from razorpayx_integration.payment_utils.constants.enums import BaseEnum
 from razorpayx_integration.payment_utils.constants.roles import (
     DEFAULT_PERM_LEVELS as PAYMENT_PERM_LEVELS,
@@ -30,6 +31,13 @@ ROLES = [
     {
         "doctype": RAZORPAYX_SETTING_DOCTYPE,
         "role_name": PAYMENT_PROFILES.AUTO_PAYMENTS_MANAGER.value,
+        "permlevel": 0,
+        "permissions": PERMISSIONS["Manager"],
+    },
+    ## Payment Integration Roles ##
+    {
+        "doctype": INTEGRATION_DOCTYPE,
+        "role_name": ROLE_PROFILES.RAZORPAYX_MANAGER.value,
         "permlevel": 0,
         "permissions": PERMISSIONS["Manager"],
     },

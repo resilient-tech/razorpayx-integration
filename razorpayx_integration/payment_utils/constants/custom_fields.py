@@ -10,16 +10,10 @@ Note:
         ...
 """
 
-from razorpayx_integration.payment_utils.constants.enums import BaseEnum
+from razorpayx_integration.payment_utils.constants import INTEGRATION_DOCTYPE
 from razorpayx_integration.payment_utils.constants.roles import (
     DEFAULT_PERM_LEVELS as PERM_LEVELS,
 )
-
-
-# TODO: ? or make doctype for this
-class PAYMENT_INTEGRATIONS(BaseEnum):
-    RAZORPAYX = "RazorpayX"
-
 
 # TODO: permission level are left to add
 BLOCK_AUTO_PAYMENT = {
@@ -56,7 +50,7 @@ CUSTOM_FIELDS = {
             "fieldname": "online_payment_section",
             "label": "Online Payment Details",
             "fieldtype": "Section Break",
-            "insert_after": "party_section",
+            "insert_after": "contact_email",
             "depends_on": "eval: doc.payment_type=='Pay' && doc.mode_of_payment!='Cash' && doc.paid_from && doc.party && doc.party_bank_account",
             "permlevel": PERM_LEVELS.AUTO_PAYMENTS_MANAGER.value,
         },
@@ -75,12 +69,13 @@ CUSTOM_FIELDS = {
             "permlevel": PERM_LEVELS.AUTO_PAYMENTS_MANAGER.value,
         },
         {
-            "fieldname": "online_payment_integration",
-            "label": "Payment Integration",
-            "fieldtype": "Select",
+            "fieldname": "bank_payment_integration",
+            "label": "Bank Payment Integration",
+            "fieldtype": "Link",
             "insert_after": "online_payment_cb",
-            "options": PAYMENT_INTEGRATIONS.values_as_string(),
-            "default": PAYMENT_INTEGRATIONS.RAZORPAYX.value,
+            "options": INTEGRATION_DOCTYPE,
+            "depends_on": "eval: doc.make_online_payment",
+            "mandatory_depends_on": "eval: doc.make_online_payment",
             "permlevel": PERM_LEVELS.AUTO_PAYMENTS_MANAGER.value,
         },
     ],

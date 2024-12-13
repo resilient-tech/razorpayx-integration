@@ -1,6 +1,7 @@
 import frappe
 from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
 
+from razorpayx_integration.payment_utils.constants import INTEGRATION_DOCTYPE
 from razorpayx_integration.payment_utils.constants.custom_fields import CUSTOM_FIELDS
 from razorpayx_integration.payment_utils.constants.property_setters import (
     PROPERTY_SETTERS,
@@ -73,3 +74,17 @@ def delete_payment_utils_role_and_permissions():
 def delete_payment_utils_workflows():
     # TODO
     delete_workflows(WORKFLOWS)
+
+
+### Fixtures ###
+def create_bank_payments_integrations(integrations: list[dict]):
+    """
+    Create `Online Bank Payment Integration` fixtures.
+    """
+    try:
+        for integration in integrations:
+            doc = frappe.new_doc(INTEGRATION_DOCTYPE)
+            doc.update(integration)
+            doc.insert()
+    except frappe.DuplicateEntryError:
+        pass

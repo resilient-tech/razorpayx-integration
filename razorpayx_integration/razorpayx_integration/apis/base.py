@@ -9,7 +9,7 @@ from razorpayx_integration.constants import (
     RAZORPAYX,
     RAZORPAYX_BASE_API_URL,
     RAZORPAYX_SETTING_DOCTYPE,
-    RAZORPAYX_SUPPORTED_HTTP_METHODS,
+    SUPPORTED_HTTP_METHODS,
 )
 from razorpayx_integration.payment_utils.utils import (
     get_end_of_day_epoch,
@@ -91,31 +91,31 @@ class BaseRazorPayXAPI:
         """
         Make `GET` HTTP request.
         """
-        return self._make_request("GET", *args, **kwargs)
+        return self._make_request(SUPPORTED_HTTP_METHODS.GET.value, *args, **kwargs)
 
     def delete(self, *args, **kwargs):
         """
         Make `DELETE` HTTP request.
         """
-        return self._make_request("DELETE", *args, **kwargs)
+        return self._make_request(SUPPORTED_HTTP_METHODS.DELETE.value, *args, **kwargs)
 
     def post(self, *args, **kwargs):
         """
         Make `POST` HTTP request.
         """
-        return self._make_request("POST", *args, **kwargs)
+        return self._make_request(SUPPORTED_HTTP_METHODS.POST.value, *args, **kwargs)
 
     def put(self, *args, **kwargs):
         """
         Make `PUT` HTTP request.
         """
-        return self._make_request("PUT", *args, **kwargs)
+        return self._make_request(SUPPORTED_HTTP_METHODS.PUT.value, *args, **kwargs)
 
     def patch(self, *args, **kwargs):
         """
         Make `PATCH` HTTP request.
         """
-        return self._make_request("PATCH", *args, **kwargs)
+        return self._make_request(SUPPORTED_HTTP_METHODS.PATCH.value, *args, **kwargs)
 
     def get_all(
         self, filters: dict | None = None, count: int | None = None
@@ -186,7 +186,7 @@ class BaseRazorPayXAPI:
         Process headers,params and data then make request and return processed response.
         """
         method = method.upper()
-        if method not in RAZORPAYX_SUPPORTED_HTTP_METHODS:
+        if method not in SUPPORTED_HTTP_METHODS.values():
             frappe.throw(_("Invalid method {0}").format(method))
 
         request_args = frappe._dict(
