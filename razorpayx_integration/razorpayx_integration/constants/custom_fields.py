@@ -103,7 +103,7 @@ CUSTOM_FIELDS = {
             "read_only": 1,
         },
         {
-            "fieldname": "pay_instantaneous",
+            "fieldname": "razorpayx_pay_instantaneously",
             "label": "Pay Instantaneously",
             "fieldtype": "Check",
             "insert_after": "razorpayx_payment_mode",
@@ -118,7 +118,7 @@ CUSTOM_FIELDS = {
             "permlevel": PAYMENT_PERM_LEVELS.AUTO_PAYMENTS_MANAGER.value,
         },
         {
-            "fieldname": "payment_desc",
+            "fieldname": "razorpayx_payment_desc",
             "label": "Payment Description",
             "fieldtype": "Data",
             "insert_after": "razorpayx_payment_cb",

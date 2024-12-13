@@ -12,6 +12,8 @@ REJECTED_STATES = [
 ]
 
 
+# TODO: move to utils
+# TODO: depends on workflpw is on or not
 def validate(doc, method=None):
     validate_rejected_states(doc)
 
