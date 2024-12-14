@@ -157,4 +157,9 @@ def validate_upi_id(doc):
 
 
 def on_submit(doc, method=None):
-    pass
+    make_online_payment(doc)
+
+
+def make_online_payment(doc):
+    if not doc.make_online_payment:
+        return
