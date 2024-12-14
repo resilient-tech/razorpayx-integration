@@ -11,18 +11,15 @@ before_uninstall = "razorpayx_integration.uninstall.before_uninstall"
 
 app_include_js = "razorpayx_integration.bundle.js"
 
-scheduler_events = {
-    "daily": [
-        "razorpayx_integration.payment_utils.scheduler_events.fetch_daily_transactions.execute"
-    ]
-}
-
 export_python_type_annotations = True
 
 doctype_js = {
-    "Bank Account": "razorpayx_integration/razorpayx_integration/client_overrides/bank_account.js"
+    "Bank Account": "payment_utils/client_overrides/bank_account.js",
+    "Payment Entry": "razorpayx_integration/client_overrides/payment_entry.js",
 }
 
-override_doctype_class = {
-    "Bank Account": "razorpayx_integration.razorpayx_integration.server_overrides.bank_account.BankAccount"
+doc_events = {
+    "Bank Account": {
+        "validate": "razorpayx_integration.payment_utils.server_overrides.bank_account.validate"
+    }
 }

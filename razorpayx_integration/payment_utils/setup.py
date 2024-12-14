@@ -10,7 +10,7 @@ from razorpayx_integration.payment_utils.constants.workflows import (
     STATES_COLORS as WORKFLOW_STATES,
 )
 from razorpayx_integration.payment_utils.constants.workflows import (
-    WORKFLOW_ACTIONS,
+    WORKFLOW_ACTION,
     WORKFLOWS,
 )
 from razorpayx_integration.payment_utils.utils import (
@@ -50,7 +50,7 @@ def make_payment_utils_workflows():
     make_workflow_states(WORKFLOW_STATES)
 
     # create actions
-    make_workflow_actions(WORKFLOW_ACTIONS.values())
+    make_workflow_actions(WORKFLOW_ACTION.values())
 
     # create workflows
     make_workflows(WORKFLOWS)

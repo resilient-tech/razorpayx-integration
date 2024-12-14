@@ -7,10 +7,13 @@ from razorpayx_integration.setup import setup_customizations
 
 POST_INSTALL_PATCHES = ("set_default_razorpayx_payment_mode",)
 
+# TODO: post install patches to set  default value `NEFT/RTGS` for PAYOUT_MODE
+
 
 def after_install():
     try:
         setup_customizations()
+        run_post_install_patches()
 
     except Exception as e:
         click.secho(
@@ -23,11 +26,12 @@ def after_install():
         )
         raise e
 
-    click.secho(f"\nThank you for installing {APP_NAME}!", fg="green")
+    click.secho(f"\nThank you for installing {APP_NAME}!!\n", fg="green")
 
 
-# TODO: verify this function
 def run_post_install_patches():
+    if not POST_INSTALL_PATCHES:
+        return
     click.secho(f"\nRunning post-install patches for {APP_NAME}...", fg="yellow")
 
     if not frappe.db.exists("Company", {"country": "India"}):

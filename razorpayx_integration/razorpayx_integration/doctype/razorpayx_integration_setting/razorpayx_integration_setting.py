@@ -6,9 +6,7 @@ from frappe import _
 from frappe.model.document import Document
 
 from razorpayx_integration.constants import RAZORPAYX
-
-# TODO: add documentation tab to the doctype
-# TODO: Payout settings implementation
+from razorpayx_integration.payment_utils.constants.workflows import WORKFLOW_STATE
 
 
 class RazorPayXIntegrationSetting(Document):
@@ -28,23 +26,63 @@ class RazorPayXIntegrationSetting(Document):
         company_account: DF.Link | None
         disabled: DF.Check
         ifsc_code: DF.Data | None
-        key_authorized: DF.Check
         key_id: DF.Data
         key_secret: DF.Password
-        last_synced: DF.Datetime | None
         payment_success_template: DF.Link | None
         webhook_secret: DF.Password | None
 
     # end: auto-generated types
     def validate(self):
         self.validate_api_credentials()
+        self.validate_bank_account()
 
-    # todo: validate API credential (Are actually razorpayx credentials or not?)
     def validate_api_credentials(self):
         if not self.key_id or not self.key_secret:
             frappe.throw(
                 msg=_("Please set {0} API credentials.").format(RAZORPAYX),
                 title=_("API Credentials Are Missing"),
+            )
+
+    def validate_bank_account(self):
+        if not self.bank_account:
+            frappe.throw(
+                msg=_("Please set Bank Account."),
+                title=_("Bank Account Is Missing"),
+            )
+
+        bank_account = frappe.get_value(
+            "Bank Account",
+            self.bank_account,
+            ["disabled", "razorpayx_workflow_state", "is_company_account"],
+            as_dict=True,
+        )
+
+        if not bank_account:
+            frappe.throw(
+                msg=_("Bank Account not found."),
+                title=_("Invalid Bank Account"),
+            )
+
+        # ! ERROR: Maybe fails
+        if (
+            bank_account.razorpayx_workflow_state
+            and bank_account.razorpayx_workflow_state != WORKFLOW_STATE.APPROVED.value
+        ):
+            frappe.throw(
+                msg=_("Bank Account is not approved. Please approve it first."),
+                title=_("Invalid Bank Account"),
+            )
+
+        if bank_account.disabled:
+            frappe.throw(
+                msg=_("Bank Account is disabled. Please enable it first."),
+                title=_("Invalid Bank Account"),
+            )
+
+        if not bank_account.is_company_account:
+            frappe.throw(
+                msg=_("Bank Account is not a company's bank account."),
+                title=_("Invalid Bank Account"),
             )
 
 

@@ -11,9 +11,7 @@ from frappe.utils import (
     getdate,
 )
 
-from razorpayx_integration.constants import (
-    SECONDS_IN_A_DAY_MINUS_ONE,
-)
+from razorpayx_integration.constants import SECONDS_IN_A_DAY
 
 
 def get_start_of_day_epoch(date: DateTimeLikeObject = None) -> int:
@@ -53,7 +51,7 @@ def get_end_of_day_epoch(date: DateTimeLikeObject = None) -> int:
     Note:
         - Unix timestamp refers to `2024-05-30 11:59:59 PM`
     """
-    return int(get_timestamp(date)) + SECONDS_IN_A_DAY_MINUS_ONE
+    return int(get_timestamp(date)) + (SECONDS_IN_A_DAY - 1)
 
 
 def get_str_datetime_from_epoch(epoch_time: int) -> str:
