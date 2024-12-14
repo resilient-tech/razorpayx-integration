@@ -175,5 +175,9 @@ def make_online_payment(doc):
         # TODO: ? what can be done
         return
 
-    if payment_status := response.get["status"]:
+    if payment_status := response.get("status"):
         doc.razorpayx_payment_status = payment_status
+
+
+# ! IMPORTANT
+# TODO: if on submit fails, also cancel PE
