@@ -55,6 +55,7 @@ def validate_payout_mode(doc):
     validate_razorpayx_payout_mode(doc.razorpayx_payment_mode)
 
     if doc.razorpayx_payment_mode == RAZORPAYX_USER_PAYOUT_MODE.BANK.value:
+        # TODO: also fetch `IFSC` and `Account Number` and check
         if not doc.party_bank_account:
             frappe.throw(
                 msg=_("Party's Bank Account is mandatory to make payment."),

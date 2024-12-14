@@ -60,3 +60,16 @@ PAYOUT_PURPOSE_MAP = {
     "Customer": RAZORPAYX_PAYOUT_PURPOSE.UTILITY_BILL.value,
     "Employee": RAZORPAYX_PAYOUT_PURPOSE.SALARY.value,
 }
+
+CONTACT_TYPE_MAP = {
+    "Supplier": RAZORPAYX_CONTACT_TYPE.SUPPLIER.value,
+    "Customer": RAZORPAYX_CONTACT_TYPE.CUSTOMER.value,
+    "Employee": RAZORPAYX_CONTACT_TYPE.EMPLOYEE.value,
+}
+
+
+class PAYMENT_MODE_THRESHOLD(BaseEnum):
+    UPI = 1_00_000  # 1 Lakh INR
+    NEFT = 2_00_000  # 2 Lakh INR
+    IMPS = 5_00_000  # 5 Lakh INR
+    RTGS = "INFINITE"  # No Limit
