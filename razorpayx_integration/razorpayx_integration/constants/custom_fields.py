@@ -19,6 +19,7 @@ from razorpayx_integration.razorpayx_integration.constants.payouts import (
 
 CUSTOM_FIELDS = {
     "Payment Entry": [
+        #### PAYMENT SECTION START ####
         {
             "fieldname": "razorpayx_payment_section",
             "label": "RazorpayX Payment Details",
@@ -87,5 +88,6 @@ CUSTOM_FIELDS = {
             "in_standard_filter": 1,
             "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
         },
+        #### PAYMENT SECTION END ####
     ],
 }
