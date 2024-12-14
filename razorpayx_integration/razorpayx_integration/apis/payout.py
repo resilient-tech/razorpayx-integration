@@ -307,7 +307,7 @@ class RazorPayXLinkPayout(RazorPayXPayout):
             "contact": {
                 "name": request["party_name"],
                 "contact": request.get("party_mobile", ""),
-                "email": request["party_email", ""],
+                "email": request.get("party_email", ""),
                 "type": CONTACT_TYPE_MAP.get(
                     request["party_type"], RAZORPAYX_CONTACT_TYPE.CUSTOMER.value
                 ),

@@ -4,9 +4,18 @@
 // TODO: Backend validation for RazorpayX status fields !!!
 
 frappe.ui.form.on("Payment Entry", {
-	setup: function (frm) {},
+	refresh: function (frm) {
+		// set Intro for Payment
+		if (frm.is_new() || !frm.doc.make_online_payment) return;
 
-	refresh: function (frm) {},
+		if (frm.doc.docstatus == 0) {
+			frm.set_intro(__("This Payment will be processed by RazorpayX on submission."));
+		} else if (frm.doc.docstatus == 1) {
+			frm.set_intro(
+				__("RazorpayX Payment Status: <strong>{0}</strong>", [frm.doc.razorpayx_payment_status])
+			);
+		}
+	},
 
 	bank_account: async function (frm) {
 		// fetch razorpayx_integration account
