@@ -78,7 +78,25 @@ CUSTOM_FIELDS = {
     ],
     "Payment Entry": [
         {
-            "fieldname": "party_upi_id",
+            "fieldname": "party_bank_account_no",
+            "label": "Party Bank Account No",
+            "fieldtype": "Data",
+            "insert_after": "party_bank_account",
+            "fetch_from": "party_bank_account.bank_account_no",  # Note: update at integration level if required
+            "read_only": 1,
+            "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
+        },
+        {
+            "fieldname": "party_bank_ifsc",
+            "label": "Party Bank IFSC Code",
+            "fieldtype": "Data",
+            "insert_after": "party_bank_account_no",
+            "fetch_from": "party_bank_account.branch_code",  # Note: update at integration level if required
+            "read_only": 1,
+            "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
+        },
+        {
+            "fieldname": "party_bank_ifsc",
             "label": "Party UPI ID",
             "fieldtype": "Data",
             "insert_after": "party_bank_account",

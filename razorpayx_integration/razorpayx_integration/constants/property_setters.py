@@ -11,6 +11,7 @@ PE_MANDATORY_FIELDS_FOR_PAYMENT = [
 ]
 
 UPI_ID_CONDITION = f"eval: doc.make_online_payment and doc.razorpayx_account and doc.razorpayx_payment_mode === '{RAZORPAYX_USER_PAYOUT_MODE.UPI.value}'"
+BANK_ACCOUNT_CONDITION = f"eval: doc.make_online_payment and doc.razorpayx_account and doc.razorpayx_payment_mode === '{RAZORPAYX_USER_PAYOUT_MODE.BANK.value}'"
 
 PROPERTY_SETTERS = [
     ## Payment Entry ##
@@ -48,6 +49,34 @@ PROPERTY_SETTERS = [
         "property": "depends_on",
         "property_type": "Data",
         "value": UPI_ID_CONDITION,
+    },
+    {
+        "doctype": "Payment Entry",
+        "fieldname": "party_bank_account_no",
+        "property": "mandatory_depends_on",
+        "property_type": "Data",
+        "value": BANK_ACCOUNT_CONDITION,
+    },
+    {
+        "doctype": "Payment Entry",
+        "fieldname": "party_bank_account_no",
+        "property": "depends_on",
+        "property_type": "Data",
+        "value": BANK_ACCOUNT_CONDITION,
+    },
+    {
+        "doctype": "Payment Entry",
+        "fieldname": "party_bank_ifsc",
+        "property": "mandatory_depends_on",
+        "property_type": "Data",
+        "value": BANK_ACCOUNT_CONDITION,
+    },
+    {
+        "doctype": "Payment Entry",
+        "fieldname": "party_bank_ifsc",
+        "property": "depends_on",
+        "property_type": "Data",
+        "value": BANK_ACCOUNT_CONDITION,
     },
     ## Bank Account ##
     {
