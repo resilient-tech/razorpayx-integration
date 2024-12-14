@@ -60,9 +60,19 @@ CUSTOM_FIELDS = {
             "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
         },
         {
+            "fieldname": "razorpayx_payout_id",
+            "label": "RazorpayX Payout ID",
+            "fieldtype": "Data",
+            "insert_after": "razorpayx_pay_instantaneously",
+            "read_only": 1,
+            "hidden": 1,
+            "print_hide": 1,
+            "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
+        },
+        {
             "fieldname": "razorpayx_payment_cb",
             "fieldtype": "Column Break",
-            "insert_after": "razorpayx_pay_instantaneously",
+            "insert_after": "razorpayx_payout_id",
             "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
         },
         {

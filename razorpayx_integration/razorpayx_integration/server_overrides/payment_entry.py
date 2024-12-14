@@ -175,6 +175,9 @@ def make_online_payment(doc):
         # TODO: ? what can be done
         return
 
+    if payout_id := response.get("razorpayx_payout_id"):
+        doc.razorpayx_payout_id = payout_id
+
     if payment_status := response.get("status"):
         doc.razorpayx_payment_status = payment_status
 
