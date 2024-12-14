@@ -18,7 +18,7 @@ def validate_razorpayx_contact_type(type: str):
     if not RAZORPAYX_CONTACT_TYPE.has_value(type):
         type_list = (
             "<ul>"
-            + "".join(f"<li>{t.value}</li>" for t in RAZORPAYX_CONTACT_TYPE)
+            + "".join(f"<li>{value}</li>" for value in RAZORPAYX_CONTACT_TYPE.values())
             + "</ul>"
         )
         frappe.throw(
@@ -37,7 +37,9 @@ def validate_razorpayx_fund_account_type(type: str):
     if not RAZORPAYX_FUND_ACCOUNT_TYPE.has_value(type):
         type_list = (
             "<ul>"
-            + "".join(f"<li>{t.value}</li>" for t in RAZORPAYX_FUND_ACCOUNT_TYPE)
+            + "".join(
+                f"<li>{value}</li>" for value in RAZORPAYX_FUND_ACCOUNT_TYPE.values()
+            )
             + "</ul>"
         )
         frappe.throw(
@@ -77,7 +79,7 @@ def validate_razorpayx_payout_status(status: str):
     if not RAZORPAYX_PAYOUT_STATUS.has_value(status):
         status_list = (
             "<ul>"
-            + "".join(f"<li>{t.value}</li>" for t in RAZORPAYX_PAYOUT_STATUS)
+            + "".join(f"<li>{value}</li>" for value in RAZORPAYX_PAYOUT_STATUS.values())
             + "</ul>"
         )
         frappe.throw(

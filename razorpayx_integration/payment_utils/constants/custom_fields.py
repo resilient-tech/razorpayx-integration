@@ -96,10 +96,10 @@ CUSTOM_FIELDS = {
             "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
         },
         {
-            "fieldname": "party_bank_ifsc",
+            "fieldname": "party_upi_id",
             "label": "Party UPI ID",
             "fieldtype": "Data",
-            "insert_after": "party_bank_account",
+            "insert_after": "party_bank_ifsc",
             "fetch_from": "party_bank_account.upi_id",  # Note: update at integration level if required
             "read_only": 1,
             "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,

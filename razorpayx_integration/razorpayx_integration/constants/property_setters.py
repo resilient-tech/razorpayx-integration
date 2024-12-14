@@ -10,8 +10,8 @@ PE_MANDATORY_FIELDS_FOR_PAYMENT = [
     "party_bank_account",
 ]
 
-UPI_ID_CONDITION = f"eval: doc.make_online_payment and doc.razorpayx_account and doc.razorpayx_payment_mode === '{RAZORPAYX_USER_PAYOUT_MODE.UPI.value}'"
-BANK_ACCOUNT_CONDITION = f"eval: doc.make_online_payment and doc.razorpayx_account and doc.razorpayx_payment_mode === '{RAZORPAYX_USER_PAYOUT_MODE.BANK.value}'"
+UPI_ID_CONDITION = f"eval: doc.make_online_payment && doc.razorpayx_account && doc.razorpayx_payment_mode === '{RAZORPAYX_USER_PAYOUT_MODE.UPI.value}'"
+BANK_ACCOUNT_CONDITION = f"eval: doc.make_online_payment && doc.razorpayx_account && doc.razorpayx_payment_mode === '{RAZORPAYX_USER_PAYOUT_MODE.BANK.value}'"
 
 PROPERTY_SETTERS = [
     ## Payment Entry ##

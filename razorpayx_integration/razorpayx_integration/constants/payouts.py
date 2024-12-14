@@ -37,8 +37,8 @@ class RAZORPAYX_PAYOUT_PURPOSE(BaseEnum):
     CASH_BACK = "cashback"
     PAYOUT = "payout"
     SALARY = "salary"
-    UTILITY_BILL = "utility_bill"
-    VENDOR_BILL = "vendor_bill"
+    UTILITY_BILL = "utility bill"
+    VENDOR_BILL = "vendor bill"
 
 
 class RAZORPAYX_PAYOUT_STATUS(BaseEnum):

@@ -188,8 +188,8 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         if fund_account_type == RAZORPAYX_FUND_ACCOUNT_TYPE.BANK_ACCOUNT.value:
             fund_account["bank_account"] = {
                 "name": request["party_name"],
-                "ifsc": request["ifsc_code"],
-                "account_number": request["party_account_number"],
+                "ifsc": request["party_bank_ifsc"],
+                "account_number": request["party_bank_account_no"],
             }
         else:
             fund_account["vpa"] = {
@@ -247,7 +247,7 @@ class RazorPayXCompositePayout(RazorPayXPayout):
                 else:
                     return RAZORPAYX_PAYOUT_MODE.NEFT.value
 
-        party_account_type = RAZORPAYX_FUND_ACCOUNT_TYPE.BANK_ACCOUNT
+        party_account_type = RAZORPAYX_FUND_ACCOUNT_TYPE.BANK_ACCOUNT.value
 
         request["mode"] = get_bank_payment_mode()
 
@@ -265,7 +265,7 @@ class RazorPayXCompositePayout(RazorPayXPayout):
         ---
         Reference: https://razorpay.com/docs/api/x/payout-composite/create/vpa/
         """
-        party_account_type = RAZORPAYX_FUND_ACCOUNT_TYPE.VPA
+        party_account_type = RAZORPAYX_FUND_ACCOUNT_TYPE.VPA.value
 
         request["mode"] = RAZORPAYX_PAYOUT_MODE.UPI.value
 
@@ -325,133 +325,4 @@ class RazorPayXLinkPayout(RazorPayXPayout):
         }
 
 
-# what is needed?
-
-"""
-Common: Composite
-1. Account Number: Fetch from API
-2. Amount : DATA
-3. Mode: DATA : DECIDE
-4. PURPOSE: DATA : DECIDE BY PARTY TYPE
-5.
-
-1. By Bank Account:
-"""
-
-""""
----
-
-    {
-    amount
-    mode
-    party name
-    party ifsc
-    party account number -> VPA
-    party email
-    party contact
-    party type
-    party
-    refrence_id
-    description
-    }
-
----
-
-    amount
-    party_contact details
-    description
-"""
-
-"""BANK
-{
-    "account_number": "7878780080316316",
-    "amount": 1000000,
-    "currency": "INR",
-    "mode": "NEFT",
-    "purpose": "refund",
-    "fund_account": {
-        "account_type": "bank_account",
-        "bank_account": {
-            "name": "Gaurav Kumar",
-            "ifsc": "HDFC0001234",
-            "account_number": "1121431121541121"
-        },
-        "contact": {
-            "name": "Gaurav Kumar",
-            "email": "gaurav.kumar@example.com",
-            "contact": "9876543210",
-            "type": "vendor",
-            "reference_id": "Acme Contact ID 12345",
-            "notes": {
-                "notes_key_1": "Tea, Earl Grey, Hot",
-                "notes_key_2": "Tea, Earl Grey… decaf."
-            }
-        }
-    },
-    "queue_if_low_balance": true,
-    "reference_id": "Acme Transaction ID 12345",
-    "narration": "Acme Corp Fund Transfer",
-    "notes": {
-        "notes_key_1": "Beam me up Scotty",
-        "notes_key_2": "Engage"
-    }
-}
-"""
-
-""" VPA
-{
-    "account_number": "7878780080316316",
-    "amount": 1000000,
-    "currency": "INR",
-    "mode": "UPI",
-    "purpose": "refund",
-    "fund_account": {
-        "account_type": "vpa",
-        "vpa": {
-            "address": "gauravkumar@exampleupi"
-        },
-        "contact": {
-            "name": "Gaurav Kumar",
-            "email": "gaurav.kumar@example.com",
-            "contact": "9876543210",
-            "type": "self",
-            "reference_id": "Acme Contact ID 12345",
-            "notes": {
-                "notes_key_1": "Tea, Earl Grey, Hot",
-                "notes_key_2": "Tea, Earl Grey… decaf."
-            }
-        }
-    },
-    "queue_if_low_balance": true,
-    "reference_id": "Acme Transaction ID 12345",
-    "narration": "Acme Corp Fund Transfer",
-    "notes": {
-        "notes_key_1": "Beam me up Scotty",
-        "notes_key_2": "Engage"
-    }
-}
-"""
-
-"""Link (by contact detials)
-{
-  "account_number": "7878780080857996",
-  "contact": {
-    "name": "Gaurav Kumar",
-    "contact": "912345678",
-    "email": "gaurav.kumar@example.com",
-    "type": "customer"
-  }, // Only applicable when you have the contact details of the recipient.
-  "amount": 1000,
-  "currency": "INR",
-  "purpose": "refund",
-  "description": "Payout link for Gaurav Kumar",
-  "receipt": "Receipt No. 1",
-  "send_sms": true,
-  "send_email": true,
-  "notes": {
-    "notes_key_1":"Tea, Earl Grey, Hot",
-    "notes_key_2":"Tea, Earl Grey… decaf."
-  },
-  "expire_by": 1545384058 // This parameter can be used only if you have enabled the expiry feature for Payout Links.
-}
-"""
+# TODO: store response data??

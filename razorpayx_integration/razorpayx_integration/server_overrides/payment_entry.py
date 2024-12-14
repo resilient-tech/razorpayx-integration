@@ -13,6 +13,9 @@ from razorpayx_integration.razorpayx_integration.constants.payouts import (
     RAZORPAYX_PAYOUT_STATUS,
     RAZORPAYX_USER_PAYOUT_MODE,
 )
+from razorpayx_integration.razorpayx_integration.utils.payout import (
+    make_payment_from_payment_entry,
+)
 from razorpayx_integration.razorpayx_integration.utils.validation import (
     validate_razorpayx_payout_mode,
 )
@@ -157,6 +160,7 @@ def validate_upi_id(doc):
         )
 
 
+# TODO: enqueue it?
 def on_submit(doc, method=None):
     make_online_payment(doc)
 
@@ -164,3 +168,12 @@ def on_submit(doc, method=None):
 def make_online_payment(doc):
     if not doc.make_online_payment:
         return
+
+    response = make_payment_from_payment_entry(doc)
+
+    if not response:
+        # TODO: ? what can be done
+        return
+
+    if payment_status := response.get["status"]:
+        doc.razorpayx_payment_status = payment_status
