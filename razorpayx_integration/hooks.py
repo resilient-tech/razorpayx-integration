@@ -21,5 +21,9 @@ doctype_js = {
 doc_events = {
     "Bank Account": {
         "validate": "razorpayx_integration.payment_utils.server_overrides.bank_account.validate"
-    }
+    },
+    "Payment Entry": {
+        "validate": "razorpayx_integration.razorpayx_integration.server_overrides.payment_entry.validate",
+        "on_submit": "razorpayx_integration.razorpayx_integration.server_overrides.payment_entry.on_submit",
+    },
 }
