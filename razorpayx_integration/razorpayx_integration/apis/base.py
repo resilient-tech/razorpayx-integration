@@ -15,6 +15,9 @@ from razorpayx_integration.payment_utils.utils import (
     get_end_of_day_epoch,
     get_start_of_day_epoch,
 )
+from razorpayx_integration.razorpayx_integration.doctype.razorpayx_integration_setting.razorpayx_integration_setting import (
+    RazorPayXIntegrationSetting,
+)
 
 # todo: logs for API calls.
 
@@ -28,9 +31,9 @@ class BaseRazorPayXAPI:
     # * utility attributes
     BASE_PATH = ""
 
-    def __init__(self, razorpayx_account_name: str, *args, **kwargs):
-        self.razorpayx_account = frappe.get_doc(
-            RAZORPAYX_SETTING_DOCTYPE, razorpayx_account_name
+    def __init__(self, razorpayx_account: str, *args, **kwargs):
+        self.razorpayx_account: RazorPayXIntegrationSetting = frappe.get_doc(
+            RAZORPAYX_SETTING_DOCTYPE, razorpayx_account
         )
 
         self.authenticate_razorpayx_account()
@@ -53,7 +56,7 @@ class BaseRazorPayXAPI:
         if self.razorpayx_account.disabled:
             frappe.throw(
                 msg=_("To use {0} account, please enable it first!").format(
-                    frappe.bold(self.razorpayx_account.bank_account)
+                    frappe.bold(self.razorpayx_account.name)
                 ),
                 title=_("RazorPayX Integration Account Is Disable"),
             )

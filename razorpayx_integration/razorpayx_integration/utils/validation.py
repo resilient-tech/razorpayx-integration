@@ -5,11 +5,12 @@ from razorpayx_integration.constants import RAZORPAYX
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
     RAZORPAYX_CONTACT_TYPE,
     RAZORPAYX_FUND_ACCOUNT_TYPE,
-    RAZORPAYX_PAYOUT_MODE,
     RAZORPAYX_PAYOUT_STATUS,
+    RAZORPAYX_USER_PAYOUT_MODE,
 )
 
 
+# TODO: need refactoring about enums
 def validate_razorpayx_contact_type(type: str):
     """
     :raises ValueError: If the type is not valid.
@@ -17,7 +18,7 @@ def validate_razorpayx_contact_type(type: str):
     if not RAZORPAYX_CONTACT_TYPE.has_value(type):
         type_list = (
             "<ul>"
-            + "".join(f"<li>{t.value}</li>" for t in RAZORPAYX_CONTACT_TYPE)
+            + "".join(f"<li>{value}</li>" for value in RAZORPAYX_CONTACT_TYPE.values())
             + "</ul>"
         )
         frappe.throw(
@@ -36,7 +37,9 @@ def validate_razorpayx_fund_account_type(type: str):
     if not RAZORPAYX_FUND_ACCOUNT_TYPE.has_value(type):
         type_list = (
             "<ul>"
-            + "".join(f"<li>{t.value}</li>" for t in RAZORPAYX_FUND_ACCOUNT_TYPE)
+            + "".join(
+                f"<li>{value}</li>" for value in RAZORPAYX_FUND_ACCOUNT_TYPE.values()
+            )
             + "</ul>"
         )
         frappe.throw(
@@ -48,14 +51,16 @@ def validate_razorpayx_fund_account_type(type: str):
         )
 
 
-def validate_razorpayx_payout_mode(mode: str):
+def validate_razorpayx_payout_mode(mode: str | None = None):
     """
     :raises ValueError: If the mode is not valid.
     """
-    if not RAZORPAYX_PAYOUT_MODE.has_value(mode):
+    if not RAZORPAYX_USER_PAYOUT_MODE.has_value(mode):
         mode_list = (
             "<ul>"
-            + "".join(f"<li>{t.value}</li>" for t in RAZORPAYX_PAYOUT_MODE)
+            + "".join(
+                f"<li>{value}</li>" for value in RAZORPAYX_USER_PAYOUT_MODE.values()
+            )
             + "</ul>"
         )
         frappe.throw(
@@ -63,7 +68,7 @@ def validate_razorpayx_payout_mode(mode: str):
                 mode, mode_list
             ),
             title=_("Invalid {0} Payout mode").format(RAZORPAYX),
-            exc=ValueError,
+            exc=frappe.ValidationError,
         )
 
 
@@ -74,7 +79,7 @@ def validate_razorpayx_payout_status(status: str):
     if not RAZORPAYX_PAYOUT_STATUS.has_value(status):
         status_list = (
             "<ul>"
-            + "".join(f"<li>{t.value}</li>" for t in RAZORPAYX_PAYOUT_STATUS)
+            + "".join(f"<li>{value}</li>" for value in RAZORPAYX_PAYOUT_STATUS.values())
             + "</ul>"
         )
         frappe.throw(
