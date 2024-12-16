@@ -15,14 +15,8 @@ from razorpayx_integration.razorpayx_integration.doctype.razorpayx_integration_s
     RazorPayXIntegrationSetting,
 )
 
-
 # API: https://sixty-bobcats-push.loca.lt/api/method/razorpayx_integration.razorpayx_integration.utils.webhooks.process_webhook
 # regenerate code: lt --port 8001 --subdomain sixty-bobcats-push
-class WEBHOOK_EVENTS_TYPE(BaseEnum):
-    PAYOUT = "payout"
-    PAYOUT_LINK = "payout_link"
-    TRANSACTION = "transaction"
-    # ACCOUNT = "fund_account.validation" # Ignore this event
 
 
 class RazorPayXWebhook:

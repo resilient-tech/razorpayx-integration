@@ -52,6 +52,8 @@ class RAZORPAYX_PAYOUT_STATUS(BaseEnum):
     REVERSED = "reversed"
     FAILED = "failed"
     ISSUED = "issued"  # Payout via Link
+    EXPIRED = "expired"  # Payout via Link
+    ATTEMPTED = "attempted"  # Payout via Link
 
 
 # if not map use `RAZORPAYX_PAYOUT_PURPOSE.PAYOUT`
