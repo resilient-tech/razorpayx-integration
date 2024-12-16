@@ -178,7 +178,7 @@ def make_online_payment(doc):
     doc.db_set(
         {
             "razorpayx_payout_id": response["id"],
-            "razorpayx_payment_status": response["status"],
+            "razorpayx_payment_status": response["status"].title(),
         }
     )
 

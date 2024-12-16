@@ -124,14 +124,27 @@ CUSTOM_FIELDS = {
             "label": "RazorpayX Event ID",
             "fieldtype": "Data",
             "insert_after": "request_id",
+            "read_only": 1,
+        },
+        {
+            "fieldname": "razorpayx_payment_status",
+            "label": "RazorPayX Payment Status",
+            "fieldtype": "Select",
+            "insert_after": "status",
+            "options": "\n "
+            + RAZORPAYX_PAYOUT_STATUS.title_case_values(as_string=True),
+            "read_only": 1,
+            "in_list_view": 1,
+            "in_standard_filter": 1,
         },
         {
             "fieldname": "razorpayx_event",
             "label": "RazorpayX Event",
             "fieldtype": "Select",
-            "insert_after": "status",
+            "insert_after": "razorpayx_payment_status",
             "options": "\n" + get_webhook_events_as_select_options(),
             "in_standard_filter": 1,
+            "read_only": 1,
         },
     ],
 }

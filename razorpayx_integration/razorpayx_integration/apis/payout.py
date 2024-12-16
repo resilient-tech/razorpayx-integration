@@ -111,6 +111,7 @@ class RazorPayXPayout(BaseRazorPayXAPI):
 
     ### HELPERS ###
     # todo: need proper key generation and implementation
+    # todo: BUGGY! if somthing fails after API calls it is not allowing to retry
     # ! important
     def get_idempotency_key_header(self, json: dict) -> dict:
         """

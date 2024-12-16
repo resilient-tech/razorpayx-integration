@@ -15,8 +15,8 @@ from razorpayx_integration.razorpayx_integration.doctype.razorpayx_integration_s
     RazorPayXIntegrationSetting,
 )
 
-# API: https://sixty-bobcats-push.loca.lt/api/method/razorpayx_integration.razorpayx_integration.utils.webhooks.process_webhook
-# regenerate code: lt --port 8001 --subdomain sixty-bobcats-push
+# API: TUNNEL_URL/api/method/razorpayx_integration.razorpayx_integration.utils.webhooks.process_webhook
+# regenerate code: lt --port 8001
 
 
 class RazorPayXWebhook:
@@ -69,10 +69,11 @@ class RazorPayXWebhook:
                 "request_id": self.request_id,
                 "razorpayx_event_id": self.event_id,
                 "razorpayx_event": self.event,
+                "razorpayx_payment_status": self.payment_status,
                 "integration_request_service": "Online Banking Payment with RazorpayX",
                 "request_headers": str(frappe.request.headers),
                 "data": json.dumps(self.payload, indent=4),
-                "status": "Queued",
+                "status": "Authorized",
                 "reference_doctype": self.source_doctype,
                 "reference_docname": self.source_docname,
             }
@@ -88,24 +89,25 @@ class RazorPayXWebhook:
     #### UTILITIES ####
     def set_payload_data_to_object(self):
         frappe.set_user("Administrator")
-
-        event_type = self.payload["contains"][0]
         account_key = "razorpayx_integration_account"
 
         self.request_id = frappe.get_request_header("Request-Id")
-        self.event = self.payload["event"]
-        self.entity = self.payload["payload"][event_type]["entity"]
+
         self.row_payload = frappe.request.data
         self.payload = json.loads(self.row_payload)
+        event_type = self.payload["contains"][0]
+        self.event = self.payload["event"]
+        self.entity = self.payload["payload"][event_type]["entity"]
 
-        match event_type:
-            case WEBHOOK_EVENTS_TYPE.PAYOUT.value:
-                self.notes = self.entity["notes"]
-            case WEBHOOK_EVENTS_TYPE.PAYOUT_LINK.value:
-                self.notes = self.entity["notes"]
-            case WEBHOOK_EVENTS_TYPE.TRANSACTION.value:
-                self.notes = self.entity["source"]["notes"]
+        if event_type == WEBHOOK_EVENTS_TYPE.TRANSACTION.value:
+            source = self.entity["source"]
+            self.notes = source["notes"]
+            self.payment_status = source["status"]
+        else:
+            self.notes = self.entity["notes"]
+            self.payment_status = self.entity["status"]
 
+        self.payment_status = self.payment_status.title()
         self.source_doctype = self.notes["source_doctype"]
         self.source_docname = self.notes["source_docname"]
 
