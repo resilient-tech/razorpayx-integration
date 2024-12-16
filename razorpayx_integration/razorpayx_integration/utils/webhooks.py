@@ -18,6 +18,9 @@ from razorpayx_integration.razorpayx_integration.doctype.razorpayx_integration_s
 # API: TUNNEL_URL/api/method/razorpayx_integration.razorpayx_integration.utils.webhooks.process_webhook
 # regenerate code: lt --port 8001
 
+# TODO: When to create a `Bank Transaction`
+# TODO: when to cancel PE ?
+
 
 class RazorPayXWebhook:
     def __init__(self):
