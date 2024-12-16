@@ -8,7 +8,7 @@
 import frappe
 from frappe import _
 
-from razorpayx_integration.constants import RAZORPAYX, RAZORPAYX_SETTING_DOCTYPE
+from razorpayx_integration.constants import RAZORPAYX, RAZORPAYX_INTEGRATION_DOCTYPE
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
     RAZORPAYX_PAYOUT_STATUS,
     RAZORPAYX_USER_PAYOUT_MODE,
@@ -104,7 +104,7 @@ def validate_razorpayx_account(doc):
         return
 
     associated_razorpayx_account = frappe.get_value(
-        RAZORPAYX_SETTING_DOCTYPE,
+        RAZORPAYX_INTEGRATION_DOCTYPE,
         {"bank_account": doc.bank_account},
         "name",
     )

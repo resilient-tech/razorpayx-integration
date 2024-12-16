@@ -10,7 +10,7 @@ Note:
         ...
 """
 
-from razorpayx_integration.constants import RAZORPAYX_SETTING_DOCTYPE
+from razorpayx_integration.constants import RAZORPAYX_INTEGRATION_DOCTYPE
 from razorpayx_integration.payment_utils.constants.roles import PERMISSION_LEVEL
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
     RAZORPAYX_PAYOUT_STATUS,
@@ -33,7 +33,7 @@ CUSTOM_FIELDS = {
             "label": "RazorpayX Integration Account",
             "fieldtype": "Link",
             "insert_after": "razorpayx_payment_section",
-            "options": RAZORPAYX_SETTING_DOCTYPE,
+            "options": RAZORPAYX_INTEGRATION_DOCTYPE,
             "print_hide": 1,
             "read_only": 1,
             "hidden": 1,

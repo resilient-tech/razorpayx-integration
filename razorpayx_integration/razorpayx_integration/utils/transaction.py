@@ -2,7 +2,7 @@ import frappe
 from frappe.utils import DateTimeLikeObject, now_datetime
 
 from razorpayx_integration.constants import (
-    RAZORPAYX_SETTING_DOCTYPE,
+    RAZORPAYX_INTEGRATION_DOCTYPE,
 )
 from razorpayx_integration.payment_utils.utils import (
     get_str_datetime_from_epoch,
@@ -18,7 +18,7 @@ from razorpayx_integration.razorpayx_integration.apis.transaction import (
 # todo: this file need to be refactor and optimize
 @frappe.whitelist()
 def sync_bank_transactions(bank_account: str, from_date: DateTimeLikeObject):
-    frappe.has_permission(RAZORPAYX_SETTING_DOCTYPE, bank_account, throw=True)
+    frappe.has_permission(RAZORPAYX_INTEGRATION_DOCTYPE, bank_account, throw=True)
     frappe.has_permission("Bank Transaction", throw=True)
 
     return sync_razorpayx_bank_transactions(
@@ -69,7 +69,7 @@ def sync_razorpayx_bank_transactions(
 
         # set last sync field in `RazorPayX Integration Settings`
         frappe.db.set_value(
-            RAZORPAYX_SETTING_DOCTYPE, account, "last_synced", now_datetime()
+            RAZORPAYX_INTEGRATION_DOCTYPE, account, "last_synced", now_datetime()
         )
 
         return True

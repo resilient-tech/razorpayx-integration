@@ -4,7 +4,7 @@ BUG_REPORT_URL = "https://github.com/resilient-tech/razorpayx_integration/issues
 
 ### Constants for RazorpayX Integration ###
 RAZORPAYX = "RazorPayX"
-RAZORPAYX_SETTING_DOCTYPE = "RazorPayX Integration Setting"
+RAZORPAYX_INTEGRATION_DOCTYPE = "RazorPayX Integration Setting"
 
 
 ### Constants for APIs ###
