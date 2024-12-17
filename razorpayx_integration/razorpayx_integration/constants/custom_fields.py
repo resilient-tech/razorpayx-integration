@@ -10,12 +10,26 @@ Note:
         ...
 """
 
-from razorpayx_integration.constants import RAZORPAYX_SETTING_DOCTYPE
+from razorpayx_integration.constants import RAZORPAYX_INTEGRATION_DOCTYPE
 from razorpayx_integration.payment_utils.constants.roles import PERMISSION_LEVEL
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
     RAZORPAYX_PAYOUT_STATUS,
     RAZORPAYX_USER_PAYOUT_MODE,
 )
+from razorpayx_integration.razorpayx_integration.constants.webhooks import (
+    WEBHOOK_PAYOUT_EVENT,
+    WEBHOOK_PAYOUT_LINK_EVENT,
+)
+
+
+def get_webhook_events_as_select_options() -> str:
+    return "\n".join(
+        [
+            WEBHOOK_PAYOUT_EVENT.values_as_string(),
+            WEBHOOK_PAYOUT_LINK_EVENT.values_as_string(),
+        ]
+    )
+
 
 CUSTOM_FIELDS = {
     "Payment Entry": [
@@ -33,7 +47,7 @@ CUSTOM_FIELDS = {
             "label": "RazorpayX Integration Account",
             "fieldtype": "Link",
             "insert_after": "razorpayx_payment_section",
-            "options": RAZORPAYX_SETTING_DOCTYPE,
+            "options": RAZORPAYX_INTEGRATION_DOCTYPE,
             "print_hide": 1,
             "read_only": 1,
             "hidden": 1,
@@ -86,7 +100,7 @@ CUSTOM_FIELDS = {
         },
         {
             "fieldname": "razorpayx_payment_status",
-            "label": "Payment Status",
+            "label": "RazorPayX Payment Status",
             "fieldtype": "Select",
             "insert_after": "razorpayx_payment_desc",
             "options": RAZORPAYX_PAYOUT_STATUS.title_case_values(as_string=True),
@@ -99,5 +113,34 @@ CUSTOM_FIELDS = {
             "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
         },
         #### PAYMENT SECTION END ####
+    ],
+    "Integration Request": [
+        {
+            "fieldname": "razorpayx_event_id",
+            "label": "RazorpayX Event ID",
+            "fieldtype": "Data",
+            "insert_after": "request_id",
+            "read_only": 1,
+        },
+        {
+            "fieldname": "razorpayx_payment_status",
+            "label": "RazorPayX Payment Status",
+            "fieldtype": "Select",
+            "insert_after": "status",
+            "options": "\n "
+            + RAZORPAYX_PAYOUT_STATUS.title_case_values(as_string=True),
+            "read_only": 1,
+            "in_list_view": 1,
+            "in_standard_filter": 1,
+        },
+        {
+            "fieldname": "razorpayx_event",
+            "label": "RazorpayX Event",
+            "fieldtype": "Select",
+            "insert_after": "razorpayx_payment_status",
+            "options": "\n" + get_webhook_events_as_select_options(),
+            "in_standard_filter": 1,
+            "read_only": 1,
+        },
     ],
 }

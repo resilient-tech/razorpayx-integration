@@ -105,18 +105,15 @@ class RazorPayXPayout(BaseRazorPayXAPI):
 
         :param json: Processed request data for `Payout`.
         """
-        headers = self.get_idempotency_key_header(json["source_name"])
-
-        # delete source_type and source_name from json
-        del json["source_type"]
-        del json["source_name"]
+        headers = self.get_idempotency_key_header(json)
 
         return self.post(json=json, headers=headers)
 
     ### HELPERS ###
     # todo: need proper key generation and implementation
+    # todo: BUGGY! if somthing fails after API calls it is not allowing to retry
     # ! important
-    def get_idempotency_key_header(self, source_name: str) -> dict:
+    def get_idempotency_key_header(self, json: dict) -> dict:
         """
         Generate `Idempotency Key` header for `Payout` creation.
 
@@ -129,7 +126,7 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         Reference: https://razorpay.com/docs/api/x/payout-idempotency/make-request/
         """
 
-        return {"X-Payout-Idempotency": source_name}
+        return {"X-Payout-Idempotency": json["notes"]["source_docname"]}
 
     def map_payout_request(
         self,
@@ -157,10 +154,15 @@ class RazorPayXPayout(BaseRazorPayXAPI):
             "purpose": PAYOUT_PURPOSE_MAP.get(
                 request["party_type"], RAZORPAYX_PAYOUT_PURPOSE.PAYOUT.value
             ),
-            "reference_id": f"{request['source_type']}-{request['source_name']}",
+            "reference_id": f"{request['source_doctype']}-{request['source_docname']}",
             "narration": request["payment_description"],
-            "source_type": request["source_type"],
-            "source_name": request["source_name"],
+            "notes": {
+                "source_doctype": request["source_doctype"],
+                "source_docname": request["source_docname"],
+                "razorpayx_integration_account": request[
+                    "razorpayx_integration_account"
+                ],
+            },
         }
 
         if fund_account_id:
@@ -320,8 +322,13 @@ class RazorPayXLinkPayout(RazorPayXPayout):
             "description": request["payment_description"],
             "send_sms": True,
             "send_email": True,
-            "source_type": request["source_type"],
-            "source_name": request["source_name"],
+            "notes": {
+                "source_doctype": request["source_doctype"],
+                "source_docname": request["source_docname"],
+                "razorpayx_integration_account": request[
+                    "razorpayx_integration_account"
+                ],
+            },
         }
 
 

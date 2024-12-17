@@ -13,22 +13,15 @@ from razorpayx_integration.razorpayx_integration.constants.payouts import (
 )
 
 
-@frappe.whitelist()
-def make_payout(data):
-    pass
-
-
-# Identify transactions to pay.
-# Create a payment entry.
-
+# TODO: convert it to class implementation ??
+# ! IMPORTANT
 # TODO: make more efficient secure and reliable
-
-
 def make_payment_from_payment_entry(payment_entry: PaymentEntry):
     """
     Make RazorPayX payment from payment entry
     """
 
+    # Validate Payment Entry
     validate_payment_prerequisite(payment_entry)
 
     def pay_to_bank_account():
@@ -74,6 +67,7 @@ def make_payment_from_payment_entry(payment_entry: PaymentEntry):
         )
 
 
+# TODO: make more efficient
 def validate_payment_prerequisite(payment_entry: PaymentEntry):
     if (
         payment_entry.razorpayx_payment_status
@@ -115,6 +109,7 @@ def validate_payment_prerequisite(payment_entry: PaymentEntry):
         )
 
 
+# Make more general
 def get_mapped_request(payment_entry: PaymentEntry) -> dict:
     return frappe._dict(
         {
@@ -130,7 +125,8 @@ def get_mapped_request(payment_entry: PaymentEntry) -> dict:
             "amount": payment_entry.paid_amount,
             "payment_description": payment_entry.razorpayx_payment_desc,
             "payment_status": payment_entry.razorpayx_payment_status,
-            "source_type": payment_entry.doctype,
-            "source_name": payment_entry.name,
+            "source_doctype": payment_entry.doctype,
+            "source_docname": payment_entry.name,
+            "razorpayx_integration_account": payment_entry.razorpayx_account,
         }
     )

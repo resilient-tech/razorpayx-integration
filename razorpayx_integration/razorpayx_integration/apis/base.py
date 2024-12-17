@@ -8,7 +8,7 @@ from frappe.app import UNSAFE_HTTP_METHODS
 from razorpayx_integration.constants import (
     RAZORPAYX,
     RAZORPAYX_BASE_API_URL,
-    RAZORPAYX_SETTING_DOCTYPE,
+    RAZORPAYX_INTEGRATION_DOCTYPE,
     SUPPORTED_HTTP_METHOD,
 )
 from razorpayx_integration.payment_utils.utils import (
@@ -33,7 +33,7 @@ class BaseRazorPayXAPI:
 
     def __init__(self, razorpayx_account: str, *args, **kwargs):
         self.razorpayx_account: RazorPayXIntegrationSetting = frappe.get_doc(
-            RAZORPAYX_SETTING_DOCTYPE, razorpayx_account
+            RAZORPAYX_INTEGRATION_DOCTYPE, razorpayx_account
         )
 
         self.authenticate_razorpayx_account()

@@ -141,3 +141,5 @@ CUSTOM_FIELDS = {
         {**BLOCK_AUTO_PAYMENT, "insert_after": "bank_name"},
     ],
 }
+
+# TODO: Add `no copy` for all custom fields which are not required to copy

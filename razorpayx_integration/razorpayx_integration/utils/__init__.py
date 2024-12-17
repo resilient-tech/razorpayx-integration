@@ -3,14 +3,14 @@ import json
 import frappe
 from frappe import _
 
-from razorpayx_integration.constants import RAZORPAYX_SETTING_DOCTYPE
+from razorpayx_integration.constants import RAZORPAYX_INTEGRATION_DOCTYPE
 
 
 @frappe.whitelist()
 def get_associate_razorpayx_account(
     paid_from_account: str, fieldname: list | str | None = None
 ) -> dict | None:
-    frappe.has_permission(RAZORPAYX_SETTING_DOCTYPE)
+    frappe.has_permission(RAZORPAYX_INTEGRATION_DOCTYPE)
 
     if not fieldname:
         fieldname = "name"
@@ -25,7 +25,7 @@ def get_associate_razorpayx_account(
         return
 
     return frappe.db.get_value(
-        RAZORPAYX_SETTING_DOCTYPE,
+        RAZORPAYX_INTEGRATION_DOCTYPE,
         {"bank_account": bank_account},
         fieldname,
         as_dict=True,
@@ -34,7 +34,7 @@ def get_associate_razorpayx_account(
 
 def get_enabled_razorpayx_accounts() -> list[str]:
     return frappe.get_all(
-        RAZORPAYX_SETTING_DOCTYPE,
+        RAZORPAYX_INTEGRATION_DOCTYPE,
         filters={"disabled": 0},
         pluck="name",
     )
