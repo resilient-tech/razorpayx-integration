@@ -13,6 +13,7 @@
   "key_id",
   "key_secret",
   "column_break_8tcki",
+  "account_id",
   "webhook_secret",
   "account_tab",
   "account_details_section",
@@ -167,11 +168,21 @@
    "fieldtype": "Link",
    "label": "On Payment Success",
    "options": "Email Template"
+  },
+  {
+   "description": " This is a <strong> Business ID </strong>found in RazorPayX settings.\n\nGet it from <strong><a target=\"_blank\" href=\"https://x.razorpay.com/settings/business\">here.</a></strong>",
+   "fieldname": "account_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Account ID",
+   "no_copy": 1,
+   "reqd": 1,
+   "unique": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-12-13 14:54:37.300339",
+ "modified": "2024-12-17 19:18:05.193939",
  "modified_by": "Administrator",
  "module": "Razorpayx Integration",
  "name": "RazorPayX Integration Setting",
