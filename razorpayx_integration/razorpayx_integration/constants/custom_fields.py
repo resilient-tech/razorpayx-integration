@@ -17,20 +17,16 @@ from razorpayx_integration.razorpayx_integration.constants.payouts import (
     RAZORPAYX_USER_PAYOUT_MODE,
 )
 from razorpayx_integration.razorpayx_integration.constants.webhooks import (
-    WEBHOOK_FUND_ACCOUNT_EVENT,
     WEBHOOK_PAYOUT_EVENT,
     WEBHOOK_PAYOUT_LINK_EVENT,
-    WEBHOOK_TRANSACTION_EVENT,
 )
 
 
 def get_webhook_events_as_select_options() -> str:
     return "\n".join(
         [
-            WEBHOOK_FUND_ACCOUNT_EVENT.values_as_string(),
             WEBHOOK_PAYOUT_EVENT.values_as_string(),
             WEBHOOK_PAYOUT_LINK_EVENT.values_as_string(),
-            WEBHOOK_TRANSACTION_EVENT.values_as_string(),
         ]
     )
 

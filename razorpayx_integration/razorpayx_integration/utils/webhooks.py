@@ -7,7 +7,9 @@ from frappe import _
 from razorpayx_integration.constants import (
     RAZORPAYX_INTEGRATION_DOCTYPE,
 )
-from razorpayx_integration.payment_utils.constants.enums import BaseEnum
+from razorpayx_integration.razorpayx_integration.constants.payouts import (
+    RAZORPAYX_PAYOUT_STATUS,
+)
 from razorpayx_integration.razorpayx_integration.constants.webhooks import (
     WEBHOOK_EVENTS_TYPE,
 )
@@ -20,6 +22,9 @@ from razorpayx_integration.razorpayx_integration.doctype.razorpayx_integration_s
 
 # TODO: When to create a `Bank Transaction`
 # TODO: when to cancel PE ?
+
+# ! IMPORTANT
+# TODO: only payout webhook is supported
 
 
 class RazorPayXWebhook:
@@ -39,11 +44,13 @@ class RazorPayXWebhook:
 
         frappe.cache().set_value(self.event_id, True, expires_in_sec=60)
 
-        self.set_payload_data_to_object()
+        self.initialize_payload_data()
 
         self.verify_webhook_signature()
 
         self.log_razorpayx_webhook_request()
+
+        self.update_payment_entry()
 
     def verify_webhook_signature(self):
         """
@@ -72,7 +79,7 @@ class RazorPayXWebhook:
                 "request_id": self.request_id,
                 "razorpayx_event_id": self.event_id,
                 "razorpayx_event": self.event,
-                "razorpayx_payment_status": self.payment_status,
+                "razorpayx_payment_status": self.payment_status.title(),
                 "integration_request_service": "Online Banking Payment with RazorpayX",
                 "request_headers": str(frappe.request.headers),
                 "data": json.dumps(self.payload, indent=4),
@@ -89,8 +96,34 @@ class RazorPayXWebhook:
 
         return integration_request.name
 
+    def update_payment_entry(self):
+        if self.source_doctype != "Payment Entry":
+            return
+
+        pe = frappe.get_doc("Payment Entry", self.source_docname)
+
+        if not self.does_order_maintained(pe.razorpayx_payment_status.title()):
+            return
+
+        values = {
+            "razorpayx_payment_status": self.payment_status.title(),
+        }
+
+        if self.utr:
+            values["reference_no"] = self.utr
+
+        pe.db_set(values, update_modified=True)
+
+        if self.payment_status in [
+            RAZORPAYX_PAYOUT_STATUS.REJECTED.value,
+            RAZORPAYX_PAYOUT_STATUS.FAILED.value,
+            RAZORPAYX_PAYOUT_STATUS.REVERSED.value,
+            RAZORPAYX_PAYOUT_STATUS.EXPIRED.value,
+        ]:
+            pe.cancel()
+
     #### UTILITIES ####
-    def set_payload_data_to_object(self):
+    def initialize_payload_data(self):
         frappe.set_user("Administrator")
         account_key = "razorpayx_integration_account"
 
@@ -98,25 +131,25 @@ class RazorPayXWebhook:
 
         self.row_payload = frappe.request.data
         self.payload = json.loads(self.row_payload)
+
         event_type = self.payload["contains"][0]
         self.event = self.payload["event"]
-        self.entity = self.payload["payload"][event_type]["entity"]
+        self.payout_entity = self.payload["payload"][event_type]["entity"]
 
-        if event_type == WEBHOOK_EVENTS_TYPE.TRANSACTION.value:
-            source = self.entity["source"]
-            self.notes = source["notes"]
-            self.payment_status = source["status"]
-        else:
-            self.notes = self.entity["notes"]
-            self.payment_status = self.entity["status"]
+        self.payment_status = self.payout_entity["status"]
+        self.utr = self.payout_entity["utr"]
 
-        self.payment_status = self.payment_status.title()
+        self.notes = self.payout_entity["notes"]
         self.source_doctype = self.notes["source_doctype"]
         self.source_docname = self.notes["source_docname"]
 
         self.razorpayx_account: RazorPayXIntegrationSetting = frappe.get_doc(
             RAZORPAYX_INTEGRATION_DOCTYPE, self.notes[account_key]
         )
+
+    def does_order_maintained(self, pe_payment_status):
+        # TODO: check if the order is maintained
+        return True
 
 
 @frappe.whitelist(allow_guest=True)

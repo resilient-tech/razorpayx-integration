@@ -4,14 +4,14 @@ from razorpayx_integration.payment_utils.constants.enums import BaseEnum
 class WEBHOOK_EVENTS_TYPE(BaseEnum):
     PAYOUT = "payout"
     PAYOUT_LINK = "payout_link"
-    TRANSACTION = "transaction"
-    # ACCOUNT = "fund_account.validation" # Ignore this event
+    # TRANSACTION = "transaction" # ! NOTE: currently not supported
+    # ACCOUNT = "fund_account.validation" # ! NOTE: currently not supported
 
 
 # ! NOTE: currently not supported
-class WEBHOOK_FUND_ACCOUNT_EVENT(BaseEnum):
-    COMPLETED = "fund_account.validation.completed"
-    FAILED = "fund_account.validation.failed"
+# class WEBHOOK_FUND_ACCOUNT_EVENT(BaseEnum):
+# COMPLETED = "fund_account.validation.completed"
+# FAILED = "fund_account.validation.failed"
 
 
 class WEBHOOK_PAYOUT_EVENT(BaseEnum):
@@ -23,8 +23,8 @@ class WEBHOOK_PAYOUT_EVENT(BaseEnum):
     UPDATED = "payout.updated"
     REVERSED = "payout.reversed"
     FAILED = "payout.failed"
-    DOWNTIME_STARTED = "payout.downtime.started"
-    DOWNTIME_RESOLVED = "payout.downtime.resolved"
+    # DOWNTIME_STARTED = "payout.downtime.started"  # ! NOTE: currently not supported
+    # DOWNTIME_RESOLVED = "payout.downtime.resolved" # ! NOTE: currently not supported
 
 
 class WEBHOOK_PAYOUT_LINK_EVENT(BaseEnum):
@@ -38,5 +38,6 @@ class WEBHOOK_PAYOUT_LINK_EVENT(BaseEnum):
     EXPIRED = "payout_link.expired"
 
 
-class WEBHOOK_TRANSACTION_EVENT(BaseEnum):
-    CREATED = "transaction.created"
+# ! NOTE: currently not supported
+# class WEBHOOK_TRANSACTION_EVENT(BaseEnum):
+#     CREATED = "transaction.created"

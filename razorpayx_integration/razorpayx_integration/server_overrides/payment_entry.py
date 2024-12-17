@@ -171,6 +171,9 @@ def make_online_payment(doc):
 
     response = make_payment_from_payment_entry(doc)
 
+    print("Response: ", frappe.as_json(response,indent=2))
+
+
     if not response:
         # TODO: ? what can be done
         return
