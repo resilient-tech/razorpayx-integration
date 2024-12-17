@@ -1,5 +1,7 @@
 from razorpayx_integration.payment_utils.constants.enums import BaseEnum
 
+# TODO: ? can remove prefix `RAZORPAYX_` from all constants
+
 
 class RAZORPAYX_CONTACT_TYPE(BaseEnum):
     EMPLOYEE = "employee"
@@ -42,18 +44,39 @@ class RAZORPAYX_PAYOUT_PURPOSE(BaseEnum):
 
 
 class RAZORPAYX_PAYOUT_STATUS(BaseEnum):
-    NOT_INITIATED = "not initiated"  # custom # Actually not available in RazorpayX API
+    """
+    Reference:
+    - https://razorpay.com/docs/x/payouts/states-life-cycle/#payout-states
+    """
+
+    # Custom Status
+    NOT_INITIATED = "not initiated"
+
+    # Payout Status
+    PENDING = "pending"
     QUEUED = "queued"
-    PENDING = "pending"  # if RazorpayX workflow is enabled
-    REJECTED = "rejected"  # if RazorpayX workflow is enabled
+    SCHEDULED = "scheduled"
     PROCESSING = "processing"
     PROCESSED = "processed"
     CANCELLED = "cancelled"
-    REVERSED = "reversed"
+    REJECTED = "rejected"
     FAILED = "failed"
-    ISSUED = "issued"  # Payout via Link
-    EXPIRED = "expired"  # Payout via Link
-    ATTEMPTED = "attempted"  # Payout via Link
+    REVERSED = "reversed"
+
+
+class RAZORPAYX_PAYOUT_LINK_STATUS(BaseEnum):
+    """
+    Reference:
+    - https://razorpay.com/docs/x/payout-links/life-cycle/
+    """
+
+    PENDING = "pending"
+    ISSUED = "issued"
+    PROCESSING = "processing"
+    PROCESSED = "processed"
+    CANCELLED = "cancelled"
+    REJECTED = "rejected"
+    EXPIRED = "expired"
 
 
 PAYOUT_ORDERS = {
