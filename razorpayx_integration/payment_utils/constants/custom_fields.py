@@ -136,6 +136,7 @@ CUSTOM_FIELDS = {
             "insert_after": "online_payment_section",
             "description": "Make online payment using <strong>Payments Integration</strong>",
             "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
+            "no_copy": 1,
         },
     ],
     "Customer": [
