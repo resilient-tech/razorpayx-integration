@@ -36,8 +36,9 @@ class SUPPORTED_HTTP_METHOD(BaseEnum):
 
 class BaseRazorPayXAPI:
     """
-    Base class for RazorPayX APIs.\n
-    Must need `RazorPayX Account Name` to initiate API.
+    Base class for RazorPayX APIs.
+
+    Must need `RazorPayX Integration Account` name to initiate API.
     """
 
     # * utility attributes
@@ -80,7 +81,9 @@ class BaseRazorPayXAPI:
             )
 
     def setup(self, *args, **kwargs):
-        # Override in subclass
+        """
+        Override this method to setup API specific configurations.
+        """
         pass
 
     def get_url(self, *path_segments):
