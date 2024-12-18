@@ -18,6 +18,7 @@ class RazorPayXIntegrationSetting(Document):
     if TYPE_CHECKING:
         from frappe.types import DF
 
+        account_id: DF.Data
         account_number: DF.Data | None
         balance: DF.Currency
         bank: DF.Link | None

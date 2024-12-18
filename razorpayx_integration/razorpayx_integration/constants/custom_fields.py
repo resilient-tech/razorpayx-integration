@@ -1,5 +1,5 @@
 """
-Custom fields which are helpful for payments via RazorpayX
+Custom fields which are helpful for payments via RazorPayX
 
 Note:
     - Keep sequence like this:
@@ -16,35 +16,22 @@ from razorpayx_integration.razorpayx_integration.constants.payouts import (
     RAZORPAYX_PAYOUT_STATUS,
     RAZORPAYX_USER_PAYOUT_MODE,
 )
-from razorpayx_integration.razorpayx_integration.constants.webhooks import (
-    WEBHOOK_PAYOUT_EVENT,
-    WEBHOOK_PAYOUT_LINK_EVENT,
-)
-
-
-def get_webhook_events_as_select_options() -> str:
-    return "\n".join(
-        [
-            WEBHOOK_PAYOUT_EVENT.values_as_string(),
-            WEBHOOK_PAYOUT_LINK_EVENT.values_as_string(),
-        ]
-    )
-
 
 CUSTOM_FIELDS = {
     "Payment Entry": [
         #### PAYMENT SECTION START ####
         {
             "fieldname": "razorpayx_payment_section",
-            "label": "RazorpayX Payment Details",
+            "label": "RazorPayX Payment Details",
             "fieldtype": "Section Break",
             "insert_after": "make_online_payment",  ## Insert After `Make Online Payment` field (Payment Utils Custom Field)
             "depends_on": "eval: doc.make_online_payment",
             "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
+            "no_copy": 1,
         },
         {
             "fieldname": "razorpayx_account",
-            "label": "RazorpayX Integration Account",
+            "label": "RazorPayX Integration Account",
             "fieldtype": "Link",
             "insert_after": "razorpayx_payment_section",
             "options": RAZORPAYX_INTEGRATION_DOCTYPE,
@@ -52,10 +39,11 @@ CUSTOM_FIELDS = {
             "read_only": 1,
             "hidden": 1,
             "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
+            "no_copy": 1,
         },
         {
             "fieldname": "razorpayx_payment_mode",
-            "label": "RazorpayX Payment Mode",
+            "label": "RazorPayX Payment Mode",
             "fieldtype": "Data",
             "insert_after": "razorpayx_account",
             "fetch_from": "party_bank_account.online_payment_mode",
@@ -63,6 +51,7 @@ CUSTOM_FIELDS = {
             "mandatory_depends_on": "eval:doc.make_online_payment && doc.razorpayx_account && doc.party_bank_account",
             "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
             "read_only": 1,
+            "no_copy": 1,
         },
         {
             "fieldname": "razorpayx_pay_instantaneously",
@@ -72,21 +61,12 @@ CUSTOM_FIELDS = {
             "depends_on": f"eval: doc.razorpayx_account && doc.razorpayx_payment_mode === '{RAZORPAYX_USER_PAYOUT_MODE.BANK.value}'",
             "description": "Payment will be done with <strong>IMPS</strong> mode.",
             "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
-        },
-        {
-            "fieldname": "razorpayx_payout_id",
-            "label": "RazorpayX Payout ID",
-            "fieldtype": "Data",
-            "insert_after": "razorpayx_pay_instantaneously",
-            "read_only": 1,
-            "hidden": 1,
-            "print_hide": 1,
-            "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
+            "no_copy": 1,
         },
         {
             "fieldname": "razorpayx_payment_cb",
             "fieldtype": "Column Break",
-            "insert_after": "razorpayx_payout_id",
+            "insert_after": "razorpayx_pay_instantaneously",
             "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
         },
         {
@@ -97,6 +77,7 @@ CUSTOM_FIELDS = {
             "depends_on": "eval: doc.razorpayx_account",
             "mandatory_depends_on": f"eval:doc.make_online_payment && doc.razorpayx_account && doc.razorpayx_payment_mode === '{RAZORPAYX_USER_PAYOUT_MODE.LINK.value}'",
             "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
+            "no_copy": 1,
         },
         {
             "fieldname": "razorpayx_payment_status",
@@ -111,36 +92,36 @@ CUSTOM_FIELDS = {
             "in_list_view": 1,
             "in_standard_filter": 1,
             "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
+            "no_copy": 1,
+        },
+        {
+            "fieldname": "razorpayx_payout_id_sec",
+            "fieldtype": "Section Break",
+            "insert_after": "razorpayx_payment_status",
+            "hidden": 1,
+        },
+        {
+            "fieldname": "razorpayx_payout_id",
+            "label": "RazorPayX Payout ID",
+            "fieldtype": "Data",
+            "insert_after": "razorpayx_payout_id_sec",
+            "read_only": 1,
+            "hidden": 1,
+            "print_hide": 1,
+            "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
+            "no_copy": 1,
+        },
+        {
+            "fieldname": "razorpayx_payout_link_id",
+            "label": "RazorPayX Payout Link ID",
+            "fieldtype": "Data",
+            "insert_after": "razorpayx_payout_id",
+            "read_only": 1,
+            "hidden": 1,
+            "print_hide": 1,
+            "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
+            "no_copy": 1,
         },
         #### PAYMENT SECTION END ####
-    ],
-    "Integration Request": [
-        {
-            "fieldname": "razorpayx_event_id",
-            "label": "RazorpayX Event ID",
-            "fieldtype": "Data",
-            "insert_after": "request_id",
-            "read_only": 1,
-        },
-        {
-            "fieldname": "razorpayx_payment_status",
-            "label": "RazorPayX Payment Status",
-            "fieldtype": "Select",
-            "insert_after": "status",
-            "options": "\n "
-            + RAZORPAYX_PAYOUT_STATUS.title_case_values(as_string=True),
-            "read_only": 1,
-            "in_list_view": 1,
-            "in_standard_filter": 1,
-        },
-        {
-            "fieldname": "razorpayx_event",
-            "label": "RazorpayX Event",
-            "fieldtype": "Select",
-            "insert_after": "razorpayx_payment_status",
-            "options": "\n" + get_webhook_events_as_select_options(),
-            "in_standard_filter": 1,
-            "read_only": 1,
-        },
     ],
 }

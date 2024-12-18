@@ -21,7 +21,6 @@ from razorpayx_integration.razorpayx_integration.utils.validation import (
 )
 
 
-# TODO: process webhook data
 def validate(doc, method=None):
     validate_mandatory_fields_for_payment(doc)
     validate_payout_mode(doc)
@@ -171,9 +170,6 @@ def make_online_payment(doc):
 
     response = make_payment_from_payment_entry(doc)
 
-    print("Response: ", frappe.as_json(response,indent=2))
-
-
     if not response:
         # TODO: ? what can be done
         return
@@ -187,4 +183,5 @@ def make_online_payment(doc):
 
 
 # ! IMPORTANT
-# TODO: if on submit fails, also cancel PE
+# TODO: if on submit fails, also cancel the payment ??
+# TODO: do not allow to cancel if already paid ?
