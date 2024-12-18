@@ -6,8 +6,8 @@ from razorpayx_integration.razorpayx_integration.utils.validation import (
     validate_razorpayx_fund_account_type,
 )
 
-# todo : use composite API, If composite APIs working properly fine then no need of this API
-# todo: this need to be refactor and optimize
+# ! IMPORTANT: currently this API is not maintained.
+# TODO: this need to be refactor and optimize
 
 
 class RazorPayXFundAccount(BaseRazorPayXAPI):

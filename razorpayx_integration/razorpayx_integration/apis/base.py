@@ -7,10 +7,9 @@ from frappe.app import UNSAFE_HTTP_METHODS
 
 from razorpayx_integration.constants import (
     RAZORPAYX,
-    RAZORPAYX_BASE_API_URL,
     RAZORPAYX_INTEGRATION_DOCTYPE,
-    SUPPORTED_HTTP_METHOD,
 )
+from razorpayx_integration.payment_utils.constants.enums import BaseEnum
 from razorpayx_integration.payment_utils.utils import (
     get_end_of_day_epoch,
     get_start_of_day_epoch,
@@ -21,6 +20,18 @@ from razorpayx_integration.razorpayx_integration.doctype.razorpayx_integration_s
 
 # TODO: logs for API calls.
 # TODO: mask sensitive data in logs.
+# TODO: complete other todo's
+# TODO: add docs
+
+RAZORPAYX_BASE_API_URL = "https://api.razorpay.com/v1/"
+
+
+class SUPPORTED_HTTP_METHOD(BaseEnum):
+    GET = "GET"
+    DELETE = "DELETE"
+    POST = "POST"
+    PUT = "PUT"
+    PATCH = "PATCH"
 
 
 class BaseRazorPayXAPI:
