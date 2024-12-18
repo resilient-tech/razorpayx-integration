@@ -19,7 +19,8 @@ from razorpayx_integration.razorpayx_integration.doctype.razorpayx_integration_s
     RazorPayXIntegrationSetting,
 )
 
-# todo: logs for API calls.
+# TODO: logs for API calls.
+# TODO: mask sensitive data in logs.
 
 
 class BaseRazorPayXAPI:
@@ -250,7 +251,7 @@ class BaseRazorPayXAPI:
         # validate and process filters except date filters (from,to)
         pass
 
-    # todo:  handle special(error) http code (specially payout process!!)
+    # TODO:  handle special(error) http code (specially payout process!!)
     def handle_failed_api_response(self, response_json: dict | None = None):
         """
         Handle failed API response from RazorPayX.
