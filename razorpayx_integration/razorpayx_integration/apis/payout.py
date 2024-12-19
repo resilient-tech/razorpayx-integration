@@ -1,4 +1,4 @@
-from uuid import uuid4 as generate_idempotency_key
+from typing import Literal
 
 from razorpayx_integration.payment_utils.utils import rupees_to_paisa
 from razorpayx_integration.razorpayx_integration.apis.base import BaseRazorPayXAPI
@@ -25,7 +25,14 @@ from razorpayx_integration.razorpayx_integration.utils.validation import (
 class RazorPayXPayout(BaseRazorPayXAPI):
     """
     Handle APIs for `Payout`.
-    :param account_name: RazorPayX account for which this `Payout` is associate.
+
+    :param account_name: RazorPayX Integration account from which `Payout` is created.
+    :param fund_account_id: The fund account's id to be used in `Payout` (Ex. `fa_00000000000001`).
+
+    Note:
+    - ⚠️ Use when payout is to be made for a specific `Fund Account`.
+    - Payout will be `queued` if the balance is low.
+
     ---
     Reference: https://razorpay.com/docs/api/x/payouts/
     """
@@ -35,25 +42,95 @@ class RazorPayXPayout(BaseRazorPayXAPI):
 
     # * override base setup
     def setup(self, *args, **kwargs):
-        self.account_number = self.razorpayx_account.account_number
+        self.razorpayx_account_number = self.razorpayx_account.account_number
+        self.fund_account_id = kwargs.get("fund_account_id")
+        self.default_payout_request = {
+            "account_number": self.razorpayx_account_number,
+            "queue_if_low_balance": True,
+            "currency": RAZORPAYX_PAYOUT_CURRENCY.INR.value,
+        }
 
     ### APIs ###
-    def create_with_fund_account_id(self, request: dict, fund_account_id: str) -> dict:
+    def pay_to_bank_account(self, payout_details: dict) -> dict:
         """
-        Create a `Payout` with `Fund Account Id`.
+        Pay to a `Bank Account` using `Fund Account`.
 
-        :param request: Request for `Payout`.
-        :param fund_account_id: The fund account's id to be paid.
+        :param payout_details: Request body for `Payout`.
+
+        ---
+
+        Note:
+        - Fund account must associate with the bank account.
+            - Refer : https://razorpay.com/docs/api/x/fund-accounts/create/bank-account
+
+        ---
+
+        Params of `payout_details`:
+
+        Mandatory:
+        - `amount` :float: Amount to be paid. (Must be in `INR`)
+        - `source_doctype` :str: The source document type.
+        - `source_docname` :str: The source document name.
+        - `party_type` :str: The type of party to be paid (Ex. `Customer`, `Supplier`, `Employee`).
+
+        Optional:
+        - `mode` :str: The payout mode to be used. (Default: `NEFT`)
+        - `pay_instantaneously` :bool: Pay instantaneously if `True`. (Default: `False`)
+        - `description` :str: Description of the payout.
+           - Maximum length `30` characters. Allowed characters: `a-z`, `A-Z`, `0-9` and `space`.
+        - `reference_id` :str: Reference Id of the payout.
+        - `purpose` :str: Purpose of the payout. (Default: `Payout` or decided by `party_type`)
+        - `notes` :dict: Additional notes for the payout.
+
+        ---
+        Reference: https://razorpay.com/docs/api/x/payouts/create/bank-account
         """
-        payout_request = self.map_payout_request(
-            request=request, fund_account_id=fund_account_id
-        )
-        return self.make_payout(json=payout_request)
+        payout_details["mode"] = self.get_bank_payment_mode(payout_details)
+
+        return self._pay_to_fund_account(payout_details)
+
+    def pay_to_upi_id(self, payout_details: dict) -> dict:
+        """
+        Pay to a `VPA` using `Fund Account`.
+
+        :param payout_details: Request body for `Payout`.
+
+        ---
+
+        Note:
+        - Fund account must associate with the UPI ID.
+         - Refer : https://razorpay.com/docs/api/x/fund-accounts/create/vpa
+
+        ---
+
+        Params of `payout_details`:
+
+        Mandatory:
+        - `amount` :float: Amount to be paid. (Must be in `INR`)
+        - `source_doctype` :str: The source document type.
+        - `source_docname` :str: The source document name.
+        - `party_type` :str: The type of party to be paid (Ex. `Customer`, `Supplier`, `Employee`).
+
+        Optional:
+        - `description` :str: Description of the payout.
+            - Maximum length `30` characters. Allowed characters: `a-z`, `A-Z`, `0-9` and `space`.
+        - `reference_id` :str: Reference Id of the payout.
+        - `purpose` :str: Purpose of the payout. (Default: `Payout` or decided by `party_type`)
+        - `notes` :dict: Additional notes for the payout.
+
+        ---
+        Reference: https://razorpay.com/docs/api/x/payouts/create/vpa
+        """
+        payout_details["mode"] = RAZORPAYX_PAYOUT_MODE.UPI.value
+
+        return self._pay_to_fund_account(payout_details=payout_details)
 
     def get_by_id(self, payout_id: str) -> dict:
         """
         Fetch the details of a specific `Payout` by Id.
+
         :param id: `Id` of fund account to fetch (Ex.`payout_jkHgLM02`).
+
         ---
         Reference: https://razorpay.com/docs/api/x/payouts/fetch-with-id
         """
@@ -84,9 +161,11 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         }
         response=payout.get_all(filters)
         ```
+
         ---
         Note:
             - `from` and `to` can be str,date,datetime (in YYYY-MM-DD).
+
         ---
         Reference: https://razorpay.com/docs/api/x/payouts/fetch-all/
         """
@@ -94,22 +173,60 @@ class RazorPayXPayout(BaseRazorPayXAPI):
             filters = {}
 
         # account number is mandatory
-        filters["account_number"] = self.account_number
+        filters["account_number"] = self.razorpayx_account_number
 
         return super().get_all(filters, count)
 
     ### BASES ###
-    def make_payout(self, json: dict) -> dict:
+    def _pay_to_fund_account(self, payout_details: dict) -> dict:
+        """
+        Create a `Payout` with `Fund Account Id`.
+
+        Caution: ⚠️  This method should not be called directly.
+
+        :param payout_details: Request for `Payout`.
+        """
+        payout_request = self.get_mapped_payout_request(request=payout_details)
+
+        return self._make_payout(json=payout_request)
+
+    def _make_payout(self, json: dict) -> dict:
         """
         Base method to create a `Payout`.
+
+        Caution: ⚠️  This method should not be called directly.
 
         :param json: Processed request data for `Payout`.
         """
         headers = self.get_idempotency_key_header(json)
 
+        # TODO: validation so can reduce the number of API calls
+
         return self.post(json=json, headers=headers)
 
     ### HELPERS ###
+    # TODO: should respect user input ?
+    def get_bank_payment_mode(payout_details: dict) -> str:
+        """
+        Return the payment mode for the payout.
+
+        :param payout_details: Request body for `Payout`.
+
+        Returns: NEFT | RTGS | IMPS
+        """
+        pay_instantaneously = (
+            payout_details.get("pay_instantaneously", False)
+            or payout_details.get("mode") == RAZORPAYX_PAYOUT_MODE.IMPS.value
+        )
+
+        if pay_instantaneously:
+            return RAZORPAYX_PAYOUT_MODE.IMPS.value
+        else:
+            if payout_details["amount"] > PAYMENT_MODE_THRESHOLD.NEFT.value:
+                return RAZORPAYX_PAYOUT_MODE.RTGS.value
+            else:
+                return RAZORPAYX_PAYOUT_MODE.NEFT.value
+
     # todo: need proper key generation and implementation
     # todo: BUGGY! if somthing fails after API calls it is not allowing to retry
     # ! important
@@ -128,7 +245,84 @@ class RazorPayXPayout(BaseRazorPayXAPI):
 
         return {"X-Payout-Idempotency": json["notes"]["source_docname"]}
 
-    def map_payout_request(
+    def get_mapped_payout_request_body(self, payout_details: dict) -> dict:
+        """
+        Mapping the request data to RazorPayX Payout API's required format.
+
+        :param payout_details: Request data for `Payout`.
+        """
+
+        base_request = self.get_base_mapped_payout_request(payout_details)
+
+        base_request["fund_account_id"] = self.fund_account_id
+
+        return base_request
+
+    def get_base_mapped_payout_request(self, payout_details: dict) -> dict:
+        """
+        Return the base mapped payout request.
+
+        Consists of:
+        - Mandatory values
+        - Default values
+        - Dependent values
+
+        :param payout_details: Request data for `Payout`.
+
+        Example:
+        ```py
+        {
+            "account_number": 255185620,
+            "amount": 5000,  # in paisa
+            "currency": "INR",  # Fixed
+            "mode": "NEFT",
+            "queue_if_low_balance": True,  # Fixed
+            "purpose": "payout",
+            "reference_id": "ACC-PAY-002-2024-06-01",
+            "narration": "Payout for customer",
+            "notes": {
+                "source_doctype": "Sales Invoice",
+                "source_docname": "SINV-0001",
+            },
+        }
+        ```
+        """
+
+        def get_purpose() -> str:
+            if purpose := payout_details.get("purpose"):
+                return purpose
+
+            return PAYOUT_PURPOSE_MAP.get(
+                payout_details["party_type"], RAZORPAYX_PAYOUT_PURPOSE.PAYOUT.value
+            )
+
+        def get_reference_id() -> str:
+            if reference_id := payout_details.get("reference_id"):
+                return reference_id
+
+            return (
+                f"{payout_details['source_doctype']}-{payout_details['source_docname']}"
+            )
+
+        def get_notes() -> dict:
+            return {
+                "source_doctype": payout_details["source_doctype"],
+                "source_docname": payout_details["source_docname"],
+                **payout_details.get("notes", {}),
+            }
+
+        return {
+            "account_number": self.razorpayx_account_number,
+            "amount": rupees_to_paisa(payout_details["amount"]),
+            "currency": RAZORPAYX_PAYOUT_CURRENCY.INR.value,
+            "mode": payout_details["mode"],
+            "purpose": get_purpose(),
+            "reference_id": get_reference_id(),
+            "narration": payout_details.get("description", ""),
+            "notes": get_notes(),
+        }
+
+    def get_mapped_payout_request(
         self,
         request: dict,
         fund_account_id: str | None = None,
@@ -147,7 +341,7 @@ class RazorPayXPayout(BaseRazorPayXAPI):
 
         payout_request = {
             "queue_if_low_balance": True,
-            "account_number": self.account_number,
+            "account_number": self.razorpayx_account_number,
             "amount": rupees_to_paisa(request["amount"]),
             "currency": RAZORPAYX_PAYOUT_CURRENCY.INR.value,
             "mode": request["mode"],
@@ -210,6 +404,7 @@ class RazorPayXPayout(BaseRazorPayXAPI):
 
         return fund_account
 
+    ### VALIDATIONS ###
     def validate_and_process_request_filters(self, filters: dict):
         if mode := filters.get("mode"):
             validate_razorpayx_payout_mode(mode)
@@ -253,11 +448,11 @@ class RazorPayXCompositePayout(RazorPayXPayout):
 
         request["mode"] = get_bank_payment_mode()
 
-        payout_request = self.map_payout_request(
+        payout_request = self.get_mapped_payout_request(
             request=request, fund_account_type=party_account_type
         )
 
-        return self.make_payout(json=payout_request)
+        return self._make_payout(json=payout_request)
 
     def create_with_vpa(self, request: dict) -> dict:
         """
@@ -271,11 +466,11 @@ class RazorPayXCompositePayout(RazorPayXPayout):
 
         request["mode"] = RAZORPAYX_PAYOUT_MODE.UPI.value
 
-        payout_request = self.map_payout_request(
+        payout_request = self.get_mapped_payout_request(
             request=request, fund_account_type=party_account_type
         )
 
-        return self.make_payout(json=payout_request)
+        return self._make_payout(json=payout_request)
 
 
 class RazorPayXLinkPayout(RazorPayXPayout):
@@ -299,13 +494,13 @@ class RazorPayXLinkPayout(RazorPayXPayout):
         ---
         Reference: https://razorpay.com/docs/api/x/payout-links/create/use-contact-details/
         """
-        payout_request = self.map_payout_request(request)
+        payout_request = self.get_mapped_payout_request(request)
 
-        return self.make_payout(json=payout_request)
+        return self._make_payout(json=payout_request)
 
-    def map_payout_request(self, request: dict) -> dict:
+    def get_mapped_payout_request(self, request: dict) -> dict:
         return {
-            "account_number": self.account_number,
+            "account_number": self.razorpayx_account_number,
             "contact": {
                 "name": request["party_name"],
                 "contact": request.get("party_mobile", ""),

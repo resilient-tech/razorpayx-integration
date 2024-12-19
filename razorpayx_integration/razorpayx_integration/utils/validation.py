@@ -89,3 +89,6 @@ def validate_razorpayx_payout_status(status: str):
             title=_("Invalid {0} Payout status").format(RAZORPAYX),
             exc=ValueError,
         )
+
+
+# TODO: validate payout description

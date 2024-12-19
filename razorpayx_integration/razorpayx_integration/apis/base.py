@@ -39,6 +39,8 @@ class BaseRazorPayXAPI:
     Base class for RazorPayX APIs.
 
     Must need `RazorPayX Integration Account` name to initiate API.
+
+    :param razorpayx_account: RazorPayX Integration Account name.
     """
 
     # * utility attributes
@@ -261,8 +263,11 @@ class BaseRazorPayXAPI:
             filters["to"] = get_end_of_day_epoch(to_date)
 
     def validate_and_process_request_filters(self, filters: dict):
-        # override in sub class
-        # validate and process filters except date filters (from,to)
+        """
+        Override in sub class.
+        validate and process filters except date filters (from,to)
+
+        """
         pass
 
     # TODO:  handle special(error) http code (specially payout process!!)
