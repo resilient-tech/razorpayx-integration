@@ -270,8 +270,8 @@ class RazorPayXPayout(BaseRazorPayXAPI):
             "reference_id": "ACC-PAY-002-2024-06-01",
             "narration": "Payout for customer",
             "notes": {
-                "source_doctype": "Sales Invoice",
-                "source_docname": "SINV-0001",
+                "source_doctype": "Payment Entry",
+                "source_docname": "PE-0001",
             },
         }
         ```
@@ -306,8 +306,8 @@ class RazorPayXPayout(BaseRazorPayXAPI):
             "reference_id": "ACC-PAY-002-2024-06-01",
             "narration": "Payout for customer",
             "notes": {
-                "source_doctype": "Sales Invoice",
-                "source_docname": "SINV-0001",
+                "source_doctype": "Payment Entry",
+                "source_docname": "PE-0001",
             },
         }
         ```
@@ -558,7 +558,44 @@ class RazorPayXCompositePayout(RazorPayXPayout):
     ### HELPERS ###
     def get_mapped_payout_request_body(self, payout_details):
         """
-        TODO docs
+        Mapping the request data to RazorPayX Payout API's required format.
+
+        Note: 🟢 Override this method to customize the request data.
+
+        ---
+        Example:
+
+        ```py
+        {
+            "account_number": 255185620,
+            "amount": 5000,
+            "currency": "INR",
+            "mode": "NEFT",
+            "queue_if_low_balance": True,
+            "purpose": "payout",
+            "fund_account": {
+                "account_type": "bank_account",
+                "bank_account": {
+                    "name": "Gaurav Kumar",
+                    "ifsc": "HDFC0000053",
+                    "account_number": "7654321234567890",
+                },
+                "contact": {
+                    "name": "Gaurav Kumar",
+                    "email": "gauravemail@gmail.com",
+                    "contact": "9123456789",
+                    "type": "customer",
+                    "reference_id": "cont_00HjGh1",
+                },
+            },
+            "reference_id": "ACC-PAY-002-2024-06-01",
+            "narration": "Payout for customer",
+            "notes": {
+                "source_doctype": "Payment Entry",
+                "source_docname": "PE-0001",
+            },
+        }
+        ```
         """
         mapped_request = self.get_base_mapped_payout_info(payout_details)
 
@@ -590,11 +627,11 @@ class RazorPayXLinkPayout(RazorPayXPayout):
         ---
         Reference: https://razorpay.com/docs/api/x/payout-links/create/use-contact-details/
         """
-        payout_request = self.get_mapped_payout_request(request)
+        payout_request = self.get_mapped_payout_request_body(request)
 
         return self._make_payout(json=payout_request)
 
-    def get_mapped_payout_request(self, request: dict) -> dict:
+    def get_mapped_payout_request_body(self, request: dict) -> dict:
         return {
             "account_number": self.razorpayx_account_number,
             "contact": {
