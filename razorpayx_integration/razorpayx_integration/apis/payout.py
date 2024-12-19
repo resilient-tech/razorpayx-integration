@@ -26,8 +26,10 @@ class RazorPayXPayout(BaseRazorPayXAPI):
     """
     Handle APIs for `Payout`.
 
-    :param account_name: RazorPayX Integration account from which `Payout` is created.
+    :param account_name: RazorPayX Integration account from which `Payout` will be created.
     :param fund_account_id: The fund account's id to be used in `Payout` (Ex. `fa_00000000000001`).
+
+    ---
 
     Note:
     - ⚠️ Use when payout is to be made for a specific `Fund Account`.
@@ -91,7 +93,7 @@ class RazorPayXPayout(BaseRazorPayXAPI):
 
     def pay_to_upi_id(self, payout_details: dict) -> dict:
         """
-        Pay to a `VPA` using `Fund Account`.
+        Pay to a `UPI ID` using `Fund Account`.
 
         :param payout_details: Request body for `Payout`.
 
@@ -250,6 +252,25 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         Mapping the request data to RazorPayX Payout API's required format.
 
         :param payout_details: Request data for `Payout`.
+
+        Example:
+        ```py
+        {
+            "account_number": 255185620,
+            "amount": 5000,  # in paisa
+            "currency": "INR",  # Fixed
+            "fund_account_id": "fa_00000000000001",
+            "mode": "NEFT",
+            "queue_if_low_balance": True,  # Fixed
+            "purpose": "payout",
+            "reference_id": "ACC-PAY-002-2024-06-01",
+            "narration": "Payout for customer",
+            "notes": {
+                "source_doctype": "Sales Invoice",
+                "source_docname": "SINV-0001",
+            },
+        }
+        ```
         """
 
         base_request = self.get_base_mapped_payout_request(payout_details)
@@ -312,9 +333,8 @@ class RazorPayXPayout(BaseRazorPayXAPI):
             }
 
         return {
-            "account_number": self.razorpayx_account_number,
+            **self.default_payout_request,
             "amount": rupees_to_paisa(payout_details["amount"]),
-            "currency": RAZORPAYX_PAYOUT_CURRENCY.INR.value,
             "mode": payout_details["mode"],
             "purpose": get_purpose(),
             "reference_id": get_reference_id(),
