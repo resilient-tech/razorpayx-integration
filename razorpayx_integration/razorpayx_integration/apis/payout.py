@@ -1,5 +1,3 @@
-from typing import Literal
-
 from razorpayx_integration.payment_utils.utils import rupees_to_paisa
 from razorpayx_integration.razorpayx_integration.apis.base import BaseRazorPayXAPI
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
@@ -241,7 +239,7 @@ class RazorPayXPayout(BaseRazorPayXAPI):
 
     def get_mapped_payout_request_body(self, payout_details: dict) -> dict:
         """
-        Mapping the request data to RazorPayX Payout API's required format.
+        Mapping the request data to RazorPayX `Payout` API's required format.
 
         :param payout_details: Request data for `Payout`.
 
@@ -249,7 +247,7 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         Note: 🟢 Override this method to customize the request data.
 
         ---
-        Example:
+        Mapped Sample:
         ```py
         {
             "account_number": 255185620,
@@ -287,7 +285,7 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         :param payout_details: Request body for `Payout`.
 
         ---
-        Example:
+        Base Mapped Sample:
         ```py
         {
             "account_number": 255185620,
@@ -349,7 +347,7 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         Note:  ⚠️  `party_account_type` must be provided in the `payout_details`.
 
         ---
-        Example:
+        Fund Account Sample:
 
         ```py
         # Bank Account
@@ -416,8 +414,9 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         :param data: Request body for `Payout`.
 
         ---
-        Example:
+        Contact Sample:
         ```
+        # If `razorpayx_contact_id` is not provided
         {
             "name": "Gaurav Kumar",
             "email": "gauravemail@gmail.com",
@@ -425,6 +424,9 @@ class RazorPayXPayout(BaseRazorPayXAPI):
             "type": "customer",
             "reference_id": "cont_00HjGh1",
         }
+
+        # If `razorpayx_contact_id` is provided
+        {"id": "cont_00HjGh1"}
         ```
         """
 
@@ -432,6 +434,9 @@ class RazorPayXPayout(BaseRazorPayXAPI):
             return CONTACT_TYPE_MAP.get(
                 payout_details["party_type"], RAZORPAYX_CONTACT_TYPE.SELF.value
             )
+
+        if contact_id := payout_details.get("razorpayx_contact_id"):
+            return {"id": contact_id}
 
         return {
             "name": payout_details["party_name"],
@@ -454,7 +459,7 @@ class RazorPayXPayout(BaseRazorPayXAPI):
 
 class RazorPayXCompositePayout(RazorPayXPayout):
     """
-    Handle composite APIs for `Payout`.
+    Handle APIs for `Composite Payout`.
 
     :param account_name: RazorPayX Integration account from which `Payout` will be created.
 
@@ -488,6 +493,8 @@ class RazorPayXCompositePayout(RazorPayXPayout):
 
         Optional:
         - `party_id` :str: Id of the party (Ex. Docname of the party).
+        - `party_mobile` :str: Mobile number of the party.
+        - `party_email` :str: Email of the party.
         - `pay_instantaneously` :bool: Pay instantaneously if `True`. (Default: `False`)
         - `description` :str: Description of the payout.
            - Maximum length `30` characters. Allowed characters: `a-z`, `A-Z`, `0-9` and `space`.
@@ -524,6 +531,8 @@ class RazorPayXCompositePayout(RazorPayXPayout):
 
         Optional:
         - `party_id` :str: Id of the party (Ex. Docname of the party).
+        - `party_mobile` :str: Mobile number of the party.
+        - `party_email` :str: Email of the party.
         - `description` :str: Description of the payout.
            - Maximum length `30` characters. Allowed characters: `a-z`, `A-Z`, `0-9` and `space`.
         - `reference_id` :str: Reference Id of the payout.
@@ -539,9 +548,9 @@ class RazorPayXCompositePayout(RazorPayXPayout):
         return self._make_payout(payout_details)
 
     ### HELPERS ###
-    def get_mapped_payout_request_body(self, payout_details):
+    def get_mapped_payout_request_body(self, payout_details) -> dict:
         """
-        Mapping the request data to RazorPayX Payout API's required format.
+        Mapping the request data to RazorPayX `Composite Payout` API's required format.
 
         :param payout_details: Request body for `Payout`.
 
@@ -549,7 +558,7 @@ class RazorPayXCompositePayout(RazorPayXPayout):
         Note: 🟢 Override this method to customize the request data.
 
         ---
-        Example:
+        Mapped Sample:
 
         ```py
         {
@@ -596,7 +605,11 @@ class RazorPayXLinkPayout(RazorPayXPayout):
     """
     Handle APIs for `Link Payout`.
 
-    :param account_name: RazorPayX account for which this `Payout` is associate.
+    :param account_name: RazorPayX Integration account from which `Payout` will be created.
+
+    ---
+    Note:
+    - ⚠️ Use when payout is made with link (Link will be sent to party's contact details).
 
     ---
     Reference: https://razorpay.com/docs/api/x/payout-links
@@ -604,46 +617,129 @@ class RazorPayXLinkPayout(RazorPayXPayout):
 
     BASE_PATH = "payout-links"
 
-    def create_with_contact_details(self, request: dict) -> dict:
+    ### APIs ###
+    def create_with_contact_details(self, payout_details: dict) -> dict:
         """
         Create a `Link Payout` with party's contact details.
 
-        :param data: Request data for `Payout`.
+        :param data: Request body for `Payout`.
+
+        ---
+        Params of `payout_details`:
+
+        Mandatory:
+        - `amount` :float: Amount to be paid. (Must be in `INR`)
+        - `source_doctype` :str: The source document type.
+        - `source_docname` :str: The source document name.
+        - `party_name` :str: Name of the party to be paid.
+        - `party_type` :str: The type of party to be paid (Ex. `Customer`, `Supplier`, `Employee`).
+        - `party_mobile` :str: Mobile number of the party.
+        - `party_email` :str: Email of the party.
+
+        Optional:
+        - `receipt` :str: Receipt details for the payout.
+        - `send_sms` :bool: Send SMS to the party if `True`. (Default: `True`)
+        - `send_email` :bool: Send Email to the party if `True`. (Default: `True`)
+        - `description` :str: Description of the payout.
+           - Maximum length `30` characters. Allowed characters: `a-z`, `A-Z`, `0-9` and `space`.
+        - `reference_id` :str: Reference Id of the payout.
+        - `purpose` :str: Purpose of the payout. (Default: `Payout` or decided by `party_type`)
+        - `notes` :dict: Additional notes for the payout.
+        - `expire_by` :datetime: Expiry date-time of the link.
+            - This parameter can be used only if you have enabled the expiry feature for Payout Links.
 
         ---
         Reference: https://razorpay.com/docs/api/x/payout-links/create/use-contact-details/
         """
-        payout_request = self.get_mapped_payout_request_body(request)
+        return self._make_payout(payout_details)
 
-        return self._make_payout(json=payout_request)
+    def create_with_razorpayx_contact_id(self, payout_details: dict) -> dict:
+        """
+        Create a `Link Payout` with party's `RazorPayX Contact ID`.
 
-    def get_mapped_payout_request_body(self, request: dict) -> dict:
-        return {
-            "account_number": self.razorpayx_account_number,
+        :param payout_details: Request body for `Payout`.
+
+        ---
+        Params of `payout_details`:
+
+        Mandatory:
+        - `amount` :float: Amount to be paid. (Must be in `INR`)
+        - `source_doctype` :str: The source document type.
+        - `source_docname` :str: The source document name.
+        - `party_type` :str: The type of party to be paid (Ex. `Customer`, `Supplier`, `Employee`).
+        - `razorpayx_contact_id` :str: The RazorPayX Contact ID of the party (Ex. `cont_00HjGh1`).
+
+        Optional:
+        - `receipt` :str: Receipt details for the payout.
+        - `send_sms` :bool: Send SMS to the party if `True`. (Default: `True`)
+        - `send_email` :bool: Send Email to the party if `True`. (Default: `True`)
+        - `description` :str: Description of the payout.
+           - Maximum length `30` characters. Allowed characters: `a-z`, `A-Z`, `0-9` and `space`.
+        - `purpose` :str: Purpose of the payout. (Default: `Payout` or decided by `party_type`)
+        - `notes` :dict: Additional notes for the payout.
+        - `expire_by` :datetime: Expiry date-time of the link.
+            - This parameter can be used only if you have enabled the expiry feature for Payout Links.
+
+        ---
+        Reference: https://razorpay.com/docs/api/x/payout-links/create/use-contact-id
+        """
+        return self._make_payout(payout_details)
+
+    ### HELPERS ###
+    def get_mapped_payout_request_body(self, payout_details: dict) -> dict:
+        """
+
+        Mapping the request data to RazorPayX `Link Payout` API's required format.
+
+        :param payout_details: Request body for `Payout`.
+
+        ---
+        Note: 🟢 Override this method to customize the request data.
+
+        ---
+        Mapped Sample:
+
+        ```py
+        {
+            "account_number": 255185620,
             "contact": {
-                "name": request["party_name"],
-                "contact": request.get("party_mobile", ""),
-                "email": request.get("party_email", ""),
-                "type": CONTACT_TYPE_MAP.get(
-                    request["party_type"], RAZORPAYX_CONTACT_TYPE.CUSTOMER.value
-                ),
+                "name": "Gaurav Kumar",
+                "email": "gauravemail@gmail.com",
+                "contact": "9123456789",
+                "type": "customer",
             },
-            "amount": rupees_to_paisa(request["amount"]),
-            "currency": RAZORPAYX_PAYOUT_CURRENCY.INR.value,
-            "purpose": PAYOUT_PURPOSE_MAP.get(
-                request["party_type"], RAZORPAYX_PAYOUT_PURPOSE.PAYOUT.value
-            ),
-            "description": request["payment_description"],
-            "send_sms": True,
-            "send_email": True,
+            "amount": 5000,
+            "currency": "INR",
+            "purpose": "payout",
+            "description": "Payout for customer",
+            "receipt": "Receipt No. 1",
+            "send_sms": true,
+            "send_email": true,
             "notes": {
-                "source_doctype": request["source_doctype"],
-                "source_docname": request["source_docname"],
-                "razorpayx_integration_account": request[
-                    "razorpayx_integration_account"
-                ],
+                "source_doctype": "Payment Entry",
+                "source_docname": "PE-0001",
             },
+            "expire_by": 1545384058,
         }
+        ```
+
+        """
+        params_to_delete = ("narration", "queue_if_low_balance", "reference_id", "mode")
+
+        mapped_request = self.get_base_mapped_payout_info(payout_details)
+
+        mapped_request["description"] = mapped_request["narration"]
+        mapped_request["contact"] = self.get_party_contact_details(payout_details)
+
+        if expire_by := payout_details.get("expire_by"):
+            mapped_request["expire_by"] = expire_by.timestamp()
+
+        for param in params_to_delete:
+            del mapped_request[param]
+
+        return mapped_request
+
+    # TODO: others APIs
 
 
 # TODO: store response data??
