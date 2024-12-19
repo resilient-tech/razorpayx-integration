@@ -17,18 +17,12 @@ from razorpayx_integration.razorpayx_integration.utils.validation import (
     validate_razorpayx_payout_status,
 )
 
-# TODO: need proper mapping
-# TODO: add Data format and other format
 
-
-# TODO: need refactoring
 class RazorPayXPayout(BaseRazorPayXAPI):
     """
     Handle APIs for `Payout`.
 
     :param account_name: RazorPayX Integration account from which `Payout` will be created.
-    :param fund_account_id: The fund account's id to be used in `Payout` (Ex. `fa_00000000000001`).
-
     ---
 
     Note:
@@ -45,7 +39,6 @@ class RazorPayXPayout(BaseRazorPayXAPI):
     # * override base setup
     def setup(self, *args, **kwargs):
         self.razorpayx_account_number = self.razorpayx_account.account_number
-        self.fund_account_id = kwargs.get("fund_account_id")
         self.default_payout_request = {
             "account_number": self.razorpayx_account_number,
             "queue_if_low_balance": True,
@@ -71,6 +64,7 @@ class RazorPayXPayout(BaseRazorPayXAPI):
 
         Mandatory:
         - `amount` :float: Amount to be paid. (Must be in `INR`)
+        - `fund_account_id` :str: The fund account id to be used for the payout (Ex. `fa_00000000000001`).
         - `source_doctype` :str: The source document type.
         - `source_docname` :str: The source document name.
         - `party_type` :str: The type of party to be paid (Ex. `Customer`, `Supplier`, `Employee`).
@@ -109,6 +103,7 @@ class RazorPayXPayout(BaseRazorPayXAPI):
 
         Mandatory:
         - `amount` :float: Amount to be paid. (Must be in `INR`)
+        - `fund_account_id` :str: The fund account id to be used for the payout (Ex. `fa_00000000000001`).
         - `source_doctype` :str: The source document type.
         - `source_docname` :str: The source document name.
         - `party_type` :str: The type of party to be paid (Ex. `Customer`, `Supplier`, `Employee`).
@@ -149,6 +144,7 @@ class RazorPayXPayout(BaseRazorPayXAPI):
 
         :raises ValueError: If `mode` or `status` is not valid (if specified).\n
         ---
+
         Example Usage:
         ```
         payout = RazorPayXPayout("RAZORPAYX_BANK_ACCOUNT")
@@ -166,7 +162,7 @@ class RazorPayXPayout(BaseRazorPayXAPI):
 
         ---
         Note:
-            - `from` and `to` can be str,date,datetime (in YYYY-MM-DD).
+        - `from` and `to` can be str,date,datetime (in YYYY-MM-DD).
 
         ---
         Reference: https://razorpay.com/docs/api/x/payouts/fetch-all/
@@ -199,7 +195,7 @@ class RazorPayXPayout(BaseRazorPayXAPI):
 
         :param payout_details: Request for `Payout`.
         """
-        payout_request = self.get_mapped_payout_request(request=payout_details)
+        payout_request = self.get_mapped_payout_request_body(request=payout_details)
 
         return self._make_payout(json=payout_request)
 
@@ -240,8 +236,8 @@ class RazorPayXPayout(BaseRazorPayXAPI):
             else:
                 return RAZORPAYX_PAYOUT_MODE.NEFT.value
 
-    # todo: need proper key generation and implementation
-    # todo: BUGGY! if somthing fails after API calls it is not allowing to retry
+    # TODO: need proper key generation and implementation
+    # TODO: BUGGY! if somthing fails after API calls it is not allowing to retry
     # ! important
     def get_idempotency_key_header(self, json: dict) -> dict:
         """
@@ -286,7 +282,7 @@ class RazorPayXPayout(BaseRazorPayXAPI):
 
         base_request = self.get_base_mapped_payout_request(payout_details)
 
-        base_request["fund_account_id"] = self.fund_account_id
+        base_request["fund_account_id"] = payout_details["fund_account_id"]
 
         return base_request
 
@@ -442,6 +438,8 @@ class RazorPayXPayout(BaseRazorPayXAPI):
 
         if status := filters.get("status"):
             validate_razorpayx_payout_status(status)
+
+        # TODO: validate purpose also ...
 
 
 class RazorPayXCompositePayout(RazorPayXPayout):
