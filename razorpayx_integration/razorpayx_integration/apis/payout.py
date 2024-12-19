@@ -23,8 +23,8 @@ class RazorPayXPayout(BaseRazorPayXAPI):
     Handle APIs for `Payout`.
 
     :param account_name: RazorPayX Integration account from which `Payout` will be created.
-    ---
 
+    ---
     Note:
     - ⚠️ Use when payout is to be made for a specific `Fund Account`.
     - Payout will be `queued` if the balance is low.
@@ -53,13 +53,11 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         :param payout_details: Request body for `Payout`.
 
         ---
-
         Note:
         - Fund account must associate with the bank account.
             - Refer : https://razorpay.com/docs/api/x/fund-accounts/create/bank-account
 
         ---
-
         Params of `payout_details`:
 
         Mandatory:
@@ -92,13 +90,11 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         :param payout_details: Request body for `Payout`.
 
         ---
-
         Note:
         - Fund account must associate with the UPI ID.
          - Refer : https://razorpay.com/docs/api/x/fund-accounts/create/vpa
 
         ---
-
         Params of `payout_details`:
 
         Mandatory:
@@ -142,9 +138,9 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         :param filters: Result will be filtered as given filters.
         :param count: The number of payouts to be retrieved.
 
-        :raises ValueError: If `mode` or `status` is not valid (if specified).\n
-        ---
+        :raises ValueError: If `mode` or `status` is not valid (if specified).
 
+        ---
         Example Usage:
         ```
         payout = RazorPayXPayout("RAZORPAYX_BANK_ACCOUNT")
@@ -446,7 +442,12 @@ class RazorPayXCompositePayout(RazorPayXPayout):
     """
     Handle composite APIs for `Payout`.
 
-    :param account_name: RazorPayX account for which this `Payout` is associate.
+    :param account_name: RazorPayX Integration account from which `Payout` will be created.
+
+    ---
+    Note:
+    - ⚠️ Use when payout is made directly to party's `Bank Account` or `VPA`.
+    - Payout will be `queued` if the balance is low.
 
     ---
     Reference: https://razorpay.com/docs/api/x/payout-composite/
