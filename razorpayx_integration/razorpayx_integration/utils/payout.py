@@ -28,7 +28,7 @@ def make_payment_from_payment_entry(payment_entry: PaymentEntry):
         composite_payout = RazorPayXCompositePayout(payment_entry.razorpayx_account)
 
         request = get_mapped_request(payment_entry)
-        response = composite_payout.create_with_bank_account(
+        response = composite_payout.pay_to_bank_account(
             request, payment_entry.razorpayx_pay_instantaneously
         )
 
@@ -38,7 +38,7 @@ def make_payment_from_payment_entry(payment_entry: PaymentEntry):
         composite_payout = RazorPayXCompositePayout(payment_entry.razorpayx_account)
 
         request = get_mapped_request(payment_entry)
-        response = composite_payout.create_with_vpa(request)
+        response = composite_payout.pay_to_upi_id(request)
 
         return response
 

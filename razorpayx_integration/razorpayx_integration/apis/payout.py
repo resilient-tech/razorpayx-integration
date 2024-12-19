@@ -48,7 +48,7 @@ class RazorPayXPayout(BaseRazorPayXAPI):
     ### APIs ###
     def pay_to_bank_account(self, payout_details: dict) -> dict:
         """
-        Pay to a `Bank Account` using `Fund Account`.
+        Pay to a `Bank Account` using `Fund Account ID`.
 
         :param payout_details: Request body for `Payout`.
 
@@ -68,7 +68,6 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         - `party_type` :str: The type of party to be paid (Ex. `Customer`, `Supplier`, `Employee`).
 
         Optional:
-        - `mode` :str: The payout mode to be used. (Default: `NEFT`)
         - `pay_instantaneously` :bool: Pay instantaneously if `True`. (Default: `False`)
         - `description` :str: Description of the payout.
            - Maximum length `30` characters. Allowed characters: `a-z`, `A-Z`, `0-9` and `space`.
@@ -85,7 +84,7 @@ class RazorPayXPayout(BaseRazorPayXAPI):
 
     def pay_to_upi_id(self, payout_details: dict) -> dict:
         """
-        Pay to a `UPI ID` using `Fund Account`.
+        Pay to a `UPI ID` using `Fund Account ID`.
 
         :param payout_details: Request body for `Payout`.
 
@@ -175,6 +174,8 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         """
         Cancel a specific `Payout` by Id.
 
+        Caution: ⚠️  Only `queued` payouts can be canceled.
+
         :param id: Payout ID to be canceled (Ex.`payout_jkHgLM02`).
 
         ---
@@ -189,11 +190,13 @@ class RazorPayXPayout(BaseRazorPayXAPI):
 
         Caution: ⚠️  This method should not be called directly.
 
-        :param payout_details: Request for `Payout`.
+        :param payout_details: Request body for `Payout`.
         """
-        payout_request = self.get_mapped_payout_request_body(request=payout_details)
+        payout_request = self.get_mapped_payout_request_body(
+            payout_details=payout_details
+        )
 
-        return self._make_payout(json=payout_request)
+        return self._make_payout(payout_request)
 
     def _make_payout(self, json: dict) -> dict:
         """
@@ -219,12 +222,8 @@ class RazorPayXPayout(BaseRazorPayXAPI):
 
         Returns: NEFT | RTGS | IMPS
         """
-        pay_instantaneously = (
-            payout_details.get("pay_instantaneously", False)
-            or payout_details.get("mode") == RAZORPAYX_PAYOUT_MODE.IMPS.value
-        )
 
-        if pay_instantaneously:
+        if payout_details.get("pay_instantaneously"):
             return RAZORPAYX_PAYOUT_MODE.IMPS.value
         else:
             if payout_details["amount"] > PAYMENT_MODE_THRESHOLD.NEFT.value:
@@ -254,6 +253,8 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         """
         Mapping the request data to RazorPayX Payout API's required format.
 
+        Note: 🟢 Override this method to customize the request data.
+
         :param payout_details: Request data for `Payout`.
 
         Example:
@@ -276,22 +277,22 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         ```
         """
 
-        base_request = self.get_base_mapped_payout_request(payout_details)
+        mapped_request = self.get_base_mapped_payout_info(payout_details)
 
-        base_request["fund_account_id"] = payout_details["fund_account_id"]
+        mapped_request["fund_account_id"] = payout_details["fund_account_id"]
 
-        return base_request
+        return mapped_request
 
-    def get_base_mapped_payout_request(self, payout_details: dict) -> dict:
+    def get_base_mapped_payout_info(self, payout_details: dict) -> dict:
         """
-        Return the base mapped payout request.
+        Return the base mapped payout information.
 
         Consists of:
         - Mandatory values
         - Default values
         - Dependent values
 
-        :param payout_details: Request data for `Payout`.
+        :param payout_details: Request body for `Payout`.
 
         Example:
         ```py
@@ -345,87 +346,104 @@ class RazorPayXPayout(BaseRazorPayXAPI):
             "notes": get_notes(),
         }
 
-    def get_mapped_payout_request(
-        self,
-        request: dict,
-        fund_account_id: str | None = None,
-        fund_account_type: str | None = None,
-    ) -> dict:
+    def get_party_fund_account_details(self, payout_details: dict) -> dict:
         """
-        Map the request data to RazorPayX Payout API's required format.
+        Make a dictionary for `Fund Account` to be used in `Payout`.
 
-        :param request: Request data for `Payout`.
-        :param fund_account_id: The fund account's id to be used in `Payout`.
-        :param fund_account_type: The party's account type to be used in `Payout`.
+        :param data: Request body for `Payout`.
 
         ---
-        Note: Either `fund_account_id` or `fund_account_type` should be provided. Or none of them.
-        """
+        Example:
 
-        payout_request = {
-            "queue_if_low_balance": True,
-            "account_number": self.razorpayx_account_number,
-            "amount": rupees_to_paisa(request["amount"]),
-            "currency": RAZORPAYX_PAYOUT_CURRENCY.INR.value,
-            "mode": request["mode"],
-            "purpose": PAYOUT_PURPOSE_MAP.get(
-                request["party_type"], RAZORPAYX_PAYOUT_PURPOSE.PAYOUT.value
-            ),
-            "reference_id": f"{request['source_doctype']}-{request['source_docname']}",
-            "narration": request["payment_description"],
-            "notes": {
-                "source_doctype": request["source_doctype"],
-                "source_docname": request["source_docname"],
-                "razorpayx_integration_account": request[
-                    "razorpayx_integration_account"
-                ],
+        ```py
+        # Bank Account
+        {
+            "account_type": "bank_account",
+            "bank_account": {
+                "name": "Gaurav Kumar",
+                "ifsc": "HDFC0000053",
+                "account_number": "7654321234567890",
+            },
+            "contact": {
+                "name": "Gaurav Kumar",
+                "email": "gauravemail@gmail.com",
+                "contact": "9123456789",
+                "type": "customer",
+                "reference_id": "cont_00HjGh1",
             },
         }
 
-        if fund_account_id:
-            payout_request["fund_account_id"] = fund_account_id
-        elif fund_account_type:
-            payout_request["fund_account"] = self.get_mapped_fund_account_details(
-                request, fund_account_type
+        # VPA
+        {
+            "account_type": "vpa",
+            "vpa": {
+                "address": "gauravkumar@upi",
+            },
+            "contact": {
+                "name": "Gaurav Kumar",
+                "email": "gauravemail@gmail.com",
+                "contact": "9123456789",
+                "type": "customer",
+                "reference_id": "cont_00HjGh1",
+            },
+        }
+        ```
+        """
+
+        def get_account_details(account_type: str) -> dict:
+            match account_type:
+                case RAZORPAYX_FUND_ACCOUNT_TYPE.BANK_ACCOUNT.value:
+                    return {
+                        "bank_account": {
+                            "name": payout_details["party_name"],
+                            "ifsc": payout_details["party_bank_ifsc"],
+                            "account_number": payout_details["party_bank_account_no"],
+                        }
+                    }
+                case RAZORPAYX_FUND_ACCOUNT_TYPE.VPA.value:
+                    return {
+                        "vpa": {
+                            "address": payout_details["party_upi_id"],
+                        }
+                    }
+
+        return {
+            "account_type": payout_details["party_account_type"],
+            **get_account_details(payout_details["party_account_type"]),
+            "contact": self.get_party_contact_details(payout_details),
+        }
+
+    def get_party_contact_details(self, payout_details: dict) -> dict:
+        """
+        Make a dictionary for `Contact` to be used in `Payout`.
+
+        :param data: Request body for `Payout`.
+
+        ---
+        Example:
+        ```
+        {
+            "name": "Gaurav Kumar",
+            "email": "gauravemail@gmail.com",
+            "contact": "9123456789",
+            "type": "customer",
+            "reference_id": "cont_00HjGh1",
+        }
+        ```
+        """
+
+        def get_type() -> str:
+            return CONTACT_TYPE_MAP.get(
+                payout_details["party_type"], RAZORPAYX_CONTACT_TYPE.SELF.value
             )
 
-        return payout_request
-
-    def get_mapped_fund_account_details(
-        self, request: dict, fund_account_type: str
-    ) -> dict:
-        """
-        Make a dictionary for `Fund Account` to be used in `Payout` creation.
-
-        :param data: Request data for `Payout`.
-        :param account_type: The type of fund account to be used in `Payout`.
-        """
-        fund_account = {
-            "account_type": fund_account_type,
+        return {
+            "name": payout_details["party_name"],
+            "email": payout_details.get("party_email", ""),
+            "contact": payout_details.get("party_mobile", ""),
+            "type": get_type(),
+            "reference_id": payout_details.get("party_id", ""),
         }
-
-        if fund_account_type == RAZORPAYX_FUND_ACCOUNT_TYPE.BANK_ACCOUNT.value:
-            fund_account["bank_account"] = {
-                "name": request["party_name"],
-                "ifsc": request["party_bank_ifsc"],
-                "account_number": request["party_bank_account_no"],
-            }
-        else:
-            fund_account["vpa"] = {
-                "address": request["party_upi_id"],
-            }
-
-        fund_account["contact"] = {
-            "name": request["party_name"],
-            "email": request.get("party_email", ""),
-            "contact": request.get("party_mobile", ""),
-            "type": CONTACT_TYPE_MAP.get(
-                request["party_type"], RAZORPAYX_CONTACT_TYPE.SELF.value
-            ),
-            "reference_id": request["party_id"],
-        }
-
-        return fund_account
 
     ### VALIDATIONS ###
     def validate_and_process_request_filters(self, filters: dict):
@@ -453,54 +471,102 @@ class RazorPayXCompositePayout(RazorPayXPayout):
     Reference: https://razorpay.com/docs/api/x/payout-composite/
     """
 
-    def create_with_bank_account(
-        self, request: dict, pay_instantaneously: bool = False
-    ) -> dict:
+    ### APIs ###
+    def pay_to_bank_account(self, payout_details: dict) -> dict:
         """
-        Create a `Payout` with party's `Bank Account`.
+        Make a `Payout` to a party's `Bank Account`.
 
-        :param data: Request data for `Payout`.
+        :param payout_details: Request body for `Payout`.
+
+        ---
+        Params of `payout_details`:
+
+        Mandatory:
+        - `amount` :float: Amount to be paid. (Must be in `INR`)
+        - `source_doctype` :str: The source document type.
+        - `source_docname` :str: The source document name.
+        - `party_name` :str: Name of the party to be paid.
+        - `party_type` :str: The type of party to be paid (Ex. `Customer`, `Supplier`, `Employee`).
+        - `party_bank_account_no` :str: Bank account number of the party.
+        - `party_bank_ifsc` :str: IFSC code of the party's bank.
+
+        Optional:
+        - `party_id` :str: Id of the party (Ex. Docname of the party).
+        - `pay_instantaneously` :bool: Pay instantaneously if `True`. (Default: `False`)
+        - `description` :str: Description of the payout.
+           - Maximum length `30` characters. Allowed characters: `a-z`, `A-Z`, `0-9` and `space`.
+        - `reference_id` :str: Reference Id of the payout.
+        - `purpose` :str: Purpose of the payout. (Default: `Payout` or decided by `party_type`)
+        - `notes` :dict: Additional notes for the payout.
 
         ---
         Reference: https://razorpay.com/docs/api/x/payout-composite/create/bank-account/
         """
+        payout_details["mode"] = self.get_bank_payment_mode(payout_details)
+        payout_details[
+            "party_account_type"
+        ] = RAZORPAYX_FUND_ACCOUNT_TYPE.BANK_ACCOUNT.value
 
-        def get_bank_payment_mode() -> str:
-            if pay_instantaneously:
-                return RAZORPAYX_PAYOUT_MODE.IMPS.value
-            else:
-                if request["amount"] > PAYMENT_MODE_THRESHOLD.NEFT.value:
-                    return RAZORPAYX_PAYOUT_MODE.RTGS.value
-                else:
-                    return RAZORPAYX_PAYOUT_MODE.NEFT.value
+        return self._make_composite_payout(payout_details)
 
-        party_account_type = RAZORPAYX_FUND_ACCOUNT_TYPE.BANK_ACCOUNT.value
-
-        request["mode"] = get_bank_payment_mode()
-
-        payout_request = self.get_mapped_payout_request(
-            request=request, fund_account_type=party_account_type
-        )
-
-        return self._make_payout(json=payout_request)
-
-    def create_with_vpa(self, request: dict) -> dict:
+    def pay_to_upi_id(self, payout_details: dict) -> dict:
         """
-        Create a `Payout` with party's `VPA`.
+        Make a `Payout` to a party's `UPI ID`.
 
-        :param data: Request data for `Payout`.
+        :param payout_details: Request body for `Payout`.
+
+        ---
+        Params of `payout_details`:
+
+        Mandatory:
+        - `amount` :float: Amount to be paid. (Must be in `INR`)
+        - `source_doctype` :str: The source document type.
+        - `source_docname` :str: The source document name.
+        - `party_name` :str: Name of the party to be paid.
+        - `party_type` :str: The type of party to be paid (Ex. `Customer`, `Supplier`, `Employee`).
+        - `party_upi_id` :str: UPI ID of the party (Ex. `gauravkumar@exampleupi`).
+
+        Optional:
+        - `party_id` :str: Id of the party (Ex. Docname of the party).
+        - `description` :str: Description of the payout.
+           - Maximum length `30` characters. Allowed characters: `a-z`, `A-Z`, `0-9` and `space`.
+        - `reference_id` :str: Reference Id of the payout.
+        - `purpose` :str: Purpose of the payout. (Default: `Payout` or decided by `party_type`)
+        - `notes` :dict: Additional notes for the payout.
+
         ---
         Reference: https://razorpay.com/docs/api/x/payout-composite/create/vpa/
         """
-        party_account_type = RAZORPAYX_FUND_ACCOUNT_TYPE.VPA.value
+        payout_details["mode"] = RAZORPAYX_PAYOUT_MODE.UPI.value
+        payout_details["party_account_type"] = RAZORPAYX_FUND_ACCOUNT_TYPE.VPA.value
 
-        request["mode"] = RAZORPAYX_PAYOUT_MODE.UPI.value
+        return self._make_composite_payout(payout_details)
 
-        payout_request = self.get_mapped_payout_request(
-            request=request, fund_account_type=party_account_type
+    ### BASES ###
+    def _make_composite_payout(self, payout_details: dict) -> dict:
+        """
+        Base method to create a `Composite Payout`.
+
+        Caution: ⚠️  This method should not be called directly.
+
+        :param payout_details: Request body for `Payout`.
+        """
+        payout_request = self.get_mapped_payout_request_body(payout_details)
+
+        return self._make_payout(payout_request)
+
+    ### HELPERS ###
+    def get_mapped_payout_request_body(self, payout_details):
+        """
+        TODO docs
+        """
+        mapped_request = self.get_base_mapped_payout_info(payout_details)
+
+        mapped_request["fund_account"] = self.get_party_fund_account_details(
+            payout_details
         )
 
-        return self._make_payout(json=payout_request)
+        return mapped_request
 
 
 class RazorPayXLinkPayout(RazorPayXPayout):

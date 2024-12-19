@@ -1,7 +1,7 @@
 from razorpayx_integration.payment_utils.constants.enums import BaseEnum
 
 # TODO: ? can remove prefix `RAZORPAYX_` from all constants
-# TODO: ? what if there are custom purpose? No need for validation of purpose?? Or create doctype for purpose?
+# TODO: ? what if there are custom purpose and custom contact type? No need for validation of purpose?? Or create doctype for purpose?
 
 
 class RAZORPAYX_CONTACT_TYPE(BaseEnum):
@@ -14,6 +14,7 @@ class RAZORPAYX_CONTACT_TYPE(BaseEnum):
 class RAZORPAYX_FUND_ACCOUNT_TYPE(BaseEnum):
     BANK_ACCOUNT = "bank_account"
     VPA = "vpa"
+    # CARD = "card" # ! Not supported currently
 
 
 class RAZORPAYX_USER_PAYOUT_MODE(BaseEnum):
