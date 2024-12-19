@@ -44,6 +44,7 @@ class RazorPayXPayout(BaseRazorPayXAPI):
             "queue_if_low_balance": True,
             "currency": RAZORPAYX_PAYOUT_CURRENCY.INR.value,
         }
+        self.payout_headers = {}
 
     ### APIs ###
     def pay_to_bank_account(self, payout_details: dict) -> dict:
@@ -80,7 +81,7 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         """
         payout_details["mode"] = self.get_bank_payment_mode(payout_details)
 
-        return self._pay_to_fund_account(payout_details)
+        return self._make_payout(payout_details)
 
     def pay_to_upi_id(self, payout_details: dict) -> dict:
         """
@@ -115,7 +116,7 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         """
         payout_details["mode"] = RAZORPAYX_PAYOUT_MODE.UPI.value
 
-        return self._pay_to_fund_account(payout_details=payout_details)
+        return self._make_payout(payout_details)
 
     def get_by_id(self, payout_id: str) -> dict:
         """
@@ -184,33 +185,20 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         return self.post(endpoint=f"{payout_id}/cancel")
 
     ### BASES ###
-    def _pay_to_fund_account(self, payout_details: dict) -> dict:
-        """
-        Create a `Payout` with `Fund Account Id`.
-
-        Caution: ⚠️  This method should not be called directly.
-
-        :param payout_details: Request body for `Payout`.
-        """
-        payout_request = self.get_mapped_payout_request_body(
-            payout_details=payout_details
-        )
-
-        return self._make_payout(payout_request)
-
-    def _make_payout(self, json: dict) -> dict:
+    def _make_payout(self, payout_details: dict) -> dict:
         """
         Base method to create a `Payout`.
 
         Caution: ⚠️  This method should not be called directly.
 
-        :param json: Processed request data for `Payout`.
+        :param payout_details: Request body for `Payout`.
         """
-        headers = self.get_idempotency_key_header(json)
+        json = self.get_mapped_payout_request_body(payout_details)
 
+        self.set_idempotency_key_header(json)
         # TODO: validation so can reduce the number of API calls
 
-        return self.post(json=json, headers=headers)
+        return self.post(json=json, headers=self.payout_headers)
 
     ### HELPERS ###
     # TODO: should respect user input ?
@@ -234,29 +222,33 @@ class RazorPayXPayout(BaseRazorPayXAPI):
     # TODO: need proper key generation and implementation
     # TODO: BUGGY! if somthing fails after API calls it is not allowing to retry
     # ! important
-    def get_idempotency_key_header(self, json: dict) -> dict:
+    def set_idempotency_key_header(self, json: dict):
         """
         Generate `Idempotency Key` header for `Payout` creation.
 
+        :param json: Mapped request data for `Payout`.
+
+        ---
         Example:
         ```
         {"X-Payout-Idempotency": "ACC-PAY-002-2024-06-01"}
         ```
-
         ---
         Reference: https://razorpay.com/docs/api/x/payout-idempotency/make-request/
         """
 
-        return {"X-Payout-Idempotency": json["notes"]["source_docname"]}
+        self.default_headers["X-Payout-Idempotency"] = json["notes"]["source_docname"]
 
     def get_mapped_payout_request_body(self, payout_details: dict) -> dict:
         """
         Mapping the request data to RazorPayX Payout API's required format.
 
-        Note: 🟢 Override this method to customize the request data.
-
         :param payout_details: Request data for `Payout`.
 
+        ---
+        Note: 🟢 Override this method to customize the request data.
+
+        ---
         Example:
         ```py
         {
@@ -294,6 +286,7 @@ class RazorPayXPayout(BaseRazorPayXAPI):
 
         :param payout_details: Request body for `Payout`.
 
+        ---
         Example:
         ```py
         {
@@ -351,6 +344,9 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         Make a dictionary for `Fund Account` to be used in `Payout`.
 
         :param data: Request body for `Payout`.
+
+        ---
+        Note:  ⚠️  `party_account_type` must be provided in the `payout_details`.
 
         ---
         Example:
@@ -507,7 +503,7 @@ class RazorPayXCompositePayout(RazorPayXPayout):
             "party_account_type"
         ] = RAZORPAYX_FUND_ACCOUNT_TYPE.BANK_ACCOUNT.value
 
-        return self._make_composite_payout(payout_details)
+        return self._make_payout(payout_details)
 
     def pay_to_upi_id(self, payout_details: dict) -> dict:
         """
@@ -540,26 +536,16 @@ class RazorPayXCompositePayout(RazorPayXPayout):
         payout_details["mode"] = RAZORPAYX_PAYOUT_MODE.UPI.value
         payout_details["party_account_type"] = RAZORPAYX_FUND_ACCOUNT_TYPE.VPA.value
 
-        return self._make_composite_payout(payout_details)
-
-    ### BASES ###
-    def _make_composite_payout(self, payout_details: dict) -> dict:
-        """
-        Base method to create a `Composite Payout`.
-
-        Caution: ⚠️  This method should not be called directly.
-
-        :param payout_details: Request body for `Payout`.
-        """
-        payout_request = self.get_mapped_payout_request_body(payout_details)
-
-        return self._make_payout(payout_request)
+        return self._make_payout(payout_details)
 
     ### HELPERS ###
     def get_mapped_payout_request_body(self, payout_details):
         """
         Mapping the request data to RazorPayX Payout API's required format.
 
+        :param payout_details: Request body for `Payout`.
+
+        ---
         Note: 🟢 Override this method to customize the request data.
 
         ---
