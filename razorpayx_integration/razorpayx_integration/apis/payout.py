@@ -179,6 +179,17 @@ class RazorPayXPayout(BaseRazorPayXAPI):
 
         return super().get_all(filters, count)
 
+    def cancel(self, payout_id: str) -> dict:
+        """
+        Cancel a specific `Payout` by Id.
+
+        :param id: Payout ID to be canceled (Ex.`payout_jkHgLM02`).
+
+        ---
+        Reference: https://razorpay.com/docs/api/x/payouts/cancel
+        """
+        return self.post(endpoint=f"{payout_id}/cancel")
+
     ### BASES ###
     def _pay_to_fund_account(self, payout_details: dict) -> dict:
         """
