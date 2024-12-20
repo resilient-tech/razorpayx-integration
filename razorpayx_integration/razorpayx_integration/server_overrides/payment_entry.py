@@ -10,11 +10,10 @@ from frappe import _
 
 from razorpayx_integration.constants import RAZORPAYX, RAZORPAYX_INTEGRATION_DOCTYPE
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
-    RAZORPAYX_PAYOUT_STATUS,
     RAZORPAYX_USER_PAYOUT_MODE,
 )
 from razorpayx_integration.razorpayx_integration.utils.payout import (
-    make_payment_from_payment_entry,
+    PayoutWithPaymentEntry,
 )
 from razorpayx_integration.razorpayx_integration.utils.validation import (
     validate_razorpayx_payout_mode,
@@ -22,6 +21,13 @@ from razorpayx_integration.razorpayx_integration.utils.validation import (
 
 
 def validate(doc, method=None):
+    validate_online_payment_requirements(doc)
+
+
+def validate_online_payment_requirements(doc):
+    if not doc.make_online_payment:
+        return
+
     validate_mandatory_fields_for_payment(doc)
     validate_payout_mode(doc)
     validate_razorpayx_account(doc)
@@ -29,9 +35,6 @@ def validate(doc, method=None):
 
 
 def validate_mandatory_fields_for_payment(doc):
-    if not doc.make_online_payment:
-        return
-
     if doc.bank_account and not doc.razorpayx_account:
         frappe.throw(
             msg=_("{0} Account not found for bank account <strong>{1}</strong>").format(
@@ -51,9 +54,6 @@ def validate_mandatory_fields_for_payment(doc):
 
 
 def validate_payout_mode(doc):
-    if not doc.make_online_payment:
-        return
-
     validate_razorpayx_payout_mode(doc.razorpayx_payment_mode)
 
     if doc.razorpayx_payment_mode == RAZORPAYX_USER_PAYOUT_MODE.BANK.value:
@@ -99,9 +99,6 @@ def validate_payout_mode(doc):
 
 
 def validate_razorpayx_account(doc):
-    if not doc.make_online_payment:
-        return
-
     associated_razorpayx_account = frappe.get_value(
         RAZORPAYX_INTEGRATION_DOCTYPE,
         {"bank_account": doc.bank_account},
@@ -128,10 +125,7 @@ def validate_razorpayx_account(doc):
 
 
 def validate_upi_id(doc):
-    if (
-        not doc.make_online_payment
-        or doc.razorpayx_payment_mode != RAZORPAYX_USER_PAYOUT_MODE.UPI.value
-    ):
+    if doc.razorpayx_payment_mode != RAZORPAYX_USER_PAYOUT_MODE.UPI.value:
         return
 
     associated_upi_id = frappe.get_value(
@@ -159,29 +153,10 @@ def validate_upi_id(doc):
         )
 
 
-# TODO: enqueue it?
 def on_submit(doc, method=None):
-    make_online_payment(doc)
+    make_payout(doc)
 
 
-def make_online_payment(doc):
-    if not doc.make_online_payment:
-        return
-
-    response = make_payment_from_payment_entry(doc)
-
-    if not response:
-        # TODO: ? what can be done
-        return
-
-    doc.db_set(
-        {
-            "razorpayx_payout_id": response["id"],
-            "razorpayx_payment_status": response["status"].title(),
-        }
-    )
-
-
-# ! IMPORTANT
-# TODO: if on submit fails, also cancel the payment ??
-# TODO: do not allow to cancel if already paid ?
+# TODO: enqueue it?
+def make_payout(doc):
+    PayoutWithPaymentEntry(doc).make_payout()

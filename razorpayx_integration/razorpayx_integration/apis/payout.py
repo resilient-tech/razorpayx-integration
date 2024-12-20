@@ -37,14 +37,14 @@ class RazorPayXPayout(BaseRazorPayXAPI):
     Reference: https://razorpay.com/docs/api/x/payouts/
     """
 
-    # * utility attributes
+    ### CLASS VARIABLES ###
     BASE_PATH = "payouts"
     DEFAULT_SOURCE_AMOUNT_FIELD = "paid_amount"
 
-    # * override base setup
+    ### SETUPS ###
     def setup(self, *args, **kwargs):
         """
-        Override this method to setup API specific configurations.
+        Override this method to setup `API` specific configurations.
 
         Caution: ⚠️ Don't forget to call `super().setup()` in sub class.
         """
@@ -357,7 +357,7 @@ class RazorPayXPayout(BaseRazorPayXAPI):
 
     def _get_party_fund_account_details(self, payout_details: dict) -> dict:
         """
-        Make a dictionary for `Fund Account` to be used in `Payout`.
+        Get a dictionary for `Fund Account` to be used in `Payout`.
 
         :param data: Request body for `Payout`.
 
@@ -724,6 +724,7 @@ class RazorPayXLinkPayout(RazorPayXPayout):
     Reference: https://razorpay.com/docs/api/x/payout-links
     """
 
+    ### CLASS VARIABLES ###
     BASE_PATH = "payout-links"
 
     ### APIs ###

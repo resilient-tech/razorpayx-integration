@@ -10,6 +10,7 @@ from razorpayx_integration.razorpayx_integration.constants.payouts import (
     RAZORPAYX_PAYOUT_LINK_STATUS,
     RAZORPAYX_PAYOUT_MODE,
     RAZORPAYX_PAYOUT_STATUS,
+    RAZORPAYX_USER_PAYOUT_MODE,
 )
 
 
@@ -55,6 +56,22 @@ def validate_razorpayx_payout_mode(mode: str | None = None):
     frappe.throw(
         msg=_("Invalid Payout mode: {0}.<br> Must be one of : <br> {1}").format(
             mode, RAZORPAYX_PAYOUT_MODE.values_as_html_list()
+        ),
+        title=_("Invalid RazorPayX Payout mode"),
+        exc=frappe.ValidationError,
+    )
+
+
+def validate_razorpayx_user_payout_mode(mode: str | None = None):
+    """
+    :raises frappe.ValidationError: If the mode is not valid.
+    """
+    if RAZORPAYX_USER_PAYOUT_MODE.has_value(mode):
+        return
+
+    frappe.throw(
+        msg=_("Invalid Payout mode: {0}.<br> Must be one of : <br> {1}").format(
+            mode, RAZORPAYX_USER_PAYOUT_MODE.values_as_html_list()
         ),
         title=_("Invalid RazorPayX Payout mode"),
         exc=frappe.ValidationError,
