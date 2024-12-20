@@ -134,6 +134,6 @@ class RazorPayXFundAccount(BaseRazorPayXAPI):
         return self.patch(endpoint=id, json={"active": active})
 
     ### Helpers ###
-    def validate_and_process_request_filters(self, filters: dict) -> dict:
+    def _validate_and_process_filters(self, filters: dict) -> dict:
         if account_type := filters.get("account_type"):
             validate_razorpayx_fund_account_type(account_type)

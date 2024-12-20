@@ -235,5 +235,5 @@ class RazorPayXContact(BaseRazorPayXAPI):
             request["type"] = RAZORPAYX_CONTACT_TYPE[type.upper()].value
             validate_razorpayx_contact_type(request["type"])
 
-    def validate_and_process_request_filters(self, filters: dict):
+    def _validate_and_process_filters(self, filters: dict):
         self.validate_email_and_type_of_contact(filters)

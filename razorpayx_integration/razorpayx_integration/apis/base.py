@@ -149,7 +149,7 @@ class BaseRazorPayXAPI:
         if filters:
             self._clean_request_filters(filters)
             self._set_epoch_time_for_date_filters(filters)
-            self.validate_and_process_request_filters(filters)
+            self._validate_and_process_filters(filters)
 
         else:
             filters = {}
@@ -227,7 +227,7 @@ class BaseRazorPayXAPI:
             response_json = response.json(object_hook=frappe._dict)
 
             if response.status_code >= 400:
-                self.handle_failed_api_response(response_json)
+                self._handle_failed_api_response(response_json)
 
             return response_json
 
@@ -254,7 +254,7 @@ class BaseRazorPayXAPI:
 
     def _set_epoch_time_for_date_filters(self, filters: dict):
         """
-        Converts `from` and `to` date filters to epoch time.
+        Converts  the date filters `from` and `to` to epoch time (Unix timestamp).
         """
         if from_date := filters.get("from"):
             filters["from"] = get_start_of_day_epoch(from_date)
@@ -262,16 +262,16 @@ class BaseRazorPayXAPI:
         if to_date := filters.get("to"):
             filters["to"] = get_end_of_day_epoch(to_date)
 
-    def validate_and_process_request_filters(self, filters: dict):
+    def _validate_and_process_filters(self, filters: dict):
         """
-        Override in sub class.
-        validate and process filters except date filters (from,to)
+        Override in sub class to validate and process filters, except date filters (from,to).
 
+        Validation happen before `get_all()` to reduce API calls.
         """
         pass
 
     # TODO:  handle special(error) http code (specially payout process!!)
-    def handle_failed_api_response(self, response_json: dict | None = None):
+    def _handle_failed_api_response(self, response_json: dict | None = None):
         """
         Handle failed API response from RazorPayX.
 

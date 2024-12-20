@@ -11,6 +11,7 @@ from razorpayx_integration.razorpayx_integration.constants.payouts import (
     RAZORPAYX_PAYOUT_PURPOSE,
 )
 from razorpayx_integration.razorpayx_integration.utils.validation import (
+    validate_razorpayx_payout_link_status,
     validate_razorpayx_payout_mode,
     validate_razorpayx_payout_status,
 )
@@ -131,7 +132,7 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         self, filters: dict | None = None, count: int | None = None
     ) -> list[dict]:
         """
-        Get all `Payouts` associate with given `RazorPayX` account if limit is not given.
+        Get all `Payouts` associate with given `RazorPayX` account if count is not given.
 
         :param filters: Result will be filtered as given filters.
         :param count: The number of payouts to be retrieved.
@@ -141,7 +142,7 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         ---
         Example Usage:
         ```
-        payout = RazorPayXPayout("RAZORPAYX_BANK_ACCOUNT")
+        payout = RazorPayXPayout(RAZORPAYX_BANK_ACCOUNT)
         filters = {
             "contact_id":"cont_00HjGh1",
             "fund_account_id":"fa_00HjHue1",
@@ -175,7 +176,7 @@ class RazorPayXPayout(BaseRazorPayXAPI):
 
         Caution: ⚠️  Only `queued` payouts can be canceled.
 
-        :param id: Payout ID to be canceled (Ex.`payout_jkHgLM02`).
+        :param payout_id: Payout ID to be canceled (Ex.`payout_jkHgLM02`).
 
         ---
         Reference: https://razorpay.com/docs/api/x/payouts/cancel
@@ -447,7 +448,7 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         }
 
     ### VALIDATIONS ###
-    def validate_and_process_request_filters(self, filters: dict):
+    def _validate_and_process_filters(self, filters: dict):
         if mode := filters.get("mode"):
             validate_razorpayx_payout_mode(mode)
 
@@ -687,6 +688,68 @@ class RazorPayXLinkPayout(RazorPayXPayout):
         """
         return self._make_payout(payout_details)
 
+    def get_by_id(self, payout_link_id: str) -> dict:
+        """
+        Fetch the details of a specific `Link Payout` by Id.
+
+        :param id: `Id` of fund account to fetch (Ex.`poutlk_jkHgLM02`).
+
+        ---
+        Reference: https://razorpay.com/docs/api/x/payout-links/fetch-with-id
+        """
+        return self.get(endpoint=payout_link_id)
+
+    def get_all(self, filters=None, count=None):
+        """
+        Get all `Payout Links` associate with given `RazorPayX` account if count is not given.
+
+        :param filters: Result will be filtered as given filters.
+        :param count: The number of payouts to be retrieved.
+
+        :raises ValueError: If `status` is not valid (if specified).
+
+        ---
+        Example Usage:
+        ```
+        link_payout = RazorPayXLinkPayout(RAZORPAYX_BANK_ACCOUNT)
+        filters = {
+            "id":"poutlk_jkHgLM02",
+            "contact_id":"cont_00HjGh1",
+            "contact_phone_number":"9123456789",
+            "contact_email":"gaurvaexmaple@gmail.com",
+            "purpose":"payout",
+            "fund_account_id":"fa_00HjHue1",
+            "receipt":"ACC-PAY-003-2024-06-01",
+            "short_url":"https://rzp.io/p/abc",
+            "status":"processing",
+            "from":"2024-01-01"
+            "to":"2024-06-01"
+        }
+        response=link_payout.get_all(filters)
+        ```
+
+        ---
+        Note:
+        - `from` and `to` can be str,date,datetime (in YYYY-MM-DD).
+
+        ---
+        Reference: https://razorpay.com/docs/api/x/payouts/fetch-all/
+        """
+        return super().get_all(filters, count)
+
+    def cancel(self, payout_link_id: str) -> dict:
+        """
+        Cancel a specific `Payout Link` by Id.
+
+        Caution: ⚠️  Only `issued` payout links can be canceled.
+
+        :param payout_link_id: Payout link ID to be canceled (Ex.`poutlk_jkHgLM02`).
+
+        ---
+        Reference: https://razorpay.com/docs/api/x/payout-links/cancel
+        """
+        return self.post(endpoint=f"{payout_link_id}/cancel")
+
     ### HELPERS ###
     def get_mapped_payout_request_body(self, payout_details: dict) -> dict:
         """
@@ -741,7 +804,13 @@ class RazorPayXLinkPayout(RazorPayXPayout):
 
         return mapped_request
 
-    # TODO: others APIs
+    ### VALIDATIONS ###
+    def _validate_and_process_filters(self, filters):
+        """
+        Validate and process the filters for `Link Payout`.
+        """
+        if status := filters.get("status"):
+            validate_razorpayx_payout_link_status(status)
 
 
 # TODO: store response data??
