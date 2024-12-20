@@ -1,3 +1,6 @@
+import frappe
+from frappe import _
+
 from razorpayx_integration.payment_utils.utils import rupees_to_paisa
 from razorpayx_integration.razorpayx_integration.apis.base import BaseRazorPayXAPI
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
@@ -78,7 +81,7 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         ---
         Reference: https://razorpay.com/docs/api/x/payouts/create/bank-account
         """
-        payout_details["mode"] = self.get_bank_payment_mode(payout_details)
+        payout_details["mode"] = self._get_bank_payment_mode(payout_details)
 
         return self._make_payout(payout_details)
 
@@ -192,16 +195,16 @@ class RazorPayXPayout(BaseRazorPayXAPI):
 
         :param payout_details: Request body for `Payout`.
         """
-        json = self.get_mapped_payout_request_body(payout_details)
+        json = self._get_mapped_payout_request_body(payout_details)
 
-        self.set_idempotency_key_header(json)
-        # TODO: validation so can reduce the number of API calls
+        self._set_idempotency_key_header(json)
+
+        self._validate_payout_payload(json)
 
         return self.post(json=json, headers=self.payout_headers)
 
     ### HELPERS ###
-    # TODO: should respect user input ?
-    def get_bank_payment_mode(payout_details: dict) -> str:
+    def _get_bank_payment_mode(payout_details: dict) -> str:
         """
         Return the payment mode for the payout.
 
@@ -218,10 +221,7 @@ class RazorPayXPayout(BaseRazorPayXAPI):
             else:
                 return RAZORPAYX_PAYOUT_MODE.NEFT.value
 
-    # TODO: need proper key generation and implementation
-    # TODO: BUGGY! if somthing fails after API calls it is not allowing to retry
-    # ! important
-    def set_idempotency_key_header(self, json: dict):
+    def _set_idempotency_key_header(self, json: dict):
         """
         Generate `Idempotency Key` header for `Payout` creation.
 
@@ -238,7 +238,7 @@ class RazorPayXPayout(BaseRazorPayXAPI):
 
         self.payout_headers["X-Payout-Idempotency"] = json["notes"]["source_docname"]
 
-    def get_mapped_payout_request_body(self, payout_details: dict) -> dict:
+    def _get_mapped_payout_request_body(self, payout_details: dict) -> dict:
         """
         Mapping the request data to RazorPayX `Payout` API's required format.
 
@@ -268,13 +268,13 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         ```
         """
 
-        mapped_request = self.get_base_mapped_payout_info(payout_details)
+        mapped_request = self._get_base_mapped_payout_info(payout_details)
 
         mapped_request["fund_account_id"] = payout_details["fund_account_id"]
 
         return mapped_request
 
-    def get_base_mapped_payout_info(self, payout_details: dict) -> dict:
+    def _get_base_mapped_payout_info(self, payout_details: dict) -> dict:
         """
         Return the base mapped payout information.
 
@@ -338,7 +338,7 @@ class RazorPayXPayout(BaseRazorPayXAPI):
             "notes": get_notes(),
         }
 
-    def get_party_fund_account_details(self, payout_details: dict) -> dict:
+    def _get_party_fund_account_details(self, payout_details: dict) -> dict:
         """
         Make a dictionary for `Fund Account` to be used in `Payout`.
 
@@ -405,10 +405,10 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         return {
             "account_type": payout_details["party_account_type"],
             **get_account_details(payout_details["party_account_type"]),
-            "contact": self.get_party_contact_details(payout_details),
+            "contact": self._get_party_contact_details(payout_details),
         }
 
-    def get_party_contact_details(self, payout_details: dict) -> dict:
+    def _get_party_contact_details(self, payout_details: dict) -> dict:
         """
         Make a dictionary for `Contact` to be used in `Payout`.
 
@@ -448,14 +448,65 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         }
 
     ### VALIDATIONS ###
-    def _validate_and_process_filters(self, filters: dict):
-        if mode := filters.get("mode"):
+    def _validate_payout_payload(self, json: dict):
+        """
+        Validation before making payout.
+
+        :param json: Payload for `Payout`.
+        """
+        self._validate_description(json)
+        self._validate_payout_mode(json)
+
+    def _validate_description(self, json: dict):
+        """
+        Description/Narration should be of max 30 characters and A-Z, a-z, 0-9, and space only.
+
+        :param json: Payload for `Payout`.
+        """
+        import re
+
+        description = json.get("narration") or json.get("description")
+
+        if not description:
+            return
+
+        pattern = re.compile(r"^[a-zA-Z0-9 ]{1,30}$")
+
+        if not pattern.match(description):
+            frappe.throw(
+                msg=_(
+                    "Description/Narration should be of max 30 characters and A-Z, a-z, 0-9, and space only."
+                ),
+                title=_("Invalid Description/Narration"),
+                exc=frappe.ValidationError,
+            )
+
+    def _validate_payout_mode(self, json: dict):
+        """
+        Validate the `mode` of the payout.
+
+        :param json: Request or Filter data.
+        """
+        if mode := json.get("mode"):
             validate_razorpayx_payout_mode(mode)
 
-        if status := filters.get("status"):
+    def _validate_status(self, json: dict):
+        """
+        Validate the `status` of the payout.
+
+        :param json: Request or Filter data.
+        """
+        if status := json.get("status"):
             validate_razorpayx_payout_status(status)
 
-        # TODO: validate purpose also ...
+    def _validate_and_process_filters(self, filters: dict):
+        """
+        Validation before `get_all` API call.
+
+        :param filters: Filters for fetching filtered response.
+        """
+        self._validate_payout_mode(filters)
+        self._validate_status(filters)
 
 
 class RazorPayXCompositePayout(RazorPayXPayout):
@@ -506,10 +557,10 @@ class RazorPayXCompositePayout(RazorPayXPayout):
         ---
         Reference: https://razorpay.com/docs/api/x/payout-composite/create/bank-account/
         """
-        payout_details["mode"] = self.get_bank_payment_mode(payout_details)
-        payout_details[
-            "party_account_type"
-        ] = RAZORPAYX_FUND_ACCOUNT_TYPE.BANK_ACCOUNT.value
+        payout_details["mode"] = self._get_bank_payment_mode(payout_details)
+        payout_details["party_account_type"] = (  # noqa: RUF100
+            RAZORPAYX_FUND_ACCOUNT_TYPE.BANK_ACCOUNT.value
+        )
 
         return self._make_payout(payout_details)
 
@@ -549,7 +600,7 @@ class RazorPayXCompositePayout(RazorPayXPayout):
         return self._make_payout(payout_details)
 
     ### HELPERS ###
-    def get_mapped_payout_request_body(self, payout_details) -> dict:
+    def _get_mapped_payout_request_body(self, payout_details) -> dict:
         """
         Mapping the request data to RazorPayX `Composite Payout` API's required format.
 
@@ -593,9 +644,9 @@ class RazorPayXCompositePayout(RazorPayXPayout):
         }
         ```
         """
-        mapped_request = self.get_base_mapped_payout_info(payout_details)
+        mapped_request = self._get_base_mapped_payout_info(payout_details)
 
-        mapped_request["fund_account"] = self.get_party_fund_account_details(
+        mapped_request["fund_account"] = self._get_party_fund_account_details(
             payout_details
         )
 
@@ -751,7 +802,7 @@ class RazorPayXLinkPayout(RazorPayXPayout):
         return self.post(endpoint=f"{payout_link_id}/cancel")
 
     ### HELPERS ###
-    def get_mapped_payout_request_body(self, payout_details: dict) -> dict:
+    def _get_mapped_payout_request_body(self, payout_details: dict) -> dict:
         """
 
         Mapping the request data to RazorPayX `Link Payout` API's required format.
@@ -791,10 +842,10 @@ class RazorPayXLinkPayout(RazorPayXPayout):
         """
         params_to_delete = ("narration", "queue_if_low_balance", "reference_id", "mode")
 
-        mapped_request = self.get_base_mapped_payout_info(payout_details)
+        mapped_request = self._get_base_mapped_payout_info(payout_details)
 
         mapped_request["description"] = mapped_request["narration"]
-        mapped_request["contact"] = self.get_party_contact_details(payout_details)
+        mapped_request["contact"] = self._get_party_contact_details(payout_details)
 
         if expire_by := payout_details.get("expire_by"):
             mapped_request["expire_by"] = expire_by.timestamp()
@@ -805,12 +856,20 @@ class RazorPayXLinkPayout(RazorPayXPayout):
         return mapped_request
 
     ### VALIDATIONS ###
-    def _validate_and_process_filters(self, filters):
+    def _validate_status(self, json):
         """
-        Validate and process the filters for `Link Payout`.
+        Validate the `status` of the payout link.
+
+        :param json: Request or Filter data.
+
         """
-        if status := filters.get("status"):
+        if status := json.get("status"):
             validate_razorpayx_payout_link_status(status)
 
+    def _validate_and_process_filters(self, filters):
+        """
+        Validation before `get_all` API call.
 
-# TODO: store response data??
+        :param filters: Filters for fetching filtered response.
+        """
+        self._validate_status(filters)
