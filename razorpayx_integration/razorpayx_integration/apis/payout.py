@@ -506,9 +506,9 @@ class RazorPayXCompositePayout(RazorPayXPayout):
         Reference: https://razorpay.com/docs/api/x/payout-composite/create/bank-account/
         """
         payout_details["mode"] = self.get_bank_payment_mode(payout_details)
-        payout_details[
-            "party_account_type"
-        ] = RAZORPAYX_FUND_ACCOUNT_TYPE.BANK_ACCOUNT.value
+        payout_details["party_account_type"] = (
+            RAZORPAYX_FUND_ACCOUNT_TYPE.BANK_ACCOUNT.value
+        )
 
         return self._make_payout(payout_details)
 
@@ -713,8 +713,8 @@ class RazorPayXLinkPayout(RazorPayXPayout):
             "purpose": "payout",
             "description": "Payout for customer",
             "receipt": "Receipt No. 1",
-            "send_sms": true,
-            "send_email": true,
+            "send_sms": True,
+            "send_email": True,
             "notes": {
                 "source_doctype": "Payment Entry",
                 "source_docname": "PE-0001",
