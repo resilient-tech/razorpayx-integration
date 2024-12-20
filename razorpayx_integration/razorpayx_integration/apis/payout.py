@@ -235,7 +235,7 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         Reference: https://razorpay.com/docs/api/x/payout-idempotency/make-request/
         """
 
-        self.default_headers["X-Payout-Idempotency"] = json["notes"]["source_docname"]
+        self.payout_headers["X-Payout-Idempotency"] = json["notes"]["source_docname"]
 
     def get_mapped_payout_request_body(self, payout_details: dict) -> dict:
         """
@@ -506,9 +506,9 @@ class RazorPayXCompositePayout(RazorPayXPayout):
         Reference: https://razorpay.com/docs/api/x/payout-composite/create/bank-account/
         """
         payout_details["mode"] = self.get_bank_payment_mode(payout_details)
-        payout_details["party_account_type"] = (
-            RAZORPAYX_FUND_ACCOUNT_TYPE.BANK_ACCOUNT.value
-        )
+        payout_details[
+            "party_account_type"
+        ] = RAZORPAYX_FUND_ACCOUNT_TYPE.BANK_ACCOUNT.value
 
         return self._make_payout(payout_details)
 
@@ -646,7 +646,8 @@ class RazorPayXLinkPayout(RazorPayXPayout):
         - `purpose` :str: Purpose of the payout. (Default: `Payout` or decided by `party_type`)
         - `notes` :dict: Additional notes for the payout.
         - `expire_by` :datetime: Expiry date-time of the link.
-            - This parameter can be used only if you have enabled the expiry feature for Payout Links.
+            - ⚠️ This parameter can be used only if you have enabled the expiry feature for Payout Links.
+            - Set at least 15 minutes ahead of the current time.
 
         ---
         Reference: https://razorpay.com/docs/api/x/payout-links/create/use-contact-details/
@@ -678,7 +679,8 @@ class RazorPayXLinkPayout(RazorPayXPayout):
         - `purpose` :str: Purpose of the payout. (Default: `Payout` or decided by `party_type`)
         - `notes` :dict: Additional notes for the payout.
         - `expire_by` :datetime: Expiry date-time of the link.
-            - This parameter can be used only if you have enabled the expiry feature for Payout Links.
+            - ⚠️ This parameter can be used only if you have enabled the expiry feature for Payout Links.
+            - Set at least 15 minutes ahead of the current time.
 
         ---
         Reference: https://razorpay.com/docs/api/x/payout-links/create/use-contact-id
