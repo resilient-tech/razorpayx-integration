@@ -1,6 +1,3 @@
-import frappe
-from frappe import _
-
 from razorpayx_integration.payment_utils.utils import rupees_to_paisa
 from razorpayx_integration.razorpayx_integration.apis.base import BaseRazorPayXAPI
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
@@ -14,6 +11,7 @@ from razorpayx_integration.razorpayx_integration.constants.payouts import (
     RAZORPAYX_PAYOUT_PURPOSE,
 )
 from razorpayx_integration.razorpayx_integration.utils.validation import (
+    validate_razorpayx_payout_description,
     validate_razorpayx_payout_link_status,
     validate_razorpayx_payout_mode,
     validate_razorpayx_payout_status,
@@ -459,27 +457,15 @@ class RazorPayXPayout(BaseRazorPayXAPI):
 
     def _validate_description(self, json: dict):
         """
-        Description/Narration should be of max 30 characters and A-Z, a-z, 0-9, and space only.
+        Validate the `narration` of the payout.
 
         :param json: Payload for `Payout`.
+
+        ---
+        Note: 🟢 Override this method to customize the validation.
         """
-        import re
-
-        description = json.get("narration") or json.get("description")
-
-        if not description:
-            return
-
-        pattern = re.compile(r"^[a-zA-Z0-9 ]{1,30}$")
-
-        if not pattern.match(description):
-            frappe.throw(
-                msg=_(
-                    "Description/Narration should be of max 30 characters and A-Z, a-z, 0-9, and space only."
-                ),
-                title=_("Invalid Description/Narration"),
-                exc=frappe.ValidationError,
-            )
+        if narration := json.get("narration"):
+            validate_razorpayx_payout_description(narration)
 
     def _validate_payout_mode(self, json: dict):
         """
@@ -687,13 +673,13 @@ class RazorPayXLinkPayout(RazorPayXPayout):
         - `party_type` :str: The type of party to be paid (Ex. `Customer`, `Supplier`, `Employee`).
         - `party_mobile` :str: Mobile number of the party.
         - `party_email` :str: Email of the party.
+        - `description` :str: Description of the payout.
+           - Maximum length `30` characters. Allowed characters: `a-z`, `A-Z`, `0-9` and `space`.
 
         Optional:
         - `receipt` :str: Receipt details for the payout.
         - `send_sms` :bool: Send SMS to the party if `True`. (Default: `True`)
         - `send_email` :bool: Send Email to the party if `True`. (Default: `True`)
-        - `description` :str: Description of the payout.
-           - Maximum length `30` characters. Allowed characters: `a-z`, `A-Z`, `0-9` and `space`.
         - `reference_id` :str: Reference Id of the payout.
         - `purpose` :str: Purpose of the payout. (Default: `Payout` or decided by `party_type`)
         - `notes` :dict: Additional notes for the payout.
@@ -721,13 +707,13 @@ class RazorPayXLinkPayout(RazorPayXPayout):
         - `source_docname` :str: The source document name.
         - `party_type` :str: The type of party to be paid (Ex. `Customer`, `Supplier`, `Employee`).
         - `razorpayx_contact_id` :str: The RazorPayX Contact ID of the party (Ex. `cont_00HjGh1`).
+        - `description` :str: Description of the payout.
+           - Maximum length `30` characters. Allowed characters: `a-z`, `A-Z`, `0-9` and `space`.
 
         Optional:
         - `receipt` :str: Receipt details for the payout.
         - `send_sms` :bool: Send SMS to the party if `True`. (Default: `True`)
         - `send_email` :bool: Send Email to the party if `True`. (Default: `True`)
-        - `description` :str: Description of the payout.
-           - Maximum length `30` characters. Allowed characters: `a-z`, `A-Z`, `0-9` and `space`.
         - `purpose` :str: Purpose of the payout. (Default: `Payout` or decided by `party_type`)
         - `notes` :dict: Additional notes for the payout.
         - `expire_by` :datetime: Expiry date-time of the link.
@@ -840,11 +826,11 @@ class RazorPayXLinkPayout(RazorPayXPayout):
         ```
 
         """
-        params_to_delete = ("narration", "queue_if_low_balance", "reference_id", "mode")
+        params_to_delete = ("queue_if_low_balance", "reference_id", "mode")
 
         mapped_request = self._get_base_mapped_payout_info(payout_details)
 
-        mapped_request["description"] = mapped_request["narration"]
+        mapped_request["description"] = mapped_request.pop("narration")
         mapped_request["contact"] = self._get_party_contact_details(payout_details)
 
         if expire_by := payout_details.get("expire_by"):
@@ -856,6 +842,17 @@ class RazorPayXLinkPayout(RazorPayXPayout):
         return mapped_request
 
     ### VALIDATIONS ###
+    def _validate_description(self, json: dict):
+        """
+        Validate the `description` of the payout link.
+
+        :param json: Payload for `Payout Link`.
+
+        ---
+        Note: 🟢 Override this method to customize the validation.
+        """
+        validate_razorpayx_payout_description(json["description"])
+
     def _validate_status(self, json):
         """
         Validate the `status` of the payout link.

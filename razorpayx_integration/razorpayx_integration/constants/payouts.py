@@ -4,6 +4,11 @@ from razorpayx_integration.payment_utils.constants.enums import BaseEnum
 # TODO: ? what if there are custom purpose and custom contact type? No need for validation of purpose?? Or create doctype for purpose?
 
 
+### REGEX ###
+
+DESCRIPTION_REGEX = r"^[a-zA-Z0-9 ]{1,30}$"
+
+
 class RAZORPAYX_CONTACT_TYPE(BaseEnum):
     EMPLOYEE = "employee"
     SUPPLIER = "vendor"
