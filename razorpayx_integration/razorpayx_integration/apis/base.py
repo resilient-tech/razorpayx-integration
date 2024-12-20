@@ -85,6 +85,8 @@ class BaseRazorPayXAPI:
     def setup(self, *args, **kwargs):
         """
         Override this method to setup API specific configurations.
+
+        Caution: ⚠️ Don't forget to call `super().setup()` in sub class.
         """
         pass
 

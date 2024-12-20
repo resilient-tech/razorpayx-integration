@@ -1,4 +1,8 @@
-from razorpayx_integration.payment_utils.utils import rupees_to_paisa
+import frappe
+from frappe import _
+from frappe.utils import fmt_money, get_link_to_form
+
+from razorpayx_integration.payment_utils.utils import paisa_to_rupees, rupees_to_paisa
 from razorpayx_integration.razorpayx_integration.apis.base import BaseRazorPayXAPI
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
     CONTACT_TYPE_MAP,
@@ -35,9 +39,17 @@ class RazorPayXPayout(BaseRazorPayXAPI):
 
     # * utility attributes
     BASE_PATH = "payouts"
+    DEFAULT_SOURCE_AMOUNT_FIELD = "paid_amount"
 
     # * override base setup
     def setup(self, *args, **kwargs):
+        """
+        Override this method to setup API specific configurations.
+
+        Caution: ⚠️ Don't forget to call `super().setup()` in sub class.
+        """
+        super().setup(*args, **kwargs)
+
         self.razorpayx_account_number = self.razorpayx_account.account_number
         self.default_payout_request = {
             "account_number": self.razorpayx_account_number,
@@ -45,6 +57,9 @@ class RazorPayXPayout(BaseRazorPayXAPI):
             "currency": RAZORPAYX_PAYOUT_CURRENCY.INR.value,
         }
         self.payout_headers = {}
+        self.source_amount_field_map = {
+            "Payment Entry": "paid_amount",
+        }
 
     ### APIs ###
     def pay_to_bank_account(self, payout_details: dict) -> dict:
@@ -194,6 +209,10 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         :param payout_details: Request body for `Payout`.
         """
         json = self._get_mapped_payout_request_body(payout_details)
+
+        # to ease the validation
+        self.source_doctype = json["notes"]["source_doctype"]
+        self.source_docname = json["notes"]["source_docname"]
 
         self._set_idempotency_key_header(json)
 
@@ -445,6 +464,24 @@ class RazorPayXPayout(BaseRazorPayXAPI):
             "reference_id": payout_details.get("party_id", ""),
         }
 
+    def _get_source_amount(self, json: dict) -> float:
+        """
+        Get the amount from the source document.
+
+        :param json: Payload for `Payout`.
+
+        ---
+        Note: 🟢 Override this method to customize the amount fetching.
+        """
+        amount_field = (
+            self.source_amount_field_map.get(self.source_doctype)
+            or self.DEFAULT_SOURCE_AMOUNT_FIELD
+        )
+
+        return frappe.db.get_value(
+            self.source_doctype, self.source_docname, amount_field
+        )
+
     ### VALIDATIONS ###
     def _validate_payout_payload(self, json: dict):
         """
@@ -452,8 +489,42 @@ class RazorPayXPayout(BaseRazorPayXAPI):
 
         :param json: Payload for `Payout`.
         """
+        self._validate_amount(json)
         self._validate_description(json)
         self._validate_payout_mode(json)
+
+    def _validate_amount(self, json: dict):
+        """
+        Validate the `amount` of the payout.
+
+        Compare amount with source document amount.
+
+        :param json: Payload for `Payout`.
+
+        ---
+        Note: 🟢 Override this method to customize the validation.
+        """
+
+        def format_amount(amount: float) -> str:
+            return fmt_money(amount, currency=RAZORPAYX_PAYOUT_CURRENCY.INR.value)
+
+        source_amount = self._get_source_amount(json)
+        payout_amount = paisa_to_rupees(json["amount"])
+
+        if source_amount == payout_amount:
+            return
+
+        frappe.throw(
+            title=_("Amount Mismatch"),
+            msg=_(
+                "The payout amount <strong>{0}</strong> does not match with the source document amount <strong>{1}</strong>."
+                + "<br> Please check the source document <strong>{2}</strong>."
+            ).format(
+                format_amount(payout_amount),
+                format_amount(source_amount),
+                get_link_to_form(self.source_doctype, self.source_docname),
+            ),
+        )
 
     def _validate_description(self, json: dict):
         """
