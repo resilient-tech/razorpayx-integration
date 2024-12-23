@@ -16,6 +16,7 @@ from razorpayx_integration.razorpayx_integration.utils.payout import (
     PayoutWithPaymentEntry,
 )
 from razorpayx_integration.razorpayx_integration.utils.validation import (
+    validate_razorpayx_payout_description,
     validate_razorpayx_payout_mode,
 )
 
@@ -32,6 +33,9 @@ def validate_online_payment_requirements(doc):
     validate_payout_mode(doc)
     validate_razorpayx_account(doc)
     validate_upi_id(doc)
+
+    if doc.razorpayx_payment_desc:
+        validate_razorpayx_payout_description(doc.razorpayx_payment_desc)
 
 
 def validate_mandatory_fields_for_payment(doc):

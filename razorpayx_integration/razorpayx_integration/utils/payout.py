@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import ClassVar
+from typing import ClassVar, Literal
 
 import frappe
 from erpnext.accounts.doctype.payment_entry.payment_entry import PaymentEntry
@@ -10,6 +10,7 @@ from razorpayx_integration.payment_utils.constants.enums import BaseEnum
 from razorpayx_integration.razorpayx_integration.apis.payout import (
     RazorPayXCompositePayout,
     RazorPayXLinkPayout,
+    RazorPayXPayout,
 )
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
     RAZORPAYX_PAYOUT_STATUS,
@@ -18,6 +19,21 @@ from razorpayx_integration.razorpayx_integration.constants.payouts import (
 from razorpayx_integration.razorpayx_integration.utils.validation import (
     validate_razorpayx_user_payout_mode,
 )
+
+
+class PAYOUT_METHOD(BaseEnum):
+    FUND_ACCOUNT_BANK_ACCOUNT = "fund_account.bank_account"
+    FUND_ACCOUNT_UPI = "fund_account.upi"
+    COMPOSITE_BANK_ACCOUNT = "composite.bank_account"
+    COMPOSITE_UPI = "composite.upi"
+    LINK_CONTACT_DETAILS = "link.contact_details"
+    LINK_CONTACT_ID = "link.contact_id"  # RazorPayX Contact ID
+
+
+class PAYOUT_TYPE(BaseEnum):
+    PAYOUT = "payout"  # paid with `Fund Account ID`
+    COMPOSITE = "composite"  # paid with party details
+    PAYOUT_LINK = "payout_link"  # send link to party contact
 
 
 class PayoutWithDocType(ABC):
@@ -35,25 +51,13 @@ class PayoutWithDocType(ABC):
     Caution: 🔴 Payout with `Fund Account ID` is not supported.
     """
 
-    class PAYOUT_METHOD(BaseEnum):
-        FUND_ACCOUNT_BANK_ACCOUNT = "fund_account.bank_account"
-        FUND_ACCOUNT_UPI = "fund_account.upi"
-        COMPOSITE_BANK_ACCOUNT = "composite.bank_account"
-        COMPOSITE_UPI = "composite.upi"
-        LINK_CONTACT_DETAILS = "link.contact_details"
-        LINK_CONTACT_ID = "link.contact_id"  # RazorPayX Contact ID
-
-    class PAYOUT_TYPE(BaseEnum):
-        PAYOUT = "payout"
-        PAYOUT_LINK = "payout_link"
-
     PAYOUT_METHOD_MAPPING: ClassVar[dict] = {
-        PAYOUT_METHOD.FUND_ACCOUNT_BANK_ACCOUNT.value: "bank_payout_with_fund_account",
-        PAYOUT_METHOD.FUND_ACCOUNT_UPI.value: "upi_payout_with_fund_account",
-        PAYOUT_METHOD.COMPOSITE_BANK_ACCOUNT.value: "bank_payout_with_composite",
-        PAYOUT_METHOD.COMPOSITE_UPI.value: "upi_payout_with_composite",
-        PAYOUT_METHOD.LINK_CONTACT_DETAILS.value: "link_payout_with_contact_details",
-        PAYOUT_METHOD.LINK_CONTACT_ID.value: "link_payout_with_contact_id",
+        PAYOUT_METHOD.FUND_ACCOUNT_BANK_ACCOUNT.value: "_bank_payout_with_fund_account",
+        PAYOUT_METHOD.FUND_ACCOUNT_UPI.value: "_upi_payout_with_fund_account",
+        PAYOUT_METHOD.COMPOSITE_BANK_ACCOUNT.value: "_bank_payout_with_composite",
+        PAYOUT_METHOD.COMPOSITE_UPI.value: "_upi_payout_with_composite",
+        PAYOUT_METHOD.LINK_CONTACT_DETAILS.value: "_link_payout_with_contact_details",
+        PAYOUT_METHOD.LINK_CONTACT_ID.value: "_link_payout_with_contact_id",
     }
 
     ### SETUPS ###
@@ -88,6 +92,8 @@ class PayoutWithDocType(ABC):
                 exc=frappe.ValidationError,
             )
 
+        self._before_making_payout()
+
         return getattr(self, self.PAYOUT_METHOD_MAPPING[payout_method])()
 
     ### HELPERS ###
@@ -96,6 +102,12 @@ class PayoutWithDocType(ABC):
         Return link to form of given document.
         """
         return get_link_to_form(self.doc.doctype, self.doc.name)
+
+    def _before_making_payout(self):
+        """
+        Run before making payout.
+        """
+        self._get_razorpayx_account()
 
     @abstractmethod
     def _get_razorpayx_account(self) -> str:
@@ -119,7 +131,7 @@ class PayoutWithDocType(ABC):
         """
         pass
 
-    def _get_base_mapped_request(self) -> dict:
+    def _get_base_payout_details(self) -> dict:
         """
         Return base mapped request for making payout.
         """
@@ -129,45 +141,79 @@ class PayoutWithDocType(ABC):
         }
 
     @abstractmethod
-    def _get_request_for_fund_account(self) -> dict:
+    def _get_payout_details_for_fund_account(self) -> dict:
         """
         Return request body for making payout with `Fund Account ID` API.
         """
         pass
 
     @abstractmethod
-    def _get_request_for_composite(self) -> dict:
+    def _get_payout_details_for_composite(self) -> dict:
         """
         Return request body for making payout with `Composite` API.
         """
         pass
 
     @abstractmethod
-    def _get_request_for_link(self) -> dict:
+    def _get_payout_details_for_link(self) -> dict:
         """
         Return request body for making payout with `Link` API.
         """
         pass
 
-    # TODO: implement this
     ### PAYOUT METHODS ###
-    def bank_payout_with_fund_account(self):
-        pass
+    def _get_instance_and_request(
+        self,
+        payout_type: Literal[
+            "payout",
+            "composite",
+            "payout_link",
+        ],
+    ) -> tuple[RazorPayXPayout | RazorPayXCompositePayout | RazorPayXLinkPayout, dict]:
+        """
+        Prepare instance and request for making payout.
+        """
 
-    def upi_payout_with_fund_account(self):
-        pass
+        def get_api_instance():
+            match payout_type:
+                case PAYOUT_TYPE.PAYOUT.value:
+                    return RazorPayXPayout(self.razorpayx_account.name)
+                case PAYOUT_TYPE.COMPOSITE.value:
+                    return RazorPayXCompositePayout(self.razorpayx_account.name)
+                case PAYOUT_TYPE.PAYOUT_LINK.value:
+                    return RazorPayXLinkPayout(self.razorpayx_account.name)
 
-    def bank_payout_with_composite(self):
-        pass
+        details_map = {
+            PAYOUT_TYPE.PAYOUT.value: "_get_payout_details_for_fund_account",
+            PAYOUT_TYPE.COMPOSITE.value: "_get_payout_details_for_composite",
+            PAYOUT_TYPE.PAYOUT_LINK.value: "_get_payout_details_for_link",
+        }
 
-    def upi_payout_with_composite(self):
-        pass
+        return get_api_instance(), getattr(self, details_map[payout_type])()
 
-    def link_payout_with_contact_details(self):
-        pass
+    def _bank_payout_with_fund_account(self):
+        payout, request = self._get_instance_and_request(PAYOUT_TYPE.PAYOUT.value)
+        return payout.pay_to_bank_account(request)
 
-    def link_payout_with_contact_id(self):
-        pass
+    def _upi_payout_with_fund_account(self):
+        payout, request = self._get_instance_and_request(PAYOUT_TYPE.PAYOUT.value)
+        return payout.pay_to_upi_id(request)
+
+    def _bank_payout_with_composite(self):
+        payout, request = self._get_instance_and_request(PAYOUT_TYPE.COMPOSITE.value)
+        return payout.pay_to_bank_account(request)
+
+    def _upi_payout_with_composite(self):
+        payout, request = self._get_instance_and_request(PAYOUT_TYPE.COMPOSITE.value)
+        return payout.pay_to_upi_id(request)
+
+    def _link_payout_with_contact_details(self):
+        payout, request = self._get_instance_and_request(PAYOUT_TYPE.PAYOUT_LINK.value)
+        return payout.create_with_contact_details(request)
+
+    def _link_payout_with_contact_id(self):
+        payout, request = self._get_instance_and_request(PAYOUT_TYPE.PAYOUT_LINK.value)
+        return payout.create_with_razorpayx_contact_id(request)
 
     ### VALIDATIONS ###
     @abstractmethod
@@ -204,12 +250,65 @@ class PayoutWithPaymentEntry(PayoutWithDocType):
         return self.doc.razorpayx_account
 
     def _get_method_for_payout(self) -> str:
-        if self.doc.razorpayx_payment_mode == RAZORPAYX_USER_PAYOUT_MODE.BANK.value:
-            return self.PAYOUT_METHOD.COMPOSITE_BANK_ACCOUNT.value
-        elif self.doc.razorpayx_payment_mode == RAZORPAYX_USER_PAYOUT_MODE.UPI.value:
-            return self.PAYOUT_METHOD.COMPOSITE_UPI.value
-        else:
-            return self.PAYOUT_METHOD.LINK_CONTACT_DETAILS.value
+        match self.doc.razorpayx_payment_mode:
+            case RAZORPAYX_USER_PAYOUT_MODE.BANK.value:
+                return PAYOUT_METHOD.COMPOSITE_BANK_ACCOUNT.value
+            case RAZORPAYX_USER_PAYOUT_MODE.UPI.value:
+                return PAYOUT_METHOD.COMPOSITE_UPI.value
+            case RAZORPAYX_USER_PAYOUT_MODE.LINK.value:
+                return PAYOUT_METHOD.LINK_CONTACT_DETAILS.value
+
+    def _get_base_payout_details(self) -> dict:
+        """
+        Return base mapped request for making payout.
+        """
+        return {
+            ## Mandatory Fields ##
+            "amount": self.doc.paid_amount,
+            "source_doctype": self.doc.doctype,
+            "source_docname": self.doc.name,
+            "party_type": self.doc.party_type,
+            ## Payment Details ##
+            "description": self.doc.razorpayx_payment_desc,
+        }
+
+    def _get_payout_details_for_fund_account(self) -> dict:
+        """
+        Return request body for making payout with `Fund Account ID` API.
+        """
+        return {
+            **self._get_base_payout_details(),
+            "pay_instantaneously": self.doc.razorpayx_pay_instantaneously,
+            # "party_fund_account_id": self.doc.party_fund_account_id,  # ! Not Supported
+        }
+
+    def _get_payout_details_for_composite(self) -> dict:
+        """
+        Return request body for making payout with `Composite` API.
+        """
+        return {
+            **self._get_base_payout_details(),
+            "party_id": self.doc.party,
+            "party_name": self.doc.party_name,
+            "party_bank_account_no": self.doc.party_bank_account_no,
+            "party_bank_ifsc": self.doc.party_bank_ifsc,
+            "party_upi_id": self.doc.party_upi_id,
+            "party_email": self.doc.contact_email,
+            "party_mobile": self.doc.contact_mobile,
+            "pay_instantaneously": self.doc.razorpayx_pay_instantaneously,
+        }
+
+    def _get_payout_details_for_link(self) -> dict:
+        """
+        Return request body for making payout with `Link` API.
+        """
+        return {
+            **self._get_base_payout_details(),
+            "party_name": self.doc.party_name,
+            "party_email": self.doc.contact_email,
+            "party_mobile": self.doc.contact_mobile,
+            # "razorpayx_party_contact_id": self.doc.razorpayx_party_contact_id, # ! Not Supported
+        }
 
     ### VALIDATIONS ###
     def _validate_payout_prerequisite(self):
@@ -262,25 +361,3 @@ class PayoutWithPaymentEntry(PayoutWithDocType):
             )
 
         validate_razorpayx_user_payout_mode(self.doc.razorpayx_payment_mode)
-
-
-# Make more general
-def get_mapped_request(payment_entry: PaymentEntry) -> dict:
-    return frappe._dict(
-        {
-            "party_id": payment_entry.party,
-            "party_type": payment_entry.party_type,
-            "party_name": payment_entry.party_name,
-            "party_bank_account": payment_entry.party_bank_account,
-            "party_bank_account_no": payment_entry.party_bank_account_no,
-            "party_bank_ifsc": payment_entry.party_bank_ifsc,
-            "party_upi_id": payment_entry.party_upi_id,
-            "party_email": payment_entry.contact_email,
-            "party_mobile": payment_entry.contact_mobile,
-            "amount": payment_entry.paid_amount,
-            "payment_description": payment_entry.razorpayx_payment_desc,
-            "payment_status": payment_entry.razorpayx_payment_status,
-            "source_doctype": payment_entry.doctype,
-            "source_docname": payment_entry.name,
-        }
-    )

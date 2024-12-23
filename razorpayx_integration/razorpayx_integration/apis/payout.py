@@ -434,7 +434,7 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         ---
         Contact Sample:
         ```
-        # If `razorpayx_contact_id` is not provided
+        # If `razorpayx_party_contact_id` is not provided
         {
             "name": "Gaurav Kumar",
             "email": "gauravemail@gmail.com",
@@ -443,7 +443,7 @@ class RazorPayXPayout(BaseRazorPayXAPI):
             "reference_id": "cont_00HjGh1",
         }
 
-        # If `razorpayx_contact_id` is provided
+        # If `razorpayx_party_contact_id` is provided
         {"id": "cont_00HjGh1"}
         ```
         """
@@ -453,7 +453,7 @@ class RazorPayXPayout(BaseRazorPayXAPI):
                 payout_details["party_type"], RAZORPAYX_CONTACT_TYPE.SELF.value
             )
 
-        if contact_id := payout_details.get("razorpayx_contact_id"):
+        if contact_id := payout_details.get("razorpayx_party_contact_id"):
             return {"id": contact_id}
 
         return {
@@ -778,7 +778,7 @@ class RazorPayXLinkPayout(RazorPayXPayout):
         - `source_doctype` :str: The source document type.
         - `source_docname` :str: The source document name.
         - `party_type` :str: The type of party to be paid (Ex. `Customer`, `Supplier`, `Employee`).
-        - `razorpayx_contact_id` :str: The RazorPayX Contact ID of the party (Ex. `cont_00HjGh1`).
+        - `razorpayx_party_contact_id` :str: The RazorPayX Contact ID of the party (Ex. `cont_00HjGh1`).
         - `description` :str: Description of the payout.
            - Maximum length `30` characters. Allowed characters: `a-z`, `A-Z`, `0-9` and `space`.
 
