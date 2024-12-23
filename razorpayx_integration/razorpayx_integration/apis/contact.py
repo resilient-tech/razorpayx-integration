@@ -8,8 +8,8 @@ from razorpayx_integration.razorpayx_integration.utils.validation import (
     validate_razorpayx_contact_type,
 )
 
-# todo : use composite API, If composite APIs working properly fine then no need of this API
-# todo: this need to be refactor and optimize
+# ! IMPORTANT: currently this API is not maintained.
+# TODO: this need to be refactor and optimize
 
 
 class RazorPayXContact(BaseRazorPayXAPI):
@@ -235,5 +235,5 @@ class RazorPayXContact(BaseRazorPayXAPI):
             request["type"] = RAZORPAYX_CONTACT_TYPE[type.upper()].value
             validate_razorpayx_contact_type(request["type"])
 
-    def validate_and_process_request_filters(self, filters: dict):
+    def _validate_and_process_filters(self, filters: dict):
         self.validate_email_and_type_of_contact(filters)

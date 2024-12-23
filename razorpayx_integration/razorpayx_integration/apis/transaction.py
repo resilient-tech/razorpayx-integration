@@ -2,7 +2,8 @@ from frappe.utils import DateTimeLikeObject, today
 
 from razorpayx_integration.razorpayx_integration.apis.base import BaseRazorPayXAPI
 
-# todo: Multiple Account can more easily connect with APIs, currently for each account new object initiation require!
+# TODO: Multiple Account can more easily connect with APIs, currently for each account new object initiation require!
+# TODO: Need changes as per new design.
 
 
 class RazorPayXTransaction(BaseRazorPayXAPI):

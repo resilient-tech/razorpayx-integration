@@ -13,6 +13,8 @@ from frappe.utils import (
 
 from razorpayx_integration.constants import SECONDS_IN_A_DAY
 
+################# APIs RELATED #################
+
 
 def get_start_of_day_epoch(date: DateTimeLikeObject = None) -> int:
     """
@@ -80,10 +82,10 @@ def rupees_to_paisa(amount: float | int) -> int:
     rupees_to_paisa(100) ==> 10000
     ```
     """
-    return amount * 100
+    return int(amount * 100)
 
 
-def paisa_to_rupees(amount: int) -> int:
+def paisa_to_rupees(amount: int) -> int | float:
     """
     Convert the given amount in Paisa to Rupees.
 
@@ -95,6 +97,11 @@ def paisa_to_rupees(amount: int) -> int:
     ```
     """
     return amount / 100
+
+
+################# HTML RELATED #################
+def get_unordered_list(items: list[str]) -> str:
+    return "<ul>" + "".join([f"<li>{item}</li>" for item in items]) + "</ul>"
 
 
 ################# SETUPS #################

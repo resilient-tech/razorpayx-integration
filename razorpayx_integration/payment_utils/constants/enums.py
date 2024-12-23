@@ -55,6 +55,23 @@ class BaseEnum(Enum):
         """
         return sep.join(cls.names())
 
+    @classmethod
+    def values_as_html_list(cls, ordered: bool = False) -> str:
+        """
+        Return the values as an HTML list.
+
+        :param ordered: Ordered list or not.
+        """
+
+        def get_tag():
+            return "ol" if ordered else "ul"
+
+        return (
+            f"<{get_tag()}>"
+            + "".join(f"<li>{value}</li>" for value in cls.values())
+            + f"</{get_tag()}>"
+        )
+
     # TODO: can make one common method for all the below methods
     @classmethod
     def scrubbed_values(cls, as_string: bool = False, sep: str = "\n") -> list | str:

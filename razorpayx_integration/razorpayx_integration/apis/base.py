@@ -7,10 +7,9 @@ from frappe.app import UNSAFE_HTTP_METHODS
 
 from razorpayx_integration.constants import (
     RAZORPAYX,
-    RAZORPAYX_BASE_API_URL,
     RAZORPAYX_INTEGRATION_DOCTYPE,
-    SUPPORTED_HTTP_METHOD,
 )
+from razorpayx_integration.payment_utils.constants.enums import BaseEnum
 from razorpayx_integration.payment_utils.utils import (
     get_end_of_day_epoch,
     get_start_of_day_epoch,
@@ -21,12 +20,27 @@ from razorpayx_integration.razorpayx_integration.doctype.razorpayx_integration_s
 
 # TODO: logs for API calls.
 # TODO: mask sensitive data in logs.
+# TODO: complete other todo's
+# TODO: add docs
+
+RAZORPAYX_BASE_API_URL = "https://api.razorpay.com/v1/"
+
+
+class SUPPORTED_HTTP_METHOD(BaseEnum):
+    GET = "GET"
+    DELETE = "DELETE"
+    POST = "POST"
+    PUT = "PUT"
+    PATCH = "PATCH"
 
 
 class BaseRazorPayXAPI:
     """
-    Base class for RazorPayX APIs.\n
-    Must need `RazorPayX Account Name` to initiate API.
+    Base class for RazorPayX APIs.
+
+    Must need `RazorPayX Integration Account` name to initiate API.
+
+    :param razorpayx_account: RazorPayX Integration Account name.
     """
 
     # * utility attributes
@@ -69,7 +83,11 @@ class BaseRazorPayXAPI:
             )
 
     def setup(self, *args, **kwargs):
-        # Override in subclass
+        """
+        Override this method to setup API specific configurations.
+
+        Caution: ⚠️ Don't forget to call `super().setup()` in sub class.
+        """
         pass
 
     def get_url(self, *path_segments):
@@ -133,7 +151,7 @@ class BaseRazorPayXAPI:
         if filters:
             self._clean_request_filters(filters)
             self._set_epoch_time_for_date_filters(filters)
-            self.validate_and_process_request_filters(filters)
+            self._validate_and_process_filters(filters)
 
         else:
             filters = {}
@@ -211,7 +229,7 @@ class BaseRazorPayXAPI:
             response_json = response.json(object_hook=frappe._dict)
 
             if response.status_code >= 400:
-                self.handle_failed_api_response(response_json)
+                self._handle_failed_api_response(response_json)
 
             return response_json
 
@@ -238,7 +256,7 @@ class BaseRazorPayXAPI:
 
     def _set_epoch_time_for_date_filters(self, filters: dict):
         """
-        Converts `from` and `to` date filters to epoch time.
+        Converts  the date filters `from` and `to` to epoch time (Unix timestamp).
         """
         if from_date := filters.get("from"):
             filters["from"] = get_start_of_day_epoch(from_date)
@@ -246,13 +264,16 @@ class BaseRazorPayXAPI:
         if to_date := filters.get("to"):
             filters["to"] = get_end_of_day_epoch(to_date)
 
-    def validate_and_process_request_filters(self, filters: dict):
-        # override in sub class
-        # validate and process filters except date filters (from,to)
+    def _validate_and_process_filters(self, filters: dict):
+        """
+        Override in sub class to validate and process filters, except date filters (from,to).
+
+        Validation happen before `get_all()` to reduce API calls.
+        """
         pass
 
     # TODO:  handle special(error) http code (specially payout process!!)
-    def handle_failed_api_response(self, response_json: dict | None = None):
+    def _handle_failed_api_response(self, response_json: dict | None = None):
         """
         Handle failed API response from RazorPayX.
 

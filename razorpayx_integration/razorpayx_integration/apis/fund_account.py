@@ -6,8 +6,8 @@ from razorpayx_integration.razorpayx_integration.utils.validation import (
     validate_razorpayx_fund_account_type,
 )
 
-# todo : use composite API, If composite APIs working properly fine then no need of this API
-# todo: this need to be refactor and optimize
+# ! IMPORTANT: currently this API is not maintained.
+# TODO: this need to be refactor and optimize
 
 
 class RazorPayXFundAccount(BaseRazorPayXAPI):
@@ -134,6 +134,6 @@ class RazorPayXFundAccount(BaseRazorPayXAPI):
         return self.patch(endpoint=id, json={"active": active})
 
     ### Helpers ###
-    def validate_and_process_request_filters(self, filters: dict) -> dict:
+    def _validate_and_process_filters(self, filters: dict) -> dict:
         if account_type := filters.get("account_type"):
             validate_razorpayx_fund_account_type(account_type)

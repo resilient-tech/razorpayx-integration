@@ -159,7 +159,29 @@ def process_webhook():
     """
 
     # TODO: enqueue the process_webhook function
-    RazorPayXWebhook().process_webhook()
+    # RazorPayXWebhook().process_webhook()
+    print("\n\n Webhook Received \n\n")
+
+    IR = frappe.new_doc("Integration Request")
+
+    row_payload = frappe.request.data
+    payload = json.loads(row_payload)
+
+    print("\n\n Webhook Payload \n\n")
+    print(payload)
+
+    IR.update(
+        {
+            "integration_request_service": "RazorpayX Webhooks",
+            "request_headers": str(frappe.request.headers),
+            "data": json.dumps(payload, indent=4),
+            "status": "Completed",
+        }
+    )
+
+    IR.flags.ignore_permissions = True
+
+    IR.save()
 
 
 # TODO: add doc for `notes` mandatory keys in the payload : `source_doctype`, `source_docname`, `razorpayx_integration_account`

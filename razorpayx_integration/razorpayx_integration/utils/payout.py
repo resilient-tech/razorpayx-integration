@@ -1,132 +1,395 @@
+from abc import ABC, abstractmethod
+from typing import ClassVar, Literal
+
 import frappe
 from erpnext.accounts.doctype.payment_entry.payment_entry import PaymentEntry
 from frappe import _
 from frappe.utils import get_link_to_form
 
+from razorpayx_integration.payment_utils.constants.enums import BaseEnum
 from razorpayx_integration.razorpayx_integration.apis.payout import (
     RazorPayXCompositePayout,
     RazorPayXLinkPayout,
+    RazorPayXPayout,
 )
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
     RAZORPAYX_PAYOUT_STATUS,
     RAZORPAYX_USER_PAYOUT_MODE,
 )
+from razorpayx_integration.razorpayx_integration.utils.validation import (
+    validate_razorpayx_user_payout_mode,
+)
 
 
-# TODO: convert it to class implementation ??
-# ! IMPORTANT
-# TODO: make more efficient secure and reliable
-def make_payment_from_payment_entry(payment_entry: PaymentEntry):
+class PAYOUT_METHOD(BaseEnum):
+    FUND_ACCOUNT_BANK_ACCOUNT = "fund_account.bank_account"
+    FUND_ACCOUNT_UPI = "fund_account.upi"
+    COMPOSITE_BANK_ACCOUNT = "composite.bank_account"
+    COMPOSITE_UPI = "composite.upi"
+    LINK_CONTACT_DETAILS = "link.contact_details"
+    LINK_CONTACT_ID = "link.contact_id"  # RazorPayX Contact ID
+
+
+class PAYOUT_TYPE(BaseEnum):
+    PAYOUT = "payout"  # paid with `Fund Account ID`
+    COMPOSITE = "composite"  # paid with party details
+    PAYOUT_LINK = "payout_link"  # send link to party contact
+
+
+class PayoutWithDocType(ABC):
     """
-    Make RazorPayX payment from payment entry
+    Make RazorPayx Payout with given DocType.
+
+    - Base class for making payout with doctypes.
+    - It is recommended to use `Submittable` doctype for making payout.
+
+    :param doc: DocType instance.
+
+    ---
+    Note: ⚠️ Inherit this class to make payout with different doctypes.
+
+    Caution: 🔴 Payout with `Fund Account ID` is not supported.
     """
 
-    # Validate Payment Entry
-    validate_payment_prerequisite(payment_entry)
+    PAYOUT_METHOD_MAPPING: ClassVar[dict] = {
+        PAYOUT_METHOD.FUND_ACCOUNT_BANK_ACCOUNT.value: "_bank_payout_with_fund_account",
+        PAYOUT_METHOD.FUND_ACCOUNT_UPI.value: "_upi_payout_with_fund_account",
+        PAYOUT_METHOD.COMPOSITE_BANK_ACCOUNT.value: "_bank_payout_with_composite",
+        PAYOUT_METHOD.COMPOSITE_UPI.value: "_upi_payout_with_composite",
+        PAYOUT_METHOD.LINK_CONTACT_DETAILS.value: "_link_payout_with_contact_details",
+        PAYOUT_METHOD.LINK_CONTACT_ID.value: "_link_payout_with_contact_id",
+    }
 
-    def pay_to_bank_account():
-        composite_payout = RazorPayXCompositePayout(payment_entry.razorpayx_account)
+    PAYOUT_DETAILS_MAPPING: ClassVar[dict] = {
+        PAYOUT_TYPE.PAYOUT.value: "_get_payout_details_for_fund_account",
+        PAYOUT_TYPE.COMPOSITE.value: "_get_payout_details_for_composite",
+        PAYOUT_TYPE.PAYOUT_LINK.value: "_get_payout_details_for_link",
+    }
 
-        request = get_mapped_request(payment_entry)
-        response = composite_payout.create_with_bank_account(
-            request, payment_entry.razorpayx_pay_instantaneously
-        )
+    ### SETUPS ###
+    def __init__(self, doc, *args, **kwargs):
+        """
+        :param doc: DocType instance.
 
-        return response
+        ---
+        Caution: ⚠️  Don't forget to call `super().__init__()` in sub class.
+        """
+        self.doc = doc
+        self.form_link = self._get_form_link()
+        self.razorpayx_account = self._get_razorpayx_account()
 
-    def pay_to_upi():
-        composite_payout = RazorPayXCompositePayout(payment_entry.razorpayx_account)
+    ### APIs ###
+    def make_payout(self) -> dict:
+        """
+        Make payout with given document.
+        """
+        self._validate_payout_prerequisite()
 
-        request = get_mapped_request(payment_entry)
-        response = composite_payout.create_with_vpa(request)
+        payout_method = self._get_method_for_payout()
 
-        return response
+        if payout_method not in self.PAYOUT_METHOD_MAPPING:
+            frappe.throw(
+                msg=_("Payout method {0} is not supported.").format(
+                    frappe.bold(payout_method)
+                ),
+                title=_("Unsupported Payout Method"),
+                exc=frappe.ValidationError,
+            )
 
-    def pay_via_link():
-        link_payout = RazorPayXLinkPayout(payment_entry.razorpayx_account)
+        self._before_making_payout()
 
-        request = get_mapped_request(payment_entry)
-        response = link_payout.create_with_contact_details(request)
+        return getattr(self, self.PAYOUT_METHOD_MAPPING[payout_method])()
 
-        return response
+    ### HELPERS ###
+    def _get_form_link(self, bold: bool = True) -> str:
+        """
+        Return link to form of given document.
+        """
+        return frappe.bold(get_link_to_form(self.doc.doctype, self.doc.name))
 
-    # Create RazorPayX Payout
-    if payment_entry.razorpayx_payment_mode == RAZORPAYX_USER_PAYOUT_MODE.LINK.value:
-        return pay_via_link()
-    elif payment_entry.razorpayx_payment_mode == RAZORPAYX_USER_PAYOUT_MODE.UPI.value:
-        return pay_to_upi()
-    elif payment_entry.razorpayx_payment_mode == RAZORPAYX_USER_PAYOUT_MODE.BANK.value:
-        return pay_to_bank_account()
-    else:
-        frappe.throw(
-            msg=_(
-                "Invalid Payment Mode <strong>{0}</strong> for Payment Entry <strong>{1}</strong>"
-            ).format(payment_entry.razorpayx_payment_mode, payment_entry.name),
-            title=_("Invalid Payment Mode"),
-            exc=frappe.ValidationError,
-        )
+    def _before_making_payout(self):
+        """
+        Run before making payout.
+        """
+        self._get_razorpayx_account()
 
+    @abstractmethod
+    def _get_razorpayx_account(self) -> str:
+        """
+        Return RazorPayX Integration Account name for making payout.
+        """
+        pass
 
-# TODO: make more efficient
-def validate_payment_prerequisite(payment_entry: PaymentEntry):
-    if (
-        payment_entry.razorpayx_payment_status
-        != RAZORPAYX_PAYOUT_STATUS.NOT_INITIATED.value.title()
-    ):
-        frappe.throw(
-            msg=_(
-                "Payment Entry <strong>{0}</strong> is already initiated for payment."
-            ).format(get_link_to_form("Payment Entry", payment_entry.name)),
-            title=_("Invalid Payment Entry"),
-            exc=frappe.ValidationError,
-        )
+    @abstractmethod
+    def _get_method_for_payout(self) -> str:
+        """
+        Return payout method for making payout.
 
-    if payment_entry.docstatus != 1:
-        frappe.throw(
-            msg=_(
-                "To make payment, Payment Entry must be submitted! <br> Please submit <strong>{0}</strong>"
-            ).format(get_link_to_form("Payment Entry", payment_entry.name)),
-            title=_("Invalid Payment Entry"),
-            exc=frappe.ValidationError,
-        )
+        Decide which method to use for making payout.
 
-    if payment_entry.payment_type != "Pay":
-        frappe.throw(
-            msg=_(
-                "Payment Entry <strong>{0}</strong> is not a payment entry to pay."
-            ).format(payment_entry.name),
-            title=_("Invalid Payment Entry"),
-            exc=frappe.ValidationError,
-        )
+        ---
+        Example:
 
-    if not payment_entry.make_online_payment:
-        frappe.throw(
-            msg=_(
-                "Online Payment is not enabled for Payment Entry <strong>{0}</strong>"
-            ).format(get_link_to_form("Payment Entry", payment_entry.name)),
-            title=_("Invalid Payment Entry"),
-            exc=frappe.ValidationError,
-        )
+        If you want to make payout with `Fund Account ID` with `Bank Account`
+        then return `PAYOUT_METHOD.FUND_ACCOUNT_BANK_ACCOUNT.value`.
+        """
+        pass
 
-
-# Make more general
-def get_mapped_request(payment_entry: PaymentEntry) -> dict:
-    return frappe._dict(
-        {
-            "party_id": payment_entry.party,
-            "party_type": payment_entry.party_type,
-            "party_name": payment_entry.party_name,
-            "party_bank_account": payment_entry.party_bank_account,
-            "party_bank_account_no": payment_entry.party_bank_account_no,
-            "party_bank_ifsc": payment_entry.party_bank_ifsc,
-            "party_upi_id": payment_entry.party_upi_id,
-            "party_email": payment_entry.contact_email,
-            "party_mobile": payment_entry.contact_mobile,
-            "amount": payment_entry.paid_amount,
-            "payment_description": payment_entry.razorpayx_payment_desc,
-            "payment_status": payment_entry.razorpayx_payment_status,
-            "source_doctype": payment_entry.doctype,
-            "source_docname": payment_entry.name,
-            "razorpayx_integration_account": payment_entry.razorpayx_account,
+    def _get_base_payout_details(self) -> dict:
+        """
+        Return base mapped request for making payout.
+        """
+        return {
+            "source_doctype": self.doc.doctype,
+            "source_docname": self.doc.name,
         }
-    )
+
+    @abstractmethod
+    def _get_payout_details_for_fund_account(self) -> dict:
+        """
+        Return request body for making payout with `Fund Account ID` API.
+        """
+        pass
+
+    @abstractmethod
+    def _get_payout_details_for_composite(self) -> dict:
+        """
+        Return request body for making payout with `Composite` API.
+        """
+        pass
+
+    @abstractmethod
+    def _get_payout_details_for_link(self) -> dict:
+        """
+        Return request body for making payout with `Link` API.
+        """
+        pass
+
+    ### PAYOUT METHODS ###
+    def _get_payout_instance_and_details(
+        self,
+        payout_type: Literal[
+            "payout",
+            "composite",
+            "payout_link",
+        ],
+    ) -> tuple[RazorPayXPayout | RazorPayXCompositePayout | RazorPayXLinkPayout, dict]:
+        """
+        Prepare instance and payout details for making payout.
+        """
+
+        def get_api_instance():
+            match payout_type:
+                case PAYOUT_TYPE.PAYOUT.value:
+                    return RazorPayXPayout(self.razorpayx_account)
+                case PAYOUT_TYPE.COMPOSITE.value:
+                    return RazorPayXCompositePayout(self.razorpayx_account)
+                case PAYOUT_TYPE.PAYOUT_LINK.value:
+                    return RazorPayXLinkPayout(self.razorpayx_account)
+
+        instance = get_api_instance()
+        payout_details = getattr(self, self.PAYOUT_DETAILS_MAPPING[payout_type])()
+
+        return instance, payout_details
+
+    def _bank_payout_with_fund_account(self):
+        payout, payout_details = self._get_payout_instance_and_details(
+            PAYOUT_TYPE.PAYOUT.value
+        )
+        return payout.pay_to_bank_account(payout_details)
+
+    def _upi_payout_with_fund_account(self):
+        payout, payout_details = self._get_payout_instance_and_details(
+            PAYOUT_TYPE.PAYOUT.value
+        )
+        return payout.pay_to_upi_id(payout_details)
+
+    def _bank_payout_with_composite(self):
+        payout, payout_details = self._get_payout_instance_and_details(
+            PAYOUT_TYPE.COMPOSITE.value
+        )
+        return payout.pay_to_bank_account(payout_details)
+
+    def _upi_payout_with_composite(self):
+        payout, payout_details = self._get_payout_instance_and_details(
+            PAYOUT_TYPE.COMPOSITE.value
+        )
+        return payout.pay_to_upi_id(payout_details)
+
+    def _link_payout_with_contact_details(self):
+        payout, payout_details = self._get_payout_instance_and_details(
+            PAYOUT_TYPE.PAYOUT_LINK.value
+        )
+        return payout.create_with_contact_details(payout_details)
+
+    def _link_payout_with_contact_id(self):
+        payout, payout_details = self._get_payout_instance_and_details(
+            PAYOUT_TYPE.PAYOUT_LINK.value
+        )
+        return payout.create_with_razorpayx_contact_id(payout_details)
+
+    ### VALIDATIONS ###
+    @abstractmethod
+    def _validate_payout_prerequisite(self):
+        """
+        Validate prerequisites for making payout.
+        """
+        pass
+
+
+class PayoutWithPaymentEntry(PayoutWithDocType):
+    """
+    Make RazorPayx Payout with Payment Entry.
+
+    :param payment_entry: Payment Entry instance.
+
+    ---
+    Caution: 🔴 Payout with `Fund Account ID` and `Contact ID` are not supported.
+    """
+
+    def __init__(self, payment_entry: PaymentEntry):
+        super().__init__(payment_entry)
+
+    ### APIs ###
+    def make_payout(self) -> dict:
+        response = super().make_payout()
+
+        if not response:
+            return
+
+        self._update_payment_entry(response)
+
+        return response
+
+    ### HELPERS ###
+    def _get_razorpayx_account(self) -> str:
+        return self.doc.razorpayx_account
+
+    def _get_method_for_payout(self) -> str:
+        match self.doc.razorpayx_payment_mode:
+            case RAZORPAYX_USER_PAYOUT_MODE.BANK.value:
+                return PAYOUT_METHOD.COMPOSITE_BANK_ACCOUNT.value
+            case RAZORPAYX_USER_PAYOUT_MODE.UPI.value:
+                return PAYOUT_METHOD.COMPOSITE_UPI.value
+            case RAZORPAYX_USER_PAYOUT_MODE.LINK.value:
+                return PAYOUT_METHOD.LINK_CONTACT_DETAILS.value
+
+    def _get_base_payout_details(self) -> dict:
+        """
+        Return base mapped request for making payout.
+        """
+        return {
+            ## Mandatory Fields ##
+            "amount": self.doc.paid_amount,
+            "source_doctype": self.doc.doctype,
+            "source_docname": self.doc.name,
+            "party_type": self.doc.party_type,
+            ## Payment Details ##
+            "description": self.doc.razorpayx_payment_desc,
+        }
+
+    def _get_payout_details_for_fund_account(self) -> dict:
+        """
+        Return request body for making payout with `Fund Account ID` API.
+        """
+        return {
+            **self._get_base_payout_details(),
+            "pay_instantaneously": self.doc.razorpayx_pay_instantaneously,
+            # "party_fund_account_id": self.doc.party_fund_account_id,  # ! Not Supported
+        }
+
+    def _get_payout_details_for_composite(self) -> dict:
+        """
+        Return request body for making payout with `Composite` API.
+        """
+        return {
+            **self._get_base_payout_details(),
+            "party_id": self.doc.party,
+            "party_name": self.doc.party_name,
+            "party_bank_account_no": self.doc.party_bank_account_no,
+            "party_bank_ifsc": self.doc.party_bank_ifsc,
+            "party_upi_id": self.doc.party_upi_id,
+            "party_email": self.doc.contact_email,
+            "party_mobile": self.doc.contact_mobile,
+            "pay_instantaneously": self.doc.razorpayx_pay_instantaneously,
+        }
+
+    def _get_payout_details_for_link(self) -> dict:
+        """
+        Return request body for making payout with `Link` API.
+        """
+        return {
+            **self._get_base_payout_details(),
+            "party_name": self.doc.party_name,
+            "party_email": self.doc.contact_email,
+            "party_mobile": self.doc.contact_mobile,
+            # "razorpayx_party_contact_id": self.doc.razorpayx_party_contact_id, # ! Not Supported
+        }
+
+    def _update_payment_entry(self, response: dict):
+        """
+        Update Payment Entry with response.
+        """
+        values = {}
+
+        entity = response.get("entity")
+        id = response.get("id")
+        status = response.get("status")
+
+        if entity == PAYOUT_TYPE.PAYOUT.value:
+            values["razorpayx_payout_id"] = id
+            values["razorpayx_payment_status"] = status.title()
+        else:
+            values["razorpayx_payout_link_id"] = id
+
+        self.doc.db_set(values, update_modified=True)
+
+    ### VALIDATIONS ###
+    def _validate_payout_prerequisite(self):
+        if self.doc.docstatus != 1:
+            frappe.throw(
+                msg=_(
+                    "To make payout, Payment Entry must be submitted! Please submit {0}"
+                ).format(self.form_link),
+                title=_("Invalid Payment Entry"),
+                exc=frappe.ValidationError,
+            )
+
+        if self.doc.payment_type != "Pay":
+            frappe.throw(
+                msg=_("Payment Entry {0} is not set to pay").format(self.form_link),
+                title=_("Invalid Payment Entry"),
+                exc=frappe.ValidationError,
+            )
+
+        if not self.doc.make_online_payment:
+            frappe.throw(
+                msg=_("Online Payment is not enabled for Payment Entry {0}").format(
+                    self.form_link
+                ),
+                title=_("Invalid Payment Entry"),
+                exc=frappe.ValidationError,
+            )
+
+        if not self.doc.razorpayx_account:
+            frappe.throw(
+                msg=_("RazorPayX Account not found for Payment Entry {0}").format(
+                    self.form_link
+                ),
+                title=_("Invalid Payment Entry"),
+                exc=frappe.ValidationError,
+            )
+
+        if (
+            self.doc.razorpayx_payment_status
+            != RAZORPAYX_PAYOUT_STATUS.NOT_INITIATED.value.title()
+        ):
+            frappe.throw(
+                msg=_("Payment Entry {0} is already initiated for payment.").format(
+                    self.form_link
+                ),
+                title=_("Invalid Payment Entry"),
+                exc=frappe.ValidationError,
+            )
+
+        validate_razorpayx_user_payout_mode(self.doc.razorpayx_payment_mode)
