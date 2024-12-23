@@ -60,6 +60,12 @@ class PayoutWithDocType(ABC):
         PAYOUT_METHOD.LINK_CONTACT_ID.value: "_link_payout_with_contact_id",
     }
 
+    PAYOUT_DETAILS_MAPPING: ClassVar[dict] = {
+        PAYOUT_TYPE.PAYOUT.value: "_get_payout_details_for_fund_account",
+        PAYOUT_TYPE.COMPOSITE.value: "_get_payout_details_for_composite",
+        PAYOUT_TYPE.PAYOUT_LINK.value: "_get_payout_details_for_link",
+    }
+
     ### SETUPS ###
     def __init__(self, doc, *args, **kwargs):
         """
@@ -69,9 +75,7 @@ class PayoutWithDocType(ABC):
         Caution: ⚠️  Don't forget to call `super().__init__()` in sub class.
         """
         self.doc = doc
-
-        self.form_link = self._get_link()
-
+        self.form_link = self._get_form_link()
         self.razorpayx_account = self._get_razorpayx_account()
 
     ### APIs ###
@@ -97,7 +101,7 @@ class PayoutWithDocType(ABC):
         return getattr(self, self.PAYOUT_METHOD_MAPPING[payout_method])()
 
     ### HELPERS ###
-    def _get_link(self) -> str:
+    def _get_form_link(self) -> str:
         """
         Return link to form of given document.
         """
@@ -162,7 +166,7 @@ class PayoutWithDocType(ABC):
         pass
 
     ### PAYOUT METHODS ###
-    def _get_instance_and_request(
+    def _get_payout_instance_and_details(
         self,
         payout_type: Literal[
             "payout",
@@ -171,7 +175,7 @@ class PayoutWithDocType(ABC):
         ],
     ) -> tuple[RazorPayXPayout | RazorPayXCompositePayout | RazorPayXLinkPayout, dict]:
         """
-        Prepare instance and request for making payout.
+        Prepare instance and payout details for making payout.
         """
 
         def get_api_instance():
@@ -183,37 +187,46 @@ class PayoutWithDocType(ABC):
                 case PAYOUT_TYPE.PAYOUT_LINK.value:
                     return RazorPayXLinkPayout(self.razorpayx_account.name)
 
-        details_map = {
-            PAYOUT_TYPE.PAYOUT.value: "_get_payout_details_for_fund_account",
-            PAYOUT_TYPE.COMPOSITE.value: "_get_payout_details_for_composite",
-            PAYOUT_TYPE.PAYOUT_LINK.value: "_get_payout_details_for_link",
-        }
+            instance = get_api_instance()
+            payout_details = getattr(self, self.PAYOUT_DETAILS_MAPPING[payout_type])()
 
-        return get_api_instance(), getattr(self, details_map[payout_type])()
+            return instance, payout_details
 
     def _bank_payout_with_fund_account(self):
-        payout, request = self._get_instance_and_request(PAYOUT_TYPE.PAYOUT.value)
-        return payout.pay_to_bank_account(request)
+        payout, payout_details = self._get_payout_instance_and_details(
+            PAYOUT_TYPE.PAYOUT.value
+        )
+        return payout.pay_to_bank_account(payout_details)
 
     def _upi_payout_with_fund_account(self):
-        payout, request = self._get_instance_and_request(PAYOUT_TYPE.PAYOUT.value)
-        return payout.pay_to_upi_id(request)
+        payout, payout_details = self._get_payout_instance_and_details(
+            PAYOUT_TYPE.PAYOUT.value
+        )
+        return payout.pay_to_upi_id(payout_details)
 
     def _bank_payout_with_composite(self):
-        payout, request = self._get_instance_and_request(PAYOUT_TYPE.COMPOSITE.value)
-        return payout.pay_to_bank_account(request)
+        payout, payout_details = self._get_payout_instance_and_details(
+            PAYOUT_TYPE.COMPOSITE.value
+        )
+        return payout.pay_to_bank_account(payout_details)
 
     def _upi_payout_with_composite(self):
-        payout, request = self._get_instance_and_request(PAYOUT_TYPE.COMPOSITE.value)
-        return payout.pay_to_upi_id(request)
+        payout, payout_details = self._get_payout_instance_and_details(
+            PAYOUT_TYPE.COMPOSITE.value
+        )
+        return payout.pay_to_upi_id(payout_details)
 
     def _link_payout_with_contact_details(self):
-        payout, request = self._get_instance_and_request(PAYOUT_TYPE.PAYOUT_LINK.value)
-        return payout.create_with_contact_details(request)
+        payout, payout_details = self._get_payout_instance_and_details(
+            PAYOUT_TYPE.PAYOUT_LINK.value
+        )
+        return payout.create_with_contact_details(payout_details)
 
     def _link_payout_with_contact_id(self):
-        payout, request = self._get_instance_and_request(PAYOUT_TYPE.PAYOUT_LINK.value)
-        return payout.create_with_razorpayx_contact_id(request)
+        payout, payout_details = self._get_payout_instance_and_details(
+            PAYOUT_TYPE.PAYOUT_LINK.value
+        )
+        return payout.create_with_razorpayx_contact_id(payout_details)
 
     ### VALIDATIONS ###
     @abstractmethod
@@ -241,7 +254,10 @@ class PayoutWithPaymentEntry(PayoutWithDocType):
     def make_payout(self) -> dict:
         response = super().make_payout()
 
-        # TODO: update payment entry with response
+        if not response:
+            return
+
+        self._update_payment_entry(response)
 
         return response
 
@@ -309,6 +325,24 @@ class PayoutWithPaymentEntry(PayoutWithDocType):
             "party_mobile": self.doc.contact_mobile,
             # "razorpayx_party_contact_id": self.doc.razorpayx_party_contact_id, # ! Not Supported
         }
+
+    def _update_payment_entry(self, response: dict):
+        """
+        Update Payment Entry with response.
+        """
+        values = {}
+
+        entity = response.get("entity")
+        id = response.get("id")
+        status = response.get("status")
+
+        if entity == PAYOUT_TYPE.PAYOUT.value:
+            values["razorpayx_payout_id"] = id
+            values["razorpayx_payout_status"] = status
+        else:
+            values["razorpayx_payout_link_id"] = id
+
+        self.doc.db_set(values, update_modified=True)
 
     ### VALIDATIONS ###
     def _validate_payout_prerequisite(self):
