@@ -89,8 +89,8 @@ class PayoutWithDocType(ABC):
 
         if payout_method not in self.PAYOUT_METHOD_MAPPING:
             frappe.throw(
-                msg=_("Payout method <strong>{0}</strong> is not supported.").format(
-                    payout_method
+                msg=_("Payout method {0} is not supported.").format(
+                    frappe.bold(payout_method)
                 ),
                 title=_("Unsupported Payout Method"),
                 exc=frappe.ValidationError,
@@ -101,11 +101,11 @@ class PayoutWithDocType(ABC):
         return getattr(self, self.PAYOUT_METHOD_MAPPING[payout_method])()
 
     ### HELPERS ###
-    def _get_form_link(self) -> str:
+    def _get_form_link(self, bold: bool = True) -> str:
         """
         Return link to form of given document.
         """
-        return get_link_to_form(self.doc.doctype, self.doc.name)
+        return frappe.bold(get_link_to_form(self.doc.doctype, self.doc.name))
 
     def _before_making_payout(self):
         """
@@ -349,7 +349,7 @@ class PayoutWithPaymentEntry(PayoutWithDocType):
         if self.doc.docstatus != 1:
             frappe.throw(
                 msg=_(
-                    "To make payout, Payment Entry must be submitted! Please submit <strong>{0}</strong>"
+                    "To make payout, Payment Entry must be submitted! Please submit {0}"
                 ).format(self.form_link),
                 title=_("Invalid Payment Entry"),
                 exc=frappe.ValidationError,
@@ -357,27 +357,25 @@ class PayoutWithPaymentEntry(PayoutWithDocType):
 
         if self.doc.payment_type != "Pay":
             frappe.throw(
-                msg=_("Payment Entry <strong>{0}</strong> is not set to pay").format(
-                    self.form_link
-                ),
+                msg=_("Payment Entry {0} is not set to pay").format(self.form_link),
                 title=_("Invalid Payment Entry"),
                 exc=frappe.ValidationError,
             )
 
         if not self.doc.make_online_payment:
             frappe.throw(
-                msg=_(
-                    "Online Payment is not enabled for Payment Entry <strong>{0}</strong>"
-                ).format(self.form_link),
+                msg=_("Online Payment is not enabled for Payment Entry {0}").format(
+                    self.form_link
+                ),
                 title=_("Invalid Payment Entry"),
                 exc=frappe.ValidationError,
             )
 
         if not self.doc.razorpayx_account:
             frappe.throw(
-                msg=_(
-                    "RazorPayX Account not found for Payment Entry <strong>{0}</strong>"
-                ).format(self.form_link),
+                msg=_("RazorPayX Account not found for Payment Entry {0}").format(
+                    self.form_link
+                ),
                 title=_("Invalid Payment Entry"),
                 exc=frappe.ValidationError,
             )
@@ -387,9 +385,9 @@ class PayoutWithPaymentEntry(PayoutWithDocType):
             != RAZORPAYX_PAYOUT_STATUS.NOT_INITIATED.value.title()
         ):
             frappe.throw(
-                msg=_(
-                    "Payment Entry <strong>{0}</strong> is already initiated for payment."
-                ).format(self.form_link),
+                msg=_("Payment Entry {0} is already initiated for payment.").format(
+                    self.form_link
+                ),
                 title=_("Invalid Payment Entry"),
                 exc=frappe.ValidationError,
             )

@@ -514,16 +514,22 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         if source_amount == payout_amount:
             return
 
+        message = _(
+            "The payout amount {0} does not match with the source document amount {1}."
+        ).format(
+            frappe.bold(format_amount(payout_amount)),
+            frappe.bold(format_amount(source_amount)),
+        )
+
+        message += "<br>"
+
+        message += _("Please check the source document {0}.").format(
+            frappe.bold(get_link_to_form(self.source_doctype, self.source_docname))
+        )
+
         frappe.throw(
+            msg=message,
             title=_("Amount Mismatch"),
-            msg=_(
-                "The payout amount <strong>{0}</strong> does not match with the source document amount <strong>{1}</strong>."
-                + "<br> Please check the source document <strong>{2}</strong>."
-            ).format(
-                format_amount(payout_amount),
-                format_amount(source_amount),
-                get_link_to_form(self.source_doctype, self.source_docname),
-            ),
         )
 
     def _validate_description(self, json: dict):
