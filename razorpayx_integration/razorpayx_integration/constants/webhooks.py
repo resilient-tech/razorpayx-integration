@@ -4,7 +4,7 @@ from razorpayx_integration.payment_utils.constants.enums import BaseEnum
 class WEBHOOK_EVENTS_TYPE(BaseEnum):
     PAYOUT = "payout"
     PAYOUT_LINK = "payout_link"
-    # TRANSACTION = "transaction" # ! NOTE: currently not supported
+    TRANSACTION = "transaction"
     # ACCOUNT = "fund_account.validation" # ! NOTE: currently not supported
 
 
@@ -20,7 +20,7 @@ class WEBHOOK_PAYOUT_EVENT(BaseEnum):
     QUEUED = "payout.queued"
     INITIATED = "payout.initiated"
     PROCESSED = "payout.processed"
-    UPDATED = "payout.updated"
+    # UPDATED = "payout.updated" # ! NOTE: currently not supported
     REVERSED = "payout.reversed"
     FAILED = "payout.failed"
     # DOWNTIME_STARTED = "payout.downtime.started"  # ! NOTE: currently not supported
@@ -38,6 +38,5 @@ class WEBHOOK_PAYOUT_LINK_EVENT(BaseEnum):
     EXPIRED = "payout_link.expired"
 
 
-# ! NOTE: currently not supported
-# class WEBHOOK_TRANSACTION_EVENT(BaseEnum):
-#     CREATED = "transaction.created"
+class WEBHOOK_TRANSACTION_EVENT(BaseEnum):
+    CREATED = "transaction.created"

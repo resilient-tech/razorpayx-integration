@@ -12,13 +12,20 @@ from razorpayx_integration.razorpayx_integration.constants.payouts import (
 )
 from razorpayx_integration.razorpayx_integration.constants.webhooks import (
     WEBHOOK_EVENTS_TYPE,
+    WEBHOOK_PAYOUT_EVENT,
+    WEBHOOK_PAYOUT_LINK_EVENT,
+    WEBHOOK_TRANSACTION_EVENT,
 )
 from razorpayx_integration.razorpayx_integration.doctype.razorpayx_integration_setting.razorpayx_integration_setting import (
     RazorPayXIntegrationSetting,
 )
+from razorpayx_integration.razorpayx_integration.utils import (
+    log_razorpayx_integration_request,
+)
 
-# API: TUNNEL_URL/api/method/razorpayx_integration.razorpayx_integration.utils.webhooks.process_webhook
+# API: TUNNEL_URL/api/method/razorpayx_integration.razorpayx_integration.utils.webhooks.razorpayx_webhook_listener
 # regenerate code: lt --port 8001
+# FIX OTP: 754081
 
 # TODO: When to create a `Bank Transaction`
 # TODO: when to cancel PE ?
@@ -27,6 +34,7 @@ from razorpayx_integration.razorpayx_integration.doctype.razorpayx_integration_s
 # TODO: only payout webhook is supported
 
 
+###### WEBHOOK PROCESSORS ######
 class RazorPayXWebhook:
     def __init__(self):
         self.event_id = frappe.get_request_header("X-Razorpay-Event-Id")
@@ -152,36 +160,73 @@ class RazorPayXWebhook:
         return True
 
 
+class PayoutWebhook(RazorPayXWebhook):
+    pass
+
+
+class PayoutLinkWebhook(RazorPayXWebhook):
+    pass
+
+
+class TransactionWebhook(RazorPayXWebhook):
+    pass
+
+
+###### CONSTANTS ######
+WEBHOOK_EVENT_TYPES_MAPPER = {
+    WEBHOOK_EVENTS_TYPE.PAYOUT.value: PayoutWebhook,
+    WEBHOOK_EVENTS_TYPE.PAYOUT_LINK.value: PayoutLinkWebhook,
+    WEBHOOK_EVENTS_TYPE.TRANSACTION.value: TransactionWebhook,
+}
+
+
+###### APIs ######
 @frappe.whitelist(allow_guest=True)
-def process_webhook():
+def razorpayx_webhook_listener():
+    """
+    RazorpayX Webhook Listener.
+    """
+    # TODO: Enqueue the webhook processing
+    process_razorpayx_webhook()
+
+
+def process_razorpayx_webhook():
     """
     Process RazorpayX Webhook.
     """
 
-    # TODO: enqueue the process_webhook function
-    # RazorPayXWebhook().process_webhook()
-    print("\n\n Webhook Received \n\n")
+    def is_valid_webhook_event(event: str | None) -> bool:
+        """
+        Webhook event is supported or not.
+        """
+        if not event:
+            return False
 
-    IR = frappe.new_doc("Integration Request")
+        return event in [
+            *WEBHOOK_PAYOUT_EVENT,
+            *WEBHOOK_PAYOUT_LINK_EVENT,
+            *WEBHOOK_TRANSACTION_EVENT,
+        ]
 
-    row_payload = frappe.request.data
-    payload = json.loads(row_payload)
+    event = frappe.form_dict.get("event")
 
-    print("\n\n Webhook Payload \n\n")
-    print(payload)
+    if not is_valid_webhook_event(event):
+        log_razorpayx_integration_request(
+            integration_request_service=f"RazorpayX Webhook Event - {event}",
+            request_id=frappe.get_request_header("Request-Id"),
+            request_headers=str(frappe.request.headers),
+            data=frappe.form_dict,
+            error="The webhook event is not supported.",
+            is_remote_request=True,
+        )
 
-    IR.update(
-        {
-            "integration_request_service": "RazorpayX Webhooks",
-            "request_headers": str(frappe.request.headers),
-            "data": json.dumps(payload, indent=4),
-            "status": "Completed",
-        }
-    )
+        return
 
-    IR.flags.ignore_permissions = True
+    event_type = event.split(".")[0]
 
-    IR.save()
-
-
-# TODO: add doc for `notes` mandatory keys in the payload : `source_doctype`, `source_docname`, `razorpayx_integration_account`
+    if event_type == WEBHOOK_EVENTS_TYPE.PAYOUT.value:
+        return PayoutWebhook().process_webhook()
+    elif event_type == WEBHOOK_EVENTS_TYPE.PAYOUT_LINK.value:
+        return PayoutLinkWebhook().process_webhook()
+    elif event_type == WEBHOOK_EVENTS_TYPE.TRANSACTION.value:
+        return TransactionWebhook().process_webhook()
