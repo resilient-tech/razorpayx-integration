@@ -221,7 +221,7 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         return self.post(json=json, headers=self.payout_headers)
 
     ### HELPERS ###
-    def _get_bank_payment_mode(payout_details: dict) -> str:
+    def _get_bank_payment_mode(self, payout_details: dict) -> str:
         """
         Return the payment mode for the payout.
 
@@ -348,7 +348,7 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         return {
             **self.default_payout_request,
             "amount": rupees_to_paisa(payout_details["amount"]),
-            "mode": payout_details["mode"],
+            "mode": payout_details.get("mode", RAZORPAYX_PAYOUT_MODE.NEFT.value),
             "purpose": get_purpose(),
             "reference_id": get_reference_id(),
             "narration": payout_details.get("description", ""),

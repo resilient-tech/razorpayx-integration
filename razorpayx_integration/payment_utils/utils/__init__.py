@@ -82,10 +82,10 @@ def rupees_to_paisa(amount: float | int) -> int:
     rupees_to_paisa(100) ==> 10000
     ```
     """
-    return amount * 100
+    return int(amount * 100)
 
 
-def paisa_to_rupees(amount: int) -> int:
+def paisa_to_rupees(amount: int) -> int | float:
     """
     Convert the given amount in Paisa to Rupees.
 

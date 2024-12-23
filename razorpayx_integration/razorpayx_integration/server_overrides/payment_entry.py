@@ -17,7 +17,7 @@ from razorpayx_integration.razorpayx_integration.utils.payout import (
 )
 from razorpayx_integration.razorpayx_integration.utils.validation import (
     validate_razorpayx_payout_description,
-    validate_razorpayx_payout_mode,
+    validate_razorpayx_user_payout_mode,
 )
 
 
@@ -58,7 +58,7 @@ def validate_mandatory_fields_for_payment(doc):
 
 
 def validate_payout_mode(doc):
-    validate_razorpayx_payout_mode(doc.razorpayx_payment_mode)
+    validate_razorpayx_user_payout_mode(doc.razorpayx_payment_mode)
 
     if doc.razorpayx_payment_mode == RAZORPAYX_USER_PAYOUT_MODE.BANK.value:
         # TODO: also fetch `IFSC` and `Account Number` and check

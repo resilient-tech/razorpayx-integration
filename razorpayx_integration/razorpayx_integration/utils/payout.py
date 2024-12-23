@@ -181,16 +181,16 @@ class PayoutWithDocType(ABC):
         def get_api_instance():
             match payout_type:
                 case PAYOUT_TYPE.PAYOUT.value:
-                    return RazorPayXPayout(self.razorpayx_account.name)
+                    return RazorPayXPayout(self.razorpayx_account)
                 case PAYOUT_TYPE.COMPOSITE.value:
-                    return RazorPayXCompositePayout(self.razorpayx_account.name)
+                    return RazorPayXCompositePayout(self.razorpayx_account)
                 case PAYOUT_TYPE.PAYOUT_LINK.value:
-                    return RazorPayXLinkPayout(self.razorpayx_account.name)
+                    return RazorPayXLinkPayout(self.razorpayx_account)
 
-            instance = get_api_instance()
-            payout_details = getattr(self, self.PAYOUT_DETAILS_MAPPING[payout_type])()
+        instance = get_api_instance()
+        payout_details = getattr(self, self.PAYOUT_DETAILS_MAPPING[payout_type])()
 
-            return instance, payout_details
+        return instance, payout_details
 
     def _bank_payout_with_fund_account(self):
         payout, payout_details = self._get_payout_instance_and_details(
@@ -338,7 +338,7 @@ class PayoutWithPaymentEntry(PayoutWithDocType):
 
         if entity == PAYOUT_TYPE.PAYOUT.value:
             values["razorpayx_payout_id"] = id
-            values["razorpayx_payout_status"] = status
+            values["razorpayx_payment_status"] = status.title()
         else:
             values["razorpayx_payout_link_id"] = id
 
