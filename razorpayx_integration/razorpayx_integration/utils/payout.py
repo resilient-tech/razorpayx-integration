@@ -351,7 +351,7 @@ class PayoutWithPaymentEntry(PayoutWithDocType):
                 msg=_(
                     "To make payout, Payment Entry must be submitted! Please submit {0}"
                 ).format(self.form_link),
-                title=_("Invalid Payment Entry"),
+                title="Invalid Payment Entry",
                 exc=frappe.ValidationError,
             )
 
