@@ -1,5 +1,6 @@
 import json
 from hmac import new as hmac
+from typing import Literal
 
 import frappe
 from frappe import _
@@ -7,6 +8,7 @@ from frappe import _
 from razorpayx_integration.constants import (
     RAZORPAYX_INTEGRATION_DOCTYPE,
 )
+from razorpayx_integration.payment_utils.utils import log_integration_request
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
     PAYOUT_STATUS,
 )
@@ -18,9 +20,6 @@ from razorpayx_integration.razorpayx_integration.constants.webhooks import (
 )
 from razorpayx_integration.razorpayx_integration.doctype.razorpayx_integration_setting.razorpayx_integration_setting import (
     RazorPayXIntegrationSetting,
-)
-from razorpayx_integration.razorpayx_integration.utils import (
-    log_razorpayx_integration_request,
 )
 
 # API: TUNNEL_URL/api/method/razorpayx_integration.razorpayx_integration.utils.webhooks.razorpayx_webhook_listener
@@ -36,34 +35,74 @@ from razorpayx_integration.razorpayx_integration.utils import (
 
 ###### WEBHOOK PROCESSORS ######
 class RazorPayXWebhook:
+    ### SETUP ###
     def __init__(self):
+        """
+        Caution: ⚠️ Don't forget to call `super().__init__()` in sub class.
+        """
+        frappe.set_user("Administrator")
+
         self.event_id = frappe.get_request_header("X-Razorpay-Event-Id")
         self.signature = frappe.get_request_header("X-Razorpay-Signature")
+
+        self.request_id = frappe.get_request_header("Request-Id")
+
+        self.row_payload = frappe.request.data
+        self.payload = json.loads(self.row_payload)
+
+        self.initialize_payload_data()
+        self.verify_webhook_signature()
+        self.log_razorpayx_webhook_request()
+
+    def initialize_payload_data(self):
+        """
+        Initialize the payload data to be used in the webhook processing.
+
+        Caution: ⚠️ Don't forget to call `super().initialize_payload_data()` in sub class.
+        """
+        self.event = self.payload["event"]
+        self.event_type = self.event.split(".")[0]
+
+        self.entity = (
+            self.payload.get("payload", {}).get(self.event_type, {}).get("entity", {})
+        )
+
+        self.payment_status = self.entity.get("status", "")
+        self.utr = self.entity.get("utr", "")
+
+        self.source_docname = ""
+        self.source_doctype = ""
+
+        self.notes = self.entity.get("notes", {})
+        if self.notes and isinstance(self.notes, dict):
+            self.source_doctype = self.notes.get("source_doctype", "")
+            self.source_docname = self.notes.get("source_docname", "")
+
+        self.razorpayx_account: RazorPayXIntegrationSetting = (
+            self.get_razorpayx_account()
+        )
 
     def process_webhook(self):
         """
         Process RazorpayX Webhook.
+
+        Note: This method should be overridden in the sub class.
         """
-        if not (self.event_id and self.signature):
-            return
+        pass
 
-        if frappe.cache().get_value(self.event_id):
-            return
-
-        frappe.cache().set_value(self.event_id, True, expires_in_sec=60)
-
-        self.initialize_payload_data()
-
-        self.verify_webhook_signature()
-
-        self.log_razorpayx_webhook_request()
-
-        self.update_payment_entry()
-
+    ### VALIDATIONS ###
     def verify_webhook_signature(self):
         """
         Verify the signature of the payload.
+
+        :raises: frappe.ValidationError
         """
+        if not self.razorpayx_account:
+            frappe.throw(
+                title="RazorpayX Account Not Found",
+                message=f"Payload: \n {self.payload}",
+            )
+
         webhook_secret = self.razorpayx_account.get_password("webhook_secret").encode()
 
         expected_signature = hmac(
@@ -76,84 +115,40 @@ class RazorPayXWebhook:
                 message=f"Payload: \n {self.payload}",
             )
 
+    #### UTILITIES ####
     def log_razorpayx_webhook_request(self):
         """
         Log RazorpayX Webhook Request.
         """
-        integration_request = frappe.new_doc("Integration Request")
-
-        integration_request.update(
-            {
-                "request_id": self.request_id,
-                "razorpayx_event_id": self.event_id,
-                "razorpayx_event": self.event,
-                "razorpayx_payment_status": self.payment_status.title(),
-                "integration_request_service": "Online Banking Payment with RazorpayX",
-                "request_headers": str(frappe.request.headers),
-                "data": json.dumps(self.payload, indent=4),
-                "status": "Authorized",
-                "reference_doctype": self.source_doctype,
-                "reference_docname": self.source_docname,
-            }
+        return log_integration_request(
+            integration_request_service=f"RazorPayX Webhook Event - {self.event}",
+            request_id=self.request_id,
+            request_headers=str(frappe.request.headers),
+            data=self.payload,
+            reference_doctype=self.source_doctype,
+            reference_name=self.source_docname,
+            is_remote_request=True,
         )
 
-        integration_request.flags.ignore_permissions = True
-        integration_request.save()
+    def get_razorpayx_account(
+        self, account_id: str | None = None
+    ) -> RazorPayXIntegrationSetting | None:
+        """
+        Get RazorpayX Account Doc.
 
-        self.integration_request = integration_request
+        :param account_id: RazorpayX Account ID (Business ID).
 
-        return integration_request.name
+        Note: `account_id` must start with `acc_`.
+        """
+        if not account_id:
+            account_id = self.payload.get("account_id")
 
-    def update_payment_entry(self):
-        if self.source_doctype != "Payment Entry":
+        if not account_id:
             return
 
-        pe = frappe.get_doc("Payment Entry", self.source_docname)
+        account_id = account_id.removeprefix("acc_")
 
-        if not self.does_order_maintained(pe.razorpayx_payment_status.title()):
-            return
-
-        values = {
-            "razorpayx_payment_status": self.payment_status.title(),
-        }
-
-        if self.utr:
-            values["reference_no"] = self.utr
-
-        pe.db_set(values, update_modified=True)
-
-        if self.payment_status in [
-            PAYOUT_STATUS.REJECTED.value,
-            PAYOUT_STATUS.FAILED.value,
-            PAYOUT_STATUS.REVERSED.value,
-            PAYOUT_STATUS.EXPIRED.value,
-        ]:
-            pe.cancel()
-
-    #### UTILITIES ####
-    def initialize_payload_data(self):
-        frappe.set_user("Administrator")
-        account_key = "razorpayx_integration_account"
-
-        self.request_id = frappe.get_request_header("Request-Id")
-
-        self.row_payload = frappe.request.data
-        self.payload = json.loads(self.row_payload)
-
-        event_type = self.payload["contains"][0]
-        self.event = self.payload["event"]
-        self.payout_entity = self.payload["payload"][event_type]["entity"]
-
-        self.payment_status = self.payout_entity["status"]
-        self.utr = self.payout_entity["utr"]
-
-        self.notes = self.payout_entity["notes"]
-        self.source_doctype = self.notes["source_doctype"]
-        self.source_docname = self.notes["source_docname"]
-
-        self.razorpayx_account: RazorPayXIntegrationSetting = frappe.get_doc(
-            RAZORPAYX_INTEGRATION_DOCTYPE, self.notes[account_key]
-        )
+        return frappe.get_doc(RAZORPAYX_INTEGRATION_DOCTYPE, {"account_id": account_id})
 
     def does_order_maintained(self, pe_payment_status):
         # TODO: check if the order is maintained
@@ -161,11 +156,20 @@ class RazorPayXWebhook:
 
 
 class PayoutWebhook(RazorPayXWebhook):
-    pass
+    ### APIs ###
+    def process_webhook(self):
+        """
+        Process RazorpayX Payout Webhook.
+        """
+        pass
 
 
 class PayoutLinkWebhook(RazorPayXWebhook):
-    pass
+    def process_webhook(self):
+        """
+        Process RazorpayX Payout Link Webhook.
+        """
+        pass
 
 
 class TransactionWebhook(RazorPayXWebhook):
@@ -212,11 +216,12 @@ def process_razorpayx_webhook():
             or TRANSACTION_EVENT.has_value(event)
         )
 
+    # validate the webhook event
     event = frappe.form_dict.get("event")
 
     if not is_valid_webhook_event(event):
-        log_razorpayx_integration_request(
-            integration_request_service=f"RazorpayX Webhook Event - {event}",
+        log_integration_request(
+            integration_request_service=f"RazorpayX Webhook Event - {event or 'Unknown'}",
             request_id=frappe.get_request_header("Request-Id"),
             request_headers=str(frappe.request.headers),
             data=frappe.form_dict,
@@ -226,6 +231,19 @@ def process_razorpayx_webhook():
 
         return
 
+    # Check if the event is already processed
+    event_id = frappe.get_request_header("X-Razorpay-Event-Id")
+    signature = frappe.get_request_header("X-Razorpay-Signature")
+
+    if not (event_id and signature):
+        return
+
+    if frappe.cache().get_value(event_id):
+        return
+
+    frappe.cache().set_value(event_id, True, expires_in_sec=60)
+
+    # Process the webhook
     event_type = event.split(".")[0]
 
     if event_type == EVENTS_TYPE.PAYOUT.value:

@@ -5,7 +5,7 @@ class EVENTS_TYPE(BaseEnum):
     PAYOUT = "payout"
     PAYOUT_LINK = "payout_link"
     TRANSACTION = "transaction"  # ! NOTE: currently not supported
-    ACCOUNT = "fund_account.validation"  # ! NOTE: currently not supported
+    ACCOUNT = "fund_account"  # ! NOTE: currently not supported
 
 
 class FUND_ACCOUNT_EVENT(BaseEnum):
@@ -32,7 +32,7 @@ class PAYOUT_EVENT(BaseEnum):
     PROCESSED = "payout.processed"
     REVERSED = "payout.reversed"
     FAILED = "payout.failed"
-    # UPDATED = "payout.updated" # ! NOTE: currently not supported
+    UPDATED = "payout.updated"
     # DOWNTIME_STARTED = "payout.downtime.started"  # ! NOTE: currently not supported
     # DOWNTIME_RESOLVED = "payout.downtime.resolved" # ! NOTE: currently not supported
 
