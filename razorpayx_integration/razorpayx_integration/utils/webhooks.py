@@ -8,13 +8,13 @@ from razorpayx_integration.constants import (
     RAZORPAYX_INTEGRATION_DOCTYPE,
 )
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
-    RAZORPAYX_PAYOUT_STATUS,
+    PAYOUT_STATUS,
 )
 from razorpayx_integration.razorpayx_integration.constants.webhooks import (
-    WEBHOOK_EVENTS_TYPE,
-    WEBHOOK_PAYOUT_EVENT,
-    WEBHOOK_PAYOUT_LINK_EVENT,
-    WEBHOOK_TRANSACTION_EVENT,
+    EVENTS_TYPE,
+    PAYOUT_EVENT,
+    PAYOUT_LINK_EVENT,
+    TRANSACTION_EVENT,
 )
 from razorpayx_integration.razorpayx_integration.doctype.razorpayx_integration_setting.razorpayx_integration_setting import (
     RazorPayXIntegrationSetting,
@@ -123,10 +123,10 @@ class RazorPayXWebhook:
         pe.db_set(values, update_modified=True)
 
         if self.payment_status in [
-            RAZORPAYX_PAYOUT_STATUS.REJECTED.value,
-            RAZORPAYX_PAYOUT_STATUS.FAILED.value,
-            RAZORPAYX_PAYOUT_STATUS.REVERSED.value,
-            RAZORPAYX_PAYOUT_STATUS.EXPIRED.value,
+            PAYOUT_STATUS.REJECTED.value,
+            PAYOUT_STATUS.FAILED.value,
+            PAYOUT_STATUS.REVERSED.value,
+            PAYOUT_STATUS.EXPIRED.value,
         ]:
             pe.cancel()
 
@@ -172,11 +172,15 @@ class TransactionWebhook(RazorPayXWebhook):
     pass
 
 
+class AccountWebhook(RazorPayXWebhook):
+    pass
+
+
 ###### CONSTANTS ######
 WEBHOOK_EVENT_TYPES_MAPPER = {
-    WEBHOOK_EVENTS_TYPE.PAYOUT.value: PayoutWebhook,
-    WEBHOOK_EVENTS_TYPE.PAYOUT_LINK.value: PayoutLinkWebhook,
-    WEBHOOK_EVENTS_TYPE.TRANSACTION.value: TransactionWebhook,
+    EVENTS_TYPE.PAYOUT.value: PayoutWebhook,
+    EVENTS_TYPE.PAYOUT_LINK.value: PayoutLinkWebhook,
+    EVENTS_TYPE.TRANSACTION.value: TransactionWebhook,
 }
 
 
@@ -203,9 +207,9 @@ def process_razorpayx_webhook():
             return False
 
         return (
-            WEBHOOK_PAYOUT_EVENT.has_value(event)
-            or WEBHOOK_PAYOUT_LINK_EVENT.has_value(event)
-            or WEBHOOK_TRANSACTION_EVENT.has_value(event)
+            PAYOUT_EVENT.has_value(event)
+            or PAYOUT_LINK_EVENT.has_value(event)
+            or TRANSACTION_EVENT.has_value(event)
         )
 
     event = frappe.form_dict.get("event")
@@ -224,9 +228,9 @@ def process_razorpayx_webhook():
 
     event_type = event.split(".")[0]
 
-    if event_type == WEBHOOK_EVENTS_TYPE.PAYOUT.value:
+    if event_type == EVENTS_TYPE.PAYOUT.value:
         return PayoutWebhook().process_webhook()
-    elif event_type == WEBHOOK_EVENTS_TYPE.PAYOUT_LINK.value:
+    elif event_type == EVENTS_TYPE.PAYOUT_LINK.value:
         return PayoutLinkWebhook().process_webhook()
-    elif event_type == WEBHOOK_EVENTS_TYPE.TRANSACTION.value:
+    elif event_type == EVENTS_TYPE.TRANSACTION.value:
         return TransactionWebhook().process_webhook()

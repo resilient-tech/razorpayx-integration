@@ -1,7 +1,7 @@
 import frappe
 
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
-    RAZORPAYX_USER_PAYOUT_MODE,
+    USER_PAYOUT_MODE,
 )
 
 
@@ -14,7 +14,7 @@ def execute():
 
     (
         frappe.qb.update(BA)
-        .set(BA.online_payment_mode, RAZORPAYX_USER_PAYOUT_MODE.BANK.value)
+        .set(BA.online_payment_mode, USER_PAYOUT_MODE.BANK.value)
         .where(BA.online_payment_mode.isnull())
         .run()
     )

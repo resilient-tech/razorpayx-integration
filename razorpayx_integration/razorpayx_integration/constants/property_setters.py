@@ -1,5 +1,5 @@
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
-    RAZORPAYX_USER_PAYOUT_MODE,
+    USER_PAYOUT_MODE,
 )
 
 STANDARD_FIELDS_TO_HIDE = {"Employee": ["bank_name", "bank_ac_no", "iban"]}
@@ -10,8 +10,8 @@ PE_MANDATORY_FIELDS_FOR_PAYMENT = [
     "party_bank_account",
 ]
 
-UPI_ID_CONDITION = f"eval: doc.make_online_payment && doc.razorpayx_account && doc.razorpayx_payment_mode === '{RAZORPAYX_USER_PAYOUT_MODE.UPI.value}'"
-BANK_ACCOUNT_CONDITION = f"eval: doc.make_online_payment && doc.razorpayx_account && doc.razorpayx_payment_mode === '{RAZORPAYX_USER_PAYOUT_MODE.BANK.value}'"
+UPI_ID_CONDITION = f"eval: doc.make_online_payment && doc.razorpayx_account && doc.razorpayx_payment_mode === '{USER_PAYOUT_MODE.UPI.value}'"
+BANK_ACCOUNT_CONDITION = f"eval: doc.make_online_payment && doc.razorpayx_account && doc.razorpayx_payment_mode === '{USER_PAYOUT_MODE.BANK.value}'"
 
 PROPERTY_SETTERS = [
     ## Payment Entry ##
@@ -20,7 +20,7 @@ PROPERTY_SETTERS = [
         "fieldname": "contact_person",
         "property": "mandatory_depends_on",
         "property_type": "Data",
-        "value": f"eval: doc.make_online_payment && doc.razorpayx_account && doc.razorpayx_payment_mode === '{RAZORPAYX_USER_PAYOUT_MODE.LINK.value}'",
+        "value": f"eval: doc.make_online_payment && doc.razorpayx_account && doc.razorpayx_payment_mode === '{USER_PAYOUT_MODE.LINK.value}'",
     },
     {
         "doctype": "Payment Entry",
@@ -84,28 +84,28 @@ PROPERTY_SETTERS = [
         "fieldname": "online_payment_mode",
         "property": "options",
         "property_type": "Data",
-        "value": RAZORPAYX_USER_PAYOUT_MODE.values_as_string(),
+        "value": USER_PAYOUT_MODE.values_as_string(),
     },
     {
         "doctype": "Bank Account",
         "fieldname": "online_payment_mode",
         "property": "default",
         "property_type": "Data",
-        "value": RAZORPAYX_USER_PAYOUT_MODE.BANK.value,
+        "value": USER_PAYOUT_MODE.BANK.value,
     },
     {
         "doctype": "Bank Account",
         "fieldname": "upi_id",
         "property": "depends_on",
         "property_type": "Data",
-        "value": f"eval: doc.online_payment_mode === '{RAZORPAYX_USER_PAYOUT_MODE.UPI.value}'",
+        "value": f"eval: doc.online_payment_mode === '{USER_PAYOUT_MODE.UPI.value}'",
     },
     {
         "doctype": "Bank Account",
         "fieldname": "contact_to_pay",
         "property": "depends_on",
         "property_type": "Data",
-        "value": f"eval: doc.online_payment_mode === '{RAZORPAYX_USER_PAYOUT_MODE.LINK.value}'",
+        "value": f"eval: doc.online_payment_mode === '{USER_PAYOUT_MODE.LINK.value}'",
     },
 ]
 
