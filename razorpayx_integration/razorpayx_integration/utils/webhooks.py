@@ -202,11 +202,11 @@ def process_razorpayx_webhook():
         if not event:
             return False
 
-        return event in [
-            *WEBHOOK_PAYOUT_EVENT,
-            *WEBHOOK_PAYOUT_LINK_EVENT,
-            *WEBHOOK_TRANSACTION_EVENT,
-        ]
+        return (
+            WEBHOOK_PAYOUT_EVENT.has_value(event)
+            or WEBHOOK_PAYOUT_LINK_EVENT.has_value(event)
+            or WEBHOOK_TRANSACTION_EVENT.has_value(event)
+        )
 
     event = frappe.form_dict.get("event")
 
