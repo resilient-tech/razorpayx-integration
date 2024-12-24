@@ -229,8 +229,6 @@ def process_razorpayx_webhook():
     event_type = event.split(".")[0]
 
     if event_type == EVENTS_TYPE.PAYOUT.value:
-        return PayoutWebhook().process_webhook()
+        PayoutWebhook().process_webhook()
     elif event_type == EVENTS_TYPE.PAYOUT_LINK.value:
-        return PayoutLinkWebhook().process_webhook()
-    elif event_type == EVENTS_TYPE.TRANSACTION.value:
-        return TransactionWebhook().process_webhook()
+        PayoutLinkWebhook().process_webhook()
