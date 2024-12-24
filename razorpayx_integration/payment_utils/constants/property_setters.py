@@ -1,4 +1,4 @@
-DEFAULT_REFERENCE_NO = "----"
+DEFAULT_REFERENCE_NO = "-*--*-"
 
 PROPERTY_SETTERS = [
     {

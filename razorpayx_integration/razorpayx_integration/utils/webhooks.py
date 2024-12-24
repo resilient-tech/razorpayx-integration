@@ -1,15 +1,21 @@
 import json
 from hmac import new as hmac
-from typing import Literal
 
 import frappe
+from erpnext.accounts.doctype.payment_entry.payment_entry import PaymentEntry
 from frappe import _
+from frappe.utils import get_link_to_form
 
 from razorpayx_integration.constants import (
     RAZORPAYX_INTEGRATION_DOCTYPE,
 )
+from razorpayx_integration.payment_utils.constants.property_setters import (
+    DEFAULT_REFERENCE_NO,
+)
 from razorpayx_integration.payment_utils.utils import log_integration_request
+from razorpayx_integration.razorpayx_integration.apis.payout import RazorPayXLinkPayout
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
+    PAYOUT_ORDERS,
     PAYOUT_STATUS,
 )
 from razorpayx_integration.razorpayx_integration.constants.webhooks import (
@@ -67,9 +73,17 @@ class RazorPayXWebhook:
             self.payload.get("payload", {}).get(self.event_type, {}).get("entity", {})
         )
 
-        self.payment_status = self.entity.get("status", "")
-        self.utr = self.entity.get("utr", "")
+        ### Entity data related to payout or link ###
+        self.status = ""
+        self.utr = ""
+        self.id = ""
 
+        if self.entity:
+            self.status = self.entity.get("status")
+            self.utr = self.entity.get("utr")
+            self.id = self.entity.get("id")
+
+        ### Source doc data ###
         self.source_docname = ""
         self.source_doctype = ""
 
@@ -78,6 +92,7 @@ class RazorPayXWebhook:
             self.source_doctype = self.notes.get("source_doctype", "")
             self.source_docname = self.notes.get("source_docname", "")
 
+        ### RazorpayX account ###
         self.razorpayx_account: RazorPayXIntegrationSetting = (
             self.get_razorpayx_account()
         )
@@ -120,7 +135,7 @@ class RazorPayXWebhook:
         """
         Log RazorpayX Webhook Request.
         """
-        return log_integration_request(
+        ir = log_integration_request(
             integration_request_service=f"RazorPayX Webhook Event - {self.event}",
             request_id=self.request_id,
             request_headers=str(frappe.request.headers),
@@ -129,6 +144,8 @@ class RazorPayXWebhook:
             reference_name=self.source_docname,
             is_remote_request=True,
         )
+
+        self.integration_request = ir.name
 
     def get_razorpayx_account(
         self, account_id: str | None = None
@@ -150,9 +167,39 @@ class RazorPayXWebhook:
 
         return frappe.get_doc(RAZORPAYX_INTEGRATION_DOCTYPE, {"account_id": account_id})
 
-    def does_order_maintained(self, pe_payment_status):
-        # TODO: check if the order is maintained
+    def get_source_doc(self):
+        """
+        Get the source doc.
+        """
+        if not self.source_doctype or not self.source_docname:
+            return
+
+        return frappe.get_doc(self.source_doctype, self.source_docname)
+
+    def is_order_maintained(self) -> bool:
+        """
+        Check if the order maintained or not.
+
+        Note: This method should be overridden in the sub class.
+        """
+        pass
+
+    def is_webhook_processable(self) -> bool:
+        """
+        Check if the webhook is processable or not.
+
+        Only process the webhook if the source docname and source doctype is available.
+        """
+        if not self.source_docname or not self.source_doctype:
+            return False
+
         return True
+
+    def get_ir_formlink(self) -> str:
+        """
+        Get the Integration Request Form Link.
+        """
+        return get_link_to_form("Integration Request", self.integration_request)
 
 
 class PayoutWebhook(RazorPayXWebhook):
@@ -161,7 +208,92 @@ class PayoutWebhook(RazorPayXWebhook):
         """
         Process RazorpayX Payout Webhook.
         """
-        pass
+        if not self.is_webhook_processable():
+            return
+
+        self.source_doc: PaymentEntry = self.get_source_doc()
+
+        if not self.source_doc or not self.is_order_maintained():
+            return
+
+        self.update_payment_entry()
+
+    def is_order_maintained(self) -> bool:
+        """
+        Check if the order maintained or not.
+
+        Compare webhook status with the source doc status and payment status.
+        """
+        pe_status = self.source_doc.razorpayx_payment_status.lower()
+
+        if not self.status or self.source_doc.docstatus != 1:
+            return False
+
+        # If the payout status's order is less than or equal to the PE status, then order not maintained.
+        if PAYOUT_ORDERS[self.status] <= PAYOUT_ORDERS[pe_status]:
+            return False
+
+        return True
+
+    def update_payment_entry(self):
+        """
+        Update Payment Entry based on the webhook status.
+
+        - Update the status of the Payment Entry.
+        - Update the UTR Number.
+        - If failed, cancel the Payment Entry.
+        """
+        values = {
+            "razorpayx_payment_status": self.status.title(),
+        }
+
+        if self.source_doc.reference_no == DEFAULT_REFERENCE_NO and self.utr:
+            values["reference_no"] = self.utr
+
+            if self.source_doc.remarks:
+                values["remarks"] = self.source_doc.remarks.replace(
+                    self.source_doc.reference_no, self.utr
+                )
+
+        if not self.source_doc.razorpayx_payout_id:
+            values["razorpayx_payout_id"] = self.id
+
+        self.source_doc.db_set(values, notify=True)
+
+        if self.should_cancel_payment_entry():
+            self.source_doc.cancel()
+            self.cancel_payout_link()
+
+    def cancel_payout_link(self):
+        """
+        Cancel the Payout Link.
+        """
+        if not self.source_doc.razorpayx_payout_link_id:
+            return
+
+        try:
+            payout_link = RazorPayXLinkPayout(self.razorpayx_account.name)
+            payout_link.cancel(self.source_doc.razorpayx_payout_link_id)
+        except Exception:
+            frappe.log_error(
+                title="RazorpayX Payout Link Cancellation Failed",
+                message=f"Source: {self.get_ir_formlink()} \n\n Traceback: \n {frappe.get_traceback()}",
+            )
+
+    def should_cancel_payment_entry(self) -> bool:
+        """
+        Check if the Payment Entry should be cancelled or not.
+        """
+        if not self.status or self.source_doc.docstatus == 2:
+            return False
+
+        if self.status in [
+            PAYOUT_STATUS.CANCELLED.value,
+            PAYOUT_STATUS.FAILED.value,
+            PAYOUT_STATUS.REVERSED.value,
+            PAYOUT_STATUS.REJECTED.value,
+        ]:
+            return True
 
 
 class PayoutLinkWebhook(RazorPayXWebhook):
