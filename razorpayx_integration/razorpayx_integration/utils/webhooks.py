@@ -82,12 +82,15 @@ class RazorPayXWebhook:
             self.source_docname = self.notes.get("source_docname", "")
 
     ### APIs ###
-    def process_webhook(self, payload: dict, integration_request: str):
+    def process_webhook(
+        self, payload: dict, integration_request: str, account_id: str | None = None
+    ):
         """
         Process RazorpayX Webhook.
 
         :param payload: Webhook payload data.
         :param integration_request: Integration Request name.
+        :param account_id: RazorpayX Account ID (Business ID).
 
         ---
         Note:
@@ -96,6 +99,11 @@ class RazorPayXWebhook:
         """
         self.payload = payload
         self.integration_request = integration_request
+
+        if not account_id:
+            self.account_id = self.payload.get("account_id")
+
+        self.razorpayx_account = get_account_integration_name(self.account_id)
 
         self.initialize_payload_data()
 
@@ -139,15 +147,20 @@ class RazorPayXWebhook:
 
 class PayoutWebhook(RazorPayXWebhook):
     ### APIs ###
-    def process_webhook(self, payload: dict, integration_request: str):
+    def process_webhook(
+        self, payload: dict, integration_request: str, account_id: str | None = None
+    ):
         """
         Process RazorpayX Payout Webhook.
 
         :param payload: Webhook payload data.
         :param integration_request: Integration Request name.
+        :param account_id: RazorpayX Account ID (Business ID).
         """
         super().process_webhook(
-            payload=payload, integration_request=integration_request
+            payload=payload,
+            integration_request=integration_request,
+            account_id=account_id,
         )
 
         if not self.is_webhook_processable():
@@ -189,17 +202,21 @@ class PayoutWebhook(RazorPayXWebhook):
         - Update the UTR Number.
         - If failed, cancel the Payment Entry and Payout Link.
         """
+
+        def get_new_remarks() -> str:
+            return self.source_doc.remarks.replace(
+                self.source_doc.reference_no, self.utr
+            )
+
         values = {
             "razorpayx_payment_status": self.status.title(),
         }
 
-        if self.source_doc.reference_no == DEFAULT_REFERENCE_NO and self.utr:
+        if self.utr:
             values["reference_no"] = self.utr
 
             if self.source_doc.remarks:
-                values["remarks"] = self.source_doc.remarks.replace(
-                    self.source_doc.reference_no, self.utr
-                )
+                values["remarks"] = get_new_remarks()
 
         if self.id:
             values["razorpayx_payout_id"] = self.id
@@ -220,7 +237,7 @@ class PayoutWebhook(RazorPayXWebhook):
             return True
 
         try:
-            payout_link = RazorPayXLinkPayout(self.razorpayx_account.name)
+            payout_link = RazorPayXLinkPayout(self.razorpayx_account)
             id = self.source_doc.razorpayx_payout_link_id
 
             status = payout_link.get_by_id(id, "status")
@@ -239,7 +256,7 @@ class PayoutWebhook(RazorPayXWebhook):
         except Exception:
             frappe.log_error(
                 title="RazorpayX Payout Link Cancellation Failed",
-                message=f"Source: {self.get_ir_formlink()} \n\n Traceback: \n {frappe.get_traceback()}",
+                message=f"Source: {self.get_ir_formlink()}\n\n{frappe.get_traceback()}",
             )
 
     def should_cancel_payment_entry(self) -> bool:
@@ -260,7 +277,9 @@ class PayoutWebhook(RazorPayXWebhook):
 
 class PayoutLinkWebhook(RazorPayXWebhook):
     ### APIs ###
-    def process_webhook(self, payload: dict, integration_request: str):
+    def process_webhook(
+        self, payload: dict, integration_request: str, account_id: str | None = None
+    ):
         """
         Process RazorpayX Payout Link Webhook.
 
@@ -268,7 +287,9 @@ class PayoutLinkWebhook(RazorPayXWebhook):
         :param integration_request: Integration Request name.
         """
         super().process_webhook(
-            payload=payload, integration_request=integration_request
+            payload=payload,
+            integration_request=integration_request,
+            account_id=account_id,
         )
 
         if not self.is_webhook_processable():
@@ -301,6 +322,12 @@ class PayoutLinkWebhook(RazorPayXWebhook):
         - Update the UTR Number.
         - If failed, cancel the Payment Entry.
         """
+
+        def get_new_remarks() -> str:
+            return self.source_doc.remarks.replace(
+                self.source_doc.reference_no, self.utr
+            )
+
         values = {}
 
         cancel_pe = self.should_cancel_payment_entry()
@@ -308,13 +335,11 @@ class PayoutLinkWebhook(RazorPayXWebhook):
         if cancel_pe:
             values["razorpayx_payment_status"] = PAYOUT_STATUS.CANCELLED.value
 
-        if self.source_doc.reference_no == DEFAULT_REFERENCE_NO and self.utr:
+        if self.utr:
             values["reference_no"] = self.utr
 
             if self.source_doc.remarks:
-                values["remarks"] = self.source_doc.remarks.replace(
-                    self.source_doc.reference_no, self.utr
-                )
+                values["remarks"] = get_new_remarks()
 
         if not self.source_doc.razorpayx_payout_link_id and self.id:
             values["razorpayx_payout_link_id"] = self.id
@@ -441,7 +466,9 @@ def process_razorpayx_webhook(event: str, payload: dict, integration_request: st
         return WEBHOOK_EVENT_TYPES_MAPPER.get(event_type)()
 
     get_webhook_processor().process_webhook(
-        payload=payload, integration_request=integration_request
+        payload=payload,
+        integration_request=integration_request,
+        account_id=payload.get("account_id"),
     )
 
 
@@ -481,7 +508,7 @@ def validate_webhook_signature(
     except Exception:
         frappe.log_error(
             title="Invalid RazorPayX Webhook Signature",
-            message=f"Webhook Payload:\n{frappe.as_json(payload,indent=2)} \n\n ---\n\n Request Headers:\n{request_headers}",
+            message=f"Webhook Payload:\n{frappe.as_json(payload,indent=2)}\n\n---\n\nRequest Headers:\n{request_headers}",
         )
 
         frappe.throw(_("Invalid RazorPayX Webhook Signature"))
@@ -492,13 +519,29 @@ def get_webhook_secret(account_id: str) -> str | None:
     Get the webhook secret from the account id.
 
     :param account_id: RazorpayX Account ID (Business ID).
+
+    ---
+    Note: `account_id` should be in the format `acc_XXXXXX`.
+    """
+    name = get_account_integration_name(account_id)
+
+    return get_decrypted_password(RAZORPAYX_INTEGRATION_DOCTYPE, name, "webhook_secret")
+
+
+@frappe.request_cache
+def get_account_integration_name(account_id: str) -> str | None:
+    """
+    Get the account integration name from the account id.
+
+    :param account_id: RazorpayX Account ID (Business ID).
+
+    ---
+    Note: `account_id` should be in the format `acc_XXXXXX`.
     """
     account_id = account_id.removeprefix("acc_")
 
-    name = frappe.get_value(
+    return frappe.get_value(
         RAZORPAYX_INTEGRATION_DOCTYPE,
         {"account_id": account_id},
         "name",
     )
-
-    return get_decrypted_password(RAZORPAYX_INTEGRATION_DOCTYPE, name, "webhook_secret")
