@@ -99,8 +99,9 @@ class RazorPayXWebhook:
         """
         self.payload = payload
         self.integration_request = integration_request
+        self.account_id = account_id
 
-        if not account_id:
+        if not self.account_id:
             self.account_id = self.payload.get("account_id")
 
         self.razorpayx_account = get_account_integration_name(self.account_id)
@@ -365,6 +366,10 @@ class PayoutLinkWebhook(RazorPayXWebhook):
             return True
 
 
+# TODO: Transaction Webhook
+# Handle only 2: `reversal` and `payout_failed`
+# Ref1: http://razorpayx.localhost:8001/app/integration-request/5lgv3tbdn6 (reversal)
+# ref2: http://razorpayx.localhost:8001/app/integration-request/u7k9okob4m (created)
 class TransactionWebhook(RazorPayXWebhook):
     pass
 
