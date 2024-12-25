@@ -229,7 +229,7 @@ class PayoutWebhook(RazorPayXWebhook):
         if not self.status or self.source_doc.docstatus != 1:
             return False
 
-        # If the payout status's order is less than or equal to the PE status, then order not maintained.
+        # If the current webhook status's order is less than or equal to the PE status, then order not maintained.
         if PAYOUT_ORDERS[self.status] <= PAYOUT_ORDERS[pe_status]:
             return False
 
