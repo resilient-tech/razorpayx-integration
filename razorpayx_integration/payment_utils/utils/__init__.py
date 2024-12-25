@@ -118,12 +118,19 @@ def log_integration_request(
     request_id=None,
     request_headers=None,
     data=None,
+    status=None,
     output=None,
     error=None,
     reference_doctype=None,
     reference_name=None,
     is_remote_request=False,
 ):
+    def get_status():
+        if status:
+            return status
+
+        return "Failed" if error else "Completed"
+
     return frappe.get_doc(
         {
             "doctype": "Integration Request",
@@ -134,7 +141,7 @@ def log_integration_request(
             "data": pretty_json(data),
             "output": pretty_json(output),
             "error": pretty_json(error),
-            "status": "Failed" if error else "Completed",
+            "status": get_status(),
             "reference_doctype": reference_doctype,
             "reference_docname": reference_name,
             "is_remote_request": is_remote_request,

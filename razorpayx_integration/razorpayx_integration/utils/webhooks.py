@@ -90,13 +90,16 @@ class RazorPayXWebhook:
         :param integration_request: Integration Request name.
 
         ---
-        Note: This method should be overridden in the sub class.
+        Note:
+        - This method should be overridden in the sub class.
+        - Don't forget to call `super().process_webhook()` in the sub class.
         """
         self.payload = payload
         self.integration_request = integration_request
 
         self.initialize_payload_data()
 
+    ### UTILITIES ###
     def get_source_doc(self):
         """
         Get the source doc.
@@ -143,7 +146,9 @@ class PayoutWebhook(RazorPayXWebhook):
         :param payload: Webhook payload data.
         :param integration_request: Integration Request name.
         """
-        super().process_webhook()
+        super().process_webhook(
+            payload=payload, integration_request=integration_request
+        )
 
         if not self.is_webhook_processable():
             return
@@ -262,7 +267,9 @@ class PayoutLinkWebhook(RazorPayXWebhook):
         :param payload: Webhook payload data.
         :param integration_request: Integration Request name.
         """
-        super().process_webhook()
+        super().process_webhook(
+            payload=payload, integration_request=integration_request
+        )
 
         if not self.is_webhook_processable():
             return
@@ -373,25 +380,29 @@ def razorpayx_webhook_listener():
     frappe.cache().set_value(event_id, True, expires_in_sec=60)
 
     ## Validate the webhook signature ##
-    row_payload = frappe.request.data
-    validate_webhook_signature(row_payload, signature)
-
-    ## Setting up the data ##
     frappe.set_user("Administrator")
+    row_payload = frappe.request.data
     payload = json.loads(row_payload)
+    request_headers = str(frappe.request.headers)
+
+    validate_webhook_signature(
+        row_payload, signature, payload=payload, request_headers=request_headers
+    )
 
     ## Log the webhook request ##
     event = payload.get("event")
     ir_log = {
         "request_id": event_id,
+        "status": "Completed",
         "integration_request_service": f"RazorpayX Webhook Event - {event or 'Unknown'}",
-        "request_headers": str(frappe.request.headers),
+        "request_headers": request_headers,
         "data": payload,
         "is_remote_request": True,
     }
 
     if unsupported_event := is_unsupported_event(event):
         ir_log["error"] = "Unsupported Webhook Event"
+        ir_log["status"] = "Cancelled"
 
     ir = log_integration_request(**ir_log)
 
@@ -399,12 +410,16 @@ def razorpayx_webhook_listener():
     if unsupported_event:
         return
 
-    frappe.enqueue(
-        process_razorpayx_webhook,
-        event=event,
-        payload=payload,
-        integration_request=ir.name,
-    )
+    # TODO: enqueue the webhook processing
+    # frappe.enqueue(
+    #     process_razorpayx_webhook,
+    #     event=event,
+    #     payload=payload,
+    #     integration_request=ir.name,
+    # )
+
+    # TODO: remove this line after testing
+    process_razorpayx_webhook(event=event, payload=payload, integration_request=ir.name)
 
 
 def process_razorpayx_webhook(event: str, payload: dict, integration_request: str):
@@ -431,15 +446,29 @@ def process_razorpayx_webhook(event: str, payload: dict, integration_request: st
 
 
 ###### UTILITIES ######
-def validate_webhook_signature(row_payload, signature):
+def validate_webhook_signature(
+    row_payload: bytes,
+    signature: str,
+    *,
+    payload: dict | None = None,
+    request_headers: str | None = None,
+):
     """
     Validate the RazorpayX Webhook Signature.
 
     :param row_payload: Raw payload data (Do not parse the data).
+    :param request_headers: Request headers.
+    :param payload: Parsed payload data.
     :param signature: Header signature.
 
     """
-    webhook_secret = get_webhook_secret(frappe.form_dict.get("account_id"))
+    if not payload:
+        payload = json.loads(row_payload)
+
+    if not request_headers:
+        request_headers = str(frappe.request.headers)
+
+    webhook_secret = get_webhook_secret(payload.get("account_id"))
 
     try:
         expected_signature = hmac(
@@ -451,11 +480,11 @@ def validate_webhook_signature(row_payload, signature):
 
     except Exception:
         frappe.log_error(
-            title="Invalid Webhook Signature",
-            message=f"Webhook Payload: \n{json.dumps(row_payload, indent=4)}",
+            title="Invalid RazorPayX Webhook Signature",
+            message=f"Webhook Payload:\n{frappe.as_json(payload,indent=2)} \n\n ---\n\n Request Headers:\n{request_headers}",
         )
 
-        frappe.throw(_("Invalid Webhook Signature"))
+        frappe.throw(_("Invalid RazorPayX Webhook Signature"))
 
 
 def get_webhook_secret(account_id: str) -> str | None:
