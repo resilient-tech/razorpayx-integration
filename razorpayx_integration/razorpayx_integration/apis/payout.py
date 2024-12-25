@@ -133,16 +133,27 @@ class RazorPayXPayout(BaseRazorPayXAPI):
 
         return self._make_payout(payout_details)
 
-    def get_by_id(self, payout_id: str) -> dict:
+    def get_by_id(self, payout_id: str, data: str | None):
         """
         Fetch the details of a specific `Payout` by Id.
 
         :param id: `Id` of fund account to fetch (Ex.`payout_jkHgLM02`).
+        :param data: Specific data to be fetched (Ex. `status`, `utr`, etc.).
+
+        ---
+        Note:
+        - If data is not provided, the complete payout details will be fetched.
+        - If data is not available, `None` will be returned.
 
         ---
         Reference: https://razorpay.com/docs/api/x/payouts/fetch-with-id
         """
-        return self.get(endpoint=payout_id)
+        response = self.get(endpoint=payout_id)
+
+        if not data:
+            return response
+
+        return response.get(data)
 
     def get_all(
         self, filters: dict | None = None, count: int | None = None
@@ -803,16 +814,27 @@ class RazorPayXLinkPayout(RazorPayXPayout):
         """
         return self._make_payout(payout_details)
 
-    def get_by_id(self, payout_link_id: str) -> dict:
+    def get_by_id(self, payout_link_id: str, data: str | None):
         """
         Fetch the details of a specific `Link Payout` by Id.
 
         :param id: `Id` of fund account to fetch (Ex.`poutlk_jkHgLM02`).
+        :param data: Specific data to be fetched (Ex. `status`, `utr`, etc.).
+
+        ---
+        Note:
+        - If data is not provided, the complete payout details will be fetched.
+        - If data is not available, `None` will be returned.
 
         ---
         Reference: https://razorpay.com/docs/api/x/payout-links/fetch-with-id
         """
-        return self.get(endpoint=payout_link_id)
+        response = self.get(endpoint=payout_link_id)
+
+        if not data:
+            return response
+
+        return response.get(data)
 
     def get_all(self, filters=None, count=None):
         """

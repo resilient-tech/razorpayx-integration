@@ -4,7 +4,7 @@ from hmac import new as hmac
 import frappe
 from erpnext.accounts.doctype.payment_entry.payment_entry import PaymentEntry
 from frappe import _
-from frappe.utils import get_link_to_form
+from frappe.utils import get_link_to_form, get_url_to_form
 
 from razorpayx_integration.constants import (
     RAZORPAYX_INTEGRATION_DOCTYPE,
@@ -15,14 +15,13 @@ from razorpayx_integration.payment_utils.constants.property_setters import (
 from razorpayx_integration.payment_utils.utils import log_integration_request
 from razorpayx_integration.razorpayx_integration.apis.payout import RazorPayXLinkPayout
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
+    PAYOUT_LINK_STATUS,
     PAYOUT_ORDERS,
     PAYOUT_STATUS,
 )
 from razorpayx_integration.razorpayx_integration.constants.webhooks import (
     EVENTS_TYPE,
-    PAYOUT_EVENT,
-    PAYOUT_LINK_EVENT,
-    TRANSACTION_EVENT,
+    SUPPORTED_EVENTS,
 )
 from razorpayx_integration.razorpayx_integration.doctype.razorpayx_integration_setting.razorpayx_integration_setting import (
     RazorPayXIntegrationSetting,
@@ -34,6 +33,7 @@ from razorpayx_integration.razorpayx_integration.doctype.razorpayx_integration_s
 
 # TODO: When to create a `Bank Transaction`
 # TODO: when to cancel PE ?
+# TODO: TESTINGS
 
 # ! IMPORTANT
 # TODO: only payout webhook is supported
@@ -190,16 +190,18 @@ class RazorPayXWebhook:
 
         Only process the webhook if the source docname and source doctype is available.
         """
-        if not self.source_docname or not self.source_doctype:
-            return False
+        return bool(self.source_doctype and self.source_docname)
 
-        return True
-
-    def get_ir_formlink(self) -> str:
+    def get_ir_formlink(self, html: bool = False) -> str:
         """
         Get the Integration Request Form Link.
+
+        :param html: bool - If True, return the HTML link.
         """
-        return get_link_to_form("Integration Request", self.integration_request)
+        if html:
+            return get_link_to_form("Integration Request", self.integration_request)
+
+        return get_url_to_form("Integration Request", self.integration_request)
 
 
 class PayoutWebhook(RazorPayXWebhook):
@@ -217,6 +219,10 @@ class PayoutWebhook(RazorPayXWebhook):
             return
 
         self.update_payment_entry()
+
+    ### UTILITIES ###
+    def is_webhook_processable(self) -> bool:
+        return bool(self.source_doctype == "Payment Entry" and self.source_docname)
 
     def is_order_maintained(self) -> bool:
         """
@@ -241,7 +247,7 @@ class PayoutWebhook(RazorPayXWebhook):
 
         - Update the status of the Payment Entry.
         - Update the UTR Number.
-        - If failed, cancel the Payment Entry.
+        - If failed, cancel the Payment Entry and Payout Link.
         """
         values = {
             "razorpayx_payment_status": self.status.title(),
@@ -255,25 +261,41 @@ class PayoutWebhook(RazorPayXWebhook):
                     self.source_doc.reference_no, self.utr
                 )
 
-        if not self.source_doc.razorpayx_payout_id:
+        if self.id:
             values["razorpayx_payout_id"] = self.id
 
         self.source_doc.db_set(values, notify=True)
 
-        if self.should_cancel_payment_entry():
+        if self.should_cancel_payment_entry() and self.cancel_payout_link():
+            self.source_doc.flags.__canceled_by_rpx_webhook = True
             self.source_doc.cancel()
-            self.cancel_payout_link()
 
-    def cancel_payout_link(self):
+    def cancel_payout_link(self) -> bool:
         """
         Cancel the Payout Link.
+
+        :returns: bool - `True` if the Payout Link is cancelled successfully.
         """
         if not self.source_doc.razorpayx_payout_link_id:
-            return
+            return True
 
         try:
             payout_link = RazorPayXLinkPayout(self.razorpayx_account.name)
-            payout_link.cancel(self.source_doc.razorpayx_payout_link_id)
+            id = self.source_doc.razorpayx_payout_link_id
+
+            status = payout_link.get_by_id(id, "status")
+
+            if status in [
+                PAYOUT_LINK_STATUS.CANCELLED.value,
+                PAYOUT_LINK_STATUS.EXPIRED.value,
+                PAYOUT_LINK_STATUS.REJECTED.value,
+            ]:
+                return True
+
+            if status == PAYOUT_LINK_STATUS.ISSUED.value:
+                payout_link.cancel(self.source_doc.razorpayx_payout_link_id)
+                return True
+
         except Exception:
             frappe.log_error(
                 title="RazorpayX Payout Link Cancellation Failed",
@@ -297,11 +319,78 @@ class PayoutWebhook(RazorPayXWebhook):
 
 
 class PayoutLinkWebhook(RazorPayXWebhook):
+    ### APIs ###
     def process_webhook(self):
         """
         Process RazorpayX Payout Link Webhook.
         """
-        # TODO: Implement the Payout Link Webhook Processing
+        if not self.is_webhook_processable():
+            return
+
+        self.source_doc: PaymentEntry = self.get_source_doc()
+
+        if not self.source_doc or not self.is_order_maintained():
+            return
+
+        self.update_payment_entry()
+
+    ### UTILITIES ###
+    def is_webhook_processable(self) -> bool:
+        return bool(self.source_doctype == "Payment Entry" and self.source_docname)
+
+    def is_order_maintained(self) -> bool:
+        """
+        Check if the order maintained or not.
+
+        Caution: ⚠️ Payout link status is not maintained in the Payment Entry.
+        """
+        return self.status and self.source_doc.docstatus == 1
+
+    def update_payment_entry(self):
+        """
+        Update Payment Entry based on the webhook status.
+
+        - Update the status of the Payment Entry.
+        - Update the UTR Number.
+        - If failed, cancel the Payment Entry.
+        """
+        values = {}
+
+        cancel_pe = self.should_cancel_payment_entry()
+
+        if cancel_pe:
+            values["razorpayx_payment_status"] = PAYOUT_STATUS.CANCELLED.value
+
+        if self.source_doc.reference_no == DEFAULT_REFERENCE_NO and self.utr:
+            values["reference_no"] = self.utr
+
+            if self.source_doc.remarks:
+                values["remarks"] = self.source_doc.remarks.replace(
+                    self.source_doc.reference_no, self.utr
+                )
+
+        if not self.source_doc.razorpayx_payout_link_id and self.id:
+            values["razorpayx_payout_link_id"] = self.id
+
+        self.source_doc.db_set(values, notify=True)
+
+        if cancel_pe:
+            self.source_doc.flags.__canceled_by_rpx_webhook = True
+            self.source_doc.cancel()
+
+    def should_cancel_payment_entry(self) -> bool:
+        """
+        Check if the Payment Entry should be cancelled or not.
+        """
+        if not self.status or self.source_doc.docstatus == 2:
+            return False
+
+        if self.status in [
+            PAYOUT_LINK_STATUS.CANCELLED.value,
+            PAYOUT_LINK_STATUS.EXPIRED.value,
+            PAYOUT_LINK_STATUS.REJECTED.value,
+        ]:
+            return True
 
 
 class TransactionWebhook(RazorPayXWebhook):
@@ -334,35 +423,6 @@ def process_razorpayx_webhook():
     """
     Process RazorpayX Webhook.
     """
-
-    def is_valid_webhook_event(event: str | None) -> bool:
-        """
-        Webhook event is supported or not.
-        """
-        if not event:
-            return False
-
-        return (
-            PAYOUT_EVENT.has_value(event)
-            or PAYOUT_LINK_EVENT.has_value(event)
-            or TRANSACTION_EVENT.has_value(event)
-        )
-
-    # validate the webhook event
-    event = frappe.form_dict.get("event")
-
-    if not is_valid_webhook_event(event):
-        log_integration_request(
-            integration_request_service=f"RazorpayX Webhook Event - {event or 'Unknown'}",
-            request_id=frappe.get_request_header("Request-Id"),
-            request_headers=str(frappe.request.headers),
-            data=frappe.form_dict,
-            error="The webhook event is not supported.",
-            is_remote_request=True,
-        )
-
-        return
-
     # Check if the event is already processed
     event_id = frappe.get_request_header("X-Razorpay-Event-Id")
     signature = frappe.get_request_header("X-Razorpay-Signature")
@@ -374,6 +434,20 @@ def process_razorpayx_webhook():
         return
 
     frappe.cache().set_value(event_id, True, expires_in_sec=60)
+
+    # validate the webhook event
+    event = frappe.form_dict.get("event")
+
+    if not event or event not in SUPPORTED_EVENTS:
+        log_integration_request(
+            integration_request_service=f"RazorpayX Webhook Event - {event or 'Unknown'}",
+            request_headers=str(frappe.request.headers),
+            data=frappe.form_dict,
+            error="The webhook event is not supported.",
+            is_remote_request=True,
+        )
+
+        return
 
     # Process the webhook
     event_type = event.split(".")[0]
