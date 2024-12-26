@@ -2,7 +2,7 @@ from frappe.utils import validate_email_address
 
 from razorpayx_integration.razorpayx_integration.apis.base import BaseRazorPayXAPI
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
-    RAZORPAYX_CONTACT_TYPE,
+    CONTACT_TYPE,
 )
 from razorpayx_integration.razorpayx_integration.utils.validation import (
     validate_razorpayx_contact_type,
@@ -232,7 +232,7 @@ class RazorPayXContact(BaseRazorPayXAPI):
 
         if type := request.get("type"):
             # Razorpayx does not support `supplier` type contact
-            request["type"] = RAZORPAYX_CONTACT_TYPE[type.upper()].value
+            request["type"] = CONTACT_TYPE[type.upper()].value
             validate_razorpayx_contact_type(request["type"])
 
     def _validate_and_process_filters(self, filters: dict):

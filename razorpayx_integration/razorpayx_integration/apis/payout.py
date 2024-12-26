@@ -5,14 +5,14 @@ from frappe.utils import fmt_money, get_link_to_form
 from razorpayx_integration.payment_utils.utils import paisa_to_rupees, rupees_to_paisa
 from razorpayx_integration.razorpayx_integration.apis.base import BaseRazorPayXAPI
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
+    CONTACT_TYPE,
     CONTACT_TYPE_MAP,
+    FUND_ACCOUNT_TYPE,
     PAYMENT_MODE_THRESHOLD,
+    PAYOUT_CURRENCY,
+    PAYOUT_MODE,
+    PAYOUT_PURPOSE,
     PAYOUT_PURPOSE_MAP,
-    RAZORPAYX_CONTACT_TYPE,
-    RAZORPAYX_FUND_ACCOUNT_TYPE,
-    RAZORPAYX_PAYOUT_CURRENCY,
-    RAZORPAYX_PAYOUT_MODE,
-    RAZORPAYX_PAYOUT_PURPOSE,
 )
 from razorpayx_integration.razorpayx_integration.utils.validation import (
     validate_razorpayx_payout_description,
@@ -54,7 +54,7 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         self.default_payout_request = {
             "account_number": self.razorpayx_account_number,
             "queue_if_low_balance": True,
-            "currency": RAZORPAYX_PAYOUT_CURRENCY.INR.value,
+            "currency": PAYOUT_CURRENCY.INR.value,
         }
         self.payout_headers = {}
         self.source_amount_field_map = {
@@ -129,20 +129,31 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         ---
         Reference: https://razorpay.com/docs/api/x/payouts/create/vpa
         """
-        payout_details["mode"] = RAZORPAYX_PAYOUT_MODE.UPI.value
+        payout_details["mode"] = PAYOUT_MODE.UPI.value
 
         return self._make_payout(payout_details)
 
-    def get_by_id(self, payout_id: str) -> dict:
+    def get_by_id(self, payout_id: str, data: str | None):
         """
         Fetch the details of a specific `Payout` by Id.
 
         :param id: `Id` of fund account to fetch (Ex.`payout_jkHgLM02`).
+        :param data: Specific data to be fetched (Ex. `status`, `utr`, etc.).
+
+        ---
+        Note:
+        - If data is not provided, the complete payout details will be fetched.
+        - If data is not available, `None` will be returned.
 
         ---
         Reference: https://razorpay.com/docs/api/x/payouts/fetch-with-id
         """
-        return self.get(endpoint=payout_id)
+        response = self.get(endpoint=payout_id)
+
+        if not data:
+            return response
+
+        return response.get(data)
 
     def get_all(
         self, filters: dict | None = None, count: int | None = None
@@ -231,12 +242,12 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         """
 
         if payout_details.get("pay_instantaneously"):
-            return RAZORPAYX_PAYOUT_MODE.IMPS.value
+            return PAYOUT_MODE.IMPS.value
         else:
             if payout_details["amount"] > PAYMENT_MODE_THRESHOLD.NEFT.value:
-                return RAZORPAYX_PAYOUT_MODE.RTGS.value
+                return PAYOUT_MODE.RTGS.value
             else:
-                return RAZORPAYX_PAYOUT_MODE.NEFT.value
+                return PAYOUT_MODE.NEFT.value
 
     def _set_idempotency_key_header(self, json: dict):
         """
@@ -327,7 +338,7 @@ class RazorPayXPayout(BaseRazorPayXAPI):
                 return purpose
 
             return PAYOUT_PURPOSE_MAP.get(
-                payout_details["party_type"], RAZORPAYX_PAYOUT_PURPOSE.PAYOUT.value
+                payout_details["party_type"], PAYOUT_PURPOSE.PAYOUT.value
             )
 
         def get_reference_id() -> str:
@@ -348,7 +359,7 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         return {
             **self.default_payout_request,
             "amount": rupees_to_paisa(payout_details["amount"]),
-            "mode": payout_details.get("mode", RAZORPAYX_PAYOUT_MODE.NEFT.value),
+            "mode": payout_details.get("mode", PAYOUT_MODE.NEFT.value),
             "purpose": get_purpose(),
             "reference_id": get_reference_id(),
             "narration": payout_details.get("description", ""),
@@ -404,7 +415,7 @@ class RazorPayXPayout(BaseRazorPayXAPI):
 
         def get_account_details(account_type: str) -> dict:
             match account_type:
-                case RAZORPAYX_FUND_ACCOUNT_TYPE.BANK_ACCOUNT.value:
+                case FUND_ACCOUNT_TYPE.BANK_ACCOUNT.value:
                     return {
                         "bank_account": {
                             "name": payout_details["party_name"],
@@ -412,7 +423,7 @@ class RazorPayXPayout(BaseRazorPayXAPI):
                             "account_number": payout_details["party_bank_account_no"],
                         }
                     }
-                case RAZORPAYX_FUND_ACCOUNT_TYPE.VPA.value:
+                case FUND_ACCOUNT_TYPE.VPA.value:
                     return {
                         "vpa": {
                             "address": payout_details["party_upi_id"],
@@ -450,7 +461,7 @@ class RazorPayXPayout(BaseRazorPayXAPI):
 
         def get_type() -> str:
             return CONTACT_TYPE_MAP.get(
-                payout_details["party_type"], RAZORPAYX_CONTACT_TYPE.SELF.value
+                payout_details["party_type"], CONTACT_TYPE.SELF.value
             )
 
         if contact_id := payout_details.get("razorpayx_party_contact_id"):
@@ -506,7 +517,7 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         """
 
         def format_amount(amount: float) -> str:
-            return fmt_money(amount, currency=RAZORPAYX_PAYOUT_CURRENCY.INR.value)
+            return fmt_money(amount, currency=PAYOUT_CURRENCY.INR.value)
 
         source_amount = self._get_source_amount(json)
         payout_amount = paisa_to_rupees(json["amount"])
@@ -622,7 +633,7 @@ class RazorPayXCompositePayout(RazorPayXPayout):
         """
         payout_details["mode"] = self._get_bank_payment_mode(payout_details)
         payout_details["party_account_type"] = (  # noqa: RUF100
-            RAZORPAYX_FUND_ACCOUNT_TYPE.BANK_ACCOUNT.value
+            FUND_ACCOUNT_TYPE.BANK_ACCOUNT.value
         )
 
         return self._make_payout(payout_details)
@@ -657,8 +668,8 @@ class RazorPayXCompositePayout(RazorPayXPayout):
         ---
         Reference: https://razorpay.com/docs/api/x/payout-composite/create/vpa/
         """
-        payout_details["mode"] = RAZORPAYX_PAYOUT_MODE.UPI.value
-        payout_details["party_account_type"] = RAZORPAYX_FUND_ACCOUNT_TYPE.VPA.value
+        payout_details["mode"] = PAYOUT_MODE.UPI.value
+        payout_details["party_account_type"] = FUND_ACCOUNT_TYPE.VPA.value
 
         return self._make_payout(payout_details)
 
@@ -803,16 +814,27 @@ class RazorPayXLinkPayout(RazorPayXPayout):
         """
         return self._make_payout(payout_details)
 
-    def get_by_id(self, payout_link_id: str) -> dict:
+    def get_by_id(self, payout_link_id: str, data: str | None):
         """
         Fetch the details of a specific `Link Payout` by Id.
 
         :param id: `Id` of fund account to fetch (Ex.`poutlk_jkHgLM02`).
+        :param data: Specific data to be fetched (Ex. `status`, `utr`, etc.).
+
+        ---
+        Note:
+        - If data is not provided, the complete payout details will be fetched.
+        - If data is not available, `None` will be returned.
 
         ---
         Reference: https://razorpay.com/docs/api/x/payout-links/fetch-with-id
         """
-        return self.get(endpoint=payout_link_id)
+        response = self.get(endpoint=payout_link_id)
+
+        if not data:
+            return response
+
+        return response.get(data)
 
     def get_all(self, filters=None, count=None):
         """

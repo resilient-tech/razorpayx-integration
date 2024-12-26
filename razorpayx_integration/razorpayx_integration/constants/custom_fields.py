@@ -13,8 +13,8 @@ Note:
 from razorpayx_integration.constants import RAZORPAYX_INTEGRATION_DOCTYPE
 from razorpayx_integration.payment_utils.constants.roles import PERMISSION_LEVEL
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
-    RAZORPAYX_PAYOUT_STATUS,
-    RAZORPAYX_USER_PAYOUT_MODE,
+    PAYOUT_STATUS,
+    USER_PAYOUT_MODE,
 )
 
 CUSTOM_FIELDS = {
@@ -58,7 +58,7 @@ CUSTOM_FIELDS = {
             "label": "Pay Instantaneously",
             "fieldtype": "Check",
             "insert_after": "razorpayx_payment_mode",
-            "depends_on": f"eval: doc.razorpayx_account && doc.razorpayx_payment_mode === '{RAZORPAYX_USER_PAYOUT_MODE.BANK.value}'",
+            "depends_on": f"eval: doc.razorpayx_account && doc.razorpayx_payment_mode === '{USER_PAYOUT_MODE.BANK.value}'",
             "description": "Payment will be done with <strong>IMPS</strong> mode.",
             "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
             "no_copy": 1,
@@ -75,7 +75,7 @@ CUSTOM_FIELDS = {
             "fieldtype": "Data",
             "insert_after": "razorpayx_payment_cb",
             "depends_on": "eval: doc.razorpayx_account",
-            "mandatory_depends_on": f"eval:doc.make_online_payment && doc.razorpayx_account && doc.razorpayx_payment_mode === '{RAZORPAYX_USER_PAYOUT_MODE.LINK.value}'",
+            "mandatory_depends_on": f"eval:doc.make_online_payment && doc.razorpayx_account && doc.razorpayx_payment_mode === '{USER_PAYOUT_MODE.LINK.value}'",
             "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
             "no_copy": 1,
         },
@@ -84,8 +84,8 @@ CUSTOM_FIELDS = {
             "label": "RazorPayX Payment Status",
             "fieldtype": "Select",
             "insert_after": "razorpayx_payment_desc",
-            "options": RAZORPAYX_PAYOUT_STATUS.title_case_values(as_string=True),
-            "default": RAZORPAYX_PAYOUT_STATUS.NOT_INITIATED.value.title(),
+            "options": PAYOUT_STATUS.title_case_values(as_string=True),
+            "default": PAYOUT_STATUS.NOT_INITIATED.value.title(),
             "depends_on": "eval: doc.razorpayx_account && doc.creation",
             "read_only": 1,
             "allow_on_submit": 1,

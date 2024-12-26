@@ -1,6 +1,6 @@
 from razorpayx_integration.razorpayx_integration.apis.base import BaseRazorPayXAPI
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
-    RAZORPAYX_FUND_ACCOUNT_TYPE,
+    FUND_ACCOUNT_TYPE,
 )
 from razorpayx_integration.razorpayx_integration.utils.validation import (
     validate_razorpayx_fund_account_type,
@@ -41,7 +41,7 @@ class RazorPayXFundAccount(BaseRazorPayXAPI):
         """
         json = {
             "contact_id": contact_id,
-            "account_type": RAZORPAYX_FUND_ACCOUNT_TYPE.BANK_ACCOUNT,
+            "account_type": FUND_ACCOUNT_TYPE.BANK_ACCOUNT,
             "bank_account": {
                 "name": contact_name,
                 "ifsc": ifsc_code,
@@ -61,7 +61,7 @@ class RazorPayXFundAccount(BaseRazorPayXAPI):
         """
         json = {
             "contact_id": contact_id,
-            "account_type": RAZORPAYX_FUND_ACCOUNT_TYPE.VPA,
+            "account_type": FUND_ACCOUNT_TYPE.VPA,
             "vpa": {"address": vpa},
         }
         return self.post(json=json)

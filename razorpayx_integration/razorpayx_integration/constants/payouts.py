@@ -1,34 +1,30 @@
 from razorpayx_integration.payment_utils.constants.enums import BaseEnum
 
-# TODO: ? can remove prefix `RAZORPAYX_` from all constants
-# TODO: ? what if there are custom purpose and custom contact type? No need for validation of purpose?? Or create doctype for purpose?
-
-
 ### REGEX ###
-
 DESCRIPTION_REGEX = r"^[a-zA-Z0-9 ]{1,30}$"
 
 
-class RAZORPAYX_CONTACT_TYPE(BaseEnum):
+### ENUMS ###
+class CONTACT_TYPE(BaseEnum):
     EMPLOYEE = "employee"
     SUPPLIER = "vendor"
     CUSTOMER = "customer"
     SELF = "self"
 
 
-class RAZORPAYX_FUND_ACCOUNT_TYPE(BaseEnum):
+class FUND_ACCOUNT_TYPE(BaseEnum):
     BANK_ACCOUNT = "bank_account"
     VPA = "vpa"
     # CARD = "card" # ! Not supported currently
 
 
-class RAZORPAYX_USER_PAYOUT_MODE(BaseEnum):
+class USER_PAYOUT_MODE(BaseEnum):
     BANK = "NEFT/RTGS"  # NEFT/RTGS will be decided based on the amount at payout time
     UPI = "UPI"
     LINK = "Link"
 
 
-class RAZORPAYX_PAYOUT_MODE(BaseEnum):
+class PAYOUT_MODE(BaseEnum):
     NEFT = "NEFT"
     RTGS = "RTGS"
     IMPS = "IMPS"
@@ -37,11 +33,11 @@ class RAZORPAYX_PAYOUT_MODE(BaseEnum):
     CARD = "card"
 
 
-class RAZORPAYX_PAYOUT_CURRENCY(BaseEnum):
+class PAYOUT_CURRENCY(BaseEnum):
     INR = "INR"
 
 
-class RAZORPAYX_PAYOUT_PURPOSE(BaseEnum):
+class PAYOUT_PURPOSE(BaseEnum):
     REFUND = "refund"
     CASH_BACK = "cashback"
     PAYOUT = "payout"
@@ -50,7 +46,7 @@ class RAZORPAYX_PAYOUT_PURPOSE(BaseEnum):
     VENDOR_BILL = "vendor bill"
 
 
-class RAZORPAYX_PAYOUT_STATUS(BaseEnum):
+class PAYOUT_STATUS(BaseEnum):
     """
     Reference:
     - https://razorpay.com/docs/x/payouts/states-life-cycle/#payout-states
@@ -71,7 +67,7 @@ class RAZORPAYX_PAYOUT_STATUS(BaseEnum):
     REVERSED = "reversed"
 
 
-class RAZORPAYX_PAYOUT_LINK_STATUS(BaseEnum):
+class PAYOUT_LINK_STATUS(BaseEnum):
     """
     Reference:
     - https://razorpay.com/docs/x/payout-links/life-cycle/
@@ -86,35 +82,45 @@ class RAZORPAYX_PAYOUT_LINK_STATUS(BaseEnum):
     EXPIRED = "expired"
 
 
-PAYOUT_ORDERS = {
-    RAZORPAYX_PAYOUT_STATUS.NOT_INITIATED.value: 1,  # custom
-    RAZORPAYX_PAYOUT_STATUS.PENDING.value: 2,
-    RAZORPAYX_PAYOUT_STATUS.QUEUED.value: 3,
-    RAZORPAYX_PAYOUT_STATUS.PROCESSING.value: 4,
-    RAZORPAYX_PAYOUT_STATUS.PROCESSED.value: 5,
-    RAZORPAYX_PAYOUT_STATUS.CANCELLED.value: 5,
-    RAZORPAYX_PAYOUT_STATUS.FAILED.value: 5,
-    RAZORPAYX_PAYOUT_STATUS.REJECTED.value: 5,
-    RAZORPAYX_PAYOUT_STATUS.REVERSED.value: 6,
-}
-
-
-# if not map use `RAZORPAYX_PAYOUT_PURPOSE.PAYOUT`
-PAYOUT_PURPOSE_MAP = {
-    "Supplier": RAZORPAYX_PAYOUT_PURPOSE.VENDOR_BILL.value,
-    "Customer": RAZORPAYX_PAYOUT_PURPOSE.UTILITY_BILL.value,
-    "Employee": RAZORPAYX_PAYOUT_PURPOSE.SALARY.value,
-}
-
-CONTACT_TYPE_MAP = {
-    "Supplier": RAZORPAYX_CONTACT_TYPE.SUPPLIER.value,
-    "Customer": RAZORPAYX_CONTACT_TYPE.CUSTOMER.value,
-    "Employee": RAZORPAYX_CONTACT_TYPE.EMPLOYEE.value,
-}
-
-
 class PAYMENT_MODE_THRESHOLD(BaseEnum):
     UPI = 1_00_000  # 1 Lakh INR
     NEFT = 2_00_000  # 2 Lakh INR
     IMPS = 5_00_000  # 5 Lakh INR
     RTGS = "INFINITE"  # No Limit
+
+
+### MAPPINGS ###
+PAYOUT_ORDERS = {
+    PAYOUT_STATUS.NOT_INITIATED.value: 1,  # custom
+    PAYOUT_STATUS.PENDING.value: 2,
+    PAYOUT_STATUS.SCHEDULED.value: 2,
+    PAYOUT_STATUS.QUEUED.value: 3,
+    PAYOUT_STATUS.PROCESSING.value: 4,
+    PAYOUT_STATUS.PROCESSED.value: 5,
+    PAYOUT_STATUS.CANCELLED.value: 5,
+    PAYOUT_STATUS.FAILED.value: 5,
+    PAYOUT_STATUS.REJECTED.value: 5,
+    PAYOUT_STATUS.REVERSED.value: 6,
+}
+
+PAYOUT_LINK_ORDERS = {
+    PAYOUT_LINK_STATUS.PENDING.value: 1,
+    PAYOUT_LINK_STATUS.ISSUED.value: 2,
+    PAYOUT_LINK_STATUS.PROCESSING.value: 3,
+    PAYOUT_LINK_STATUS.PROCESSED.value: 4,
+    PAYOUT_LINK_STATUS.CANCELLED.value: 5,
+    PAYOUT_LINK_STATUS.REJECTED.value: 5,
+    PAYOUT_LINK_STATUS.EXPIRED.value: 5,
+}
+
+PAYOUT_PURPOSE_MAP = {
+    "Supplier": PAYOUT_PURPOSE.VENDOR_BILL.value,
+    "Customer": PAYOUT_PURPOSE.UTILITY_BILL.value,
+    "Employee": PAYOUT_PURPOSE.SALARY.value,
+}
+
+CONTACT_TYPE_MAP = {
+    "Supplier": CONTACT_TYPE.SUPPLIER.value,
+    "Customer": CONTACT_TYPE.CUSTOMER.value,
+    "Employee": CONTACT_TYPE.EMPLOYEE.value,
+}

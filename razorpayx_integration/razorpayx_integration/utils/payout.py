@@ -13,8 +13,8 @@ from razorpayx_integration.razorpayx_integration.apis.payout import (
     RazorPayXPayout,
 )
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
-    RAZORPAYX_PAYOUT_STATUS,
-    RAZORPAYX_USER_PAYOUT_MODE,
+    PAYOUT_STATUS,
+    USER_PAYOUT_MODE,
 )
 from razorpayx_integration.razorpayx_integration.utils.validation import (
     validate_razorpayx_user_payout_mode,
@@ -267,11 +267,11 @@ class PayoutWithPaymentEntry(PayoutWithDocType):
 
     def _get_method_for_payout(self) -> str:
         match self.doc.razorpayx_payment_mode:
-            case RAZORPAYX_USER_PAYOUT_MODE.BANK.value:
+            case USER_PAYOUT_MODE.BANK.value:
                 return PAYOUT_METHOD.COMPOSITE_BANK_ACCOUNT.value
-            case RAZORPAYX_USER_PAYOUT_MODE.UPI.value:
+            case USER_PAYOUT_MODE.UPI.value:
                 return PAYOUT_METHOD.COMPOSITE_UPI.value
-            case RAZORPAYX_USER_PAYOUT_MODE.LINK.value:
+            case USER_PAYOUT_MODE.LINK.value:
                 return PAYOUT_METHOD.LINK_CONTACT_DETAILS.value
 
     def _get_base_payout_details(self) -> dict:
@@ -382,7 +382,7 @@ class PayoutWithPaymentEntry(PayoutWithDocType):
 
         if (
             self.doc.razorpayx_payment_status
-            != RAZORPAYX_PAYOUT_STATUS.NOT_INITIATED.value.title()
+            != PAYOUT_STATUS.NOT_INITIATED.value.title()
         ):
             frappe.throw(
                 msg=_("Payment Entry {0} is already initiated for payment.").format(

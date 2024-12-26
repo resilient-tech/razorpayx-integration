@@ -10,7 +10,7 @@ from frappe import _
 
 from razorpayx_integration.constants import RAZORPAYX, RAZORPAYX_INTEGRATION_DOCTYPE
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
-    RAZORPAYX_USER_PAYOUT_MODE,
+    USER_PAYOUT_MODE,
 )
 from razorpayx_integration.razorpayx_integration.utils.payout import (
     PayoutWithPaymentEntry,
@@ -60,7 +60,7 @@ def validate_mandatory_fields_for_payment(doc):
 def validate_payout_mode(doc):
     validate_razorpayx_user_payout_mode(doc.razorpayx_payment_mode)
 
-    if doc.razorpayx_payment_mode == RAZORPAYX_USER_PAYOUT_MODE.BANK.value:
+    if doc.razorpayx_payment_mode == USER_PAYOUT_MODE.BANK.value:
         # TODO: also fetch `IFSC` and `Account Number` and check
         if not doc.party_bank_account:
             frappe.throw(
@@ -76,7 +76,7 @@ def validate_payout_mode(doc):
                 exc=frappe.MandatoryError,
             )
 
-    elif doc.razorpayx_payment_mode == RAZORPAYX_USER_PAYOUT_MODE.LINK.value:
+    elif doc.razorpayx_payment_mode == USER_PAYOUT_MODE.LINK.value:
         if not doc.contact_mobile or not doc.contact_email:
             frappe.throw(
                 msg=_(
@@ -93,7 +93,7 @@ def validate_payout_mode(doc):
                 exc=frappe.MandatoryError,
             )
 
-    elif doc.razorpayx_payment_mode == RAZORPAYX_USER_PAYOUT_MODE.UPI.value:
+    elif doc.razorpayx_payment_mode == USER_PAYOUT_MODE.UPI.value:
         if not doc.party_upi_id:
             frappe.throw(
                 msg=_("Party's UPI ID is mandatory to make payment."),
@@ -129,7 +129,7 @@ def validate_razorpayx_account(doc):
 
 
 def validate_upi_id(doc):
-    if doc.razorpayx_payment_mode != RAZORPAYX_USER_PAYOUT_MODE.UPI.value:
+    if doc.razorpayx_payment_mode != USER_PAYOUT_MODE.UPI.value:
         return
 
     associated_upi_id = frappe.get_value(
