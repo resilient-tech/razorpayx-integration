@@ -54,6 +54,14 @@ class RazorPayXWebhook:
         Initialize the payload data to be used in the webhook processing.
 
         Caution: ⚠️ Don't forget to call `super().initialize_payload_data()` in sub class.
+
+        ---
+        Sample Payloads:
+
+        - Payout: https://razorpay.com/docs/webhooks/payloads/x/payouts/
+        - Payout Link: https://razorpay.com/docs/webhooks/payloads/x/payout-links/
+        - Transaction: https://razorpay.com/docs/webhooks/payloads/x/transactions/
+        - Account Validation: https://razorpay.com/docs/webhooks/payloads/x/account-validation/
         """
         self.event = self.payload["event"]
         self.event_type = self.event.split(".")[0]
@@ -147,6 +155,24 @@ class RazorPayXWebhook:
 
 
 class PayoutWebhook(RazorPayXWebhook):
+    """
+    Processor for RazorpayX Payout Webhook.
+
+    - Update the Payment Entry based on the webhook status.
+
+    ---
+    Supported webhook events(8):
+
+    - payout.pending
+    - payout.processing
+    - payout.queued
+    - payout.initiated
+    - payout.processed
+    - payout.reversed
+    - payout.failed
+    - payout.updated
+    """
+
     ### APIs ###
     def process_webhook(
         self, payload: dict, integration_request: str, account_id: str | None = None
@@ -203,21 +229,10 @@ class PayoutWebhook(RazorPayXWebhook):
         - Update the UTR Number.
         - If failed, cancel the Payment Entry and Payout Link.
         """
-
-        def get_new_remarks() -> str:
-            return self.source_doc.remarks.replace(
-                self.source_doc.reference_no, self.utr
-            )
-
         values = {
             "razorpayx_payment_status": self.status.title(),
+            **self.get_updated_reference(),
         }
-
-        if self.utr:
-            values["reference_no"] = self.utr
-
-            if self.source_doc.remarks:
-                values["remarks"] = get_new_remarks()
 
         if self.id:
             values["razorpayx_payout_id"] = self.id
@@ -227,6 +242,24 @@ class PayoutWebhook(RazorPayXWebhook):
         if self.should_cancel_payment_entry() and self.cancel_payout_link():
             self.source_doc.flags.__canceled_by_rpx_webhook = True
             self.source_doc.cancel()
+
+    def get_updated_reference(self) -> dict:
+        """
+        Get PE's `reference_no` and `remarks` based on the UTR.
+        """
+
+        def get_new_remarks() -> str:
+            return self.source_doc.remarks.replace(
+                self.source_doc.reference_no, self.utr
+            )
+
+        if not self.utr:
+            return {}
+
+        return {
+            "reference_no": self.utr,
+            "remarks": get_new_remarks(),
+        }
 
     def cancel_payout_link(self) -> bool:
         """
@@ -276,37 +309,20 @@ class PayoutWebhook(RazorPayXWebhook):
             return True
 
 
-class PayoutLinkWebhook(RazorPayXWebhook):
-    ### APIs ###
-    def process_webhook(
-        self, payload: dict, integration_request: str, account_id: str | None = None
-    ):
-        """
-        Process RazorpayX Payout Link Webhook.
+class PayoutLinkWebhook(PayoutWebhook):
+    """
+    Processor for RazorpayX Payout Link Webhook.
 
-        :param payload: Webhook payload data.
-        :param integration_request: Integration Request name.
-        """
-        super().process_webhook(
-            payload=payload,
-            integration_request=integration_request,
-            account_id=account_id,
-        )
+    - Update the Payment Entry based on the webhook status.
 
-        if not self.is_webhook_processable():
-            return
+    ---
+    Supported webhook events(3):
 
-        self.source_doc: PaymentEntry = self.get_source_doc()
-
-        if not self.source_doc or not self.is_order_maintained():
-            return
-
-        self.update_payment_entry()
-
+    - payout_link.cancelled
+    - payout_link.expired
+    - payout_link.rejected
+    """
     ### UTILITIES ###
-    def is_webhook_processable(self) -> bool:
-        return bool(self.source_doctype == "Payment Entry" and self.source_docname)
-
     def is_order_maintained(self) -> bool:
         """
         Check if the order maintained or not.
@@ -319,30 +335,19 @@ class PayoutLinkWebhook(RazorPayXWebhook):
         """
         Update Payment Entry based on the webhook status.
 
-        - Update the status of the Payment Entry.
         - Update the UTR Number.
         - If failed, cancel the Payment Entry.
+            - Change Payment Status to `Cancelled`.
         """
 
-        def get_new_remarks() -> str:
-            return self.source_doc.remarks.replace(
-                self.source_doc.reference_no, self.utr
-            )
-
-        values = {}
+        values = self.get_updated_reference()
 
         cancel_pe = self.should_cancel_payment_entry()
 
         if cancel_pe:
             values["razorpayx_payment_status"] = PAYOUT_STATUS.CANCELLED.value
 
-        if self.utr:
-            values["reference_no"] = self.utr
-
-            if self.source_doc.remarks:
-                values["remarks"] = get_new_remarks()
-
-        if not self.source_doc.razorpayx_payout_link_id and self.id:
+        if self.id:
             values["razorpayx_payout_link_id"] = self.id
 
         self.source_doc.db_set(values, notify=True)
@@ -370,7 +375,7 @@ class PayoutLinkWebhook(RazorPayXWebhook):
 # Handle only 2: `reversal` and `payout_failed`
 # Ref1: http://razorpayx.localhost:8001/app/integration-request/5lgv3tbdn6 (reversal)
 # ref2: http://razorpayx.localhost:8001/app/integration-request/u7k9okob4m (created)
-class TransactionWebhook(RazorPayXWebhook):
+class TransactionWebhook(PayoutWebhook):
     pass
 
 
