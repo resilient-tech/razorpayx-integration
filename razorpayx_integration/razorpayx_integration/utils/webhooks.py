@@ -129,6 +129,22 @@ class RazorPayXWebhook:
             self.source_doctype = self.notes.get("source_doctype", "")
             self.source_docname = self.notes.get("source_docname", "")
 
+    def get_source_doc(self):
+        """
+        Get the source doc.
+
+        Also set the source doc if not set.
+
+        Note: Call this manually in the sub class if needed, because the source doc
+        is not set in the `setup_webhook_payload` method.
+        """
+        if not self.source_doctype or not self.source_docname:
+            return
+
+        self.source_doc = frappe.get_doc(self.source_doctype, self.source_docname)
+
+        return self.source_doc
+
     ### APIs ###
     def process_webhook(
         self, payload: dict, integration_request: str, account_id: str | None = None
@@ -153,14 +169,6 @@ class RazorPayXWebhook:
         self.setup_webhook_payload()
 
     ### UTILITIES ###
-    def get_source_doc(self):
-        """
-        Get the source doc.
-        """
-        if not self.source_doctype or not self.source_docname:
-            return
-
-        return frappe.get_doc(self.source_doctype, self.source_docname)
 
     def is_order_maintained(self) -> bool:
         """
@@ -230,13 +238,12 @@ class PayoutWebhook(RazorPayXWebhook):
 
         Note: Source doc (Payment Entry) is set here.
         """
-        if self.source_doctype == "Payment Entry" and self.source_docname:
-            self.source_doc: PaymentEntry = self.get_source_doc()
-
-            if self.is_order_maintained():
-                return True
-
-        return False
+        return (
+            self.source_doctype == "Payment Entry"
+            and self.source_docname
+            and self.get_source_doc()
+            and self.is_order_maintained()
+        )
 
     def is_order_maintained(self) -> bool:
         """
@@ -252,6 +259,7 @@ class PayoutWebhook(RazorPayXWebhook):
             return False
 
         # If the current webhook status's order is less than or equal to the PE status, then order not maintained.
+
         if PAYOUT_ORDERS[self.status] <= PAYOUT_ORDERS[pe_status]:
             return False
 
@@ -503,7 +511,7 @@ class TransactionWebhook(PayoutWebhook):
 
     def should_cancel_payment_entry(self):
         return (
-            self.source_doc.docstatus == 2
+            self.source_doc.docstatus == 1
             and self.status
             and self.status == PAYOUT_STATUS.REVERSED.value
         )
@@ -567,7 +575,7 @@ def razorpayx_webhook_listener():
     payload = json.loads(row_payload)
     request_headers = str(frappe.request.headers)
 
-    validate_webhook_signature(
+    account_id = validate_webhook_signature(
         row_payload, signature, payload=payload, request_headers=request_headers
     )
 
@@ -598,35 +606,39 @@ def razorpayx_webhook_listener():
     #     event=event,
     #     payload=payload,
     #     integration_request=ir.name,
+    #     account_id=account_id,
     # )
 
     # TODO: remove this line after testing
-    process_razorpayx_webhook(event=event, payload=payload, integration_request=ir.name)
+    process_razorpayx_webhook(event, payload, ir.name, account_id)
 
 
-def process_razorpayx_webhook(event: str, payload: dict, integration_request: str):
+def process_razorpayx_webhook(
+    event: str, payload: dict, integration_request: str, account_id: str | None = None
+):
     """
     Process the RazorpayX Webhook.
 
     :param event: Webhook event.
     :param payload: Webhook payload data.
     :param integration_request: Integration Request docname.
+    :param account_id: RazorpayX Account ID (Business ID).
+        - Must be start with `acc_`.
     """
 
-    def get_webhook_processor() -> (
-        PayoutWebhook | PayoutLinkWebhook | TransactionWebhook | AccountWebhook
-    ):
-        """
-        Get the webhook processor based on the event type.
-        """
-        event_type = event.split(".")[0]
-        return WEBHOOK_EVENT_TYPES_MAPPER.get(event_type)()
+    event_type = event.split(".")[0]
 
-    get_webhook_processor().process_webhook(
-        payload=payload,
-        integration_request=integration_request,
-        account_id=payload.get("account_id"),
-    )
+    # To make it readable
+    if event_type == EVENTS_TYPE.PAYOUT.value:
+        processor = PayoutWebhook()
+    elif event_type == EVENTS_TYPE.PAYOUT_LINK.value:
+        processor = PayoutLinkWebhook()
+    elif event_type == EVENTS_TYPE.TRANSACTION.value:
+        processor = TransactionWebhook()
+    else:
+        processor = AccountWebhook()
+
+    processor.process_webhook(payload, integration_request, account_id)
 
 
 ###### UTILITIES ######
@@ -636,7 +648,7 @@ def validate_webhook_signature(
     *,
     payload: dict | None = None,
     request_headers: str | None = None,
-):
+) -> str | None:
     """
     Validate the RazorpayX Webhook Signature.
 
@@ -645,6 +657,7 @@ def validate_webhook_signature(
     :param payload: Parsed payload data.
     :param signature: Header signature.
 
+    :returns: RazorpayX Account ID.
     """
     if not payload:
         payload = json.loads(row_payload)
@@ -652,7 +665,8 @@ def validate_webhook_signature(
     if not request_headers:
         request_headers = str(frappe.request.headers)
 
-    webhook_secret = get_webhook_secret(payload.get("account_id"))
+    account_id = payload.get("account_id")
+    webhook_secret = get_webhook_secret(account_id)
 
     try:
         expected_signature = hmac(
@@ -662,13 +676,14 @@ def validate_webhook_signature(
         if signature != expected_signature:
             raise Exception
 
+        return account_id
     except Exception:
         frappe.log_error(
             title="Invalid RazorPayX Webhook Signature",
             message=f"Webhook Payload:\n{frappe.as_json(payload,indent=2)}\n\n---\n\nRequest Headers:\n{request_headers}",
         )
 
-        frappe.throw(_("Invalid RazorPayX Webhook Signature"))
+        frappe.throw(msg=_("Invalid RazorPayX Webhook Signature"))
 
 
 def get_webhook_secret(account_id: str) -> str | None:
