@@ -18,11 +18,6 @@ from razorpayx_integration.razorpayx_integration.doctype.razorpayx_integration_s
     RazorPayXIntegrationSetting,
 )
 
-# TODO: logs for API calls.
-# TODO: mask sensitive data in logs.
-# TODO: complete other todo's
-# TODO: add docs
-
 RAZORPAYX_BASE_API_URL = "https://api.razorpay.com/v1/"
 
 
@@ -61,11 +56,10 @@ class BaseRazorPayXAPI:
 
         self.setup(*args, **kwargs)
 
-    # ? How to validate razorpayx_account's API credential
-    # ? can be add to utility
     def authenticate_razorpayx_account(self):
         """
-        Check account is enabled or not?\n
+        Check account is enabled or not?
+
         Validate RazorPayX API credential `Id` and `Secret` for respective account.
         """
         if self.razorpayx_account.disabled:
@@ -82,11 +76,18 @@ class BaseRazorPayXAPI:
                 title=_("API Credentials Are Missing"),
             )
 
+        if not self.razorpayx_account.webhook_secret:
+            frappe.msgprint(
+                msg=_(
+                    "Webhook Secret is missing! <br>You will not receive any updates!"
+                ),
+                indicator="yellow",
+                alert=True,
+            )
+
     def setup(self, *args, **kwargs):
         """
         Override this method to setup API specific configurations.
-
-        Caution: ⚠️ Don't forget to call `super().setup()` in sub class.
         """
         pass
 
@@ -139,6 +140,7 @@ class BaseRazorPayXAPI:
         """
         return self._make_request(SUPPORTED_HTTP_METHOD.PATCH.value, *args, **kwargs)
 
+    # TODO: should add `skip` in filters (Handle pagination + if not given fetch all) (Change in sub class)
     def get_all(
         self, filters: dict | None = None, count: int | None = None
     ) -> list[dict]:
@@ -148,6 +150,8 @@ class BaseRazorPayXAPI:
         :param filters: Filters for fetching filtered response.
         :param count: Total number of item to be fetched.If not given fetches all.
         """
+        MAX_LIMIT = 100
+
         if filters:
             self._clean_request_filters(filters)
             self._set_epoch_time_for_date_filters(filters)
@@ -162,7 +166,7 @@ class BaseRazorPayXAPI:
                 title=_("Invalid Count To Fetch Data"),
             )
 
-        if count and count <= 100:
+        if count and count <= MAX_LIMIT:
             filters["count"] = count
             return self._fetch(filters)
 
@@ -172,7 +176,7 @@ class BaseRazorPayXAPI:
             FETCH_ALL_ITEMS = False
 
         result = []
-        filters["count"] = 100  # max limit is 100
+        filters["count"] = MAX_LIMIT
         filters["skip"] = 0
 
         while True:
@@ -183,7 +187,7 @@ class BaseRazorPayXAPI:
             else:
                 break
 
-            if len(items) < 100:
+            if len(items) < MAX_LIMIT:
                 break
 
             if not FETCH_ALL_ITEMS:
@@ -191,7 +195,7 @@ class BaseRazorPayXAPI:
                 if count <= 0:
                     break
 
-            filters["skip"] += 100
+            filters["skip"] += MAX_LIMIT
 
         return result
 
@@ -204,7 +208,8 @@ class BaseRazorPayXAPI:
         json: dict | None = None,
     ):
         """
-        Base for making HTTP request.\n
+        Base for making HTTP request.
+
         Process headers,params and data then make request and return processed response.
         """
         method = method.upper()
@@ -236,7 +241,6 @@ class BaseRazorPayXAPI:
         except Exception as e:
             raise e
 
-    # todo:  also accept endpoint,headers
     def _fetch(self, params: dict) -> list:
         """
         Fetches `items` from the API response based on the given parameters.
@@ -277,7 +281,9 @@ class BaseRazorPayXAPI:
         """
         Handle failed API response from RazorPayX.
 
+        ---
         Error response format:
+        ```py
         {
             "error": {
                 "code": "SERVER_ERROR",
@@ -285,9 +291,13 @@ class BaseRazorPayXAPI:
                 "source": "NA",
                 "step": "NA",
                 "reason": "NA",
-                "metadata": {}
-            }
+                "metadata": {},
+            },
         }
+        ```
+
+        ---
+        Reference: https://razorpay.com/docs/errors/#sample-code
         """
         error_msg = "There is some error in <strong>RazorPayX</strong>"
 
@@ -300,5 +310,5 @@ class BaseRazorPayXAPI:
 
         frappe.throw(
             msg=_(error_msg),
-            title=_("{0} API Failed").format(RAZORPAYX),
+            title=_("RazorPayX API Failed"),
         )
