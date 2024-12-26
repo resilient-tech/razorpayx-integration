@@ -11,6 +11,7 @@ from razorpayx_integration.constants import (
 )
 from razorpayx_integration.payment_utils.constants.enums import BaseEnum
 from razorpayx_integration.payment_utils.utils import (
+    enqueue_integration_request,
     get_end_of_day_epoch,
     get_start_of_day_epoch,
 )
@@ -53,6 +54,8 @@ class BaseRazorPayXAPI:
             self.razorpayx_account.get_password("key_secret"),
         )
         self.default_headers = {}
+        self.default_log_values = {}  # Show value in Integration Request Log
+        self.sensitive_infos = ()  # Sensitive info to mask in Integration Request Log
 
         self.setup(*args, **kwargs)
 
@@ -226,20 +229,60 @@ class BaseRazorPayXAPI:
             auth=self.auth,
         )
 
+        # preparing log for Integration Request
+        ir_log = frappe._dict(
+            **self.default_log_values,
+            integration_request_service=f"RazorPayX Service - {self.BASE_PATH.title()}",
+            url=request_args.url,
+            data=request_args.params,
+            request_headers=request_args.headers.copy(),
+        )
+
         if method in UNSAFE_HTTP_METHODS and json:
             request_args.json = json
 
+            copied_json = json.copy()
+
+            if not request_args.params:
+                ir_log.data = copied_json
+            else:
+                ir_log.data = {
+                    "params": request_args.params,
+                    "body": copied_json,
+                }
+
+        response_json = None
+
         try:
+            self._before_request(request_args)
+
             response = requests.request(method, **request_args)
             response_json = response.json(object_hook=frappe._dict)
 
             if response.status_code >= 400:
                 self._handle_failed_api_response(response_json)
 
+            # Raise HTTPError for other HTTP codes
+            response.raise_for_status()
+
             return response_json
 
         except Exception as e:
+            ir_log.error = str(e)
             raise e
+        finally:
+            if response_json:
+                ir_log.output = response_json.copy()
+
+            self._mask_sensitive_info(ir_log)
+
+            enqueue_integration_request(**ir_log)
+
+    def _before_request(self, request_args):
+        """
+        Override in sub class to perform any operation before making the request.
+        """
+        return
 
     def _fetch(self, params: dict) -> list:
         """
@@ -276,6 +319,12 @@ class BaseRazorPayXAPI:
         """
         pass
 
+    def _mask_sensitive_info(self, ir_log: dict):
+        """
+        Mask sensitive information in the Integration Request Log.
+        """
+        pass
+
     # TODO:  handle special(error) http code (specially payout process!!)
     def _handle_failed_api_response(self, response_json: dict | None = None):
         """
@@ -306,7 +355,7 @@ class BaseRazorPayXAPI:
                 response_json.get("message")
                 or response_json.get("error", {}).get("description")
                 or error_msg
-            ).title()
+            )
 
         frappe.throw(
             msg=_(error_msg),
