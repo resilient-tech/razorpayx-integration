@@ -56,7 +56,7 @@ class TRANSACTION_EVENT(BaseEnum):
     Reference: https://razorpay.com/docs/webhooks/payloads/x/transactions/
     """
 
-    CREATED = "transaction.created"  # ! NOTE: currently not supported
+    CREATED = "transaction.created"
 
 
 SUPPORTED_EVENTS = (
@@ -73,6 +73,8 @@ SUPPORTED_EVENTS = (
     PAYOUT_LINK_EVENT.CANCELLED.value,
     PAYOUT_LINK_EVENT.REJECTED.value,
     PAYOUT_LINK_EVENT.EXPIRED.value,
+    ## TRANSACTION ##
+    TRANSACTION_EVENT.CREATED.value,
 )
 
 # TODO: How to create Payment Entry without its data?

@@ -10,6 +10,7 @@ from frappe.utils.password import get_decrypted_password
 from razorpayx_integration.constants import (
     RAZORPAYX_INTEGRATION_DOCTYPE,
 )
+from razorpayx_integration.payment_utils.constants.enums import BaseEnum
 from razorpayx_integration.payment_utils.constants.property_setters import (
     DEFAULT_REFERENCE_NO,
 )
@@ -44,47 +45,86 @@ from razorpayx_integration.razorpayx_integration.doctype.razorpayx_integration_s
 class RazorPayXWebhook:
     """
     Base class for RazorpayX Webhook Processor.
-
-    Note: This class should be inherited by the webhook processor classes.
     """
 
     ### SETUP ###
-    def initialize_payload_data(self):
+    def __init__(self):
         """
-        Initialize the payload data to be used in the webhook processing.
-
-        Caution: ⚠️ Don't forget to call `super().initialize_payload_data()` in sub class.
-
-        ---
-        Sample Payloads:
-
-        - Payout: https://razorpay.com/docs/webhooks/payloads/x/payouts/
-        - Payout Link: https://razorpay.com/docs/webhooks/payloads/x/payout-links/
-        - Transaction: https://razorpay.com/docs/webhooks/payloads/x/transactions/
-        - Account Validation: https://razorpay.com/docs/webhooks/payloads/x/account-validation/
+        Initialize the attributes.
         """
-        self.event = self.payload["event"]
-        self.event_type = self.event.split(".")[0]
+        self.payload = {}
+        self.integration_request = ""
+        self.account_id = ""
+        self.razorpayx_account = ""
 
-        self.entity = (
-            self.payload.get("payload", {}).get(self.event_type, {}).get("entity", {})
-        )
+        self.event = ""
+        self.event_type = ""
 
-        ### Entity data related to payout or link ###
+        self.payload_entity = {}
         self.status = ""
         self.utr = ""
         self.id = ""
 
-        if self.entity:
-            self.status = self.entity.get("status")
-            self.utr = self.entity.get("utr")
-            self.id = self.entity.get("id")
-
-        ### Source doc data ###
         self.source_docname = ""
         self.source_doctype = ""
+        self.source_doc = None  # Set manually in the sub class if needed.
+        self.notes = {}
 
-        self.notes = self.entity.get("notes", {})
+    def setup_webhook_payload(self):
+        """
+        Setup the webhook payload data to be used in the webhook processing.
+
+        Note: 🟢 Override this method in the sub class for custom payload setup.
+        ---
+        Sample Payloads:
+
+        - Payout: https://razorpay.com/docs/webhooks/payloads/x/payouts/#payout-pending
+        - Payout Link: https://razorpay.com/docs/webhooks/payloads/x/payout-links/#payout-linkrejected
+        - Transaction: https://razorpay.com/docs/webhooks/payloads/x/transactions/#transaction-created
+        - Account Validation: https://razorpay.com/docs/webhooks/payloads/x/account-validation/#fund-accountvalidationcompleted
+        """
+        if self.payload_entity:
+            self.status = self.payload_entity.get("status")
+            self.utr = self.payload_entity.get("utr")
+            self.id = self.payload_entity.get("id")
+
+        self.notes = self.payload_entity.get("notes", {})
+        self.set_source_doctype_and_docname()
+
+    def set_common_payload_attributes(self):
+        """
+        Set the common payload attributes.
+
+        Attributes which are common in all webhook payloads.
+
+        ---
+        Common Attributes:
+        - `event`
+        - `event_type`
+        - `payload_entity`
+        """
+        self.event = self.payload["event"]
+        self.event_type = self.event.split(".")[0]
+
+        self.payload_entity = (
+            self.payload.get("payload", {}).get(self.event_type, {}).get("entity", {})
+        )
+
+    def set_razorpayx_account(self):
+        """
+        Set the RazorpayX Account Docname using the `account_id`.
+        """
+        if not self.account_id:
+            self.account_id = self.payload.get("account_id")
+
+        self.razorpayx_account = get_account_integration_name(self.account_id)
+
+    def set_source_doctype_and_docname(self):
+        """
+        Set the source doctype and docname.
+
+        Fetching from `notes`.
+        """
         if self.notes and isinstance(self.notes, dict):
             self.source_doctype = self.notes.get("source_doctype", "")
             self.source_docname = self.notes.get("source_docname", "")
@@ -102,19 +142,15 @@ class RazorPayXWebhook:
 
         ---
         Note:
-        - This method should be overridden in the sub class.
         - Don't forget to call `super().process_webhook()` in the sub class.
         """
         self.payload = payload
         self.integration_request = integration_request
         self.account_id = account_id
 
-        if not self.account_id:
-            self.account_id = self.payload.get("account_id")
-
-        self.razorpayx_account = get_account_integration_name(self.account_id)
-
-        self.initialize_payload_data()
+        self.set_razorpayx_account()  # Mandatory
+        self.set_common_payload_attributes()  # Mandatory
+        self.setup_webhook_payload()
 
     ### UTILITIES ###
     def get_source_doc(self):
@@ -133,14 +169,6 @@ class RazorPayXWebhook:
         Note: This method should be overridden in the sub class.
         """
         pass
-
-    def is_webhook_processable(self) -> bool:
-        """
-        Check if the webhook is processable or not.
-
-        Only process the webhook if the source docname and source doctype is available.
-        """
-        return bool(self.source_doctype and self.source_docname)
 
     def get_ir_formlink(self, html: bool = False) -> str:
         """
@@ -171,6 +199,9 @@ class PayoutWebhook(RazorPayXWebhook):
     - payout.reversed
     - payout.failed
     - payout.updated
+
+    ---
+    Reference: https://razorpay.com/docs/webhooks/payloads/x/payouts/
     """
 
     ### APIs ###
@@ -190,25 +221,30 @@ class PayoutWebhook(RazorPayXWebhook):
             account_id=account_id,
         )
 
-        if not self.is_webhook_processable():
-            return
-
-        self.source_doc: PaymentEntry = self.get_source_doc()
-
-        if not self.source_doc or not self.is_order_maintained():
-            return
-
         self.update_payment_entry()
 
     ### UTILITIES ###
-    def is_webhook_processable(self) -> bool:
-        return bool(self.source_doctype == "Payment Entry" and self.source_docname)
+    def should_update_payment_entry(self) -> bool:
+        """
+        Check if the Payment Entry should be updated or not.
+
+        Note: Source doc (Payment Entry) is set here.
+        """
+        if self.source_doctype == "Payment Entry" and self.source_docname:
+            self.source_doc: PaymentEntry = self.get_source_doc()
+
+            if self.is_order_maintained():
+                return True
+
+        return False
 
     def is_order_maintained(self) -> bool:
         """
         Check if the order maintained or not.
 
         Compare webhook status with the source doc status and payment status.
+
+        Note: 🟢 Override this method in the sub class for custom order maintenance.
         """
         pe_status = self.source_doc.razorpayx_payment_status.lower()
 
@@ -229,6 +265,9 @@ class PayoutWebhook(RazorPayXWebhook):
         - Update the UTR Number.
         - If failed, cancel the Payment Entry and Payout Link.
         """
+        if not self.should_update_payment_entry():
+            return
+
         values = {
             "razorpayx_payment_status": self.status.title(),
             **self.get_updated_reference(),
@@ -239,9 +278,8 @@ class PayoutWebhook(RazorPayXWebhook):
 
         self.source_doc.db_set(values, notify=True)
 
-        if self.should_cancel_payment_entry() and self.cancel_payout_link():
-            self.source_doc.flags.__canceled_by_rpx_webhook = True
-            self.source_doc.cancel()
+        if self.should_cancel_payment_entry() and self.payout_link_cancelled():
+            self.cancel_payment_entry()
 
     def get_updated_reference(self) -> dict:
         """
@@ -261,7 +299,7 @@ class PayoutWebhook(RazorPayXWebhook):
             "remarks": get_new_remarks(),
         }
 
-    def cancel_payout_link(self) -> bool:
+    def payout_link_cancelled(self) -> bool:
         """
         Cancel the Payout Link.
 
@@ -272,9 +310,9 @@ class PayoutWebhook(RazorPayXWebhook):
 
         try:
             payout_link = RazorPayXLinkPayout(self.razorpayx_account)
-            id = self.source_doc.razorpayx_payout_link_id
+            link_id = self.source_doc.razorpayx_payout_link_id
 
-            status = payout_link.get_by_id(id, "status")
+            status = payout_link.get_by_id(link_id, "status")
 
             if status in [
                 PAYOUT_LINK_STATUS.CANCELLED.value,
@@ -292,6 +330,13 @@ class PayoutWebhook(RazorPayXWebhook):
                 title="RazorpayX Payout Link Cancellation Failed",
                 message=f"Source: {self.get_ir_formlink()}\n\n{frappe.get_traceback()}",
             )
+
+    def cancel_payment_entry(self):
+        """
+        Cancel the Payment Entry.
+        """
+        self.source_doc.flags.__canceled_by_rpx_webhook = True
+        self.source_doc.cancel()
 
     def should_cancel_payment_entry(self) -> bool:
         """
@@ -321,7 +366,11 @@ class PayoutLinkWebhook(PayoutWebhook):
     - payout_link.cancelled
     - payout_link.expired
     - payout_link.rejected
+
+    ---
+    Reference: https://razorpay.com/docs/webhooks/payloads/x/payout-links/
     """
+
     ### UTILITIES ###
     def is_order_maintained(self) -> bool:
         """
@@ -339,6 +388,8 @@ class PayoutLinkWebhook(PayoutWebhook):
         - If failed, cancel the Payment Entry.
             - Change Payment Status to `Cancelled`.
         """
+        if not self.should_update_payment_entry():
+            return
 
         values = self.get_updated_reference()
 
@@ -353,8 +404,7 @@ class PayoutLinkWebhook(PayoutWebhook):
         self.source_doc.db_set(values, notify=True)
 
         if cancel_pe:
-            self.source_doc.flags.__canceled_by_rpx_webhook = True
-            self.source_doc.cancel()
+            self.cancel_payment_entry()
 
     def should_cancel_payment_entry(self) -> bool:
         """
@@ -371,15 +421,101 @@ class PayoutLinkWebhook(PayoutWebhook):
             return True
 
 
-# TODO: Transaction Webhook
-# Handle only 2: `reversal` and `payout_failed`
-# Ref1: http://razorpayx.localhost:8001/app/integration-request/5lgv3tbdn6 (reversal)
-# ref2: http://razorpayx.localhost:8001/app/integration-request/u7k9okob4m (created)
 class TransactionWebhook(PayoutWebhook):
-    pass
+    """
+    Processor for RazorpayX Transaction Webhook.
+
+    - Update the Payment Entry based on the webhook entity.
+        - Update PE status
+        - Update UTR Number
+        - Cancel the PE if failed.
+
+    ---
+    - Supported webhook events(1):
+        - transaction.created
+            - payout created
+            - payout reversed
+
+    ---
+    Reference: https://razorpay.com/docs/webhooks/payloads/x/transactions/
+    """
+
+    ### SETUP ###
+    def setup_webhook_payload(self):
+        """
+        Initialize the transaction webhook payload to be used in the webhook processing.
+
+        ---
+        Sample Payloads:
+        - https://razorpay.com/docs/webhooks/payloads/x/transactions/#transaction-created
+        """
+
+        def get_status() -> str:
+            if status := self.transaction_source.get("status"):
+                return status
+
+            match self.transaction_type:
+                case TRANSACTION_TYPES.PAYOUT.value:
+                    return PAYOUT_STATUS.PROCESSING.value
+                case TRANSACTION_TYPES.REVERSAL.value:
+                    return PAYOUT_STATUS.REVERSED.value
+
+        def get_payout_id() -> str:
+            match self.transaction_type:
+                case TRANSACTION_TYPES.PAYOUT.value:
+                    return self.transaction_source.get("id")
+                case TRANSACTION_TYPES.REVERSAL.value:
+                    return self.transaction_source.get("payout_id")
+
+        if self.payload_entity:
+            self.transaction_source = self.payload_entity.get("source", {})
+
+        if self.transaction_source:
+            self.transaction_type = self.transaction_source.get("entity")
+            self.utr = self.transaction_source.get("utr")
+            self.status = get_status()
+            self.id = get_payout_id()
+
+    ### UTILITIES ###
+    def is_order_maintained(self):
+        return bool(
+            self.status
+            and self.source_doc.docstatus == 1
+            and self.transaction_type in TRANSACTION_TYPES.values()
+        )
+
+    def update_payment_entry(self):
+        if not self.should_update_payment_entry():
+            return
+
+        values = self.get_updated_reference()
+
+        if self.status:
+            values["razorpayx_payment_status"] = self.status.title()
+
+        if self.id:
+            values["razorpayx_payout_id"] = self.id
+
+        self.source_doc.db_set(values, notify=True)
+
+        if self.should_cancel_payment_entry() and self.payout_link_cancelled():
+            self.cancel_payment_entry()
+
+    def should_cancel_payment_entry(self):
+        return (
+            self.source_doc.docstatus == 2
+            and self.status
+            and self.status == PAYOUT_STATUS.REVERSED.value
+        )
 
 
 class AccountWebhook(RazorPayXWebhook):
+    """
+    Processor for RazorpayX Account Webhook.
+
+    Caution: ⚠️ Currently not supported.
+    """
+
     pass
 
 
@@ -390,6 +526,17 @@ WEBHOOK_EVENT_TYPES_MAPPER = {
     EVENTS_TYPE.TRANSACTION.value: TransactionWebhook,
     EVENTS_TYPE.ACCOUNT.value: AccountWebhook,
 }
+
+
+class TRANSACTION_TYPES(BaseEnum):
+    """
+    Available in transaction webhook Payload.
+
+    - request data > payload > transaction > entity > source > entity
+    """
+
+    PAYOUT = "payout"  # when payout is created
+    REVERSAL = "reversal"  # when payout is reversed
 
 
 ###### APIs ######
