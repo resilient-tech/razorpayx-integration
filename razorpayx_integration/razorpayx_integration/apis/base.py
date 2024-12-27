@@ -156,7 +156,7 @@ class BaseRazorPayXAPI:
         MAX_LIMIT = 100
 
         if filters:
-            self._clean_request_filters(filters)
+            self._clean_request(filters)
             self._set_epoch_time_for_date_filters(filters)
             self._validate_and_process_filters(filters)
 
@@ -291,7 +291,7 @@ class BaseRazorPayXAPI:
         response = self.get(params=params)
         return response.get("items", [])
 
-    def _clean_request_filters(self, filters: dict):
+    def _clean_request(self, filters: dict):
         """
         Cleans the request filters by removing any key-value pairs where
         the value is falsy.
