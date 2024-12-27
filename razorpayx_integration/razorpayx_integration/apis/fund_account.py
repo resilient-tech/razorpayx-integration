@@ -13,7 +13,9 @@ from razorpayx_integration.razorpayx_integration.utils.validation import (
 class RazorPayXFundAccount(BaseRazorPayXAPI):
     """
     Handle APIs for RazorPayX Fund Account.
+
     :param account_name: RazorPayX account for which this `Fund Account` is associate.
+
     ---
     Reference: https://razorpay.com/docs/api/x/fund-accounts/
     """
@@ -36,18 +38,20 @@ class RazorPayXFundAccount(BaseRazorPayXAPI):
         :param contact_name: The account holder's name.
         :param ifsc_code: Unique identifier of a bank branch (Eg. `HDFC0000053`).
         :param account_number: The account number (Eg. `765432123456789`).
+
         ---
         Reference: https://razorpay.com/docs/api/x/fund-accounts/create/bank-account
         """
         json = {
             "contact_id": contact_id,
-            "account_type": FUND_ACCOUNT_TYPE.BANK_ACCOUNT,
+            "account_type": FUND_ACCOUNT_TYPE.BANK_ACCOUNT.value,
             "bank_account": {
                 "name": contact_name,
                 "ifsc": ifsc_code,
                 "account_number": account_number,
             },
         }
+
         return self.post(json=json)
 
     def create_with_vpa(self, contact_id: str, vpa: str):
@@ -56,20 +60,24 @@ class RazorPayXFundAccount(BaseRazorPayXAPI):
 
         :param str contact_id: The ID of the contact to which the `fund_account` is linked (Eg. `cont_00HjGh1`).
         :param str vpa: The contact's virtual payment address (VPA) (Eg. `joedoe@exampleupi`)
+
         ---
         Reference: https://razorpay.com/docs/api/x/fund-accounts/create/vpa
         """
         json = {
             "contact_id": contact_id,
-            "account_type": FUND_ACCOUNT_TYPE.VPA,
+            "account_type": FUND_ACCOUNT_TYPE.VPA.value,
             "vpa": {"address": vpa},
         }
+
         return self.post(json=json)
 
     def get_by_id(self, id: str):
         """
         Fetch the details of a specific `Fund Account` by Id.
+
         :param id: `Id` of fund account to fetch (Ex.`fa_00HjHue1`).
+
         ---
         Reference: https://razorpay.com/docs/api/x/contacts/fetch-with-id
         """
@@ -83,10 +91,11 @@ class RazorPayXFundAccount(BaseRazorPayXAPI):
 
         :param filters: Result will be filtered as given filters.
         :param count: The number of `Fund Account` to be retrieved.
+
         ---
         Example Usage:
         ```
-        fund_account = RazorPayXFundAccount("RAZORPAYX_BANK_ACCOUNT")
+        fund_account = RazorPayXFundAccount(RAZORPAYX_BANK_ACCOUNT)
         filters = {
             "contact_id":"cont_hkj012yuGJ",
             "account_type":"bank_account",
@@ -95,11 +104,13 @@ class RazorPayXFundAccount(BaseRazorPayXAPI):
         }
         response=fund_account.get_all(filters)
         ```
+
         ---
         Note:
-            - Not all filters are require.
-            - `account_type` can be one of the ['bank_account','vpa'], if not raises an error.
-            - `from` and `to` can be str,date,datetime (in YYYY-MM-DD).
+        - Not all filters are require.
+        - `account_type` can be one of the ['bank_account','vpa'], if not raises an error.
+        - `from` and `to` can be str,date,datetime (in YYYY-MM-DD).
+
         ---
         Reference: https://razorpay.com/docs/api/x/fund-accounts/fetch-all
         """
@@ -128,6 +139,7 @@ class RazorPayXFundAccount(BaseRazorPayXAPI):
 
         :param id: Id of `Fund Account` to change state (Ex.`fa_00HjHue1`).
         :param active: Represent state. (`True`:Active,`False`:Inactive)
+
         ---
         Reference: https://razorpay.com/docs/api/x/fund-accounts/activate-or-deactivate
         """
