@@ -253,7 +253,7 @@ class PayoutWebhook(RazorPayXWebhook):
 
         Note: 🟢 Override this method in the sub class for custom order maintenance.
         """
-        pe_status = self.source_doc.razorpayx_payment_status.lower()
+        pe_status = self.source_doc.razorpayx_payout_status.lower()
 
         if not self.status or self.source_doc.docstatus != 1:
             return False
@@ -277,7 +277,7 @@ class PayoutWebhook(RazorPayXWebhook):
             return
 
         values = {
-            "razorpayx_payment_status": self.status.title(),
+            "razorpayx_payout_status": self.status.title(),
             **self.get_updated_reference(),
         }
 
@@ -404,7 +404,7 @@ class PayoutLinkWebhook(PayoutWebhook):
         cancel_pe = self.should_cancel_payment_entry()
 
         if cancel_pe:
-            values["razorpayx_payment_status"] = PAYOUT_STATUS.CANCELLED.value
+            values["razorpayx_payout_status"] = PAYOUT_STATUS.CANCELLED.value
 
         if self.id:
             values["razorpayx_payout_link_id"] = self.id
@@ -499,7 +499,7 @@ class TransactionWebhook(PayoutWebhook):
         values = self.get_updated_reference()
 
         if self.status:
-            values["razorpayx_payment_status"] = self.status.title()
+            values["razorpayx_payout_status"] = self.status.title()
 
         if self.id:
             values["razorpayx_payout_id"] = self.id

@@ -10,8 +10,8 @@ PE_MANDATORY_FIELDS_FOR_PAYMENT = [
     "party_bank_account",
 ]
 
-UPI_ID_CONDITION = f"eval: doc.make_bank_online_payment && doc.razorpayx_account && doc.razorpayx_payment_mode === '{USER_PAYOUT_MODE.UPI.value}'"
-BANK_ACCOUNT_CONDITION = f"eval: doc.make_bank_online_payment && doc.razorpayx_account && doc.razorpayx_payment_mode === '{USER_PAYOUT_MODE.BANK.value}'"
+UPI_ID_CONDITION = f"eval: doc.make_bank_online_payment && doc.razorpayx_account && doc.razorpayx_payout_mode === '{USER_PAYOUT_MODE.UPI.value}'"
+BANK_ACCOUNT_CONDITION = f"eval: doc.make_bank_online_payment && doc.razorpayx_account && doc.razorpayx_payout_mode === '{USER_PAYOUT_MODE.BANK.value}'"
 
 PROPERTY_SETTERS = [
     ## Payment Entry ##
@@ -20,7 +20,7 @@ PROPERTY_SETTERS = [
         "fieldname": "contact_person",
         "property": "mandatory_depends_on",
         "property_type": "Data",
-        "value": f"eval: doc.make_bank_online_payment && doc.razorpayx_account && doc.razorpayx_payment_mode === '{USER_PAYOUT_MODE.LINK.value}'",
+        "value": f"eval: doc.make_bank_online_payment && doc.razorpayx_account && doc.razorpayx_payout_mode === '{USER_PAYOUT_MODE.LINK.value}'",
     },
     {
         "doctype": "Payment Entry",

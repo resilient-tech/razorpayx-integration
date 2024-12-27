@@ -267,7 +267,7 @@ class PayoutWithPaymentEntry(PayoutWithDocType):
         return self.doc.razorpayx_account
 
     def _get_method_for_payout(self) -> str:
-        match self.doc.razorpayx_payment_mode:
+        match self.doc.razorpayx_payout_mode:
             case USER_PAYOUT_MODE.BANK.value:
                 return PAYOUT_METHOD.COMPOSITE_BANK_ACCOUNT.value
             case USER_PAYOUT_MODE.UPI.value:
@@ -286,7 +286,7 @@ class PayoutWithPaymentEntry(PayoutWithDocType):
             "source_docname": self.doc.name,
             "party_type": self.doc.party_type,
             ## Payment Details ##
-            "description": self.doc.razorpayx_payment_desc,
+            "description": self.doc.razorpayx_payout_desc,
         }
 
     def _get_payout_details_for_fund_account(self) -> dict:
@@ -339,10 +339,10 @@ class PayoutWithPaymentEntry(PayoutWithDocType):
 
         if entity == PAYOUT_TYPE.PAYOUT.value:
             values["razorpayx_payout_id"] = id
-            values["razorpayx_payment_status"] = status.title()
+            values["razorpayx_payout_status"] = status.title()
         else:
             values["razorpayx_payout_link_id"] = id
-            values["razorpayx_payment_link_status"] = status.title()
+            values["razorpayx_payout_link_status"] = status.title()
 
         self.doc.db_set(values, update_modified=True)
 
@@ -383,7 +383,7 @@ class PayoutWithPaymentEntry(PayoutWithDocType):
             )
 
         if (
-            self.doc.razorpayx_payment_link_status
+            self.doc.razorpayx_payout_link_status
             != PAYOUT_LINK_STATUS.NOT_INITIATED.value.title()
         ):
             frappe.throw(
@@ -395,7 +395,7 @@ class PayoutWithPaymentEntry(PayoutWithDocType):
             )
 
         if (
-            self.doc.razorpayx_payment_status
+            self.doc.razorpayx_payout_status
             != PAYOUT_STATUS.NOT_INITIATED.value.title()
         ):
             frappe.throw(
@@ -406,4 +406,4 @@ class PayoutWithPaymentEntry(PayoutWithDocType):
                 exc=frappe.ValidationError,
             )
 
-        validate_razorpayx_user_payout_mode(self.doc.razorpayx_payment_mode)
+        validate_razorpayx_user_payout_mode(self.doc.razorpayx_payout_mode)

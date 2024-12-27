@@ -45,8 +45,8 @@ def validate_online_payment_requirements(doc):
     validate_razorpayx_account(doc)
     validate_upi_id(doc)
 
-    if doc.razorpayx_payment_desc:
-        validate_razorpayx_payout_description(doc.razorpayx_payment_desc)
+    if doc.razorpayx_payout_desc:
+        validate_razorpayx_payout_description(doc.razorpayx_payout_desc)
 
 
 def validate_mandatory_fields_for_payment(doc):
@@ -69,9 +69,9 @@ def validate_mandatory_fields_for_payment(doc):
 
 
 def validate_payout_mode(doc):
-    validate_razorpayx_user_payout_mode(doc.razorpayx_payment_mode)
+    validate_razorpayx_user_payout_mode(doc.razorpayx_payout_mode)
 
-    if doc.razorpayx_payment_mode == USER_PAYOUT_MODE.BANK.value:
+    if doc.razorpayx_payout_mode == USER_PAYOUT_MODE.BANK.value:
         # TODO: also fetch `IFSC` and `Account Number` and check
         if not doc.party_bank_account:
             frappe.throw(
@@ -87,7 +87,7 @@ def validate_payout_mode(doc):
                 exc=frappe.MandatoryError,
             )
 
-    elif doc.razorpayx_payment_mode == USER_PAYOUT_MODE.LINK.value:
+    elif doc.razorpayx_payout_mode == USER_PAYOUT_MODE.LINK.value:
         if not doc.contact_mobile or not doc.contact_email:
             frappe.throw(
                 msg=_(
@@ -97,14 +97,14 @@ def validate_payout_mode(doc):
                 exc=frappe.MandatoryError,
             )
 
-        if not doc.razorpayx_payment_desc:
+        if not doc.razorpayx_payout_desc:
             frappe.throw(
-                msg=_("Payment Description is mandatory to make payment with Link."),
+                msg=_("Payout Description is mandatory to make payment with Link."),
                 title=_("Mandatory Fields Missing"),
                 exc=frappe.MandatoryError,
             )
 
-    elif doc.razorpayx_payment_mode == USER_PAYOUT_MODE.UPI.value:
+    elif doc.razorpayx_payout_mode == USER_PAYOUT_MODE.UPI.value:
         if not doc.party_upi_id:
             frappe.throw(
                 msg=_("Party's UPI ID is mandatory to make payment."),
@@ -140,7 +140,7 @@ def validate_razorpayx_account(doc):
 
 
 def validate_upi_id(doc):
-    if doc.razorpayx_payment_mode != USER_PAYOUT_MODE.UPI.value:
+    if doc.razorpayx_payout_mode != USER_PAYOUT_MODE.UPI.value:
         return
 
     associated_upi_id = frappe.get_value(

@@ -16,7 +16,7 @@ frappe.ui.form.on("Payment Entry", {
 			frm.set_intro(__("This Payment will be processed by RazorpayX on submission."));
 		} else if (frm.doc.docstatus == 1) {
 			frm.set_intro(
-				__("RazorpayX Payment Status: <strong>{0}</strong>", [frm.doc.razorpayx_payment_status])
+				__("RazorPayX Payout Status: <strong>{0}</strong>", [frm.doc.razorpayx_payout_status])
 			);
 		}
 	},
