@@ -40,9 +40,10 @@ class BaseRazorPayXAPI:
     :param razorpayx_account: RazorPayX Integration Account name.
     """
 
-    # * utility attributes
+    ### CLASS ATTRIBUTES ###
     BASE_PATH = ""
 
+    ### SETUP ###
     def __init__(self, razorpayx_account: str, *args, **kwargs):
         self.razorpayx_account: RazorPayXIntegrationSetting = frappe.get_doc(
             RAZORPAYX_INTEGRATION_DOCTYPE, razorpayx_account
@@ -95,25 +96,7 @@ class BaseRazorPayXAPI:
         """
         pass
 
-    def get_url(self, *path_segments):
-        """
-        Generate particular API's URL by combing given path_segments.
-
-        Example:
-            if path_segments = 'contact/old' then
-            URL will `RAZORPAYX_BASE_URL/BASE_PATH/contact/old`
-        """
-
-        path_segments = list(path_segments)
-
-        if self.BASE_PATH:
-            path_segments.insert(0, self.BASE_PATH)
-
-        return urljoin(
-            RAZORPAYX_BASE_API_URL,
-            "/".join(segment.strip("/") for segment in path_segments),
-        )
-
+    ### APIs ###
     def get(self, *args, **kwargs):
         """
         Make `GET` HTTP request.
@@ -144,6 +127,7 @@ class BaseRazorPayXAPI:
         """
         return self._make_request(SUPPORTED_HTTP_METHOD.PATCH.value, *args, **kwargs)
 
+    ### API WRAPPERS ###
     # TODO: should add `skip` in filters (Handle pagination + if not given fetch all) (Change in sub class)
     def get_all(
         self, filters: dict | None = None, count: int | None = None
@@ -203,6 +187,7 @@ class BaseRazorPayXAPI:
 
         return result
 
+    ### BASES ###
     def _make_request(
         self,
         method: str,
@@ -279,24 +264,38 @@ class BaseRazorPayXAPI:
 
             enqueue_integration_request(**ir_log)
 
-    def _get_ir_service(self):
-        """
-        Return the service name for the Integration Request Log.
-        """
-        return f"RazorPayX Service - {frappe.unscrub(self.BASE_PATH)}"
-
-    def _before_request(self, request_args):
-        """
-        Override in sub class to perform any operation before making the request.
-        """
-        return
-
     def _fetch(self, params: dict) -> list:
         """
         Fetches `items` from the API response based on the given parameters.
         """
         response = self.get(params=params)
         return response.get("items", [])
+
+    ### API HELPERS ###
+    def get_url(self, *path_segments):
+        """
+        Generate particular API's URL by combing given path_segments.
+
+        Example:
+            if path_segments = 'contact/old' then
+            URL will `RAZORPAYX_BASE_URL/BASE_PATH/contact/old`
+        """
+
+        path_segments = list(path_segments)
+
+        if self.BASE_PATH:
+            path_segments.insert(0, self.BASE_PATH)
+
+        return urljoin(
+            RAZORPAYX_BASE_API_URL,
+            "/".join(segment.strip("/") for segment in path_segments),
+        )
+
+    def _before_request(self, request_args):
+        """
+        Override in sub class to perform any operation before making the request.
+        """
+        return
 
     def _clean_request(self, filters: dict):
         """
@@ -326,12 +325,20 @@ class BaseRazorPayXAPI:
         """
         pass
 
+    ### LOGGING ###
+    def _get_ir_service(self):
+        """
+        Return the service name for the Integration Request Log.
+        """
+        return f"RazorPayX Service - {frappe.unscrub(self.BASE_PATH)}"
+
     def _mask_sensitive_info(self, ir_log: dict):
         """
         Mask sensitive information in the Integration Request Log.
         """
         pass
 
+    ### ERROR HANDLING ###
     # TODO:  handle special(error) http code (specially payout process!!)
     def _handle_failed_api_response(self, response_json: dict | None = None):
         """
