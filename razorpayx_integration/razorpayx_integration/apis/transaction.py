@@ -28,7 +28,9 @@ class RazorPayXTransaction(BaseRazorPayXAPI):
     def get_by_id(self, transaction_id: str) -> dict:
         """
         Fetch the details of a specific `Transaction` by Id.
+
         :param id: `Id` of fund account to fetch (Ex.`txn_jkHgLM02`).
+
         ---
         Reference: https://razorpay.com/docs/api/x/transactions/fetch-with-id
         """
@@ -40,7 +42,7 @@ class RazorPayXTransaction(BaseRazorPayXAPI):
         from_date: DateTimeLikeObject | None = None,
         to_date: DateTimeLikeObject | None = None,
         count: int | None = None,
-    ) -> list[dict]:
+    ) -> list[dict] | None:
         """
         Get all `Transaction` associate with given `RazorPayX` account if count is not given.
 
@@ -51,21 +53,25 @@ class RazorPayXTransaction(BaseRazorPayXAPI):
 
         ---
         Example Usage:
+
         ```
         fund_account = RazorPayXFundAccount("RAZORPAYX_BANK_ACCOUNT")
+
+        # Example 1:
         filters = {
             "from":"2024-01-01"
             "to":"2024-06-01"
         }
+
         response=fund_account.get_all(filters)
-        ---
+
+        # Example 2:
         response=fund_account.get_all(from_date="2024-01-01",to_date="2024-06-01",count=10)
         ```
 
         ---
-
         Note:
-            - `from` and `to` can be str,date,datetime (in YYYY-MM-DD).
+        - `from` and `to` can be str,date,datetime (in YYYY-MM-DD).
 
         ---
         Reference: https://razorpay.com/docs/api/x/transactions/fetch-all
@@ -84,19 +90,24 @@ class RazorPayXTransaction(BaseRazorPayXAPI):
 
         return super().get_all(filters, count)
 
-    def get_transactions_for_today(self, count: int | None = None):
+    def get_transactions_for_today(self, count: int | None = None) -> list[dict] | None:
         """
         Get all transactions for today associate with given `RazorPayX` account.
+
+        :param count: The number of transactions to be retrieved.
+
+        ---
+        Note: If count is not given, it will return all transactions for today.
         """
-        filters = {"from": today(), "to": today()}
-        return self.get_all(filters=filters, count=count)
+        today_date = today()
+        return self.get_all(filters={"from": today_date, "to": today_date}, count=count)
 
     def get_transactions_for_date(
         self, date: DateTimeLikeObject, count: int | None = None
-    ):
+    ) -> list[dict] | None:
         """
         Get all transactions for specific date associate with given `RazorPayX` account.
+
         :param date: A date string in "YYYY-MM-DD" format or a (datetime,date) object.
         """
-        filters = {"from": date, "to": date}
-        return self.get_all(filters=filters, count=count)
+        return self.get_all(filters={"from": date, "to": date}, count=count)

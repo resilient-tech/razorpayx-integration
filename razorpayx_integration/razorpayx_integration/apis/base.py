@@ -146,7 +146,7 @@ class BaseRazorPayXAPI:
     # TODO: should add `skip` in filters (Handle pagination + if not given fetch all) (Change in sub class)
     def get_all(
         self, filters: dict | None = None, count: int | None = None
-    ) -> list[dict]:
+    ) -> list[dict] | None:
         """
         Fetches all data of given RazorPayX account for specific API.
 
