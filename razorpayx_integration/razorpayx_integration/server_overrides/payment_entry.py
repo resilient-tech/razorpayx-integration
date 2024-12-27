@@ -22,10 +22,20 @@ from razorpayx_integration.razorpayx_integration.utils.validation import (
 
 
 # TODO:  also validate IFSC code? (Must be 11 chars or some API)
+#### DOC EVENTS ####
 def validate(doc, method=None):
     validate_online_payment_requirements(doc)
 
 
+def on_submit(doc, method=None):
+    make_payout(doc)
+
+
+def on_cancel(doc, method=None):
+    pass
+
+
+#### VALIDATIONS ####
 def validate_online_payment_requirements(doc):
     if not doc.make_online_payment:
         return
@@ -158,14 +168,13 @@ def validate_upi_id(doc):
         )
 
 
-def on_submit(doc, method=None):
-    make_payout(doc)
-
-
+#### UTILS ####
 # TODO: enqueue it?
 def make_payout(doc):
     PayoutWithPaymentEntry(doc).make_payout()
 
+
+#### HELPER FUNCTIONS ####
 
 # ! Important
 # TODO: Change design ?
