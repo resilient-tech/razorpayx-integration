@@ -95,7 +95,7 @@ class RazorPayXFundAccount(BaseRazorPayXAPI):
         ---
         Example Usage:
         ```
-        fund_account = RazorPayXFundAccount("RAZORPAYX_BANK_ACCOUNT")
+        fund_account = RazorPayXFundAccount(RAZORPAYX_BANK_ACCOUNT)
         filters = {
             "contact_id":"cont_hkj012yuGJ",
             "account_type":"bank_account",

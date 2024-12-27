@@ -55,7 +55,7 @@ class RazorPayXTransaction(BaseRazorPayXAPI):
         Example Usage:
 
         ```
-        fund_account = RazorPayXFundAccount("RAZORPAYX_BANK_ACCOUNT")
+        fund_account = RazorPayXFundAccount(RAZORPAYX_BANK_ACCOUNT)
 
         # Example 1:
         filters = {
