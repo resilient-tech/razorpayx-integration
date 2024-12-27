@@ -164,3 +164,24 @@ def on_submit(doc, method=None):
 # TODO: enqueue it?
 def make_payout(doc):
     PayoutWithPaymentEntry(doc).make_payout()
+
+
+# ! Important
+# TODO: Change design ?
+"""
+Bank Account:
+
+- In bank account there should be field for `Default Payment Mode` for that user.
+- Other fields should be visible but not mandatory.
+
+Payment Entry:
+
+- When user selects `Party's Bank Account` default mode and other setting should be fetched.
+- And PE's data must be matched with that. (Like user can't change UPI or contact details or bank account)
+- At PE level user can select `Mode of Payment`.
+
+- Why this?
+
+- No need of multiple bank accounts
+- More freedom to user at payment time, how to pay?
+"""

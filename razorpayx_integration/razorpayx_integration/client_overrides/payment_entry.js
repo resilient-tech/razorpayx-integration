@@ -3,6 +3,10 @@
 // TODO: RazorpayX status fields also allow for edit after submit
 // TODO: Backend validation for RazorpayX status fields !!!
 
+// TODO: Update CF and CP for Payment Entry
+// TODO: Work with new design for Payment Entry ???
+// TODO: Improve UX and UI for Payment Entry
+
 frappe.ui.form.on("Payment Entry", {
 	refresh: function (frm) {
 		// set Intro for Payment
