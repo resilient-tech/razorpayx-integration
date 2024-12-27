@@ -357,7 +357,27 @@ class BaseRazorPayXAPI:
                 or error_msg
             )
 
+        self._handle_custom_error(error_msg)
+
         frappe.throw(
             msg=_(error_msg),
             title=_("RazorPayX API Failed"),
         )
+
+    def _handle_custom_error(self, error_msg: str):
+        """
+        Handle custom error message.
+        """
+
+        if error_msg == "Different request body sent for the same Idempotency Header":
+            msg = _(
+                "Please cancel/delete the current document and pay with a new document."
+            )
+
+            msg += "<br><br>"
+
+            msg += _(
+                "You faced this issue because payment details were changed after the first payment attempt."
+            )
+
+            frappe.throw(title=_("RazorPayX API Failed"), msg=msg)
