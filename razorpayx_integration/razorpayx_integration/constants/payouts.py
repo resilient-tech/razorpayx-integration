@@ -56,7 +56,7 @@ class PAYOUT_STATUS(BaseEnum):
     # Custom Status
     NOT_INITIATED = "not initiated"
 
-    # Payout Status
+    # RazorpayX Payout Status
     PENDING = "pending"
     QUEUED = "queued"
     SCHEDULED = "scheduled"
@@ -74,6 +74,10 @@ class PAYOUT_LINK_STATUS(BaseEnum):
     - https://razorpay.com/docs/x/payout-links/life-cycle/
     """
 
+    # Custom Status
+    NOT_INITIATED = "not initiated"
+
+    # RazorpayX Payout Link Status
     PENDING = "pending"
     ISSUED = "issued"
     PROCESSING = "processing"
@@ -105,13 +109,14 @@ PAYOUT_ORDERS = {
 }
 
 PAYOUT_LINK_ORDERS = {
-    PAYOUT_LINK_STATUS.PENDING.value: 1,
-    PAYOUT_LINK_STATUS.ISSUED.value: 2,
-    PAYOUT_LINK_STATUS.PROCESSING.value: 3,
-    PAYOUT_LINK_STATUS.PROCESSED.value: 4,
-    PAYOUT_LINK_STATUS.CANCELLED.value: 5,
-    PAYOUT_LINK_STATUS.REJECTED.value: 5,
-    PAYOUT_LINK_STATUS.EXPIRED.value: 5,
+    PAYOUT_LINK_STATUS.NOT_INITIATED.value: 1,  # custom
+    PAYOUT_LINK_STATUS.PENDING.value: 2,
+    PAYOUT_LINK_STATUS.ISSUED.value: 3,
+    PAYOUT_LINK_STATUS.PROCESSING.value: 4,
+    PAYOUT_LINK_STATUS.PROCESSED.value: 5,
+    PAYOUT_LINK_STATUS.CANCELLED.value: 6,
+    PAYOUT_LINK_STATUS.REJECTED.value: 6,
+    PAYOUT_LINK_STATUS.EXPIRED.value: 6,
 }
 
 PAYOUT_PURPOSE_MAP = {
