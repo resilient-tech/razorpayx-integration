@@ -130,7 +130,7 @@ CUSTOM_FIELDS = {
             "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
         },
         {
-            "fieldname": "make_online_payment",
+            "fieldname": "make_bank_online_payment",
             "label": "Make Online Payment",
             "fieldtype": "Check",
             "insert_after": "online_payment_section",

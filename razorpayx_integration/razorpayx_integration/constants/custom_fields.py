@@ -24,8 +24,8 @@ CUSTOM_FIELDS = {
             "fieldname": "razorpayx_payment_section",
             "label": "RazorPayX Payment Details",
             "fieldtype": "Section Break",
-            "insert_after": "make_online_payment",  ## Insert After `Make Online Payment` field (Payment Utils Custom Field)
-            "depends_on": "eval: doc.make_online_payment",
+            "insert_after": "make_bank_online_payment",  ## Insert After `Make Online Payment` field (Payment Utils Custom Field)
+            "depends_on": "eval: doc.make_bank_online_payment",
             "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
             "no_copy": 1,
         },
@@ -48,7 +48,7 @@ CUSTOM_FIELDS = {
             "insert_after": "razorpayx_account",
             "fetch_from": "party_bank_account.online_payment_mode",
             "depends_on": "eval: doc.razorpayx_account && doc.party_bank_account",
-            "mandatory_depends_on": "eval:doc.make_online_payment && doc.razorpayx_account && doc.party_bank_account",
+            "mandatory_depends_on": "eval:doc.make_bank_online_payment && doc.razorpayx_account && doc.party_bank_account",
             "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
             "read_only": 1,
             "no_copy": 1,
@@ -75,7 +75,7 @@ CUSTOM_FIELDS = {
             "fieldtype": "Data",
             "insert_after": "razorpayx_payment_cb",
             "depends_on": "eval: doc.razorpayx_account",
-            "mandatory_depends_on": f"eval:doc.make_online_payment && doc.razorpayx_account && doc.razorpayx_payment_mode === '{USER_PAYOUT_MODE.LINK.value}'",
+            "mandatory_depends_on": f"eval:doc.make_bank_online_payment && doc.razorpayx_account && doc.razorpayx_payment_mode === '{USER_PAYOUT_MODE.LINK.value}'",
             "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
             "no_copy": 1,
         },

@@ -37,7 +37,7 @@ def on_cancel(doc, method=None):
 
 #### VALIDATIONS ####
 def validate_online_payment_requirements(doc):
-    if not doc.make_online_payment:
+    if not doc.make_bank_online_payment:
         return
 
     validate_mandatory_fields_for_payment(doc)

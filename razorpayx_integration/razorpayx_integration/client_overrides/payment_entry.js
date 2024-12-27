@@ -10,7 +10,7 @@
 frappe.ui.form.on("Payment Entry", {
 	refresh: function (frm) {
 		// set Intro for Payment
-		if (frm.is_new() || !frm.doc.make_online_payment) return;
+		if (frm.is_new() || !frm.doc.make_bank_online_payment) return;
 
 		if (frm.doc.docstatus == 0) {
 			frm.set_intro(__("This Payment will be processed by RazorpayX on submission."));

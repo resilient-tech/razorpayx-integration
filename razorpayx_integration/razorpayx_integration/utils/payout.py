@@ -362,7 +362,7 @@ class PayoutWithPaymentEntry(PayoutWithDocType):
                 exc=frappe.ValidationError,
             )
 
-        if not self.doc.make_online_payment:
+        if not self.doc.make_bank_online_payment:
             frappe.throw(
                 msg=_("Online Payment is not enabled for Payment Entry {0}").format(
                     self.form_link
