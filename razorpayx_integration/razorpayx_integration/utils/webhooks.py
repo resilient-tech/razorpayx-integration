@@ -2,7 +2,6 @@ import json
 from hmac import new as hmac
 
 import frappe
-from erpnext.accounts.doctype.payment_entry.payment_entry import PaymentEntry
 from frappe import _
 from frappe.utils import get_link_to_form, get_url_to_form
 from frappe.utils.password import get_decrypted_password
@@ -11,12 +10,10 @@ from razorpayx_integration.constants import (
     RAZORPAYX_INTEGRATION_DOCTYPE,
 )
 from razorpayx_integration.payment_utils.constants.enums import BaseEnum
-from razorpayx_integration.payment_utils.constants.property_setters import (
-    DEFAULT_REFERENCE_NO,
-)
 from razorpayx_integration.payment_utils.utils import log_integration_request
 from razorpayx_integration.razorpayx_integration.apis.payout import RazorPayXLinkPayout
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
+    PAYOUT_LINK_ORDERS,
     PAYOUT_LINK_STATUS,
     PAYOUT_ORDERS,
     PAYOUT_STATUS,
@@ -24,9 +21,6 @@ from razorpayx_integration.razorpayx_integration.constants.payouts import (
 from razorpayx_integration.razorpayx_integration.constants.webhooks import (
     EVENTS_TYPE,
     SUPPORTED_EVENTS,
-)
-from razorpayx_integration.razorpayx_integration.doctype.razorpayx_integration_setting.razorpayx_integration_setting import (
-    RazorPayXIntegrationSetting,
 )
 
 # API: TUNNEL_URL/api/method/razorpayx_integration.razorpayx_integration.utils.webhooks.razorpayx_webhook_listener
@@ -249,21 +243,17 @@ class PayoutWebhook(RazorPayXWebhook):
         """
         Check if the order maintained or not.
 
-        Compare webhook status with the source doc status and payment status.
+        Compare webhook status with the source docstatus and payout status.
 
         Note: 🟢 Override this method in the sub class for custom order maintenance.
         """
-        pe_status = self.source_doc.razorpayx_payout_status.lower()
+        pe_status = self.source_doc.razorpayx_payout_link_status.lower()
 
-        if not self.status or self.source_doc.docstatus != 1:
-            return False
-
-        # If the current webhook status's order is less than or equal to the PE status, then order not maintained.
-
-        if PAYOUT_ORDERS[self.status] <= PAYOUT_ORDERS[pe_status]:
-            return False
-
-        return True
+        return (
+            self.status
+            and self.source_doc.docstatus == 1
+            and PAYOUT_ORDERS[self.status] > PAYOUT_ORDERS[pe_status]
+        )
 
     def update_payment_entry(self):
         """
@@ -384,9 +374,15 @@ class PayoutLinkWebhook(PayoutWebhook):
         """
         Check if the order maintained or not.
 
-        Caution: ⚠️ Payout link status is not maintained in the Payment Entry.
+        Compare webhook status with the source docstatus and payout link status.
         """
-        return self.status and self.source_doc.docstatus == 1
+        pe_status = self.source_doc.razorpayx_payout_link_status.lower()
+
+        return (
+            self.status
+            and self.source_doc.docstatus == 1
+            and PAYOUT_LINK_ORDERS[self.status] > PAYOUT_LINK_ORDERS[pe_status]
+        )
 
     def update_payment_entry(self):
         """
@@ -399,7 +395,10 @@ class PayoutLinkWebhook(PayoutWebhook):
         if not self.should_update_payment_entry():
             return
 
-        values = self.get_updated_reference()
+        values = {
+            "razorpayx_payout_link_status": self.status.title(),
+            **self.get_updated_reference(),
+        }
 
         cancel_pe = self.should_cancel_payment_entry()
 
@@ -486,6 +485,9 @@ class TransactionWebhook(PayoutWebhook):
 
     ### UTILITIES ###
     def is_order_maintained(self):
+        """
+        Check if the order maintained or not.
+        """
         return bool(
             self.status
             and self.source_doc.docstatus == 1
