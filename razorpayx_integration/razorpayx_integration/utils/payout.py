@@ -13,6 +13,7 @@ from razorpayx_integration.razorpayx_integration.apis.payout import (
     RazorPayXPayout,
 )
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
+    PAYOUT_LINK_STATUS,
     PAYOUT_STATUS,
     USER_PAYOUT_MODE,
 )
@@ -341,6 +342,7 @@ class PayoutWithPaymentEntry(PayoutWithDocType):
             values["razorpayx_payment_status"] = status.title()
         else:
             values["razorpayx_payout_link_id"] = id
+            values["razorpayx_payment_link_status"] = status.title()
 
         self.doc.db_set(values, update_modified=True)
 
@@ -381,13 +383,25 @@ class PayoutWithPaymentEntry(PayoutWithDocType):
             )
 
         if (
+            self.doc.razorpayx_payment_link_status
+            != PAYOUT_LINK_STATUS.NOT_INITIATED.value.title()
+        ):
+            frappe.throw(
+                msg=_(
+                    "RazorPayX payout link already initiated for Payment Entry {0}"
+                ).format(self.form_link),
+                title=_("Invalid Payment Entry"),
+                exc=frappe.ValidationError,
+            )
+
+        if (
             self.doc.razorpayx_payment_status
             != PAYOUT_STATUS.NOT_INITIATED.value.title()
         ):
             frappe.throw(
-                msg=_("Payment Entry {0} is already initiated for payment.").format(
-                    self.form_link
-                ),
+                msg=_(
+                    "RazorPayX payout already initiated for Payment Entry {0}"
+                ).format(self.form_link),
                 title=_("Invalid Payment Entry"),
                 exc=frappe.ValidationError,
             )
