@@ -225,6 +225,14 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         self.source_doctype = json["notes"]["source_doctype"]
         self.source_docname = json["notes"]["source_docname"]
 
+        # set values for Integration Request Log
+        self.default_log_values.update(
+            {
+                "reference_doctype": self.source_doctype,
+                "reference_name": self.source_docname,
+            }
+        )
+
         self._set_idempotency_key_header(json)
 
         self._validate_payout_payload(json)
@@ -264,7 +272,7 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         Reference: https://razorpay.com/docs/api/x/payout-idempotency/make-request/
         """
 
-        self.payout_headers["X-Payout-Idempotency"] = json["notes"]["source_docname"]
+        self.payout_headers["X-Payout-Idempotency"] = self.source_docname
 
     def _get_mapped_payout_request_body(self, payout_details: dict) -> dict:
         """
