@@ -1,6 +1,7 @@
 from urllib.parse import urljoin
 
 import frappe
+import frappe.utils
 import requests
 from frappe import _
 from frappe.app import UNSAFE_HTTP_METHODS
@@ -232,7 +233,7 @@ class BaseRazorPayXAPI:
         # preparing log for Integration Request
         ir_log = frappe._dict(
             **self.default_log_values,
-            integration_request_service=f"RazorPayX Service - {self.BASE_PATH.title()}",
+            integration_request_service=self._get_ir_service(),
             url=request_args.url,
             data=request_args.params,
             request_headers=request_args.headers.copy(),
@@ -277,6 +278,12 @@ class BaseRazorPayXAPI:
             self._mask_sensitive_info(ir_log)
 
             enqueue_integration_request(**ir_log)
+
+    def _get_ir_service(self):
+        """
+        Return the service name for the Integration Request Log.
+        """
+        return f"RazorPayX Service - {frappe.unscrub(self.BASE_PATH)}"
 
     def _before_request(self, request_args):
         """
