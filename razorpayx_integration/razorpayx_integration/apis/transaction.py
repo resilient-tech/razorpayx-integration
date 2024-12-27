@@ -4,6 +4,7 @@ from razorpayx_integration.razorpayx_integration.apis.base import BaseRazorPayXA
 
 # TODO: Multiple Account can more easily connect with APIs, currently for each account new object initiation require!
 # TODO: Need changes as per new design.
+# TODO: can use db.bulk_update ???
 
 
 class RazorPayXTransaction(BaseRazorPayXAPI):

@@ -5,6 +5,7 @@ DESCRIPTION_REGEX = r"^[a-zA-Z0-9 ]{1,30}$"
 
 
 ### ENUMS ###
+# TODO ? How to map this with ERPNext DocType and RazorPayX Contact Type
 class CONTACT_TYPE(BaseEnum):
     EMPLOYEE = "employee"
     SUPPLIER = "vendor"
