@@ -135,12 +135,21 @@ class RazorPayXPayout(BaseRazorPayXAPI):
 
         return self._make_payout(payout_details)
 
-    def get_by_id(self, payout_id: str, data: str | None):
+    def get_by_id(
+        self,
+        payout_id: str,
+        *,
+        data: str | None,
+        source_doctype: str | None = None,
+        source_docname: str | None = None,
+    ) -> dict:
         """
         Fetch the details of a specific `Payout` by Id.
 
         :param id: `Id` of fund account to fetch (Ex.`payout_jkHgLM02`).
         :param data: Specific data to be fetched (Ex. `status`, `utr`, etc.).
+        :param source_doctype: The source document type.
+        :param source_docname: The source document name.
 
         ---
         Note:
@@ -150,6 +159,9 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         ---
         Reference: https://razorpay.com/docs/api/x/payouts/fetch-with-id
         """
+        if source_doctype and source_docname:
+            self._set_source_to_ir_log(source_doctype, source_docname)
+
         response = self.get(endpoint=payout_id)
 
         if not data:
@@ -158,13 +170,20 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         return response.get(data)
 
     def get_all(
-        self, filters: dict | None = None, count: int | None = None
+        self,
+        *,
+        filters: dict | None = None,
+        count: int | None = None,
+        source_doctype: str | None = None,
+        source_docname: str | None = None,
     ) -> list[dict]:
         """
         Get all `Payouts` associate with given `RazorPayX` account if count is not given.
 
         :param filters: Result will be filtered as given filters.
         :param count: The number of payouts to be retrieved.
+        :param source_doctype: The source document type.
+        :param source_docname: The source document name.
 
         :raises ValueError: If `mode` or `status` is not valid (if specified).
 
@@ -191,6 +210,9 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         ---
         Reference: https://razorpay.com/docs/api/x/payouts/fetch-all/
         """
+        if source_doctype and source_docname:
+            self._set_source_to_ir_log(source_doctype, source_docname)
+
         if not filters:
             filters = {}
 
@@ -199,17 +221,28 @@ class RazorPayXPayout(BaseRazorPayXAPI):
 
         return super().get_all(filters, count)
 
-    def cancel(self, payout_id: str) -> dict:
+    def cancel(
+        self,
+        payout_id: str,
+        *,
+        source_doctype: str | None = None,
+        source_docname: str | None = None,
+    ) -> dict:
         """
-        Cancel a specific `Payout` by Id.
+        Cancel a specific `Payout` or `Payout Link` by Id.
 
         Caution: ⚠️  Only `queued` payouts can be canceled.
 
         :param payout_id: Payout ID to be canceled (Ex.`payout_jkHgLM02`).
+        :param source_doctype: The source document type.
+        :param source_docname: The source document name.
 
         ---
         Reference: https://razorpay.com/docs/api/x/payouts/cancel
         """
+        if source_doctype and source_docname:
+            self._set_source_to_ir_log(source_doctype, source_docname)
+
         return self.post(endpoint=f"{payout_id}/cancel")
 
     ### BASES ###
@@ -228,12 +261,7 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         self.source_docname = json["notes"]["source_docname"]
 
         # set values for Integration Request Log
-        self.default_log_values.update(
-            {
-                "reference_doctype": self.source_doctype,
-                "reference_name": self.source_docname,
-            }
-        )
+        self._set_source_to_ir_log(self.source_doctype, self.source_docname)
 
         self._set_idempotency_key_header(json)
 
@@ -501,6 +529,20 @@ class RazorPayXPayout(BaseRazorPayXAPI):
 
         return frappe.db.get_value(
             self.source_doctype, self.source_docname, amount_field
+        )
+
+    def _set_source_to_ir_log(self, source_doctype: str, source_docname: str):
+        """
+        Set the source document details in the Integration Request Log.
+
+        :param source_doctype: The source document type.
+        :param source_docname: The source document name.
+        """
+        self.default_log_values.update(
+            {
+                "reference_doctype": source_doctype,
+                "reference_name": source_docname,
+            }
         )
 
     ### VALIDATIONS ###
@@ -824,12 +866,21 @@ class RazorPayXLinkPayout(RazorPayXPayout):
         """
         return self._make_payout(payout_details)
 
-    def get_by_id(self, payout_link_id: str, data: str | None):
+    def get_by_id(
+        self,
+        payout_link_id: str,
+        *,
+        data: str | None = None,
+        source_doctype: str | None = None,
+        source_docname: str | None = None,
+    ) -> dict:
         """
         Fetch the details of a specific `Link Payout` by Id.
 
         :param id: `Id` of fund account to fetch (Ex.`poutlk_jkHgLM02`).
         :param data: Specific data to be fetched (Ex. `status`, `utr`, etc.).
+        :param source_doctype: The source document type.
+        :param source_docname: The source document name.
 
         ---
         Note:
@@ -839,19 +890,28 @@ class RazorPayXLinkPayout(RazorPayXPayout):
         ---
         Reference: https://razorpay.com/docs/api/x/payout-links/fetch-with-id
         """
-        response = self.get(endpoint=payout_link_id)
+        return super().get_by_id(
+            payout_link_id,
+            data=data,
+            source_doctype=source_doctype,
+            source_docname=source_docname,
+        )
 
-        if not data:
-            return response
-
-        return response.get(data)
-
-    def get_all(self, filters=None, count=None):
+    def get_all(
+        self,
+        *,
+        filters: dict | None = None,
+        count: dict | None = None,
+        source_doctype: str | None = None,
+        source_docname: str | None = None,
+    ) -> list[dict]:
         """
         Get all `Payout Links` associate with given `RazorPayX` account if count is not given.
 
         :param filters: Result will be filtered as given filters.
         :param count: The number of payouts to be retrieved.
+        :param source_doctype: The source document type.
+        :param source_docname: The source document name.
 
         :raises ValueError: If `status` is not valid (if specified).
 
@@ -882,20 +942,37 @@ class RazorPayXLinkPayout(RazorPayXPayout):
         ---
         Reference: https://razorpay.com/docs/api/x/payouts/fetch-all/
         """
-        return super().get_all(filters, count)
+        return super().get_all(
+            filters=filters,
+            count=count,
+            source_doctype=source_doctype,
+            source_docname=source_docname,
+        )
 
-    def cancel(self, payout_link_id: str) -> dict:
+    def cancel(
+        self,
+        payout_link_id: str,
+        *,
+        source_doctype: str | None = None,
+        source_docname: str | None = None,
+    ) -> dict:
         """
         Cancel a specific `Payout Link` by Id.
 
         Caution: ⚠️  Only `issued` payout links can be canceled.
 
         :param payout_link_id: Payout link ID to be canceled (Ex.`poutlk_jkHgLM02`).
+        :param source_doctype: The source document type.
+        :param source_docname: The source document name.
 
         ---
         Reference: https://razorpay.com/docs/api/x/payout-links/cancel
         """
-        return self.post(endpoint=f"{payout_link_id}/cancel")
+        return super().cancel(
+            payout_link_id,
+            source_doctype=source_doctype,
+            source_docname=source_docname,
+        )
 
     ### HELPERS ###
     def _get_mapped_payout_request_body(self, payout_details: dict) -> dict:
