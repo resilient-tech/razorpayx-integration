@@ -13,7 +13,6 @@ Note:
 from razorpayx_integration.constants import RAZORPAYX_INTEGRATION_DOCTYPE
 from razorpayx_integration.payment_utils.constants.roles import PERMISSION_LEVEL
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
-    PAYOUT_LINK_STATUS,
     PAYOUT_STATUS,
     USER_PAYOUT_MODE,
 )

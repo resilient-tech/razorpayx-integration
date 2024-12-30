@@ -405,16 +405,17 @@ class PayoutWithPaymentEntry(PayoutWithDocType):
 
         entity = response.get("entity")
         id = response.get("id")
-        status = response.get("status")
 
         if entity == PAYOUT_TYPE.PAYOUT.value:
             values["razorpayx_payout_id"] = id
-            values["razorpayx_payout_status"] = status.title()
-        else:
-            values["razorpayx_payout_link_id"] = id
-            values["razorpayx_payout_link_status"] = status.title()
 
-        self.doc.db_set(values, update_modified=True)
+            if status := response.get("status"):
+                values["razorpayx_payout_status"] = status.title()
+        elif entity == PAYOUT_TYPE.PAYOUT_LINK.value:
+            values["razorpayx_payout_link_id"] = id
+
+        if values:
+            self.doc.db_set(values, update_modified=True)
 
     ### VALIDATIONS ###
     def _validate_payout_prerequisite(self):
