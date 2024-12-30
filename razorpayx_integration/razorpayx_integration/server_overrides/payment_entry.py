@@ -245,37 +245,8 @@ def make_payout_with_razorpayx(doc):
 
 
 def handle_payout_cancellation(doc):
-    return
-    print("handle_payout_cancellation")
-    print("Flgs:    ", doc.flags)
-    if not doc.make_bank_online_payment or doc.flags.__canceled_by_rpx:
-        return
-
-    if doc.razorpayx_payout_id and doc.razorpayx_payout_status not in [
-        PAYOUT_STATUS.NOT_INITIATED.value,
-        PAYOUT_STATUS.QUEUED.value,
-    ]:
-        frappe.throw(
-            title=_("Cannot Cancel Payment Entry"),
-            msg=_(
-                "Payment Entry cannot be cancelled as Payout is already in {0} state."
-            ).format(frappe.bold(doc.razorpayx_payout_status)),
-        )
-
-    if (
-        doc.razorpayx_payout_link_id
-        and not doc.razorpayx_payout_id
-        and doc.razorpayx_payout_link_status
-        != PAYOUT_LINK_STATUS.ISSUED.value  # TODO: Remove this
-    ):
-        frappe.throw(
-            title=_("Cannot Cancel Payment Entry"),
-            msg=_(
-                "Payment Entry cannot be cancelled as Payout Link is on {0} state."
-            ).format(frappe.bold(doc.razorpayx_payout_link_status)),
-        )
-
-    PayoutWithPaymentEntry(doc).cancel_payout()
+    # TODO: cancel payout
+    pass
 
 
 ### UTILITY ###
