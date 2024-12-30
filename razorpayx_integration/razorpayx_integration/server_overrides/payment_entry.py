@@ -47,6 +47,9 @@ def validate_online_payment_requirements(doc):
     if not doc.make_bank_online_payment:
         return
 
+    doc.previous_doc = doc.get_doc_before_save() or frappe._dict()
+
+    validate_amended_details(doc)
     validate_mandatory_fields_for_payment(doc)
     validate_payout_mode(doc)
     validate_razorpayx_account(doc)
@@ -173,6 +176,52 @@ def validate_upi_id(doc):
             title=_("Invalid Party Bank Account"),
             exc=frappe.ValidationError,
         )
+
+
+def validate_amended_details(doc):
+    if (
+        not doc.amended_from
+        or not doc.previous_doc
+        or not is_amended_from_processed(doc)
+    ):
+        return
+
+    # Payments Related Fields
+    # TODO: accurate fields ?
+    fields_to_check = [
+        # Common
+        "payment_type",
+        "bank_account",
+        # Party related
+        "party",
+        "party_type",
+        "party_name",
+        "party_bank_account",
+        "party_bank_account_no",
+        "party_bank_ifsc",
+        "party_upi_id",
+        "contact_person",
+        "contact_mobile",
+        "contact_email",
+        # RazorpayX Related
+        "razorpayx_account",
+        "make_bank_online_payment",
+        "razorpayx_payout_mode",
+        "razorpayx_payout_desc",
+        "razorpayx_payout_status",
+        "razorpayx_pay_instantaneously",
+        "razorpayx_payout_id",
+        "razorpayx_payout_link_id",
+    ]
+
+    for field in fields_to_check:
+        if doc.get(field) != doc.previous_doc.get(field):
+            frappe.throw(
+                title=_("Payment Details Cannot be Amended"),
+                msg=_(
+                    "Payment Entry cannot be amended as it is already processed via RazorPayX."
+                ),
+            )
 
 
 ### ACTIONS ###
