@@ -10,6 +10,8 @@ from frappe import _
 
 from razorpayx_integration.constants import RAZORPAYX, RAZORPAYX_INTEGRATION_DOCTYPE
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
+    PAYOUT_LINK_STATUS,
+    PAYOUT_STATUS,
     USER_PAYOUT_MODE,
 )
 from razorpayx_integration.razorpayx_integration.utils.payout import (
@@ -32,7 +34,7 @@ def on_submit(doc, method=None):
 
 
 def on_cancel(doc, method=None):
-    pass
+    handle_payout_cancellation(doc)
 
 
 #### VALIDATIONS ####
@@ -168,13 +170,41 @@ def validate_upi_id(doc):
         )
 
 
-#### UTILS ####
+### ACTIONS ###
 # TODO: enqueue it?
 def make_payout(doc):
     PayoutWithPaymentEntry(doc).make_payout()
 
 
-#### HELPER FUNCTIONS ####
+def handle_payout_cancellation(doc):
+    if not doc.make_bank_online_payment or doc.__canceled_by_rpx:
+        return
+
+    if doc.razorpayx_payout_id and doc.razorpayx_payout_status not in [
+        PAYOUT_STATUS.NOT_INITIATED.value,
+        PAYOUT_STATUS.QUEUED.value,
+    ]:
+        frappe.throw(
+            title=_("Cannot Cancel Payment Entry"),
+            msg=_(
+                "Payment Entry cannot be cancelled as Payout is already in {0} state."
+            ).format(doc.razorpayx_payout_status),
+        )
+
+    if (
+        doc.razorpayx_payout_link_id
+        and not doc.razorpayx_payout_id
+        and doc.razorpayx_payout_link_status != PAYOUT_LINK_STATUS.ISSUED.value
+    ):
+        frappe.throw(
+            title=_("Cannot Cancel Payment Entry"),
+            msg=_(
+                "Payment Entry cannot be cancelled as Payout Link is on {0} state."
+            ).format(frappe.bold(doc.razorpayx_payout_link_status)),
+        )
+
+    PayoutWithPaymentEntry(doc).cancel_payout()
+
 
 # ! Important
 # TODO: Change design ?

@@ -97,9 +97,72 @@ class PayoutWithDocType(ABC):
                 exc=frappe.ValidationError,
             )
 
-        self._before_making_payout()
-
         return getattr(self, self.PAYOUT_METHOD_MAPPING[payout_method])()
+
+    def cancel_payout(self, cancel_doc: bool = False) -> dict:
+        """
+        Cancel payout.
+
+        :param cancel_doc: Cancel document after cancelling payout.
+
+        ---
+        Note: ⚠️ Only `queued` payout can be cancelled, otherwise it will raise error.
+        """
+
+        def get_cancelled_status(response: dict) -> str:
+            return (
+                response.get("status").title() or PAYOUT_STATUS.CANCELLED.value.title()
+            )
+
+        if not self.doc.razorpayx_payout_id:
+            return
+
+        payout = RazorPayXPayout(self.razorpayx_account)
+        response = payout.cancel(self.doc.razorpayx_payout_id)
+
+        self.doc.db_set(
+            "razorpayx_payout_status",
+            get_cancelled_status(response),
+        )
+
+        if cancel_doc:
+            self.doc.__canceled_by_rpx = True
+            self.doc.cancel()
+
+        return response
+
+    def cancel_payout_link(self, cancel_doc: bool = False) -> dict:
+        """
+        Cancel payout link.
+
+        :param cancel_doc: Cancel document after cancelling payout link.
+
+        ---
+        Note: ⚠️ Only `issued` payout link can be cancelled, otherwise it will raise error.
+        """
+
+        def get_cancelled_status(response: dict) -> str:
+            return (
+                response.get("status").title()
+                or PAYOUT_LINK_STATUS.CANCELLED.value.title()
+            )
+
+        if not self.doc.razorpayx_payout_link_id:
+            return
+
+        payout = RazorPayXLinkPayout(self.razorpayx_account)
+        response = payout.cancel(self.doc.razorpayx_payout_link_id)
+
+        self.doc.db_set(
+            "razorpayx_payout_status",
+            get_cancelled_status(response),
+        )
+
+        if cancel_doc:
+            self.doc.__canceled_by_rpx = True
+            self.doc.cancel()
+
+        return response
 
     ### HELPERS ###
     def _get_form_link(self, bold: bool = True) -> str:
@@ -107,12 +170,6 @@ class PayoutWithDocType(ABC):
         Return link to form of given document.
         """
         return frappe.bold(get_link_to_form(self.doc.doctype, self.doc.name))
-
-    def _before_making_payout(self):
-        """
-        Run before making payout.
-        """
-        self._get_razorpayx_account()
 
     @abstractmethod
     def _get_razorpayx_account(self) -> str:
@@ -262,6 +319,19 @@ class PayoutWithPaymentEntry(PayoutWithDocType):
 
         return response
 
+    def cancel_payout_and_payout_link(self) -> dict:
+        """
+        Cancel payout and payout link.
+
+         ---
+         Note:
+         - ⚠️ Only `queued` payout can be cancelled, otherwise it will raise error.
+         - ⚠️ Only `issued` payout link can be cancelled, otherwise it will raise error.
+        """
+
+        self.cancel_payout(cancel_doc=False)
+        self.cancel_payout_link(cancel_doc=False)
+
     ### HELPERS ###
     def _get_razorpayx_account(self) -> str:
         return self.doc.razorpayx_account
@@ -382,27 +452,11 @@ class PayoutWithPaymentEntry(PayoutWithDocType):
                 exc=frappe.ValidationError,
             )
 
-        if (
-            self.doc.razorpayx_payout_link_status
-            and self.doc.razorpayx_payout_link_status
-            == PAYOUT_LINK_STATUS.ISSUED.value.title()
-        ):
+        if self.doc.razorpayx_payout_id or self.doc.razorpayx_payout_link_id:
             frappe.throw(
-                msg=_(
-                    "RazorPayX payout link already initiated for Payment Entry {0}"
-                ).format(self.form_link),
-                title=_("Invalid Payment Entry"),
-                exc=frappe.ValidationError,
-            )
-
-        if (
-            self.doc.razorpayx_payout_status
-            != PAYOUT_STATUS.NOT_INITIATED.value.title()
-        ):
-            frappe.throw(
-                msg=_(
-                    "RazorPayX payout already initiated for Payment Entry {0}"
-                ).format(self.form_link),
+                msg=_("Payout already created for Payment Entry {0}").format(
+                    self.form_link
+                ),
                 title=_("Invalid Payment Entry"),
                 exc=frappe.ValidationError,
             )

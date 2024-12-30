@@ -332,7 +332,7 @@ class PayoutWebhook(RazorPayXWebhook):
         """
         Cancel the Payment Entry.
         """
-        self.source_doc.flags.__canceled_by_rpx_webhook = True
+        self.source_doc.flags.__canceled_by_rpx = True
         self.source_doc.cancel()
 
     def should_cancel_payment_entry(self) -> bool:

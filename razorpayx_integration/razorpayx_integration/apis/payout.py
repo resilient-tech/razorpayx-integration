@@ -21,6 +21,8 @@ from razorpayx_integration.razorpayx_integration.utils.validation import (
     validate_razorpayx_payout_status,
 )
 
+# TODO: in other than payout api add args for ref_doctype and ref_docname? to log in IR
+
 
 class RazorPayXPayout(BaseRazorPayXAPI):
     """
