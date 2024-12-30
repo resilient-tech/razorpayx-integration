@@ -30,6 +30,10 @@ from razorpayx_integration.razorpayx_integration.utils.validation import (
 # TODO:  also validate IFSC code? (Must be 11 chars or some API)
 # TODO: check payout details with amended from
 #### DOC EVENTS ####
+def onload(doc, method=None):
+    doc.set_onload("disable_payout_fields", is_amended_from_processed(doc))
+
+
 def validate(doc, method=None):
     validate_online_payment_requirements(doc)
 
@@ -188,7 +192,7 @@ def validate_amended_details(doc):
 
     # Payments Related Fields
     # TODO: accurate fields ?
-    fields_to_check = [
+    payout_fields = [
         # Common
         "payment_type",
         "bank_account",
@@ -204,6 +208,7 @@ def validate_amended_details(doc):
         "contact_mobile",
         "contact_email",
         # RazorpayX Related
+        "paid_amount",
         "razorpayx_account",
         "make_bank_online_payment",
         "razorpayx_payout_mode",
@@ -214,7 +219,7 @@ def validate_amended_details(doc):
         "razorpayx_payout_link_id",
     ]
 
-    for field in fields_to_check:
+    for field in payout_fields:
         if doc.get(field) != doc.previous_doc.get(field):
             frappe.throw(
                 title=_("Payment Details Cannot be Amended"),
