@@ -4,7 +4,7 @@ from razorpayx_integration.payment_utils.constants.enums import BaseEnum
 class EVENTS_TYPE(BaseEnum):
     PAYOUT = "payout"
     PAYOUT_LINK = "payout_link"
-    TRANSACTION = "transaction"  # ! NOTE: currently not supported
+    TRANSACTION = "transaction"
     ACCOUNT = "fund_account"  # ! NOTE: currently not supported
 
 
@@ -42,7 +42,6 @@ class PAYOUT_LINK_EVENT(BaseEnum):
     """
 
     PENDING = "payout_link.pending"  # ! NOTE: currently not supported
-    ISSUED = "payout_link.issued"  # ! NOTE: currently not supported
     PROCESSING = "payout_link.processing"  # ! NOTE: currently not supported
     PROCESSED = "payout_link.processed"  # ! NOTE: currently not supported
     ATTEMPTED = "payout_link.attempted"  # ! NOTE: currently not supported

@@ -1,5 +1,5 @@
 app_name = "razorpayx_integration"
-app_title = "RazorpayX Integration"
+app_title = "RazorPayX Integration"
 app_publisher = "Resilient Tech"
 app_description = "Automat Payments By RazorPayX API For Frappe Apps"
 app_email = "info@resilient.tech"
@@ -25,5 +25,6 @@ doc_events = {
     "Payment Entry": {
         "validate": "razorpayx_integration.razorpayx_integration.server_overrides.payment_entry.validate",
         "on_submit": "razorpayx_integration.razorpayx_integration.server_overrides.payment_entry.on_submit",
+        "on_cancel": "razorpayx_integration.razorpayx_integration.server_overrides.payment_entry.on_cancel",
     },
 }

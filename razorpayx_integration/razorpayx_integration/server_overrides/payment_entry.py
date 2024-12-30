@@ -10,6 +10,8 @@ from frappe import _
 
 from razorpayx_integration.constants import RAZORPAYX, RAZORPAYX_INTEGRATION_DOCTYPE
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
+    PAYOUT_LINK_STATUS,
+    PAYOUT_STATUS,
     USER_PAYOUT_MODE,
 )
 from razorpayx_integration.razorpayx_integration.utils.payout import (
@@ -20,14 +22,29 @@ from razorpayx_integration.razorpayx_integration.utils.validation import (
     validate_razorpayx_user_payout_mode,
 )
 
+# TODO: cancel workflow as decided like show dialog and then show if cancelled or not
+
+# TODO: for amended form do copy the payout changes but do not allowed to change the payout details and for header pass amended_fromI
+
 
 # TODO:  also validate IFSC code? (Must be 11 chars or some API)
+#### DOC EVENTS ####
 def validate(doc, method=None):
     validate_online_payment_requirements(doc)
 
 
+def on_submit(doc, method=None):
+    if doc.make_bank_online_payment:
+        make_payout(doc)
+
+
+def on_cancel(doc, method=None):
+    handle_payout_cancellation(doc)
+
+
+#### VALIDATIONS ####
 def validate_online_payment_requirements(doc):
-    if not doc.make_online_payment:
+    if not doc.make_bank_online_payment:
         return
 
     validate_mandatory_fields_for_payment(doc)
@@ -35,8 +52,8 @@ def validate_online_payment_requirements(doc):
     validate_razorpayx_account(doc)
     validate_upi_id(doc)
 
-    if doc.razorpayx_payment_desc:
-        validate_razorpayx_payout_description(doc.razorpayx_payment_desc)
+    if doc.razorpayx_payout_desc:
+        validate_razorpayx_payout_description(doc.razorpayx_payout_desc)
 
 
 def validate_mandatory_fields_for_payment(doc):
@@ -59,9 +76,9 @@ def validate_mandatory_fields_for_payment(doc):
 
 
 def validate_payout_mode(doc):
-    validate_razorpayx_user_payout_mode(doc.razorpayx_payment_mode)
+    validate_razorpayx_user_payout_mode(doc.razorpayx_payout_mode)
 
-    if doc.razorpayx_payment_mode == USER_PAYOUT_MODE.BANK.value:
+    if doc.razorpayx_payout_mode == USER_PAYOUT_MODE.BANK.value:
         # TODO: also fetch `IFSC` and `Account Number` and check
         if not doc.party_bank_account:
             frappe.throw(
@@ -77,7 +94,7 @@ def validate_payout_mode(doc):
                 exc=frappe.MandatoryError,
             )
 
-    elif doc.razorpayx_payment_mode == USER_PAYOUT_MODE.LINK.value:
+    elif doc.razorpayx_payout_mode == USER_PAYOUT_MODE.LINK.value:
         if not doc.contact_mobile or not doc.contact_email:
             frappe.throw(
                 msg=_(
@@ -87,14 +104,14 @@ def validate_payout_mode(doc):
                 exc=frappe.MandatoryError,
             )
 
-        if not doc.razorpayx_payment_desc:
+        if not doc.razorpayx_payout_desc:
             frappe.throw(
-                msg=_("Payment Description is mandatory to make payment with Link."),
+                msg=_("Payout Description is mandatory to make payment with Link."),
                 title=_("Mandatory Fields Missing"),
                 exc=frappe.MandatoryError,
             )
 
-    elif doc.razorpayx_payment_mode == USER_PAYOUT_MODE.UPI.value:
+    elif doc.razorpayx_payout_mode == USER_PAYOUT_MODE.UPI.value:
         if not doc.party_upi_id:
             frappe.throw(
                 msg=_("Party's UPI ID is mandatory to make payment."),
@@ -130,7 +147,7 @@ def validate_razorpayx_account(doc):
 
 
 def validate_upi_id(doc):
-    if doc.razorpayx_payment_mode != USER_PAYOUT_MODE.UPI.value:
+    if doc.razorpayx_payout_mode != USER_PAYOUT_MODE.UPI.value:
         return
 
     associated_upi_id = frappe.get_value(
@@ -158,13 +175,53 @@ def validate_upi_id(doc):
         )
 
 
-def on_submit(doc, method=None):
-    make_payout(doc)
+DOC_SETTINGS = {
+    "RazorpayX Integration Settings": "razorpayx_integration_settings",
+}
 
 
+### ACTIONS ###
 # TODO: enqueue it?
 def make_payout(doc):
+    # get bank integration (bank account)
+    # api = get_api(doc.razorpayx_account)
+    # if api.pay_now(doc):
+    #     api.pay(amount, contact, description)
     PayoutWithPaymentEntry(doc).make_payout()
+
+
+def handle_payout_cancellation(doc):
+    return
+    print("handle_payout_cancellation")
+    print("Flgs:    ", doc.flags)
+    if not doc.make_bank_online_payment or doc.flags.__canceled_by_rpx:
+        return
+
+    if doc.razorpayx_payout_id and doc.razorpayx_payout_status not in [
+        PAYOUT_STATUS.NOT_INITIATED.value,
+        PAYOUT_STATUS.QUEUED.value,
+    ]:
+        frappe.throw(
+            title=_("Cannot Cancel Payment Entry"),
+            msg=_(
+                "Payment Entry cannot be cancelled as Payout is already in {0} state."
+            ).format(frappe.bold(doc.razorpayx_payout_status)),
+        )
+
+    if (
+        doc.razorpayx_payout_link_id
+        and not doc.razorpayx_payout_id
+        and doc.razorpayx_payout_link_status
+        != PAYOUT_LINK_STATUS.ISSUED.value  # TODO: Remove this
+    ):
+        frappe.throw(
+            title=_("Cannot Cancel Payment Entry"),
+            msg=_(
+                "Payment Entry cannot be cancelled as Payout Link is on {0} state."
+            ).format(frappe.bold(doc.razorpayx_payout_link_status)),
+        )
+
+    PayoutWithPaymentEntry(doc).cancel_payout()
 
 
 # ! Important

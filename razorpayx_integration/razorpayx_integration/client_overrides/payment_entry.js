@@ -7,16 +7,19 @@
 // TODO: Work with new design for Payment Entry ???
 // TODO: Improve UX and UI for Payment Entry
 
+// TODO: for UX: change submit button label to `Pay and Submit`
+// TODO: Button to create RazorpayX payout after submit if not paid by RazorpayX
+
 frappe.ui.form.on("Payment Entry", {
 	refresh: function (frm) {
 		// set Intro for Payment
-		if (frm.is_new() || !frm.doc.make_online_payment) return;
+		if (frm.is_new() || !frm.doc.make_bank_online_payment) return;
 
 		if (frm.doc.docstatus == 0) {
 			frm.set_intro(__("This Payment will be processed by RazorpayX on submission."));
 		} else if (frm.doc.docstatus == 1) {
 			frm.set_intro(
-				__("RazorpayX Payment Status: <strong>{0}</strong>", [frm.doc.razorpayx_payment_status])
+				__("RazorPayX Payout Status: <strong>{0}</strong>", [frm.doc.razorpayx_payout_status])
 			);
 		}
 	},

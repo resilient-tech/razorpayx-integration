@@ -2,7 +2,6 @@ import json
 from hmac import new as hmac
 
 import frappe
-from erpnext.accounts.doctype.payment_entry.payment_entry import PaymentEntry
 from frappe import _
 from frappe.utils import get_link_to_form, get_url_to_form
 from frappe.utils.password import get_decrypted_password
@@ -11,9 +10,6 @@ from razorpayx_integration.constants import (
     RAZORPAYX_INTEGRATION_DOCTYPE,
 )
 from razorpayx_integration.payment_utils.constants.enums import BaseEnum
-from razorpayx_integration.payment_utils.constants.property_setters import (
-    DEFAULT_REFERENCE_NO,
-)
 from razorpayx_integration.payment_utils.utils import log_integration_request
 from razorpayx_integration.razorpayx_integration.apis.payout import RazorPayXLinkPayout
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
@@ -24,9 +20,6 @@ from razorpayx_integration.razorpayx_integration.constants.payouts import (
 from razorpayx_integration.razorpayx_integration.constants.webhooks import (
     EVENTS_TYPE,
     SUPPORTED_EVENTS,
-)
-from razorpayx_integration.razorpayx_integration.doctype.razorpayx_integration_setting.razorpayx_integration_setting import (
-    RazorPayXIntegrationSetting,
 )
 
 # API: TUNNEL_URL/api/method/razorpayx_integration.razorpayx_integration.utils.webhooks.razorpayx_webhook_listener
@@ -249,21 +242,17 @@ class PayoutWebhook(RazorPayXWebhook):
         """
         Check if the order maintained or not.
 
-        Compare webhook status with the source doc status and payment status.
+        Compare webhook status with the source docstatus and payout status.
 
         Note: 🟢 Override this method in the sub class for custom order maintenance.
         """
-        pe_status = self.source_doc.razorpayx_payment_status.lower()
+        pe_status = self.source_doc.razorpayx_payout_link_status.lower()
 
-        if not self.status or self.source_doc.docstatus != 1:
-            return False
-
-        # If the current webhook status's order is less than or equal to the PE status, then order not maintained.
-
-        if PAYOUT_ORDERS[self.status] <= PAYOUT_ORDERS[pe_status]:
-            return False
-
-        return True
+        return (
+            self.status
+            and self.source_doc.docstatus == 1
+            and PAYOUT_ORDERS[self.status] > PAYOUT_ORDERS[pe_status]
+        )
 
     def update_payment_entry(self):
         """
@@ -277,7 +266,7 @@ class PayoutWebhook(RazorPayXWebhook):
             return
 
         values = {
-            "razorpayx_payment_status": self.status.title(),
+            "razorpayx_payout_status": self.status.title(),
             **self.get_updated_reference(),
         }
 
@@ -330,7 +319,7 @@ class PayoutWebhook(RazorPayXWebhook):
                 return True
 
             if status == PAYOUT_LINK_STATUS.ISSUED.value:
-                payout_link.cancel(self.source_doc.razorpayx_payout_link_id)
+                payout_link.cancel(link_id)
                 return True
 
         except Exception:
@@ -343,7 +332,7 @@ class PayoutWebhook(RazorPayXWebhook):
         """
         Cancel the Payment Entry.
         """
-        self.source_doc.flags.__canceled_by_rpx_webhook = True
+        self.source_doc.flags.__canceled_by_rpx = True
         self.source_doc.cancel()
 
     def should_cancel_payment_entry(self) -> bool:
@@ -404,7 +393,7 @@ class PayoutLinkWebhook(PayoutWebhook):
         cancel_pe = self.should_cancel_payment_entry()
 
         if cancel_pe:
-            values["razorpayx_payment_status"] = PAYOUT_STATUS.CANCELLED.value
+            values["razorpayx_payout_status"] = PAYOUT_STATUS.CANCELLED.value
 
         if self.id:
             values["razorpayx_payout_link_id"] = self.id
@@ -486,6 +475,9 @@ class TransactionWebhook(PayoutWebhook):
 
     ### UTILITIES ###
     def is_order_maintained(self):
+        """
+        Check if the order maintained or not.
+        """
         return bool(
             self.status
             and self.source_doc.docstatus == 1
@@ -499,7 +491,7 @@ class TransactionWebhook(PayoutWebhook):
         values = self.get_updated_reference()
 
         if self.status:
-            values["razorpayx_payment_status"] = self.status.title()
+            values["razorpayx_payout_status"] = self.status.title()
 
         if self.id:
             values["razorpayx_payout_id"] = self.id

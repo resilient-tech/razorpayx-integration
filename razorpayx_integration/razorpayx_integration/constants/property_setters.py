@@ -4,14 +4,14 @@ from razorpayx_integration.razorpayx_integration.constants.payouts import (
 
 STANDARD_FIELDS_TO_HIDE = {"Employee": ["bank_name", "bank_ac_no", "iban"]}
 
-# PE mandatory fields on `make_online_payment`
+# PE mandatory fields on `make_bank_online_payment`
 PE_MANDATORY_FIELDS_FOR_PAYMENT = [
     "bank_account",  # Company Bank Account
     "party_bank_account",
 ]
 
-UPI_ID_CONDITION = f"eval: doc.make_online_payment && doc.razorpayx_account && doc.razorpayx_payment_mode === '{USER_PAYOUT_MODE.UPI.value}'"
-BANK_ACCOUNT_CONDITION = f"eval: doc.make_online_payment && doc.razorpayx_account && doc.razorpayx_payment_mode === '{USER_PAYOUT_MODE.BANK.value}'"
+UPI_ID_CONDITION = f"eval: doc.make_bank_online_payment && doc.razorpayx_account && doc.razorpayx_payout_mode === '{USER_PAYOUT_MODE.UPI.value}'"
+BANK_ACCOUNT_CONDITION = f"eval: doc.make_bank_online_payment && doc.razorpayx_account && doc.razorpayx_payout_mode === '{USER_PAYOUT_MODE.BANK.value}'"
 
 PROPERTY_SETTERS = [
     ## Payment Entry ##
@@ -20,7 +20,7 @@ PROPERTY_SETTERS = [
         "fieldname": "contact_person",
         "property": "mandatory_depends_on",
         "property_type": "Data",
-        "value": f"eval: doc.make_online_payment && doc.razorpayx_account && doc.razorpayx_payment_mode === '{USER_PAYOUT_MODE.LINK.value}'",
+        "value": f"eval: doc.make_bank_online_payment && doc.razorpayx_account && doc.razorpayx_payout_mode === '{USER_PAYOUT_MODE.LINK.value}'",
     },
     {
         "doctype": "Payment Entry",
@@ -128,6 +128,6 @@ for field in PE_MANDATORY_FIELDS_FOR_PAYMENT:
             "fieldname": field,
             "property": "mandatory_depends_on",
             "property_type": "Data",
-            "value": "eval: doc.make_online_payment",
+            "value": "eval: doc.make_bank_online_payment",
         }
     )

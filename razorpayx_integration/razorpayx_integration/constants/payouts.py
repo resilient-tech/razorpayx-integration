@@ -56,7 +56,7 @@ class PAYOUT_STATUS(BaseEnum):
     # Custom Status
     NOT_INITIATED = "not initiated"
 
-    # Payout Status
+    # RazorpayX Payout Status
     PENDING = "pending"
     QUEUED = "queued"
     SCHEDULED = "scheduled"
@@ -74,6 +74,7 @@ class PAYOUT_LINK_STATUS(BaseEnum):
     - https://razorpay.com/docs/x/payout-links/life-cycle/
     """
 
+    # RazorpayX Payout Link Status
     PENDING = "pending"
     ISSUED = "issued"
     PROCESSING = "processing"
