@@ -384,7 +384,8 @@ class PayoutWithPaymentEntry(PayoutWithDocType):
 
         if (
             self.doc.razorpayx_payout_link_status
-            != PAYOUT_LINK_STATUS.NOT_INITIATED.value.title()
+            and self.doc.razorpayx_payout_link_status
+            == PAYOUT_LINK_STATUS.ISSUED.value.title()
         ):
             frappe.throw(
                 msg=_(

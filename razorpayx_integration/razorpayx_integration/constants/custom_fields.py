@@ -95,7 +95,6 @@ CUSTOM_FIELDS = {
             "fieldtype": "Select",
             "insert_after": "razorpayx_payout_status",
             "options": PAYOUT_LINK_STATUS.title_case_values(as_string=True),
-            "default": PAYOUT_LINK_STATUS.NOT_INITIATED.value.title(),
             "depends_on": f"eval: doc.razorpayx_account && doc.creation && doc.razorpayx_payout_mode === '{USER_PAYOUT_MODE.LINK.value}'",
             "read_only": 1,
             "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
