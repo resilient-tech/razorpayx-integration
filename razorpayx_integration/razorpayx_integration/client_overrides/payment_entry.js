@@ -7,6 +7,9 @@
 // TODO: Work with new design for Payment Entry ???
 // TODO: Improve UX and UI for Payment Entry
 
+// TODO: for UX: change submit button label to `Pay and Submit`
+// TODO: Button to create RazorpayX payout after submit if not paid by RazorpayX
+
 frappe.ui.form.on("Payment Entry", {
 	refresh: function (frm) {
 		// set Intro for Payment

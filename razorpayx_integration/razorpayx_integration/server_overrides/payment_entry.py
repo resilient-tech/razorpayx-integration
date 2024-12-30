@@ -22,6 +22,10 @@ from razorpayx_integration.razorpayx_integration.utils.validation import (
     validate_razorpayx_user_payout_mode,
 )
 
+# TODO: cancel workflow as decided like show dialog and then show if cancelled or not
+
+# TODO: for amended form do copy the payout changes but do not allowed to change the payout details and for header pass amended_fromI
+
 
 # TODO:  also validate IFSC code? (Must be 11 chars or some API)
 #### DOC EVENTS ####
@@ -175,6 +179,7 @@ DOC_SETTINGS = {
     "RazorpayX Integration Settings": "razorpayx_integration_settings",
 }
 
+
 ### ACTIONS ###
 # TODO: enqueue it?
 def make_payout(doc):
@@ -206,7 +211,8 @@ def handle_payout_cancellation(doc):
     if (
         doc.razorpayx_payout_link_id
         and not doc.razorpayx_payout_id
-        and doc.razorpayx_payout_link_status != PAYOUT_LINK_STATUS.ISSUED.value # TODO: Remove this
+        and doc.razorpayx_payout_link_status
+        != PAYOUT_LINK_STATUS.ISSUED.value  # TODO: Remove this
     ):
         frappe.throw(
             title=_("Cannot Cancel Payment Entry"),
