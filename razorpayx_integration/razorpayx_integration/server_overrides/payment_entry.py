@@ -28,14 +28,14 @@ from razorpayx_integration.razorpayx_integration.utils.validation import (
 
 
 # TODO:  also validate IFSC code? (Must be 11 chars or some API)
+# TODO: check payout details with amended from
 #### DOC EVENTS ####
 def validate(doc, method=None):
     validate_online_payment_requirements(doc)
 
 
 def on_submit(doc, method=None):
-    if doc.make_bank_online_payment:
-        make_payout(doc)
+    make_payout_with_razorpayx(doc)
 
 
 def on_cancel(doc, method=None):
@@ -175,18 +175,18 @@ def validate_upi_id(doc):
         )
 
 
-DOC_SETTINGS = {
-    "RazorpayX Integration Settings": "razorpayx_integration_settings",
-}
-
-
 ### ACTIONS ###
 # TODO: enqueue it?
-def make_payout(doc):
-    # get bank integration (bank account)
-    # api = get_api(doc.razorpayx_account)
-    # if api.pay_now(doc):
-    #     api.pay(amount, contact, description)
+def make_payout_with_razorpayx(doc):
+    if doc.doctype != "Payment Entry":
+        frappe.throw(
+            title=_("Invalid DocType"),
+            msg=_("DocType is not <strong>Payment Entry</strong>").format(doc.doctype),
+        )
+
+    if not doc.make_bank_online_payment or is_amended_from_processed(doc):
+        return
+
     PayoutWithPaymentEntry(doc).make_payout()
 
 
@@ -222,6 +222,21 @@ def handle_payout_cancellation(doc):
         )
 
     PayoutWithPaymentEntry(doc).cancel_payout()
+
+
+### UTILITY ###
+def is_amended_from_processed(doc) -> bool | int:
+    """
+    Returns the amended from Payment Entry is already processed via RazorpayX.
+
+    :param doc: Payment Entry Document
+    """
+    if not doc.amended_from:
+        return False
+
+    return frappe.get_value(
+        "Payment Entry", doc.amended_from, "make_bank_online_payment"
+    )
 
 
 # ! Important
