@@ -126,7 +126,7 @@ class PayoutWithDocType(ABC):
         )
 
         if cancel_doc:
-            self.doc.__canceled_by_rpx = True
+            self.doc.flags.__canceled_by_rpx = True
             self.doc.cancel()
 
         return response
@@ -159,7 +159,7 @@ class PayoutWithDocType(ABC):
         )
 
         if cancel_doc:
-            self.doc.__canceled_by_rpx = True
+            self.doc.flags.__canceled_by_rpx = True
             self.doc.cancel()
 
         return response

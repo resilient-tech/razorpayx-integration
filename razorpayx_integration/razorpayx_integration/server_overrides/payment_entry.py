@@ -30,7 +30,8 @@ def validate(doc, method=None):
 
 
 def on_submit(doc, method=None):
-    make_payout(doc)
+    if doc.make_bank_online_payment:
+        make_payout(doc)
 
 
 def on_cancel(doc, method=None):
@@ -170,14 +171,25 @@ def validate_upi_id(doc):
         )
 
 
+DOC_SETTINGS = {
+    "RazorpayX Integration Settings": "razorpayx_integration_settings",
+}
+
 ### ACTIONS ###
 # TODO: enqueue it?
 def make_payout(doc):
+    # get bank integration (bank account)
+    # api = get_api(doc.razorpayx_account)
+    # if api.pay_now(doc):
+    #     api.pay(amount, contact, description)
     PayoutWithPaymentEntry(doc).make_payout()
 
 
 def handle_payout_cancellation(doc):
-    if not doc.make_bank_online_payment or doc.__canceled_by_rpx:
+    return
+    print("handle_payout_cancellation")
+    print("Flgs:    ", doc.flags)
+    if not doc.make_bank_online_payment or doc.flags.__canceled_by_rpx:
         return
 
     if doc.razorpayx_payout_id and doc.razorpayx_payout_status not in [
@@ -188,13 +200,13 @@ def handle_payout_cancellation(doc):
             title=_("Cannot Cancel Payment Entry"),
             msg=_(
                 "Payment Entry cannot be cancelled as Payout is already in {0} state."
-            ).format(doc.razorpayx_payout_status),
+            ).format(frappe.bold(doc.razorpayx_payout_status)),
         )
 
     if (
         doc.razorpayx_payout_link_id
         and not doc.razorpayx_payout_id
-        and doc.razorpayx_payout_link_status != PAYOUT_LINK_STATUS.ISSUED.value
+        and doc.razorpayx_payout_link_status != PAYOUT_LINK_STATUS.ISSUED.value # TODO: Remove this
     ):
         frappe.throw(
             title=_("Cannot Cancel Payment Entry"),
