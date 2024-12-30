@@ -90,21 +90,10 @@ CUSTOM_FIELDS = {
             "no_copy": 1,
         },
         {
-            "fieldname": "razorpayx_payout_link_status",
-            "label": "RazorPayX Payout Link Status",
-            "fieldtype": "Select",
-            "insert_after": "razorpayx_payout_status",
-            "options": PAYOUT_LINK_STATUS.title_case_values(as_string=True),
-            "depends_on": f"eval: doc.razorpayx_account && doc.creation && doc.razorpayx_payout_mode === '{USER_PAYOUT_MODE.LINK.value}'",
-            "read_only": 1,
-            "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
-            "no_copy": 1,
-        },
-        {
             "fieldname": "razorpayx_payout_id_sec",
             "label": "RazorPayX Payout ID Section",
             "fieldtype": "Section Break",
-            "insert_after": "razorpayx_payout_link_status",
+            "insert_after": "razorpayx_payout_status",
             "hidden": 1,
         },
         {

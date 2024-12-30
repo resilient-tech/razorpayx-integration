@@ -13,7 +13,6 @@ from razorpayx_integration.payment_utils.constants.enums import BaseEnum
 from razorpayx_integration.payment_utils.utils import log_integration_request
 from razorpayx_integration.razorpayx_integration.apis.payout import RazorPayXLinkPayout
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
-    PAYOUT_LINK_ORDERS,
     PAYOUT_LINK_STATUS,
     PAYOUT_ORDERS,
     PAYOUT_STATUS,
@@ -320,7 +319,7 @@ class PayoutWebhook(RazorPayXWebhook):
                 return True
 
             if status == PAYOUT_LINK_STATUS.ISSUED.value:
-                payout_link.cancel(self.source_doc.razorpayx_payout_link_id)
+                payout_link.cancel(link_id)
                 return True
 
         except Exception:
@@ -374,15 +373,9 @@ class PayoutLinkWebhook(PayoutWebhook):
         """
         Check if the order maintained or not.
 
-        Compare webhook status with the source docstatus and payout link status.
+        Caution: ⚠️ Payout link status is not maintained in the Payment Entry.
         """
-        pe_status = self.source_doc.razorpayx_payout_link_status.lower()
-
-        return (
-            self.status
-            and self.source_doc.docstatus == 1
-            and PAYOUT_LINK_ORDERS[self.status] > PAYOUT_LINK_ORDERS[pe_status]
-        )
+        return self.status and self.source_doc.docstatus == 1
 
     def update_payment_entry(self):
         """
@@ -395,10 +388,7 @@ class PayoutLinkWebhook(PayoutWebhook):
         if not self.should_update_payment_entry():
             return
 
-        values = {
-            "razorpayx_payout_link_status": self.status.title(),
-            **self.get_updated_reference(),
-        }
+        values = self.get_updated_reference()
 
         cancel_pe = self.should_cancel_payment_entry()
 

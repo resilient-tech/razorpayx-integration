@@ -41,11 +41,10 @@ class PAYOUT_LINK_EVENT(BaseEnum):
     Reference: https://razorpay.com/docs/webhooks/payloads/x/payout-links/
     """
 
-    PENDING = "payout_link.pending"
-    ISSUED = "payout_link.issued"
-    PROCESSING = "payout_link.processing"
-    PROCESSED = "payout_link.processed"
-    ATTEMPTED = "payout_link.attempted"
+    PENDING = "payout_link.pending"  # ! NOTE: currently not supported
+    PROCESSING = "payout_link.processing"  # ! NOTE: currently not supported
+    PROCESSED = "payout_link.processed"  # ! NOTE: currently not supported
+    ATTEMPTED = "payout_link.attempted"  # ! NOTE: currently not supported
     CANCELLED = "payout_link.cancelled"
     REJECTED = "payout_link.rejected"
     EXPIRED = "payout_link.expired"
@@ -70,11 +69,6 @@ SUPPORTED_EVENTS = (
     PAYOUT_EVENT.FAILED.value,
     PAYOUT_EVENT.UPDATED.value,
     ## PAYOUT LINK ##
-    PAYOUT_LINK_EVENT.PENDING.value,
-    PAYOUT_LINK_EVENT.ISSUED.value,
-    PAYOUT_LINK_EVENT.PROCESSING.value,
-    PAYOUT_LINK_EVENT.PROCESSED.value,
-    PAYOUT_LINK_EVENT.ATTEMPTED.value,
     PAYOUT_LINK_EVENT.CANCELLED.value,
     PAYOUT_LINK_EVENT.REJECTED.value,
     PAYOUT_LINK_EVENT.EXPIRED.value,
