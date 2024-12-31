@@ -77,6 +77,35 @@ class RazorPayXWebhook:
         self.set_razorpayx_account()  # Mandatory
         self.set_common_payload_attributes()  # Mandatory
         self.setup_webhook_payload()
+        self.set_source_doctype_and_docname()
+
+    def set_razorpayx_account(self):
+        """
+        Set the RazorpayX Account Docname using the `account_id`.
+        """
+        if not self.account_id:
+            self.account_id = self.payload.get("account_id")
+
+        self.razorpayx_account = get_razorpayx_integration_account(self.account_id)
+
+    def set_common_payload_attributes(self):
+        """
+        Set the common payload attributes.
+
+        Attributes which are common in all webhook payloads.
+
+        ---
+        Common Attributes:
+        - `event`
+        - `event_type`
+        - `payload_entity`
+        """
+        self.event = self.payload["event"]
+        self.event_type = self.event.split(".")[0]
+
+        self.payload_entity = (
+            self.payload.get("payload", {}).get(self.event_type, {}).get("entity") or {}
+        )
 
     def setup_webhook_payload(self):
         """
@@ -97,36 +126,7 @@ class RazorPayXWebhook:
             self.utr = self.payload_entity.get("utr")
             self.id = self.payload_entity.get("id")
 
-        self.notes = self.payload_entity.get("notes", {})
-        self.set_source_doctype_and_docname()
-
-    def set_common_payload_attributes(self):
-        """
-        Set the common payload attributes.
-
-        Attributes which are common in all webhook payloads.
-
-        ---
-        Common Attributes:
-        - `event`
-        - `event_type`
-        - `payload_entity`
-        """
-        self.event = self.payload["event"]
-        self.event_type = self.event.split(".")[0]
-
-        self.payload_entity = (
-            self.payload.get("payload", {}).get(self.event_type, {}).get("entity", {})
-        )
-
-    def set_razorpayx_account(self):
-        """
-        Set the RazorpayX Account Docname using the `account_id`.
-        """
-        if not self.account_id:
-            self.account_id = self.payload.get("account_id")
-
-        self.razorpayx_account = get_razorpayx_integration_account(self.account_id)
+        self.notes = self.payload_entity.get("notes") or {}
 
     def set_source_doctype_and_docname(self):
         """
@@ -170,9 +170,9 @@ class RazorPayXWebhook:
         """
         Check if the order maintained or not.
 
-        Note: This method should be overridden in the sub class.
+        Note: ⚠️ This method should be overridden in the sub class.
         """
-        pass
+        return True
 
     def get_ir_formlink(self, html: bool = False) -> str:
         """
@@ -215,36 +215,6 @@ class PayoutWebhook(RazorPayXWebhook):
         """
         self.update_payment_entry()
 
-    ### UTILITIES ###
-    def should_update_payment_entry(self) -> bool:
-        """
-        Check if the Payment Entry should be updated or not.
-
-        Note: Source doc (Payment Entry) is set here.
-        """
-        return (
-            self.source_doctype == "Payment Entry"
-            and self.source_docname
-            and self.get_source_doc()
-            and self.is_order_maintained()
-        )
-
-    def is_order_maintained(self) -> bool:
-        """
-        Check if the order maintained or not.
-
-        Compare webhook status with the source docstatus and payout status.
-
-        Note: 🟢 Override this method in the sub class for custom order maintenance.
-        """
-        pe_status = self.source_doc.razorpayx_payout_link_status.lower()
-
-        return (
-            self.status
-            and self.source_doc.docstatus == 1
-            and PAYOUT_ORDERS[self.status] > PAYOUT_ORDERS[pe_status]
-        )
-
     def update_payment_entry(self):
         """
         Update Payment Entry based on the webhook status.
@@ -268,6 +238,32 @@ class PayoutWebhook(RazorPayXWebhook):
 
         if self.should_cancel_payment_entry() and self.payout_link_cancelled():
             self.cancel_payment_entry()
+
+    ### UTILITIES ###
+    def should_update_payment_entry(self) -> bool:
+        """
+        Check if the Payment Entry should be updated or not.
+
+        Note: Source doc (Payment Entry) is set here.
+        """
+        return (
+            self.source_doctype == "Payment Entry"
+            and self.source_docname
+            and self.get_source_doc()
+            and self.is_order_maintained()
+        )
+
+    def is_order_maintained(self) -> bool:
+        """
+        Check if the order maintained or not.
+
+        Compare webhook status with the source docstatus and payout status.
+
+        Note: 🟢 Override this method in the sub class for custom order maintenance.
+        """
+        pe_status = self.source_doc.razorpayx_payout_status.lower()
+
+        return self.status and PAYOUT_ORDERS[self.status] > PAYOUT_ORDERS[pe_status]
 
     def get_updated_reference(self) -> dict:
         """
@@ -366,7 +362,7 @@ class PayoutLinkWebhook(PayoutWebhook):
 
         Caution: ⚠️ Payout link status is not maintained in the Payment Entry.
         """
-        return self.status and self.source_doc.docstatus == 1
+        return bool(self.status)
 
     def update_payment_entry(self):
         """
@@ -456,24 +452,21 @@ class TransactionWebhook(PayoutWebhook):
                     return self.transaction_source.get("payout_id")
 
         if self.payload_entity:
-            self.transaction_source = self.payload_entity.get("source", {})
+            self.transaction_source = self.payload_entity.get("source") or {}
 
         if self.transaction_source:
             self.transaction_type = self.transaction_source.get("entity")
             self.utr = self.transaction_source.get("utr")
             self.status = get_status()
             self.id = get_payout_id()
+            self.notes = self.transaction_source.get("notes") or {}
 
     ### UTILITIES ###
     def is_order_maintained(self):
         """
         Check if the order maintained or not.
         """
-        return bool(
-            self.status
-            and self.source_doc.docstatus == 1
-            and self.transaction_type in TRANSACTION_TYPES.values()
-        )
+        return bool(self.status and self.transaction_type in TRANSACTION_TYPES.values())
 
     def update_payment_entry(self):
         if not self.should_update_payment_entry():
@@ -495,7 +488,6 @@ class TransactionWebhook(PayoutWebhook):
     def should_cancel_payment_entry(self):
         return (
             self.source_doc.docstatus == 1
-            and self.status
             and self.status == PAYOUT_STATUS.REVERSED.value
         )
 
