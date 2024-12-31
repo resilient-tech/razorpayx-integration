@@ -23,6 +23,7 @@ doc_events = {
         "validate": "razorpayx_integration.payment_utils.server_overrides.bank_account.validate"
     },
     "Payment Entry": {
+        "onload": "razorpayx_integration.razorpayx_integration.server_overrides.payment_entry.onload",
         "validate": "razorpayx_integration.razorpayx_integration.server_overrides.payment_entry.validate",
         "on_submit": "razorpayx_integration.razorpayx_integration.server_overrides.payment_entry.on_submit",
         "on_cancel": "razorpayx_integration.razorpayx_integration.server_overrides.payment_entry.on_cancel",

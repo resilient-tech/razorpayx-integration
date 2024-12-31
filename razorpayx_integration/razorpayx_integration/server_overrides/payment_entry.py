@@ -7,6 +7,7 @@
 
 import frappe
 from frappe import _
+from frappe.utils import get_link_to_form
 
 from razorpayx_integration.constants import RAZORPAYX, RAZORPAYX_INTEGRATION_DOCTYPE
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
@@ -28,14 +29,18 @@ from razorpayx_integration.razorpayx_integration.utils.validation import (
 
 
 # TODO:  also validate IFSC code? (Must be 11 chars or some API)
+# TODO: check payout details with amended from
 #### DOC EVENTS ####
+def onload(doc, method=None):
+    doc.set_onload("disable_payout_fields", is_amended_pe_processed(doc))
+
+
 def validate(doc, method=None):
     validate_online_payment_requirements(doc)
 
 
 def on_submit(doc, method=None):
-    if doc.make_bank_online_payment:
-        make_payout(doc)
+    make_payout_with_razorpayx(doc)
 
 
 def on_cancel(doc, method=None):
@@ -44,6 +49,10 @@ def on_cancel(doc, method=None):
 
 #### VALIDATIONS ####
 def validate_online_payment_requirements(doc):
+    # Validation for amended details to be same of processed payout
+    validate_amended_details(doc)
+
+    # Validation for user to make payment
     if not doc.make_bank_online_payment:
         return
 
@@ -175,53 +184,90 @@ def validate_upi_id(doc):
         )
 
 
-DOC_SETTINGS = {
-    "RazorpayX Integration Settings": "razorpayx_integration_settings",
-}
+def validate_amended_details(doc):
+    if not doc.amended_from or not is_amended_pe_processed(doc):
+        return
+
+    amended_from_doc = frappe.get_doc("Payment Entry", doc.amended_from)
+
+    # Payments Related Fields
+    # TODO: accurate fields ?
+    payout_fields = [
+        # Common
+        "payment_type",
+        "bank_account",
+        # Party related
+        "party",
+        "party_type",
+        "party_name",
+        "party_bank_account",
+        "party_bank_account_no",
+        "party_bank_ifsc",
+        "party_upi_id",
+        "contact_person",
+        "contact_mobile",
+        "contact_email",
+        # RazorpayX Related
+        "paid_amount",
+        "razorpayx_account",
+        "make_bank_online_payment",
+        "razorpayx_payout_mode",
+        "razorpayx_payout_desc",
+        "razorpayx_payout_status",
+        "razorpayx_pay_instantaneously",
+        "razorpayx_payout_id",
+        "razorpayx_payout_link_id",
+    ]
+
+    for field in payout_fields:
+        if doc.get(field) != amended_from_doc.get(field):
+            fieldname = _(doc.meta.get_label(field))
+            msg = _("Field <strong>{0}</strong> cannot be changed.<br><br>").format(
+                fieldname
+            )
+            msg += _(
+                "The source Payment Entry <strong>{0}</strong> is processed via RazorPayX."
+            ).format(get_link_to_form("Payment Entry", doc.amended_from))
+
+            frappe.throw(
+                title=_("Invalid Amendment"),
+                msg=msg,
+            )
 
 
 ### ACTIONS ###
 # TODO: enqueue it?
-def make_payout(doc):
-    # get bank integration (bank account)
-    # api = get_api(doc.razorpayx_account)
-    # if api.pay_now(doc):
-    #     api.pay(amount, contact, description)
+def make_payout_with_razorpayx(doc):
+    if doc.doctype != "Payment Entry":
+        frappe.throw(
+            title=_("Invalid DocType"),
+            msg=_("DocType is not <strong>Payment Entry</strong>").format(doc.doctype),
+        )
+
+    if not doc.make_bank_online_payment or is_amended_pe_processed(doc):
+        return
+
     PayoutWithPaymentEntry(doc).make_payout()
 
 
 def handle_payout_cancellation(doc):
-    return
-    print("handle_payout_cancellation")
-    print("Flgs:    ", doc.flags)
-    if not doc.make_bank_online_payment or doc.flags.__canceled_by_rpx:
-        return
+    # TODO: cancel payout
+    pass
 
-    if doc.razorpayx_payout_id and doc.razorpayx_payout_status not in [
-        PAYOUT_STATUS.NOT_INITIATED.value,
-        PAYOUT_STATUS.QUEUED.value,
-    ]:
-        frappe.throw(
-            title=_("Cannot Cancel Payment Entry"),
-            msg=_(
-                "Payment Entry cannot be cancelled as Payout is already in {0} state."
-            ).format(frappe.bold(doc.razorpayx_payout_status)),
-        )
 
-    if (
-        doc.razorpayx_payout_link_id
-        and not doc.razorpayx_payout_id
-        and doc.razorpayx_payout_link_status
-        != PAYOUT_LINK_STATUS.ISSUED.value  # TODO: Remove this
-    ):
-        frappe.throw(
-            title=_("Cannot Cancel Payment Entry"),
-            msg=_(
-                "Payment Entry cannot be cancelled as Payout Link is on {0} state."
-            ).format(frappe.bold(doc.razorpayx_payout_link_status)),
-        )
+### UTILITY ###
+def is_amended_pe_processed(doc) -> bool | int:
+    """
+    Check if the amended Payment Entry is processed via RazorPayX or not.
 
-    PayoutWithPaymentEntry(doc).cancel_payout()
+    :param doc: Payment Entry Document
+    """
+    if not doc.amended_from:
+        return False
+
+    return frappe.get_value(
+        "Payment Entry", doc.amended_from, "make_bank_online_payment"
+    )
 
 
 # ! Important
