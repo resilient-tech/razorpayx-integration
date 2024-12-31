@@ -168,8 +168,12 @@ class PayoutWithDocType(ABC):
     def _get_form_link(self, bold: bool = True) -> str:
         """
         Return link to form of given document.
+
+        :param bold: Make link bold.
         """
-        return frappe.bold(get_link_to_form(self.doc.doctype, self.doc.name))
+        link = get_link_to_form(self.doc.doctype, self.doc.name)
+
+        return frappe.bold(link) if bold else link
 
     @abstractmethod
     def _get_razorpayx_account(self) -> str:

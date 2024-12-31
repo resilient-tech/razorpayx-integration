@@ -68,6 +68,7 @@ class RazorPayXWebhook:
         Setup the webhook payload data to be used in the webhook processing.
 
         Note: 🟢 Override this method in the sub class for custom payload setup.
+
         ---
         Sample Payloads:
 
@@ -702,10 +703,8 @@ def get_account_integration_name(account_id: str) -> str | None:
     ---
     Note: `account_id` should be in the format `acc_XXXXXX`.
     """
-    account_id = account_id.removeprefix("acc_")
-
     return frappe.get_value(
         RAZORPAYX_INTEGRATION_DOCTYPE,
-        {"account_id": account_id},
+        {"account_id": account_id.removeprefix("acc_")},
         "name",
     )
