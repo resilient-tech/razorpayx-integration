@@ -242,18 +242,43 @@ class PayoutWebhook(RazorPayXWebhook):
             self.cancel_payment_entry()
 
     ### UTILITIES ###
+    def get_source_doc(self):
+        """
+        Get the source doc.
+
+        Also set the source doc if not set.
+
+        Note: Call this manually in the sub class if needed, because the source doc
+        is not set in the `setup_webhook_payload` method.
+        """
+        field_mapper = {
+            EVENTS_TYPE.PAYOUT.value: "razorpayx_payout_id",
+            EVENTS_TYPE.TRANSACTION.value: "razorpayx_payout_id",
+            EVENTS_TYPE.PAYOUT_LINK.value: "razorpayx_payout_link_id",
+        }
+
+        if self.source_doctype and self.source_doctype != "Payment Entry":
+            return
+
+        if self.source_doctype and self.source_docname:
+            self.source_doc = frappe.get_doc("Payment Entry", self.source_docname)
+            # TODO: ? what if it is deleted?
+        elif self.id and self.event_type:
+            id_field = field_mapper.get(self.event_type)
+
+            self.source_doc = frappe.get_doc(
+                "Payment Entry", {id_field: self.id, "docstatus": 1}
+            )
+
+        return self.source_doc
+
     def should_update_payment_entry(self) -> bool:
         """
         Check if the Payment Entry should be updated or not.
 
         Note: Source doc (Payment Entry) is set here.
         """
-        return (
-            self.source_doctype == "Payment Entry"
-            and self.source_docname
-            and self.get_source_doc()
-            and self.is_order_maintained()
-        )
+        return bool(self.get_source_doc() and self.is_order_maintained())
 
     def is_order_maintained(self) -> bool:
         """
