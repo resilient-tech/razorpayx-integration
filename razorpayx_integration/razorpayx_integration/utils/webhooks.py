@@ -33,6 +33,8 @@ from razorpayx_integration.razorpayx_integration.constants.webhooks import (
 # ! IMPORTANT
 # TODO: only payout webhook is supported
 
+# TODO: how to process amended and not amended PE???
+
 
 ###### WEBHOOK PROCESSORS ######
 class RazorPayXWebhook:
