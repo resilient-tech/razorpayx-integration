@@ -111,7 +111,7 @@ class RazorPayXWebhook:
         if not self.account_id:
             self.account_id = self.payload.get("account_id")
 
-        self.razorpayx_account = get_account_integration_name(self.account_id)
+        self.razorpayx_account = get_razorpayx_integration_account(self.account_id)
 
     def set_source_doctype_and_docname(self):
         """
@@ -569,7 +569,10 @@ def razorpayx_webhook_listener():
     request_headers = str(frappe.request.headers)
 
     account_id = validate_webhook_signature(
-        row_payload, signature, payload=payload, request_headers=request_headers
+        row_payload=row_payload,
+        signature=signature,
+        payload=payload,
+        request_headers=request_headers,
     )
 
     ## Log the webhook request ##
@@ -577,7 +580,7 @@ def razorpayx_webhook_listener():
     ir_log = {
         "request_id": event_id,
         "status": "Completed",
-        "integration_request_service": f"RazorpayX Webhook Event - {event or 'Unknown'}",
+        "integration_request_service": f"RazorPayX Webhook Event - {event or 'Unknown'}",
         "request_headers": request_headers,
         "data": payload,
         "is_remote_request": True,
@@ -648,10 +651,14 @@ def validate_webhook_signature(
     :param row_payload: Raw payload data (Do not parse the data).
     :param request_headers: Request headers.
     :param payload: Parsed payload data.
-    :param signature: Header signature.
+    :param signature: Webhook Signature
 
     :returns: RazorpayX Account ID.
     """
+
+    def get_expected_signature(secret: str) -> str:
+        return hmac(secret.encode(), row_payload, "sha256").hexdigest()
+
     if not payload:
         payload = json.loads(row_payload)
 
@@ -662,18 +669,21 @@ def validate_webhook_signature(
     webhook_secret = get_webhook_secret(account_id)
 
     try:
-        expected_signature = hmac(
-            webhook_secret.encode(), row_payload, "sha256"
-        ).hexdigest()
-
-        if signature != expected_signature:
+        if signature != get_expected_signature(webhook_secret):
             raise Exception
 
         return account_id
     except Exception:
+        divider = f"\n\n{'-' * 25}\n\n"
+        message = f"Request Headers:\n{request_headers}"
+        message += divider
+        message += f"Webhook Payload:\n{frappe.as_json(payload,indent=2)}"
+        message += divider
+        message += f"{frappe.get_traceback()}"
+
         frappe.log_error(
             title="Invalid RazorPayX Webhook Signature",
-            message=f"Webhook Payload:\n{frappe.as_json(payload,indent=2)}\n\n---\n\nRequest Headers:\n{request_headers}",
+            message=message,
         )
 
         frappe.throw(msg=_("Invalid RazorPayX Webhook Signature"))
@@ -688,13 +698,18 @@ def get_webhook_secret(account_id: str) -> str | None:
     ---
     Note: `account_id` should be in the format `acc_XXXXXX`.
     """
-    name = get_account_integration_name(account_id)
+    account_name = get_razorpayx_integration_account(account_id)
 
-    return get_decrypted_password(RAZORPAYX_INTEGRATION_DOCTYPE, name, "webhook_secret")
+    if not account_name:
+        return
+
+    return get_decrypted_password(
+        RAZORPAYX_INTEGRATION_DOCTYPE, account_name, "webhook_secret"
+    )
 
 
 @frappe.request_cache
-def get_account_integration_name(account_id: str) -> str | None:
+def get_razorpayx_integration_account(account_id: str) -> str | None:
     """
     Get the account integration name from the account id.
 
