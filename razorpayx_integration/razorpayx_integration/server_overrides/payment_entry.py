@@ -221,11 +221,17 @@ def validate_amended_details(doc):
 
     for field in payout_fields:
         if doc.get(field) != amended_from_doc.get(field):
+            fieldname = _(doc.meta.get_label(field))
+            msg = _("Field <strong>{0}</strong> cannot be changed.<br><br>").format(
+                fieldname
+            )
+            msg += _(
+                "The source Payment Entry <strong>{0}</strong> is processed via RazorPayX."
+            ).format(get_link_to_form("Payment Entry", doc.amended_from))
+
             frappe.throw(
-                title=_("Payment Details Cannot be Amended"),
-                msg=_(
-                    "Payout details cannot be amended once processed via RazorPayX. See <strong>{0}</strong>."
-                ).format(get_link_to_form("Payment Entry", doc.amended_from)),
+                title=_("Invalid Amendment"),
+                msg=msg,
             )
 
 
