@@ -7,6 +7,7 @@
 
 import frappe
 from frappe import _
+from frappe.utils import get_link_to_form
 
 from razorpayx_integration.constants import RAZORPAYX, RAZORPAYX_INTEGRATION_DOCTYPE
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
@@ -31,7 +32,7 @@ from razorpayx_integration.razorpayx_integration.utils.validation import (
 # TODO: check payout details with amended from
 #### DOC EVENTS ####
 def onload(doc, method=None):
-    doc.set_onload("disable_payout_fields", is_amended_from_processed(doc))
+    doc.set_onload("disable_payout_fields", is_amended_pe_processed(doc))
 
 
 def validate(doc, method=None):
@@ -48,12 +49,13 @@ def on_cancel(doc, method=None):
 
 #### VALIDATIONS ####
 def validate_online_payment_requirements(doc):
+    # Validation for amended details to be same of processed payout
+    validate_amended_details(doc)
+
+    # Validation for user to make payment
     if not doc.make_bank_online_payment:
         return
 
-    doc.previous_doc = doc.get_doc_before_save() or frappe._dict()
-
-    validate_amended_details(doc)
     validate_mandatory_fields_for_payment(doc)
     validate_payout_mode(doc)
     validate_razorpayx_account(doc)
@@ -183,12 +185,10 @@ def validate_upi_id(doc):
 
 
 def validate_amended_details(doc):
-    if (
-        not doc.amended_from
-        or not doc.previous_doc
-        or not is_amended_from_processed(doc)
-    ):
+    if not doc.amended_from or not is_amended_pe_processed(doc):
         return
+
+    amended_from_doc = frappe.get_doc("Payment Entry", doc.amended_from)
 
     # Payments Related Fields
     # TODO: accurate fields ?
@@ -220,10 +220,12 @@ def validate_amended_details(doc):
     ]
 
     for field in payout_fields:
-        if doc.get(field) != doc.previous_doc.get(field):
+        if doc.get(field) != amended_from_doc.get(field):
             frappe.throw(
                 title=_("Payment Details Cannot be Amended"),
-                msg=_("Payout details cannot be amended once processed via RazorPayX."),
+                msg=_(
+                    "Payout details cannot be amended once processed via RazorPayX. See <strong>{0}</strong>."
+                ).format(get_link_to_form("Payment Entry", doc.amended_from)),
             )
 
 
@@ -236,7 +238,7 @@ def make_payout_with_razorpayx(doc):
             msg=_("DocType is not <strong>Payment Entry</strong>").format(doc.doctype),
         )
 
-    if not doc.make_bank_online_payment or is_amended_from_processed(doc):
+    if not doc.make_bank_online_payment or is_amended_pe_processed(doc):
         return
 
     PayoutWithPaymentEntry(doc).make_payout()
@@ -248,9 +250,9 @@ def handle_payout_cancellation(doc):
 
 
 ### UTILITY ###
-def is_amended_from_processed(doc) -> bool | int:
+def is_amended_pe_processed(doc) -> bool | int:
     """
-    Returns the amended from Payment Entry is already processed via RazorpayX.
+    Check if the amended Payment Entry is processed via RazorPayX or not.
 
     :param doc: Payment Entry Document
     """
