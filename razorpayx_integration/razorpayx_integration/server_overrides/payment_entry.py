@@ -223,9 +223,7 @@ def validate_amended_details(doc):
         if doc.get(field) != doc.previous_doc.get(field):
             frappe.throw(
                 title=_("Payment Details Cannot be Amended"),
-                msg=_(
-                    "Payment Entry cannot be amended as it is already processed via RazorPayX."
-                ),
+                msg=_("Payout details cannot be amended once processed via RazorPayX."),
             )
 
 
