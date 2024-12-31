@@ -41,13 +41,24 @@ class RazorPayXWebhook:
     """
 
     ### SETUP ###
-    def __init__(self):
+    def __init__(
+        self,
+        payload: dict,
+        integration_request: str,
+        account_id: str | None = None,
+        *args,
+        **kwargs,
+    ):
         """
-        Initialize the attributes.
+        Initialize the attributes and setup the webhook payload.
+
+        :param payload: Webhook payload data.
+        :param integration_request: Integration Request name.
+        :param account_id: RazorpayX Account ID (Business ID).
         """
-        self.payload = {}
-        self.integration_request = ""
-        self.account_id = ""
+        self.payload = payload
+        self.integration_request = integration_request
+        self.account_id = account_id
         self.razorpayx_account = ""
 
         self.event = ""
@@ -62,6 +73,10 @@ class RazorPayXWebhook:
         self.source_doctype = ""
         self.source_doc = None  # Set manually in the sub class if needed.
         self.notes = {}
+
+        self.set_razorpayx_account()  # Mandatory
+        self.set_common_payload_attributes()  # Mandatory
+        self.setup_webhook_payload()
 
     def setup_webhook_payload(self):
         """
@@ -140,30 +155,17 @@ class RazorPayXWebhook:
         return self.source_doc
 
     ### APIs ###
-    def process_webhook(
-        self, payload: dict, integration_request: str, account_id: str | None = None
-    ):
+    def process_webhook(self, *args, **kwargs):
         """
         Process RazorpayX Webhook.
 
-        :param payload: Webhook payload data.
-        :param integration_request: Integration Request name.
-        :param account_id: RazorpayX Account ID (Business ID).
+        It is entry point for the webhook processing.
 
-        ---
-        Note:
-        - Don't forget to call `super().process_webhook()` in the sub class.
+        Note: 🟢 Override this method in the sub class for custom processing.
         """
-        self.payload = payload
-        self.integration_request = integration_request
-        self.account_id = account_id
-
-        self.set_razorpayx_account()  # Mandatory
-        self.set_common_payload_attributes()  # Mandatory
-        self.setup_webhook_payload()
+        pass
 
     ### UTILITIES ###
-
     def is_order_maintained(self) -> bool:
         """
         Check if the order maintained or not.
@@ -207,22 +209,10 @@ class PayoutWebhook(RazorPayXWebhook):
     """
 
     ### APIs ###
-    def process_webhook(
-        self, payload: dict, integration_request: str, account_id: str | None = None
-    ):
+    def process_webhook(self, *args, **kwargs):
         """
-        Process RazorpayX Payout Webhook.
-
-        :param payload: Webhook payload data.
-        :param integration_request: Integration Request name.
-        :param account_id: RazorpayX Account ID (Business ID).
+        Process RazorpayX Payout Related Webhooks.
         """
-        super().process_webhook(
-            payload=payload,
-            integration_request=integration_request,
-            account_id=account_id,
-        )
-
         self.update_payment_entry()
 
     ### UTILITIES ###
@@ -521,14 +511,6 @@ class AccountWebhook(RazorPayXWebhook):
 
 
 ###### CONSTANTS ######
-WEBHOOK_EVENT_TYPES_MAPPER = {
-    EVENTS_TYPE.PAYOUT.value: PayoutWebhook,
-    EVENTS_TYPE.PAYOUT_LINK.value: PayoutLinkWebhook,
-    EVENTS_TYPE.TRANSACTION.value: TransactionWebhook,
-    EVENTS_TYPE.ACCOUNT.value: AccountWebhook,
-}
-
-
 class TRANSACTION_TYPES(BaseEnum):
     """
     Available in transaction webhook Payload.
@@ -540,6 +522,15 @@ class TRANSACTION_TYPES(BaseEnum):
     REVERSAL = "reversal"  # when payout is reversed
 
 
+WEBHOOK_PROCESSORS_MAP = {
+    EVENTS_TYPE.PAYOUT.value: PayoutWebhook,
+    EVENTS_TYPE.PAYOUT_LINK.value: PayoutLinkWebhook,
+    EVENTS_TYPE.TRANSACTION.value: TransactionWebhook,
+    EVENTS_TYPE.ACCOUNT.value: AccountWebhook,
+}
+
+
+# TODO: Go through this ....
 ###### APIs ######
 @frappe.whitelist(allow_guest=True)
 def razorpayx_webhook_listener():
@@ -568,7 +559,7 @@ def razorpayx_webhook_listener():
     payload = json.loads(row_payload)
     request_headers = str(frappe.request.headers)
 
-    account_id = validate_webhook_signature(
+    validate_webhook_signature(
         row_payload=row_payload,
         signature=signature,
         payload=payload,
@@ -588,7 +579,7 @@ def razorpayx_webhook_listener():
 
     if unsupported_event := is_unsupported_event(event):
         ir_log["error"] = "Unsupported Webhook Event"
-        ir_log["status"] = "Cancelled"
+        ir_log["status"] = "Cancelled"  # TODO: ? more accurate status
 
     ir = log_integration_request(**ir_log)
 
@@ -599,42 +590,26 @@ def razorpayx_webhook_listener():
     # TODO: enqueue the webhook processing
     # frappe.enqueue(
     #     process_razorpayx_webhook,
-    #     event=event,
     #     payload=payload,
     #     integration_request=ir.name,
-    #     account_id=account_id,
     # )
 
     # TODO: remove this line after testing
-    process_razorpayx_webhook(event, payload, ir.name, account_id)
+    process_razorpayx_webhook(payload, ir.name)
 
 
-def process_razorpayx_webhook(
-    event: str, payload: dict, integration_request: str, account_id: str | None = None
-):
+def process_razorpayx_webhook(payload: dict, integration_request: str):
     """
     Process the RazorpayX Webhook.
 
-    :param event: Webhook event.
     :param payload: Webhook payload data.
     :param integration_request: Integration Request docname.
-    :param account_id: RazorpayX Account ID (Business ID).
-        - Must be start with `acc_`.
     """
 
-    event_type = event.split(".")[0]
+    event_type = payload["event"].split(".")[0]  # `event` must be exist
 
-    # To make it readable
-    if event_type == EVENTS_TYPE.PAYOUT.value:
-        processor = PayoutWebhook()
-    elif event_type == EVENTS_TYPE.PAYOUT_LINK.value:
-        processor = PayoutLinkWebhook()
-    elif event_type == EVENTS_TYPE.TRANSACTION.value:
-        processor = TransactionWebhook()
-    else:
-        processor = AccountWebhook()
-
-    processor.process_webhook(payload, integration_request, account_id)
+    processor = WEBHOOK_PROCESSORS_MAP[event_type](payload, integration_request)
+    processor.process_webhook()
 
 
 ###### UTILITIES ######
@@ -644,7 +619,7 @@ def validate_webhook_signature(
     *,
     payload: dict | None = None,
     request_headers: str | None = None,
-) -> str | None:
+):
     """
     Validate the RazorpayX Webhook Signature.
 
@@ -652,8 +627,6 @@ def validate_webhook_signature(
     :param request_headers: Request headers.
     :param payload: Parsed payload data.
     :param signature: Webhook Signature
-
-    :returns: RazorpayX Account ID.
     """
 
     def get_expected_signature(secret: str) -> str:
@@ -665,14 +638,12 @@ def validate_webhook_signature(
     if not request_headers:
         request_headers = str(frappe.request.headers)
 
-    account_id = payload.get("account_id")
-    webhook_secret = get_webhook_secret(account_id)
+    webhook_secret = get_webhook_secret(payload.get("account_id"))
 
     try:
         if signature != get_expected_signature(webhook_secret):
-            raise Exception
+            raise Exception("RazorPayX Webhook Signature Mismatch")
 
-        return account_id
     except Exception:
         divider = f"\n\n{'-' * 25}\n\n"
         message = f"Request Headers:\n{request_headers}"
@@ -689,7 +660,7 @@ def validate_webhook_signature(
         frappe.throw(msg=_("Invalid RazorPayX Webhook Signature"))
 
 
-def get_webhook_secret(account_id: str) -> str | None:
+def get_webhook_secret(account_id: str | None = None) -> str | None:
     """
     Get the webhook secret from the account id.
 
@@ -698,6 +669,9 @@ def get_webhook_secret(account_id: str) -> str | None:
     ---
     Note: `account_id` should be in the format `acc_XXXXXX`.
     """
+    if not account_id:
+        return
+
     account_name = get_razorpayx_integration_account(account_id)
 
     if not account_name:
