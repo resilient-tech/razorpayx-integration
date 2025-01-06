@@ -43,7 +43,7 @@ def on_submit(doc, method=None):
     make_payout_with_razorpayx(doc)
 
 
-def on_cancel(doc, method=None):
+def before_cancel(doc, method=None):
     handle_payout_cancellation(doc)
 
 
@@ -252,7 +252,16 @@ def make_payout_with_razorpayx(doc):
 
 def handle_payout_cancellation(doc):
     # TODO: cancel payout
-    pass
+    if not doc.make_bank_online_payment:
+        return
+
+    if not can_cancel_payout(doc):
+        frappe.throw(
+            title=_("Cannot Cancel Payment Entry"),
+            msg=_(
+                "Payment Entry cannot be cancelled as Payout is already in <strong>{0}</strong> state."
+            ).format(doc.razorpayx_payout_status),
+        )
 
 
 ### UTILITY ###
@@ -268,6 +277,18 @@ def is_amended_pe_processed(doc) -> bool | int:
     return frappe.get_value(
         "Payment Entry", doc.amended_from, "make_bank_online_payment"
     )
+
+
+def can_cancel_payout(doc) -> bool | int:
+    """
+    Check if the Payout can be cancelled or not.
+
+    :param doc: Payment Entry Document
+    """
+    return doc.make_bank_online_payment and doc.razorpayx_payout_status in [
+        PAYOUT_STATUS.NOT_INITIATED.value,
+        PAYOUT_STATUS.QUEUED.value,
+    ]
 
 
 ### APIs ###

@@ -81,9 +81,10 @@ frappe.ui.form.on("Payment Entry", {
 		// Check Payout is cancellable or not
 		if (!can_cancel_payout(frm)) {
 			frappe.throw({
-				message: __("Payment Entry cannot be cancelled as Payout is already in {0} state.", [
-					frm.doc.razorpayx_payout_status,
-				]),
+				message: __(
+					"Payment Entry cannot be cancelled as Payout is already in <strong>{0}</strong> state.",
+					[frm.doc.razorpayx_payout_status]
+				),
 				title: __("Cannot Cancel Payment Entry"),
 			});
 		}
