@@ -251,8 +251,7 @@ def make_payout_with_razorpayx(doc):
 
 
 def handle_payout_cancellation(doc):
-    # TODO: cancel payout
-    if not doc.make_bank_online_payment:
+    if not doc.make_bank_online_payment or is_payout_already_cancelled(doc):
         return
 
     if not can_cancel_payout(doc):
@@ -262,6 +261,9 @@ def handle_payout_cancellation(doc):
                 "Payment Entry cannot be cancelled as Payout is already in <strong>{0}</strong> state."
             ).format(doc.razorpayx_payout_status),
         )
+
+    if should_auto_cancel_payout(doc.razorpayx_account):
+        PayoutWithPaymentEntry(doc).cancel()
 
 
 ### UTILITY ###
@@ -291,6 +293,20 @@ def can_cancel_payout(doc) -> bool | int:
     ]
 
 
+def is_payout_already_cancelled(doc) -> bool:
+    """
+    Check if the Payout is already cancelled or not.
+
+    :param doc: Payment Entry Document
+    """
+    return doc.razorpayx_payout_status in [
+        PAYOUT_STATUS.CANCELLED.value,
+        PAYOUT_STATUS.REJECTED.value,
+        PAYOUT_STATUS.FAILED.value,
+        PAYOUT_STATUS.REVERSED.value,
+    ]
+
+
 ### APIs ###
 @frappe.whitelist()
 def should_auto_cancel_payout(razorpayx_account: str) -> bool | int:
@@ -299,12 +315,19 @@ def should_auto_cancel_payout(razorpayx_account: str) -> bool | int:
 
     :param razorpayx_account: RazorPayX Account name
     """
-    frappe.has_permission(RAZORPAYX_INTEGRATION_DOCTYPE, throw=True)
     frappe.has_permission("Payment Entry", throw=True)
 
     return frappe.db.get_value(
         RAZORPAYX_INTEGRATION_DOCTYPE, razorpayx_account, "auto_cancel_payout"
     )
+
+
+@frappe.whitelist()
+def cancel_payout_and_payout_link(doctype: str, docname: str):
+    frappe.has_permission("Payment Entry", throw=True)
+
+    doc = frappe.get_cached_doc(doctype, docname)
+    PayoutWithPaymentEntry(doc).cancel()
 
 
 # ! Important

@@ -99,20 +99,33 @@ class PayoutWithDocType(ABC):
 
         return getattr(self, self.PAYOUT_METHOD_MAPPING[payout_method])()
 
-    def cancel_payout(self, cancel_doc: bool = False) -> dict:
+    def cancel(self, cancel_doc: bool = False):
+        """
+        Cancel payout and payout link of source document.
+
+        :param cancel_doc: Cancel document after cancelling payout and payout link.
+
+        ---
+        Note:
+        - ⚠️ Only `queued` payout can be cancelled, otherwise it will raise error.
+        - ⚠️ Only `issued` payout link can be cancelled, otherwise it will raise error.
+        """
+
+        self.cancel_payout(update_status=True, cancel_doc=cancel_doc)
+        self.cancel_payout_link()
+
+    def cancel_payout(
+        self, *, update_status: bool = False, cancel_doc: bool = False
+    ) -> dict:
         """
         Cancel payout.
 
+        :param update_status: Update status in document after cancelling payout.
         :param cancel_doc: Cancel document after cancelling payout.
 
         ---
         Note: ⚠️ Only `queued` payout can be cancelled, otherwise it will raise error.
         """
-
-        def get_cancelled_status(response: dict) -> str:
-            return (
-                response.get("status").title() or PAYOUT_STATUS.CANCELLED.value.title()
-            )
 
         if not self.doc.razorpayx_payout_id:
             return
@@ -120,51 +133,64 @@ class PayoutWithDocType(ABC):
         payout = RazorPayXPayout(self.razorpayx_account)
         response = payout.cancel(self.doc.razorpayx_payout_id)
 
-        self.doc.db_set(
-            "razorpayx_payout_status",
-            get_cancelled_status(response),
+        self._update_doc_after_payout_cancel(
+            response, update_status=update_status, cancel_doc=cancel_doc
         )
-
-        if cancel_doc:
-            self.doc.flags.__canceled_by_rpx = True
-            self.doc.cancel()
 
         return response
 
-    def cancel_payout_link(self, cancel_doc: bool = False) -> dict:
+    def cancel_payout_link(
+        self, *, update_status: bool = False, cancel_doc: bool = False
+    ) -> dict:
         """
         Cancel payout link.
 
+        :param update_status: Update status in document after cancelling payout link.
         :param cancel_doc: Cancel document after cancelling payout link.
 
         ---
         Note: ⚠️ Only `issued` payout link can be cancelled, otherwise it will raise error.
         """
-
-        def get_cancelled_status(response: dict) -> str:
-            return (
-                response.get("status").title()
-                or PAYOUT_LINK_STATUS.CANCELLED.value.title()
-            )
-
         if not self.doc.razorpayx_payout_link_id:
             return
 
         payout = RazorPayXLinkPayout(self.razorpayx_account)
         response = payout.cancel(self.doc.razorpayx_payout_link_id)
 
-        self.doc.db_set(
-            "razorpayx_payout_status",
-            get_cancelled_status(response),
+        self._update_doc_after_payout_cancel(
+            response, update_status=update_status, cancel_doc=cancel_doc
         )
-
-        if cancel_doc:
-            self.doc.flags.__canceled_by_rpx = True
-            self.doc.cancel()
 
         return response
 
     ### HELPERS ###
+    def _update_doc_after_payout_cancel(
+        self, response: dict, *, update_status: bool = False, cancel_doc: bool = False
+    ):
+        """ "
+        Update document after cancelling payout and payout link.
+
+        :param response: Response after cancelling payout or payout link.
+        :param update_status: Update status in document after cancelling payout or payout link.
+        :param cancel_doc: Cancel document after cancelling payout or payout link.
+        """
+
+        if update_status:
+            self.doc.db_set(
+                "razorpayx_payout_status",
+                self._get_cancelled_status(response),
+            )
+
+        if cancel_doc and self.doc.docstatus == 1:
+            self.doc.flags.__canceled_by_rpx = True
+            self.doc.cancel()
+
+    def _get_cancelled_status(self, response: dict) -> str:
+        """
+        Return status after cancelling payout.
+        """
+        return (response.get("status") or PAYOUT_STATUS.CANCELLED.value).title()
+
     def _get_form_link(self, bold: bool = True) -> str:
         """
         Return link to form of given document.

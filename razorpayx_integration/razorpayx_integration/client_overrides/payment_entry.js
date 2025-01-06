@@ -76,7 +76,7 @@ frappe.ui.form.on("Payment Entry", {
 	},
 
 	before_cancel: async function (frm) {
-		if (!frm.doc.make_bank_online_payment) return;
+		if (!frm.doc.make_bank_online_payment || is_payout_already_cancelled()) return;
 
 		// Check Payout is cancellable or not
 		if (!can_cancel_payout(frm)) {
@@ -133,6 +133,15 @@ async function should_auto_cancel_payout(frm) {
 }
 
 /**
+ * Check if the payout is already cancelled or not.
+ *
+ * @returns {boolean} `true` if the payout is already cancelled, otherwise `false`
+ */
+function is_payout_already_cancelled(frm) {
+	return ["Cancelled", "Failed", "Rejected", "Reversed"].includes(frm.doc.razorpayx_payout_status);
+}
+
+/**
  * Show dialog to confirm the cancellation of payout.
  *
  * Two options are available:
@@ -160,7 +169,7 @@ function show_cancel_payout_dialog(frm, callback) {
 		primary_action: async (values) => {
 			if (values.cancel_payout) {
 				await frappe.call({
-					method: "YOUR_API_METHOD",
+					method: "razorpayx_integration.razorpayx_integration.server_overrides.payment_entry.cancel_payout_and_payout_link",
 					args: {
 						doctype: frm.doctype,
 						docname: frm.docname,
