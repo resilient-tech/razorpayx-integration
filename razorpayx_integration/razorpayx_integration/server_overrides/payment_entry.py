@@ -44,6 +44,9 @@ def on_submit(doc, method=None):
 
 
 def before_cancel(doc, method=None):
+    if doc.flags.__canceled_by_rpx:
+        return
+
     handle_payout_cancellation(doc)
 
 
