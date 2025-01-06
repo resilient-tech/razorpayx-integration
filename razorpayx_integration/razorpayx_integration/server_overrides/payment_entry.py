@@ -270,6 +270,22 @@ def is_amended_pe_processed(doc) -> bool | int:
     )
 
 
+### APIs ###
+@frappe.whitelist()
+def should_auto_cancel_payout(razorpayx_account: str) -> bool | int:
+    """
+    Check if the Payout should be auto cancelled or not.
+
+    :param razorpayx_account: RazorPayX Account name
+    """
+    frappe.has_permission(RAZORPAYX_INTEGRATION_DOCTYPE, throw=True)
+    frappe.has_permission("Payment Entry", throw=True)
+
+    return frappe.db.get_value(
+        RAZORPAYX_INTEGRATION_DOCTYPE, razorpayx_account, "auto_cancel_payout"
+    )
+
+
 # ! Important
 # TODO: Change design ?
 """

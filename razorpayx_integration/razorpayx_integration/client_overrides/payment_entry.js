@@ -117,19 +117,18 @@ function can_cancel_payout(frm) {
 }
 
 /**
- * Get the value of `auto_cancel_payout` field from RazorpayX Integration Setting
+ * Get the value of `auto_cancel_payout` field from RazorPayX Integration Setting
  * based on the selected RazorpayX Account.
  * @param {object} frm The doctype's form object
  * @returns {Promise<boolean>} The value of `auto_cancel_payout
  */
 async function should_auto_cancel_payout(frm) {
-	const response = await frappe.db.get_value(
-		RAZORPAYX_DOCTYPE,
-		frm.doc.razorpayx_account,
-		"auto_cancel_payout"
+	const auto_cancel = await frappe.xcall(
+		"razorpayx_integration.razorpayx_integration.server_overrides.payment_entry.should_auto_cancel_payout",
+		{ razorpayx_account: frm.doc.razorpayx_account }
 	);
 
-	return response.message?.auto_cancel_payout || 0;
+	return auto_cancel;
 }
 
 /**
