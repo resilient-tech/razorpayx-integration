@@ -15,7 +15,7 @@
   "column_break_8tcki",
   "account_id",
   "webhook_secret",
-  "configuration_section",
+  "config_section",
   "auto_cancel_payout",
   "account_tab",
   "account_details_section",
@@ -182,21 +182,21 @@
    "unique": 1
   },
   {
-   "fieldname": "configuration_section",
-   "fieldtype": "Section Break",
-   "label": "Configuration"
-  },
-  {
    "default": "0",
    "description": "<strong>Payout</strong> and <strong>Payout Link</strong> will be automatically cancelled after <i> Payment Entry </i> cancellation if possible.",
    "fieldname": "auto_cancel_payout",
    "fieldtype": "Check",
    "label": "Automatically Cancel Payout on Payment Entry Cancellation"
+  },
+  {
+   "fieldname": "config_section",
+   "fieldtype": "Section Break",
+   "label": "Configurations"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-01-02 17:57:29.393868",
+ "modified": "2025-01-07 10:59:39.983102",
  "modified_by": "Administrator",
  "module": "Razorpayx Integration",
  "name": "RazorPayX Integration Setting",
