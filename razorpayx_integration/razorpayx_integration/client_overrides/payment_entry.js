@@ -229,9 +229,9 @@ async function disable_payout_fields_in_amendment(frm) {
 
 async function show_make_payout_dialog(frm) {
 	// depends on conditions
-	const DEPENDS_ON_BANK = `eval: doc.razorpayx_payout_mode === '${PAYOUT_MODES.BANK}'`;
-	const DEPENDS_ON_UPI = `eval: doc.razorpayx_payout_mode === '${PAYOUT_MODES.UPI}'`;
-	const DEPENDS_ON_LINK = `eval: doc.razorpayx_payout_mode === '${PAYOUT_MODES.LINK}'`;
+	const DEPENDS_ON_BANK = `doc.razorpayx_payout_mode === '${PAYOUT_MODES.BANK}'`;
+	const DEPENDS_ON_UPI = `doc.razorpayx_payout_mode === '${PAYOUT_MODES.UPI}'`;
+	const DEPENDS_ON_LINK = `doc.razorpayx_payout_mode === '${PAYOUT_MODES.LINK}'`;
 
 	const dialog = new frappe.ui.Dialog({
 		title: __("Enter Payout Details"),
@@ -285,7 +285,7 @@ async function show_make_payout_dialog(frm) {
 					};
 				},
 				onchange: async function () {
-					set_default_payout_mode(dialog.get_value("party_bank_account"), dialog);
+					set_party_bank_details(dialog.get_value("party_bank_account"), dialog);
 				},
 			},
 			{
@@ -293,24 +293,27 @@ async function show_make_payout_dialog(frm) {
 				label: "Party Bank Account No",
 				fieldtype: "Data",
 				read_only: 1,
-				depends_on: DEPENDS_ON_BANK,
-				mandatory_depends_on: DEPENDS_ON_BANK,
+				depends_on: `eval: ${DEPENDS_ON_BANK}`,
+				mandatory_depends_on: `eval: ${DEPENDS_ON_BANK}`,
+				default: frm.doc.party_bank_account_no,
 			},
 			{
 				fieldname: "party_bank_ifsc",
 				label: "Party Bank IFSC Code",
 				fieldtype: "Data",
 				read_only: 1,
-				depends_on: DEPENDS_ON_BANK,
-				mandatory_depends_on: DEPENDS_ON_BANK,
+				depends_on: `eval: ${DEPENDS_ON_BANK}`,
+				mandatory_depends_on: `eval: ${DEPENDS_ON_BANK}`,
+				default: frm.doc.party_bank_ifsc,
 			},
 			{
 				fieldname: "party_upi_id",
 				label: "Party UPI ID",
 				fieldtype: "Data",
 				read_only: 1,
-				depends_on: DEPENDS_ON_UPI,
-				mandatory_depends_on: DEPENDS_ON_UPI,
+				depends_on: `eval: ${DEPENDS_ON_UPI}`,
+				mandatory_depends_on: `eval: ${DEPENDS_ON_UPI}`,
+				default: frm.doc.party_upi_id,
 			},
 			{
 				fieldname: "party_cb",
@@ -323,8 +326,8 @@ async function show_make_payout_dialog(frm) {
 				options: "Contact",
 				default: frm.doc.contact_person,
 				read_only: frm.doc.contact_person ? 1 : 0,
-				depends_on: DEPENDS_ON_LINK,
-				mandatory_depends_on: DEPENDS_ON_LINK,
+				depends_on: `eval: ${DEPENDS_ON_LINK}`,
+				mandatory_depends_on: `eval: ${DEPENDS_ON_LINK}`,
 				get_query: function () {
 					return {
 						filters: {
@@ -333,6 +336,28 @@ async function show_make_payout_dialog(frm) {
 						},
 					};
 				},
+				onchange: async function () {
+					set_contact_details(dialog.get_value("contact_person"), dialog);
+				},
+			},
+			{
+				fieldname: "contact_email",
+				label: "Email",
+				fieldtype: "Data",
+				options: "Email",
+				depends_on: `eval: ${DEPENDS_ON_LINK} && doc.contact_person`,
+				mandatory_depends_on: `eval: ${DEPENDS_ON_LINK}`,
+				read_only: 1,
+				default: frm.doc.contact_email,
+			},
+			{
+				fieldname: "contact_mobile",
+				label: "Mobile",
+				fieldtype: "Data",
+				options: "Phone",
+				depends_on: `eval: ${DEPENDS_ON_LINK} && doc.contact_person`,
+				read_only: 1,
+				default: frm.doc.contact_mobile,
 			},
 			{
 				fieldname: "payment_section_break",
@@ -351,7 +376,7 @@ async function show_make_payout_dialog(frm) {
 				label: "Pay Instantaneously",
 				fieldtype: "Check",
 				description: "Payment will be done with <strong>IMPS</strong> mode.",
-				depends_on: DEPENDS_ON_BANK,
+				depends_on: `eval: ${DEPENDS_ON_BANK}`,
 			},
 			{
 				fieldname: "party_cb",
@@ -361,7 +386,7 @@ async function show_make_payout_dialog(frm) {
 				fieldname: "razorpayx_payout_desc",
 				label: __("Payout Description"),
 				fieldtype: "Data",
-				mandatory_depends_on: DEPENDS_ON_LINK,
+				mandatory_depends_on: `eval: ${DEPENDS_ON_LINK}`,
 			},
 		],
 		primary_action_label: __("Make Payout"),
@@ -371,6 +396,7 @@ async function show_make_payout_dialog(frm) {
 	});
 
 	set_default_payout_mode(frm.doc.party_bank_account, dialog);
+
 	dialog.show();
 }
 
@@ -383,4 +409,31 @@ async function set_default_payout_mode(party_bank_account, dialog) {
 		"default_online_payment_mode"
 	);
 	dialog.set_value("razorpayx_payout_mode", response.message.default_online_payment_mode);
+}
+
+async function set_party_bank_details(party_bank_account, dialog) {
+	if (!party_bank_account) return;
+
+	const response = await frappe.db.get_value("Bank Account", party_bank_account, [
+		"branch_code as party_bank_ifsc",
+		"bank_account_no as party_bank_account_no",
+		"upi_id as party_upi_id",
+		"default_online_payment_mode as razorpayx_payout_mode",
+	]);
+
+	dialog.set_values(response.message);
+}
+
+async function set_contact_details(contact_person, dialog) {
+	if (!contact_person) return;
+
+	const response = await frappe.call({
+		method: "frappe.contacts.doctype.contact.contact.get_contact_details",
+		args: { contact: contact_person },
+	});
+
+	dialog.set_values({
+		contact_email: response.message.contact_email,
+		contact_mobile: response.message.contact_mobile,
+	});
 }
