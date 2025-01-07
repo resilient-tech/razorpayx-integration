@@ -12,6 +12,12 @@
 
 const BASE_API_PATH = "razorpayx_integration.razorpayx_integration.server_overrides.payment_entry";
 
+const PAYOUT_MODES = {
+	BANK: "NEFT/RTGS",
+	UPI: "UPI",
+	LINK: "Link",
+};
+
 const PAYOUT_FIELDS = [
 	//  Common
 	"payment_type",
@@ -222,7 +228,10 @@ async function disable_payout_fields_in_amendment(frm) {
 }
 
 async function show_make_payout_dialog(frm) {
-	const payout_modes = await frappe.xcall(`${BASE_API_PATH}.get_user_payout_modes`);
+	// depends on conditions
+	const DEPENDS_ON_BANK = `eval: doc.razorpayx_payout_mode === '${PAYOUT_MODES.BANK}'`;
+	const DEPENDS_ON_UPI = `eval: doc.razorpayx_payout_mode === '${PAYOUT_MODES.UPI}'`;
+	const DEPENDS_ON_LINK = `eval: doc.razorpayx_payout_mode === '${PAYOUT_MODES.LINK}'`;
 
 	const dialog = new frappe.ui.Dialog({
 		title: __("Enter Payout Details"),
@@ -280,6 +289,30 @@ async function show_make_payout_dialog(frm) {
 				},
 			},
 			{
+				fieldname: "party_bank_account_no",
+				label: "Party Bank Account No",
+				fieldtype: "Data",
+				read_only: 1,
+				depends_on: DEPENDS_ON_BANK,
+				mandatory_depends_on: DEPENDS_ON_BANK,
+			},
+			{
+				fieldname: "party_bank_ifsc",
+				label: "Party Bank IFSC Code",
+				fieldtype: "Data",
+				read_only: 1,
+				depends_on: DEPENDS_ON_BANK,
+				mandatory_depends_on: DEPENDS_ON_BANK,
+			},
+			{
+				fieldname: "party_upi_id",
+				label: "Party UPI ID",
+				fieldtype: "Data",
+				read_only: 1,
+				depends_on: DEPENDS_ON_UPI,
+				mandatory_depends_on: DEPENDS_ON_UPI,
+			},
+			{
 				fieldname: "party_cb",
 				fieldtype: "Column Break",
 			},
@@ -290,8 +323,8 @@ async function show_make_payout_dialog(frm) {
 				options: "Contact",
 				default: frm.doc.contact_person,
 				read_only: frm.doc.contact_person ? 1 : 0,
-				depends_on: "eval: doc.razorpayx_payout_mode === 'Link'",
-				mandatory_depends_on: "eval: doc.razorpayx_payout_mode === 'Link'",
+				depends_on: DEPENDS_ON_LINK,
+				mandatory_depends_on: DEPENDS_ON_LINK,
 				get_query: function () {
 					return {
 						filters: {
@@ -310,7 +343,7 @@ async function show_make_payout_dialog(frm) {
 				fieldname: "razorpayx_payout_mode",
 				label: __("Payout Mode"),
 				fieldtype: "Select",
-				options: payout_modes,
+				options: Object.values(PAYOUT_MODES),
 				reqd: 1,
 			},
 			{
@@ -318,7 +351,7 @@ async function show_make_payout_dialog(frm) {
 				label: "Pay Instantaneously",
 				fieldtype: "Check",
 				description: "Payment will be done with <strong>IMPS</strong> mode.",
-				depends_on: "eval: doc.razorpayx_payout_mode === 'NEFT/RTGS'",
+				depends_on: DEPENDS_ON_BANK,
 			},
 			{
 				fieldname: "party_cb",
@@ -328,7 +361,7 @@ async function show_make_payout_dialog(frm) {
 				fieldname: "razorpayx_payout_desc",
 				label: __("Payout Description"),
 				fieldtype: "Data",
-				mandatory_depends_on: "eval: doc.razorpayx_payout_mode === 'Link'",
+				mandatory_depends_on: DEPENDS_ON_LINK,
 			},
 		],
 		primary_action_label: __("Make Payout"),

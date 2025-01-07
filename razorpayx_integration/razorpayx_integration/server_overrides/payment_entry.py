@@ -333,12 +333,6 @@ def cancel_payout_and_payout_link(doctype: str, docname: str):
     PayoutWithPaymentEntry(doc).cancel()
 
 
-@frappe.whitelist()
-def get_user_payout_modes():
-    frappe.has_permission("Payment Entry", throw=True)
-    return USER_PAYOUT_MODE.values_as_string()
-
-
 # ! Important
 # TODO: Change design ?
 """
