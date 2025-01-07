@@ -1023,6 +1023,9 @@ class RazorPayXLinkPayout(RazorPayXPayout):
         if expire_by := payout_details.get("expire_by"):
             mapped_request["expire_by"] = expire_by.timestamp()
 
+        mapped_request["send_sms"] = payout_details.get("send_sms", True)
+        mapped_request["send_email"] = payout_details.get("send_email", True)
+
         for param in params_to_delete:
             del mapped_request[param]
 

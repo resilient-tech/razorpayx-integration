@@ -37,6 +37,8 @@ const PAYOUT_FIELDS = [
 	"razorpayx_payout_link_id",
 ];
 
+const RAZORPAYX_DOCTYPE = "RazorPayX Integration Setting";
+
 frappe.ui.form.on("Payment Entry", {
 	refresh: function (frm) {
 		// Do not allow to edit fields if Payment is processed by RazorpayX in amendment
@@ -72,8 +74,128 @@ frappe.ui.form.on("Payment Entry", {
 			frm.set_value("razorpayx_account", name);
 		}
 	},
+
+	before_cancel: async function (frm) {
+		if (!frm.doc.make_bank_online_payment || is_payout_already_cancelled(frm)) return;
+
+		// Check Payout is cancellable or not
+		if (!can_cancel_payout(frm)) {
+			frappe.throw({
+				message: __(
+					"Payment Entry cannot be cancelled as Payout is already in <strong>{0}</strong> state.",
+					[frm.doc.razorpayx_payout_status]
+				),
+				title: __("Cannot Cancel Payment Entry"),
+			});
+		}
+
+		const auto_cancel_payout = await should_auto_cancel_payout(frm);
+		if (auto_cancel_payout) return;
+
+		frappe.validate = false;
+
+		return new Promise((resolve) => {
+			const continue_cancellation = () => {
+				frappe.validate = true;
+				resolve();
+			};
+
+			return show_cancel_payout_dialog(frm, continue_cancellation);
+		});
+	},
 });
 
+/**
+ * Check if the payout can be cancelled or not related to the Payment Entry.
+ * @param {object} frm The doctype's form object
+ * @returns {boolean} `true` if the payout can be cancelled, otherwise `false`
+ */
+function can_cancel_payout(frm) {
+	return (
+		frm.doc.make_bank_online_payment &&
+		["Not Initiated", "Queued"].includes(frm.doc.razorpayx_payout_status)
+	);
+}
+
+/**
+ * Get the value of `auto_cancel_payout` field from RazorPayX Integration Setting
+ * based on the selected RazorpayX Account.
+ * @param {object} frm The doctype's form object
+ * @returns {Promise<boolean>} The value of `auto_cancel_payout
+ */
+async function should_auto_cancel_payout(frm) {
+	const auto_cancel = await frappe.xcall(
+		"razorpayx_integration.razorpayx_integration.server_overrides.payment_entry.should_auto_cancel_payout",
+		{ razorpayx_account: frm.doc.razorpayx_account }
+	);
+
+	return auto_cancel;
+}
+
+/**
+ * Check if the payout is already cancelled or not.
+ *
+ * @returns {boolean} `true` if the payout is already cancelled, otherwise `false`
+ */
+function is_payout_already_cancelled(frm) {
+	return ["Cancelled", "Failed", "Rejected", "Reversed"].includes(frm.doc.razorpayx_payout_status);
+}
+
+/**
+ * Show dialog to confirm the cancellation of payout.
+ *
+ * Two options are available:
+ * 1. Do not cancel the payout.
+ * 2. Cancel the payout.
+ *
+ * @param {object} frm The doctype's form object
+ * @param {function} callback The function to call after confirmation
+ */
+function show_cancel_payout_dialog(frm, callback) {
+	const dialog = new frappe.ui.Dialog({
+		title: __("Cancel Payment Entry with Payout"),
+		fields: [
+			{
+				fieldname: "cancel_payout",
+				label: __("Cancel Payout"),
+				fieldtype: "Check",
+				default: 1,
+				description: __(
+					"This will cancel the payout and payout link for this Payment Entry if checked."
+				),
+			},
+		],
+		primary_action_label: __("Continue"),
+		primary_action: async (values) => {
+			if (values.cancel_payout) {
+				await frappe.call({
+					method: "razorpayx_integration.razorpayx_integration.server_overrides.payment_entry.cancel_payout_and_payout_link",
+					args: {
+						doctype: frm.doctype,
+						docname: frm.docname,
+					},
+				});
+
+				frm.refresh();
+			}
+
+			callback && callback();
+			dialog.hide();
+		},
+	});
+
+	// Make primary action button Background Red
+	dialog.get_primary_btn().removeClass("btn-primary").addClass("btn-danger");
+	dialog.show();
+}
+
+/**
+ * If current Payment Entry is amended from another Payment Entry,
+ * and source Payment Entry is processed by RazorPayX, then disable
+ * payout fields in the current Payment Entry.
+ *
+ * @param {object} frm The doctype's form object
+ */
 async function disable_payout_fields_in_amendment(frm) {
 	if (!frm.doc.amended_from) return;
 

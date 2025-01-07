@@ -88,7 +88,6 @@ CUSTOM_FIELDS = {
             "fetch_from": "party_bank_account.bank_account_no",  # Note: update at integration level if required
             "read_only": 1,
             "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
-            "no_copy": 1,
         },
         {
             "fieldname": "party_bank_ifsc",
@@ -98,7 +97,6 @@ CUSTOM_FIELDS = {
             "fetch_from": "party_bank_account.branch_code",  # Note: update at integration level if required
             "read_only": 1,
             "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
-            "no_copy": 1,
         },
         {
             "fieldname": "party_upi_id",

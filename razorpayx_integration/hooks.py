@@ -26,6 +26,6 @@ doc_events = {
         "onload": "razorpayx_integration.razorpayx_integration.server_overrides.payment_entry.onload",
         "validate": "razorpayx_integration.razorpayx_integration.server_overrides.payment_entry.validate",
         "on_submit": "razorpayx_integration.razorpayx_integration.server_overrides.payment_entry.on_submit",
-        "on_cancel": "razorpayx_integration.razorpayx_integration.server_overrides.payment_entry.on_cancel",
+        "before_cancel": "razorpayx_integration.razorpayx_integration.server_overrides.payment_entry.before_cancel",
     },
 }

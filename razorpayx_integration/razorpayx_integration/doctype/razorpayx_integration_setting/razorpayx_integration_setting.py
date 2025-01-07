@@ -20,6 +20,7 @@ class RazorPayXIntegrationSetting(Document):
 
         account_id: DF.Data
         account_number: DF.Data | None
+        auto_cancel_payout: DF.Check
         balance: DF.Currency
         bank: DF.Link | None
         bank_account: DF.Link
