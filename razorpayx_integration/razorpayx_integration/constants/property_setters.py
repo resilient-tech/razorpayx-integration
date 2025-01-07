@@ -81,31 +81,10 @@ PROPERTY_SETTERS = [
     ## Bank Account ##
     {
         "doctype": "Bank Account",
-        "fieldname": "online_payment_mode",
+        "fieldname": "default_online_payment_mode",
         "property": "options",
         "property_type": "Data",
         "value": USER_PAYOUT_MODE.values_as_string(),
-    },
-    {
-        "doctype": "Bank Account",
-        "fieldname": "online_payment_mode",
-        "property": "default",
-        "property_type": "Data",
-        "value": USER_PAYOUT_MODE.BANK.value,
-    },
-    {
-        "doctype": "Bank Account",
-        "fieldname": "upi_id",
-        "property": "depends_on",
-        "property_type": "Data",
-        "value": f"eval: doc.online_payment_mode === '{USER_PAYOUT_MODE.UPI.value}'",
-    },
-    {
-        "doctype": "Bank Account",
-        "fieldname": "contact_to_pay",
-        "property": "depends_on",
-        "property_type": "Data",
-        "value": f"eval: doc.online_payment_mode === '{USER_PAYOUT_MODE.LINK.value}'",
     },
 ]
 
