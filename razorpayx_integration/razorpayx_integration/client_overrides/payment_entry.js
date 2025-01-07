@@ -43,17 +43,6 @@ frappe.ui.form.on("Payment Entry", {
 	refresh: function (frm) {
 		// Do not allow to edit fields if Payment is processed by RazorpayX in amendment
 		disable_payout_fields_in_amendment(frm);
-
-		// set Intro for Payment
-		if (frm.is_new() || !frm.doc.make_bank_online_payment) return;
-
-		if (frm.doc.docstatus == 0) {
-			frm.set_intro(__("This Payment will be processed by RazorpayX on submission."));
-		} else if (frm.doc.docstatus == 1) {
-			frm.set_intro(
-				__("RazorPayX Payout Status: <strong>{0}</strong>", [frm.doc.razorpayx_payout_status])
-			);
-		}
 	},
 
 	bank_account: async function (frm) {
