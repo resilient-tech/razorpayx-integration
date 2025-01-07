@@ -1,6 +1,8 @@
 DEFAULT_REFERENCE_NO = "-*--*-"
 
+# TODO: ? make `branch_code` and `bank_account_no` as mandatory fields if mode of payment is `Bank` ?
 PROPERTY_SETTERS = [
+    ### Payment Entry ###
     {
         "doctype": "Payment Entry",
         "fieldname": "reference_no",
