@@ -10,6 +10,8 @@
 // TODO: for UX: change submit button label to `Pay and Submit`
 // TODO: Button to create RazorpayX payout after submit if not paid by RazorpayX
 
+const BASE_API_PATH = "razorpayx_integration.razorpayx_integration.server_overrides.payment_entry";
+
 const PAYOUT_FIELDS = [
 	//  Common
 	"payment_type",
@@ -47,10 +49,16 @@ frappe.ui.form.on("Payment Entry", {
 	refresh: function (frm) {
 		// Do not allow to edit fields if Payment is processed by RazorpayX in amendment
 		disable_payout_fields_in_amendment(frm);
+
+		// TODO: permission check for showing the button
+		if (!frm.doc.make_bank_online_payment && frm.doc.docstatus === 1 && frm.doc.payment_type === "Pay") {
+			frm.add_custom_button(__("Make Payout"), () => show_make_payout_dialog(frm));
+		}
 	},
 
 	bank_account: async function (frm) {
-		// fetch razorpayx_integration account
+		// TODO: when `make_online_payment` is checked, then fetch the RazorpayX Account otherwise no
+		// and also when checking `make_online_payment` then fetch the RazorpayX Account if not set
 		if (!frm.doc.bank_account) {
 			frm.set_value("razorpayx_account", "");
 		} else {
@@ -124,10 +132,9 @@ function can_cancel_payout(frm) {
  * @returns {Promise<boolean>} The value of `auto_cancel_payout
  */
 async function should_auto_cancel_payout(frm) {
-	const auto_cancel = await frappe.xcall(
-		"razorpayx_integration.razorpayx_integration.server_overrides.payment_entry.should_auto_cancel_payout",
-		{ razorpayx_account: frm.doc.razorpayx_account }
-	);
+	const auto_cancel = await frappe.xcall(`${BASE_API_PATH}.should_auto_cancel_payout`, {
+		razorpayx_account: frm.doc.razorpayx_account,
+	});
 
 	return auto_cancel;
 }
@@ -169,7 +176,7 @@ function show_cancel_payout_dialog(frm, callback) {
 		primary_action: async (values) => {
 			if (values.cancel_payout) {
 				await frappe.call({
-					method: "razorpayx_integration.razorpayx_integration.server_overrides.payment_entry.cancel_payout_and_payout_link",
+					method: `${BASE_API_PATH}.cancel_payout_and_payout_link`,
 					args: {
 						doctype: frm.doctype,
 						docname: frm.docname,
@@ -212,4 +219,159 @@ async function disable_payout_fields_in_amendment(frm) {
 	}
 
 	frm.toggle_enable(PAYOUT_FIELDS, disable_payout_fields ? 0 : 1);
+}
+
+async function show_make_payout_dialog(frm) {
+	const payout_modes = await frappe.xcall(`${BASE_API_PATH}.get_user_payout_modes`);
+
+	const dialog = new frappe.ui.Dialog({
+		title: __("Enter Payout Details"),
+		fields: [
+			{
+				fieldname: "account_section_break",
+				label: __("Company Account Details"),
+				fieldtype: "Section Break",
+			},
+			{
+				fieldname: "bank_account",
+				label: __("Company Bank Account"),
+				fieldtype: "Link",
+				options: "Bank Account",
+				default: frm.doc.bank_account,
+				reqd: 1,
+				read_only: frm.doc.bank_account ? 1 : 0,
+				get_query: function () {
+					return {
+						filters: {
+							is_company_account: 1,
+							company: frm.doc.company,
+						},
+					};
+				},
+			},
+			{
+				fieldname: "account_cb",
+				fieldtype: "Column Break",
+			},
+			{
+				fieldname: "party_section_break",
+				label: __("Party Details"),
+				fieldtype: "Section Break",
+			},
+			{
+				fieldname: "party_bank_account",
+				label: __("Party Bank Account"),
+				fieldtype: "Link",
+				options: "Bank Account",
+				default: frm.doc.party_bank_account,
+				reqd: 1,
+				read_only: frm.doc.party_bank_account ? 1 : 0,
+				get_query: function () {
+					return {
+						filters: {
+							is_company_account: 0,
+							party: frm.doc.party,
+							party_type: frm.doc.party_type,
+						},
+					};
+				},
+				onchange: async function () {
+					set_default_payout_mode(dialog.get_value("party_bank_account"), dialog);
+				},
+			},
+			{
+				fieldname: "party_cb",
+				fieldtype: "Column Break",
+			},
+			{
+				fieldname: "contact_person",
+				label: __("Contact"),
+				fieldtype: "Link",
+				options: "Contact",
+				default: frm.doc.contact_person,
+				read_only: frm.doc.contact_person ? 1 : 0,
+				get_query: function () {
+					return {
+						filters: {
+							link_doctype: frm.doc.party_type,
+							link_name: frm.doc.party,
+						},
+					};
+				},
+			},
+			{
+				fieldname: "payment_section_break",
+				label: __("Payment Details"),
+				fieldtype: "Section Break",
+			},
+			{
+				fieldname: "razorpayx_payout_mode",
+				label: __("Payout Mode"),
+				fieldtype: "Select",
+				options: payout_modes,
+				reqd: 1,
+				onchange: function () {
+					const payout_mode = dialog.get_value("razorpayx_payout_mode");
+
+					if (payout_mode === "NEFT/RTGS") {
+						toggle_dialog_fields(dialog, 0, "razorpayx_pay_instantaneously");
+						toggle_dialog_fields(dialog, 1, "contact_person");
+						toggle_required(dialog, 0, "razorpayx_payout_desc", "contact_person");
+					} else if (payout_mode === "UPI") {
+						toggle_dialog_fields(dialog, 1, "razorpayx_pay_instantaneously", "contact_person");
+						toggle_required(dialog, 0, "razorpayx_payout_desc", "contact_person");
+					} else {
+						toggle_dialog_fields(dialog, 0, "contact_person");
+						toggle_required(dialog, 1, "razorpayx_payout_desc", "contact_person");
+					}
+				},
+			},
+			{
+				fieldname: "razorpayx_pay_instantaneously",
+				label: "Pay Instantaneously",
+				fieldtype: "Check",
+				description: "Payment will be done with <strong>IMPS</strong> mode.",
+				hidden: 1,
+			},
+			{
+				fieldname: "party_cb",
+				fieldtype: "Column Break",
+			},
+			{
+				fieldname: "razorpayx_payout_desc",
+				label: __("Payout Description"),
+				fieldtype: "Data",
+			},
+		],
+		primary_action_label: __("Make Payout"),
+		primary_action: async (values) => {
+			dialog.hide();
+		},
+	});
+
+	set_default_payout_mode(frm.doc.party_bank_account, dialog);
+	dialog.show();
+}
+
+async function set_default_payout_mode(party_bank_account, dialog) {
+	if (!party_bank_account) return;
+
+	const response = await frappe.db.get_value(
+		"Bank Account",
+		party_bank_account,
+		"default_online_payment_mode"
+	);
+	dialog.set_value("razorpayx_payout_mode", response.message.default_online_payment_mode);
+}
+
+function toggle_dialog_fields(dialog, hide, ...fields) {
+	fields.forEach((field) => {
+		dialog.set_df_property(field, "hidden", hide);
+	});
+}
+
+function toggle_required(dialog, required, ...fields) {
+	fields.forEach((field) => {
+		dialog.set_df_property(field, "reqd", required);
+	});
 }
