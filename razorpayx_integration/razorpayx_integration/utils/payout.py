@@ -99,10 +99,11 @@ class PayoutWithDocType(ABC):
 
         return getattr(self, self.PAYOUT_METHOD_MAPPING[payout_method])()
 
-    def cancel(self, cancel_doc: bool = False):
+    def cancel(self, update_status: bool = True, cancel_doc: bool = False):
         """
         Cancel payout and payout link of source document.
 
+        :param update_status: Update status in document after cancelling payout and payout link.
         :param cancel_doc: Cancel document after cancelling payout and payout link.
 
         ---
@@ -111,8 +112,8 @@ class PayoutWithDocType(ABC):
         - ⚠️ Only `issued` payout link can be cancelled, otherwise it will raise error.
         """
 
-        self.cancel_payout(update_status=True, cancel_doc=cancel_doc)
-        self.cancel_payout_link()
+        self.cancel_payout(update_status=update_status, cancel_doc=cancel_doc)
+        self.cancel_payout_link(update_status=update_status, cancel_doc=cancel_doc)
 
     def cancel_payout(
         self, *, update_status: bool = False, cancel_doc: bool = False
