@@ -290,6 +290,8 @@ async function show_make_payout_dialog(frm) {
 				options: "Contact",
 				default: frm.doc.contact_person,
 				read_only: frm.doc.contact_person ? 1 : 0,
+				depends_on: "eval: doc.razorpayx_payout_mode === 'Link'",
+				mandatory_depends_on: "eval: doc.razorpayx_payout_mode === 'Link'",
 				get_query: function () {
 					return {
 						filters: {
@@ -310,28 +312,13 @@ async function show_make_payout_dialog(frm) {
 				fieldtype: "Select",
 				options: payout_modes,
 				reqd: 1,
-				onchange: function () {
-					const payout_mode = dialog.get_value("razorpayx_payout_mode");
-
-					if (payout_mode === "NEFT/RTGS") {
-						toggle_dialog_fields(dialog, 0, "razorpayx_pay_instantaneously");
-						toggle_dialog_fields(dialog, 1, "contact_person");
-						toggle_required(dialog, 0, "razorpayx_payout_desc", "contact_person");
-					} else if (payout_mode === "UPI") {
-						toggle_dialog_fields(dialog, 1, "razorpayx_pay_instantaneously", "contact_person");
-						toggle_required(dialog, 0, "razorpayx_payout_desc", "contact_person");
-					} else {
-						toggle_dialog_fields(dialog, 0, "contact_person");
-						toggle_required(dialog, 1, "razorpayx_payout_desc", "contact_person");
-					}
-				},
 			},
 			{
 				fieldname: "razorpayx_pay_instantaneously",
 				label: "Pay Instantaneously",
 				fieldtype: "Check",
 				description: "Payment will be done with <strong>IMPS</strong> mode.",
-				hidden: 1,
+				depends_on: "eval: doc.razorpayx_payout_mode === 'NEFT/RTGS'",
 			},
 			{
 				fieldname: "party_cb",
@@ -341,6 +328,7 @@ async function show_make_payout_dialog(frm) {
 				fieldname: "razorpayx_payout_desc",
 				label: __("Payout Description"),
 				fieldtype: "Data",
+				mandatory_depends_on: "eval: doc.razorpayx_payout_mode === 'Link'",
 			},
 		],
 		primary_action_label: __("Make Payout"),
@@ -362,16 +350,4 @@ async function set_default_payout_mode(party_bank_account, dialog) {
 		"default_online_payment_mode"
 	);
 	dialog.set_value("razorpayx_payout_mode", response.message.default_online_payment_mode);
-}
-
-function toggle_dialog_fields(dialog, hide, ...fields) {
-	fields.forEach((field) => {
-		dialog.set_df_property(field, "hidden", hide);
-	});
-}
-
-function toggle_required(dialog, required, ...fields) {
-	fields.forEach((field) => {
-		dialog.set_df_property(field, "reqd", required);
-	});
 }
