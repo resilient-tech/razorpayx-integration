@@ -13,7 +13,6 @@ from razorpayx_integration.razorpayx_integration.apis.payout import (
     RazorPayXPayout,
 )
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
-    PAYOUT_LINK_STATUS,
     PAYOUT_STATUS,
     USER_PAYOUT_MODE,
 )
