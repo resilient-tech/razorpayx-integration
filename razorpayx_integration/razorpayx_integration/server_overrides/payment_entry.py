@@ -302,7 +302,7 @@ def is_payout_already_cancelled(doc) -> bool:
 
     :param doc: Payment Entry Document
     """
-    return doc.razorpayx_payout_status in [
+    return doc.razorpayx_payout_status.lower() in [
         PAYOUT_STATUS.CANCELLED.value,
         PAYOUT_STATUS.REJECTED.value,
         PAYOUT_STATUS.FAILED.value,

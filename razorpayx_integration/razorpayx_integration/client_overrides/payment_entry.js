@@ -76,7 +76,7 @@ frappe.ui.form.on("Payment Entry", {
 	},
 
 	before_cancel: async function (frm) {
-		if (!frm.doc.make_bank_online_payment || is_payout_already_cancelled()) return;
+		if (!frm.doc.make_bank_online_payment || is_payout_already_cancelled(frm)) return;
 
 		// Check Payout is cancellable or not
 		if (!can_cancel_payout(frm)) {
