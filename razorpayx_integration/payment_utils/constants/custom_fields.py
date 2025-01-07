@@ -96,7 +96,6 @@ CUSTOM_FIELDS = {
             "fetch_from": "party_bank_account.upi_id",  # Note: update at integration level if required
             "read_only": 1,
             "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
-            "no_copy": 1,
         },
         {
             "fieldname": "contact_mobile",
@@ -107,7 +106,6 @@ CUSTOM_FIELDS = {
             "depends_on": "eval: doc.contact_person",
             "read_only": 1,
             "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
-            "no_copy": 1,
         },
         {
             "fieldname": "online_payment_section",
@@ -124,7 +122,6 @@ CUSTOM_FIELDS = {
             "insert_after": "online_payment_section",
             "description": "Make online payment using <strong>Payments Integration</strong>",
             "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
-            "no_copy": 1,
         },
     ],
     "Customer": [
