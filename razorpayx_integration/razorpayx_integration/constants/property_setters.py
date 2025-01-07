@@ -24,20 +24,6 @@ PROPERTY_SETTERS = [
     },
     {
         "doctype": "Payment Entry",
-        "fieldname": "contact_person",
-        "property": "fetch_from",
-        "property_type": "Data",
-        "value": "party_bank_account.contact_to_pay",
-    },
-    {
-        "doctype": "Payment Entry",
-        "fieldname": "contact_person",
-        "property": "fetch_if_empty",
-        "property_type": "Check",
-        "value": 1,
-    },
-    {
-        "doctype": "Payment Entry",
         "fieldname": "party_upi_id",
         "property": "mandatory_depends_on",
         "property_type": "Data",
