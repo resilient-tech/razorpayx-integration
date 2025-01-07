@@ -290,7 +290,7 @@ def can_cancel_payout(doc) -> bool | int:
 
     :param doc: Payment Entry Document
     """
-    return doc.make_bank_online_payment and doc.razorpayx_payout_status in [
+    return doc.make_bank_online_payment and doc.razorpayx_payout_status.lower() in [
         PAYOUT_STATUS.NOT_INITIATED.value,
         PAYOUT_STATUS.QUEUED.value,
     ]
