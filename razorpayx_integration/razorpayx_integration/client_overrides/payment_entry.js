@@ -40,6 +40,10 @@ const PAYOUT_FIELDS = [
 const RAZORPAYX_DOCTYPE = "RazorPayX Integration Setting";
 
 frappe.ui.form.on("Payment Entry", {
+	setup: function (frm) {
+		frm.add_fetch("party_bank_account", "default_online_payment_mode", "razorpayx_payout_mode");
+	},
+
 	refresh: function (frm) {
 		// Do not allow to edit fields if Payment is processed by RazorpayX in amendment
 		disable_payout_fields_in_amendment(frm);
@@ -61,6 +65,13 @@ frappe.ui.form.on("Payment Entry", {
 			const { name } = response.message || {};
 
 			frm.set_value("razorpayx_account", name);
+		}
+	},
+
+	contact_person: function (frm) {
+		if (!frm.doc.contact_person) {
+			frm.set_value("contact_mobile", "");
+			frm.set_value("contact_email", "");
 		}
 	},
 
