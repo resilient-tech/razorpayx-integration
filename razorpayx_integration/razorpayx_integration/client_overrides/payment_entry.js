@@ -10,6 +10,7 @@
 // TODO: for UX: change submit button label to `Pay and Submit`
 // TODO: Button to create RazorpayX payout after submit if not paid by RazorpayX
 
+// ############ CONSTANTS ############ //
 const BASE_API_PATH = "razorpayx_integration.razorpayx_integration.server_overrides.payment_entry";
 
 const PAYOUT_MODES = {
@@ -47,6 +48,7 @@ const PAYOUT_FIELDS = [
 
 const RAZORPAYX_DOCTYPE = "RazorPayX Integration Setting";
 
+// ############ DOC EVENTS ############ //
 frappe.ui.form.on("Payment Entry", {
 	setup: function (frm) {
 		frm.add_fetch("party_bank_account", "default_online_payment_mode", "razorpayx_payout_mode");
@@ -119,6 +121,7 @@ frappe.ui.form.on("Payment Entry", {
 	},
 });
 
+// ############ PE CANCEL HELPERS ############ //
 /**
  * Check if the payout can be cancelled or not related to the Payment Entry.
  * @param {object} frm The doctype's form object
@@ -202,31 +205,7 @@ function show_cancel_payout_dialog(frm, callback) {
 	dialog.show();
 }
 
-/**
- * If current Payment Entry is amended from another Payment Entry,
- * and source Payment Entry is processed by RazorPayX, then disable
- * payout fields in the current Payment Entry.
- *
- * @param {object} frm The doctype's form object
- */
-async function disable_payout_fields_in_amendment(frm) {
-	if (!frm.doc.amended_from) return;
-
-	let disable_payout_fields = frm.doc.__onload?.disable_payout_fields;
-
-	if (disable_payout_fields === undefined) {
-		const response = await frappe.db.get_value(
-			"Payment Entry",
-			frm.doc.amended_from,
-			"make_bank_online_payment"
-		);
-
-		disable_payout_fields = response.message?.make_bank_online_payment || 0;
-	}
-
-	frm.toggle_enable(PAYOUT_FIELDS, disable_payout_fields ? 0 : 1);
-}
-
+// ############ MAKING PAYOUT HELPERS ############ //
 async function show_make_payout_dialog(frm) {
 	// depends on conditions
 	const DEPENDS_ON_BANK = `doc.razorpayx_payout_mode === '${PAYOUT_MODES.BANK}'`;
@@ -408,6 +387,7 @@ async function set_default_payout_mode(party_bank_account, dialog) {
 		party_bank_account,
 		"default_online_payment_mode"
 	);
+
 	dialog.set_value("razorpayx_payout_mode", response.message.default_online_payment_mode);
 }
 
@@ -436,4 +416,30 @@ async function set_contact_details(contact_person, dialog) {
 		contact_email: response.message.contact_email,
 		contact_mobile: response.message.contact_mobile,
 	});
+}
+
+// ############ VALIDATIONS ############ //
+/**
+ * If current Payment Entry is amended from another Payment Entry,
+ * and source Payment Entry is processed by RazorPayX, then disable
+ * payout fields in the current Payment Entry.
+ *
+ * @param {object} frm The doctype's form object
+ */
+async function disable_payout_fields_in_amendment(frm) {
+	if (!frm.doc.amended_from) return;
+
+	let disable_payout_fields = frm.doc.__onload?.disable_payout_fields;
+
+	if (disable_payout_fields === undefined) {
+		const response = await frappe.db.get_value(
+			"Payment Entry",
+			frm.doc.amended_from,
+			"make_bank_online_payment"
+		);
+
+		disable_payout_fields = response.message?.make_bank_online_payment || 0;
+	}
+
+	frm.toggle_enable(PAYOUT_FIELDS, disable_payout_fields ? 0 : 1);
 }
