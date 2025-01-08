@@ -214,7 +214,7 @@ def make_payout_with_razorpayx(doc) -> dict | None:
     if not doc.make_bank_online_payment or is_amended_pe_processed(doc):
         return
 
-    return PayoutWithPaymentEntry(doc).make_payout()
+    PayoutWithPaymentEntry(doc).make_payout()
 
 
 def handle_payout_cancellation(doc):
@@ -301,10 +301,12 @@ def make_payout_with_payment_entry(docname: str, **kwargs):
     :param kwargs: Payout details
 
     """
-    frappe.has_permission("Payment Entry", throw=True)
+    # Has role payment manager
     frappe.has_permission(RAZORPAYX_INTEGRATION_DOCTYPE, throw=True)
 
-    doc = frappe.get_cached_doc("Payment Entry", docname)
+    doc = frappe.get_doc("Payment Entry", docname)
+    # check razorpayx account doc permission ("read")
+    doc.has_permission("submit")
 
     kwargs.pop("cmd")
     doc.db_set(
@@ -316,12 +318,7 @@ def make_payout_with_payment_entry(docname: str, **kwargs):
     )
 
     validate_online_payment_requirements(doc)
-    response = make_payout_with_razorpayx(doc)
-
-    if not response:
-        doc.db_set("make_bank_online_payment", 0, update_modified=False)
-
-    return response
+    make_payout_with_razorpayx(doc)
 
 
 # ! Important
