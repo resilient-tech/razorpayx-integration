@@ -106,6 +106,7 @@ CUSTOM_FIELDS = {
             "depends_on": "eval: doc.contact_person",
             "read_only": 1,
             "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
+            "no_copy": 1,
         },
         {
             "fieldname": "online_payment_section",
