@@ -25,7 +25,7 @@ CUSTOM_FIELDS = {
             "label": "RazorPayX Payout Details",
             "fieldtype": "Section Break",
             "insert_after": "make_bank_online_payment",  ## Insert After `Make Online Payment` field (Payment Utils Custom Field)
-            "depends_on": "eval: doc.make_bank_online_payment",
+            "depends_on": "eval: doc.make_bank_online_payment && doc.party_bank_account",
             "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
         },
         {
@@ -42,13 +42,12 @@ CUSTOM_FIELDS = {
         {
             "fieldname": "razorpayx_payout_mode",
             "label": "RazorPayX Payout Mode",
-            "fieldtype": "Data",
+            "fieldtype": "Select",
             "insert_after": "razorpayx_account",
-            "fetch_from": "party_bank_account.online_payment_mode",
-            "depends_on": "eval: doc.razorpayx_account && doc.party_bank_account",
-            "mandatory_depends_on": "eval:doc.make_bank_online_payment && doc.razorpayx_account && doc.party_bank_account",
+            "options": USER_PAYOUT_MODE.values_as_string(),
+            "depends_on": "eval: doc.make_bank_online_payment && doc.razorpayx_account && doc.party_bank_account",
+            "mandatory_depends_on": "eval: doc.make_bank_online_payment && doc.razorpayx_account && doc.party_bank_account",
             "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
-            "read_only": 1,
         },
         {
             "fieldname": "razorpayx_pay_instantaneously",
@@ -70,7 +69,7 @@ CUSTOM_FIELDS = {
             "label": "Payout Description",
             "fieldtype": "Data",
             "insert_after": "razorpayx_payout_cb",
-            "depends_on": "eval: doc.razorpayx_account",
+            "depends_on": "eval: doc.razorpayx_account && doc.party_bank_account",
             "mandatory_depends_on": f"eval:doc.make_bank_online_payment && doc.razorpayx_account && doc.razorpayx_payout_mode === '{USER_PAYOUT_MODE.LINK.value}'",
             "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
         },

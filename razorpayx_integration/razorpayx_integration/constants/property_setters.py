@@ -24,20 +24,6 @@ PROPERTY_SETTERS = [
     },
     {
         "doctype": "Payment Entry",
-        "fieldname": "contact_person",
-        "property": "fetch_from",
-        "property_type": "Data",
-        "value": "party_bank_account.contact_to_pay",
-    },
-    {
-        "doctype": "Payment Entry",
-        "fieldname": "contact_person",
-        "property": "fetch_if_empty",
-        "property_type": "Check",
-        "value": 1,
-    },
-    {
-        "doctype": "Payment Entry",
         "fieldname": "party_upi_id",
         "property": "mandatory_depends_on",
         "property_type": "Data",
@@ -81,31 +67,10 @@ PROPERTY_SETTERS = [
     ## Bank Account ##
     {
         "doctype": "Bank Account",
-        "fieldname": "online_payment_mode",
+        "fieldname": "default_online_payment_mode",
         "property": "options",
         "property_type": "Data",
         "value": USER_PAYOUT_MODE.values_as_string(),
-    },
-    {
-        "doctype": "Bank Account",
-        "fieldname": "online_payment_mode",
-        "property": "default",
-        "property_type": "Data",
-        "value": USER_PAYOUT_MODE.BANK.value,
-    },
-    {
-        "doctype": "Bank Account",
-        "fieldname": "upi_id",
-        "property": "depends_on",
-        "property_type": "Data",
-        "value": f"eval: doc.online_payment_mode === '{USER_PAYOUT_MODE.UPI.value}'",
-    },
-    {
-        "doctype": "Bank Account",
-        "fieldname": "contact_to_pay",
-        "property": "depends_on",
-        "property_type": "Data",
-        "value": f"eval: doc.online_payment_mode === '{USER_PAYOUT_MODE.LINK.value}'",
     },
 ]
 

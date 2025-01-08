@@ -14,7 +14,6 @@ app_include_js = "razorpayx_integration.bundle.js"
 export_python_type_annotations = True
 
 doctype_js = {
-    "Bank Account": "payment_utils/client_overrides/bank_account.js",
     "Payment Entry": "razorpayx_integration/client_overrides/payment_entry.js",
 }
 

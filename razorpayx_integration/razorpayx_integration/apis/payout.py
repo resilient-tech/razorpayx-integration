@@ -279,7 +279,7 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         Returns: NEFT | RTGS | IMPS
         """
 
-        if payout_details.get("pay_instantaneously"):
+        if payout_details.get("pay_instantaneously") is True:
             return PAYOUT_MODE.IMPS.value
         else:
             if payout_details["amount"] > PAYMENT_MODE_THRESHOLD.NEFT.value:

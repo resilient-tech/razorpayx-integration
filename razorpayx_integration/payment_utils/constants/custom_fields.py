@@ -33,8 +33,8 @@ CUSTOM_FIELDS = {
             "depends_on": "eval: !doc.is_company_account && doc.party_type && doc.party",
         },
         {
-            "fieldname": "online_payment_mode",
-            "label": "Online Payment Mode",
+            "fieldname": "default_online_payment_mode",
+            "label": "Default Online Payment Mode",
             "fieldtype": "Select",
             "insert_after": "online_payment_section",
             "options": PAYOUT_MODE.values_as_string(),
@@ -43,7 +43,7 @@ CUSTOM_FIELDS = {
         {
             "fieldname": "online_payment_cb",
             "fieldtype": "Column Break",
-            "insert_after": "online_payment_mode",
+            "insert_after": "default_online_payment_mode",
         },
         # For `UPI` payment mode
         {
@@ -52,18 +52,8 @@ CUSTOM_FIELDS = {
             "fieldtype": "Data",
             "insert_after": "online_payment_cb",
             "placeholder": "Eg. 90876543@okicici",
-            "depends_on": f"eval: doc.online_payment_mode === '{PAYOUT_MODE.UPI.value}'",
-            "no_copy": 1,
-        },
-        # For `Link` payment mode
-        {
-            "fieldname": "contact_to_pay",
-            "label": "Contact to Pay",
-            "fieldtype": "Link",
-            "insert_after": "upi_id",
-            "options": "Contact",
-            "depends_on": f"eval: doc.online_payment_mode === '{PAYOUT_MODE.LINK.value}'",
-            "description": "Contact to whom the payment link will be sent.",
+            "depends_on": f"eval: doc.default_online_payment_mode === '{PAYOUT_MODE.UPI.value}'",
+            "mandatory_depends_on": f"eval: doc.default_online_payment_mode === '{PAYOUT_MODE.UPI.value}'",
             "no_copy": 1,
         },
     ],
@@ -106,7 +96,6 @@ CUSTOM_FIELDS = {
             "fetch_from": "party_bank_account.upi_id",  # Note: update at integration level if required
             "read_only": 1,
             "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
-            "no_copy": 1,
         },
         {
             "fieldname": "contact_mobile",
@@ -134,7 +123,6 @@ CUSTOM_FIELDS = {
             "insert_after": "online_payment_section",
             "description": "Make online payment using <strong>Payments Integration</strong>",
             "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
-            "no_copy": 1,
         },
     ],
     "Customer": [

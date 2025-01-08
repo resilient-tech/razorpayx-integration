@@ -9,11 +9,13 @@ import frappe
 from frappe import _
 from frappe.utils import get_link_to_form
 
-from razorpayx_integration.constants import RAZORPAYX, RAZORPAYX_INTEGRATION_DOCTYPE
+from razorpayx_integration.constants import RAZORPAYX_INTEGRATION_DOCTYPE
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
-    PAYOUT_LINK_STATUS,
     PAYOUT_STATUS,
     USER_PAYOUT_MODE,
+)
+from razorpayx_integration.razorpayx_integration.utils import (
+    get_razorpayx_account,
 )
 from razorpayx_integration.razorpayx_integration.utils.payout import (
     PayoutWithPaymentEntry,
@@ -71,8 +73,9 @@ def validate_online_payment_requirements(doc):
 def validate_mandatory_fields_for_payment(doc):
     if doc.bank_account and not doc.razorpayx_account:
         frappe.throw(
-            msg=_("{0} Account not found for bank account <strong>{1}</strong>").format(
-                RAZORPAYX,
+            msg=_(
+                "RazorPayX Account not found for bank account <strong>{0}</strong>"
+            ).format(
                 doc.bank_account,
             ),
             title=_("Mandatory Fields Missing"),
@@ -86,8 +89,22 @@ def validate_mandatory_fields_for_payment(doc):
             exc=frappe.MandatoryError,
         )
 
+    if not doc.party_bank_account:
+        frappe.throw(
+            msg=_("Party's Bank Account is mandatory to make payment."),
+            title=_("Mandatory Fields Missing"),
+            exc=frappe.MandatoryError,
+        )
+
 
 def validate_payout_mode(doc):
+    if not doc.razorpayx_payout_mode:
+        doc.razorpayx_payout_mode = frappe.get_value(
+            "Bank Account",
+            doc.party_bank_account,
+            "default_online_payment_mode",
+        )
+
     validate_razorpayx_user_payout_mode(doc.razorpayx_payout_mode)
 
     if doc.razorpayx_payout_mode == USER_PAYOUT_MODE.BANK.value:
@@ -133,26 +150,24 @@ def validate_payout_mode(doc):
 
 
 def validate_razorpayx_account(doc):
-    associated_razorpayx_account = frappe.get_value(
-        RAZORPAYX_INTEGRATION_DOCTYPE,
-        {"bank_account": doc.bank_account},
-        "name",
-    )
+    associated_razorpayx_account = get_razorpayx_account(doc.bank_account)
 
     if not associated_razorpayx_account:
         frappe.throw(
-            msg=_("{0} Account not found for bank account <strong>{1}</strong>").format(
-                RAZORPAYX, doc.bank_account
-            ),
+            msg=_(
+                "RazorPayX Account not found for Company Bank Account <strong>{0}</strong>"
+            ).format(doc.bank_account),
             title=_("Invalid Company Bank Account"),
             exc=frappe.ValidationError,
         )
 
-    if associated_razorpayx_account != doc.razorpayx_account:
+    if not doc.razorpayx_account:
+        doc.razorpayx_account = associated_razorpayx_account
+    elif associated_razorpayx_account != doc.razorpayx_account:
         frappe.throw(
             msg=_(
-                "Company Bank Account <strong>{0}</strong> is not associated with {1} Account <strong>{2}</strong>"
-            ).format(doc.bank_account, RAZORPAYX, doc.razorpayx_account),
+                "Company Bank Account <strong>{0}</strong> is not associated with RazorPayX Account <strong>{1}</strong>"
+            ).format(doc.bank_account, doc.razorpayx_account),
             title=_("Invalid Company Bank Account"),
             exc=frappe.ValidationError,
         )
@@ -240,7 +255,7 @@ def validate_amended_details(doc):
 
 ### ACTIONS ###
 # TODO: enqueue it?
-def make_payout_with_razorpayx(doc):
+def make_payout_with_razorpayx(doc) -> dict | None:
     if doc.doctype != "Payment Entry":
         frappe.throw(
             title=_("Invalid DocType"),
@@ -250,7 +265,7 @@ def make_payout_with_razorpayx(doc):
     if not doc.make_bank_online_payment or is_amended_pe_processed(doc):
         return
 
-    PayoutWithPaymentEntry(doc).make_payout()
+    return PayoutWithPaymentEntry(doc).make_payout()
 
 
 def handle_payout_cancellation(doc):
@@ -331,6 +346,38 @@ def cancel_payout_and_payout_link(doctype: str, docname: str):
 
     doc = frappe.get_cached_doc(doctype, docname)
     PayoutWithPaymentEntry(doc).cancel()
+
+
+@frappe.whitelist()
+def make_payout_with_payment_entry(docname: str, **kwargs):
+    """
+    Make Payout or Payout Link with Payment Entry.
+
+    :param docname: Payment Entry name
+    :param kwargs: Payout details
+
+    """
+    frappe.has_permission("Payment Entry", throw=True)
+    frappe.has_permission(RAZORPAYX_INTEGRATION_DOCTYPE, throw=True)
+
+    doc = frappe.get_cached_doc("Payment Entry", docname)
+
+    kwargs.pop("cmd")
+    doc.db_set(
+        {
+            "razorpayx_account": get_razorpayx_account(kwargs["bank_account"]),
+            "make_bank_online_payment": 1,
+            **kwargs,
+        }
+    )
+
+    validate_online_payment_requirements(doc)
+    response = make_payout_with_razorpayx(doc)
+
+    if not response:
+        doc.db_set("make_bank_online_payment", 0, update_modified=False)
+
+    return response
 
 
 # ! Important

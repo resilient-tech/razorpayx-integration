@@ -131,7 +131,11 @@ class PayoutWithDocType(ABC):
             return
 
         payout = RazorPayXPayout(self.razorpayx_account)
-        response = payout.cancel(self.doc.razorpayx_payout_id)
+        response = payout.cancel(
+            self.doc.razorpayx_payout_id,
+            source_doctype=self.doc.doctype,
+            source_docname=self.doc.name,
+        )
 
         self._update_doc_after_payout_cancel(
             response, update_status=update_status, cancel_doc=cancel_doc
@@ -155,7 +159,11 @@ class PayoutWithDocType(ABC):
             return
 
         payout = RazorPayXLinkPayout(self.razorpayx_account)
-        response = payout.cancel(self.doc.razorpayx_payout_link_id)
+        response = payout.cancel(
+            self.doc.razorpayx_payout_link_id,
+            source_doctype=self.doc.doctype,
+            source_docname=self.doc.name,
+        )
 
         self._update_doc_after_payout_cancel(
             response, update_status=update_status, cancel_doc=cancel_doc
@@ -339,7 +347,7 @@ class PayoutWithPaymentEntry(PayoutWithDocType):
         super().__init__(payment_entry)
 
     ### APIs ###
-    def make_payout(self) -> dict:
+    def make_payout(self) -> dict | None:
         response = super().make_payout()
 
         if not response:

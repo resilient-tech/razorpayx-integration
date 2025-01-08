@@ -333,7 +333,11 @@ class PayoutWebhook(RazorPayXWebhook):
                 return True
 
             if status == PAYOUT_LINK_STATUS.ISSUED.value:
-                payout_link.cancel(link_id)
+                payout_link.cancel(
+                    link_id,
+                    source_doctype=self.source_doctype,
+                    source_docname=self.source_docname,
+                )
                 return True
 
         except Exception:
