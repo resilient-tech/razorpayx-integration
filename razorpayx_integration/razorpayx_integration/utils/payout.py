@@ -339,7 +339,7 @@ class PayoutWithPaymentEntry(PayoutWithDocType):
         super().__init__(payment_entry)
 
     ### APIs ###
-    def make_payout(self) -> dict:
+    def make_payout(self) -> dict | None:
         response = super().make_payout()
 
         if not response:

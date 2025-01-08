@@ -52,6 +52,7 @@ const RAZORPAYX_DOCTYPE = "RazorPayX Integration Setting";
 frappe.ui.form.on("Payment Entry", {
 	setup: function (frm) {
 		frm.add_fetch("party_bank_account", "default_online_payment_mode", "razorpayx_payout_mode");
+		frm.add_fetch("razorpayx_account", "bank_account", "bank_account");
 	},
 
 	refresh: function (frm) {
@@ -65,22 +66,8 @@ frappe.ui.form.on("Payment Entry", {
 	},
 
 	bank_account: async function (frm) {
-		// TODO: when `make_online_payment` is checked, then fetch the RazorpayX Account otherwise no
-		// and also when checking `make_online_payment` then fetch the RazorpayX Account if not set
 		if (!frm.doc.bank_account) {
 			frm.set_value("razorpayx_account", "");
-		} else {
-			const response = await frappe.db.get_value(
-				"RazorPayX Integration Setting",
-				{
-					bank_account: frm.doc.bank_account,
-				},
-				"name"
-			);
-
-			const { name } = response.message || {};
-
-			frm.set_value("razorpayx_account", name);
 		}
 	},
 
@@ -369,7 +356,32 @@ async function show_make_payout_dialog(frm) {
 			},
 		],
 		primary_action_label: __("Make Payout"),
-		primary_action: async (values) => {
+		primary_action: (values) => {
+			frappe.call({
+				method: `${BASE_API_PATH}.make_payout_with_payment_entry`,
+				args: {
+					docname: frm.docname,
+					...values,
+				},
+				freeze: true,
+				freeze_message: __("Making Payout via RazorPayX..."),
+				callback: (response) => {
+					if (!response.message) {
+						frappe.show_alert({
+							message: __("Failed to make payout. Please try again."),
+							indicator: "red",
+						});
+					} else {
+						frappe.show_alert({
+							message: __("Payout has been made successfully."),
+							indicator: "green",
+						});
+					}
+
+					frm.reload_doc();
+				},
+			});
+
 			dialog.hide();
 		},
 	});
