@@ -46,22 +46,6 @@ def validate_razorpayx_fund_account_type(type: str):
     )
 
 
-def validate_razorpayx_payout_mode(mode: str | None = None):
-    """
-    :raises frappe.ValidationError: If the mode is not valid.
-    """
-    if PAYOUT_MODE.has_value(mode):
-        return
-
-    frappe.throw(
-        msg=_("Invalid Payout mode: {0}.<br> Must be one of : <br> {1}").format(
-            mode, PAYOUT_MODE.values_as_html_list()
-        ),
-        title=_("Invalid RazorPayX Payout mode"),
-        exc=frappe.ValidationError,
-    )
-
-
 def validate_razorpayx_user_payout_mode(mode: str | None = None):
     """
     :raises frappe.ValidationError: If the mode is not valid.

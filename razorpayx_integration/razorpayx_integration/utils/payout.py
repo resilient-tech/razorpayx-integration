@@ -16,9 +16,6 @@ from razorpayx_integration.razorpayx_integration.constants.payouts import (
     PAYOUT_STATUS,
     USER_PAYOUT_MODE,
 )
-from razorpayx_integration.razorpayx_integration.utils.validation import (
-    validate_razorpayx_user_payout_mode,
-)
 
 
 class PAYOUT_METHOD(BaseEnum):
@@ -47,17 +44,15 @@ class PayoutWithDocType(ABC):
 
     ---
     Note: ⚠️ Inherit this class to make payout with different doctypes.
-
-    Caution: 🔴 Payout with `Fund Account ID` is not supported.
     """
 
     PAYOUT_METHOD_MAPPING: ClassVar[dict] = {
-        PAYOUT_METHOD.FUND_ACCOUNT_BANK_ACCOUNT.value: "_bank_payout_with_fund_account",
-        PAYOUT_METHOD.FUND_ACCOUNT_UPI.value: "_upi_payout_with_fund_account",
+        # PAYOUT_METHOD.FUND_ACCOUNT_BANK_ACCOUNT.value: "_bank_payout_with_fund_account",
+        # PAYOUT_METHOD.FUND_ACCOUNT_UPI.value: "_upi_payout_with_fund_account",
         PAYOUT_METHOD.COMPOSITE_BANK_ACCOUNT.value: "_bank_payout_with_composite",
         PAYOUT_METHOD.COMPOSITE_UPI.value: "_upi_payout_with_composite",
         PAYOUT_METHOD.LINK_CONTACT_DETAILS.value: "_link_payout_with_contact_details",
-        PAYOUT_METHOD.LINK_CONTACT_ID.value: "_link_payout_with_contact_id",
+        # PAYOUT_METHOD.LINK_CONTACT_ID.value: "_link_payout_with_contact_id",
     }
 
     PAYOUT_DETAILS_MAPPING: ClassVar[dict] = {
@@ -83,8 +78,6 @@ class PayoutWithDocType(ABC):
         """
         Make payout with given document.
         """
-        self._validate_payout_prerequisite()
-
         payout_method = self._get_method_for_payout()
 
         if payout_method not in self.PAYOUT_METHOD_MAPPING:
@@ -324,14 +317,6 @@ class PayoutWithDocType(ABC):
         )
         return payout.create_with_razorpayx_contact_id(payout_details)
 
-    ### VALIDATIONS ###
-    @abstractmethod
-    def _validate_payout_prerequisite(self):
-        """
-        Validate prerequisites for making payout.
-        """
-        pass
-
 
 class PayoutWithPaymentEntry(PayoutWithDocType):
     """
@@ -454,50 +439,3 @@ class PayoutWithPaymentEntry(PayoutWithDocType):
 
         if values:
             self.doc.db_set(values, update_modified=True)
-
-    ### VALIDATIONS ###
-    def _validate_payout_prerequisite(self):
-        if self.doc.docstatus != 1:
-            frappe.throw(
-                msg=_(
-                    "To make payout, Payment Entry must be submitted! Please submit {0}"
-                ).format(self.form_link),
-                title=_("Invalid Payment Entry"),
-                exc=frappe.ValidationError,
-            )
-
-        if self.doc.payment_type != "Pay":
-            frappe.throw(
-                msg=_("Payment Entry {0} is not set to pay").format(self.form_link),
-                title=_("Invalid Payment Entry"),
-                exc=frappe.ValidationError,
-            )
-
-        if not self.doc.make_bank_online_payment:
-            frappe.throw(
-                msg=_("Online Payment is not enabled for Payment Entry {0}").format(
-                    self.form_link
-                ),
-                title=_("Invalid Payment Entry"),
-                exc=frappe.ValidationError,
-            )
-
-        if not self.doc.razorpayx_account:
-            frappe.throw(
-                msg=_("RazorPayX Account not found for Payment Entry {0}").format(
-                    self.form_link
-                ),
-                title=_("Invalid Payment Entry"),
-                exc=frappe.ValidationError,
-            )
-
-        if self.doc.razorpayx_payout_id or self.doc.razorpayx_payout_link_id:
-            frappe.throw(
-                msg=_("Payout already created for Payment Entry {0}").format(
-                    self.form_link
-                ),
-                title=_("Invalid Payment Entry"),
-                exc=frappe.ValidationError,
-            )
-
-        validate_razorpayx_user_payout_mode(self.doc.razorpayx_payout_mode)

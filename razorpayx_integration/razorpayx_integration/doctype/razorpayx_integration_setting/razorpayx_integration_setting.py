@@ -45,6 +45,8 @@ class RazorPayXIntegrationSetting(Document):
                 title=_("API Credentials Are Missing"),
             )
 
+        # TODO: use details to fetch account statement for one day and check if it is working.
+
     def validate_bank_account(self):
         if not self.bank_account:
             frappe.throw(
@@ -66,14 +68,14 @@ class RazorPayXIntegrationSetting(Document):
             )
 
         # ! ERROR: Maybe fails
-        if (
-            bank_account.razorpayx_workflow_state
-            and bank_account.razorpayx_workflow_state != WORKFLOW_STATE.APPROVED.value
-        ):
-            frappe.throw(
-                msg=_("Bank Account is not approved. Please approve it first."),
-                title=_("Invalid Bank Account"),
-            )
+        # if (
+        #     bank_account.razorpayx_workflow_state
+        #     and bank_account.razorpayx_workflow_state != WORKFLOW_STATE.APPROVED.value
+        # ):
+        #     frappe.throw(
+        #         msg=_("Bank Account is not approved. Please approve it first."),
+        #         title=_("Invalid Bank Account"),
+        #     )
 
         if bank_account.disabled:
             frappe.throw(

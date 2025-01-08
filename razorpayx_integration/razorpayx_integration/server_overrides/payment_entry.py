@@ -21,7 +21,6 @@ from razorpayx_integration.razorpayx_integration.utils.payout import (
     PayoutWithPaymentEntry,
 )
 from razorpayx_integration.razorpayx_integration.utils.validation import (
-    validate_razorpayx_payout_description,
     validate_razorpayx_user_payout_mode,
 )
 
@@ -38,6 +37,11 @@ def onload(doc, method=None):
 
 
 def validate(doc, method=None):
+    set_razorpayx_account(doc)
+
+    if not doc.razorpayx_account:
+        return
+
     validate_online_payment_requirements(doc)
 
 
@@ -61,40 +65,10 @@ def validate_online_payment_requirements(doc):
     if not doc.make_bank_online_payment:
         return
 
-    validate_mandatory_fields_for_payment(doc)
+    # TODO: set razorpayx account if not already set
+    # Ignore if razorpayx account is not set
     validate_payout_mode(doc)
-    validate_razorpayx_account(doc)
     validate_upi_id(doc)
-
-    if doc.razorpayx_payout_desc:
-        validate_razorpayx_payout_description(doc.razorpayx_payout_desc)
-
-
-def validate_mandatory_fields_for_payment(doc):
-    if doc.bank_account and not doc.razorpayx_account:
-        frappe.throw(
-            msg=_(
-                "RazorPayX Account not found for bank account <strong>{0}</strong>"
-            ).format(
-                doc.bank_account,
-            ),
-            title=_("Mandatory Fields Missing"),
-            exc=frappe.MandatoryError,
-        )
-
-    if not doc.party_type or not doc.party:
-        frappe.throw(
-            msg=_("Party is mandatory to make payment."),
-            title=_("Mandatory Fields Missing"),
-            exc=frappe.MandatoryError,
-        )
-
-    if not doc.party_bank_account:
-        frappe.throw(
-            msg=_("Party's Bank Account is mandatory to make payment."),
-            title=_("Mandatory Fields Missing"),
-            exc=frappe.MandatoryError,
-        )
 
 
 def validate_payout_mode(doc):
@@ -112,13 +86,6 @@ def validate_payout_mode(doc):
         if not doc.party_bank_account:
             frappe.throw(
                 msg=_("Party's Bank Account is mandatory to make payment."),
-                title=_("Mandatory Fields Missing"),
-                exc=frappe.MandatoryError,
-            )
-
-        if not doc.bank_account:
-            frappe.throw(
-                msg=_("Company's Bank Account is mandatory to make payment."),
                 title=_("Mandatory Fields Missing"),
                 exc=frappe.MandatoryError,
             )
@@ -149,28 +116,14 @@ def validate_payout_mode(doc):
             )
 
 
-def validate_razorpayx_account(doc):
-    associated_razorpayx_account = get_razorpayx_account(doc.bank_account)
-
-    if not associated_razorpayx_account:
-        frappe.throw(
-            msg=_(
-                "RazorPayX Account not found for Company Bank Account <strong>{0}</strong>"
-            ).format(doc.bank_account),
-            title=_("Invalid Company Bank Account"),
-            exc=frappe.ValidationError,
-        )
-
+def set_razorpayx_account(doc):
     if not doc.razorpayx_account:
-        doc.razorpayx_account = associated_razorpayx_account
-    elif associated_razorpayx_account != doc.razorpayx_account:
-        frappe.throw(
-            msg=_(
-                "Company Bank Account <strong>{0}</strong> is not associated with RazorPayX Account <strong>{1}</strong>"
-            ).format(doc.bank_account, doc.razorpayx_account),
-            title=_("Invalid Company Bank Account"),
-            exc=frappe.ValidationError,
-        )
+        doc.razorpayx_account = get_razorpayx_account(doc.bank_account)
+
+
+def validate_doc_company(doc):
+    # TODO
+    pass
 
 
 def validate_upi_id(doc):
@@ -188,15 +141,6 @@ def validate_upi_id(doc):
             msg=_(
                 "UPI ID not found for Party Bank Account <strong>{0}</strong>"
             ).format(doc.party_bank_account),
-            title=_("Invalid Party Bank Account"),
-            exc=frappe.ValidationError,
-        )
-
-    if associated_upi_id != doc.party_upi_id:
-        frappe.throw(
-            msg=_(
-                "Party Bank Account <strong>{0}</strong> is not associated with UPI ID <strong>{1}</strong>"
-            ).format(doc.party_bank_account, doc.party_upi_id),
             title=_("Invalid Party Bank Account"),
             exc=frappe.ValidationError,
         )
@@ -254,13 +198,18 @@ def validate_amended_details(doc):
 
 
 ### ACTIONS ###
-# TODO: enqueue it?
 def make_payout_with_razorpayx(doc) -> dict | None:
-    if doc.doctype != "Payment Entry":
-        frappe.throw(
-            title=_("Invalid DocType"),
-            msg=_("DocType is not <strong>Payment Entry</strong>").format(doc.doctype),
-        )
+    if doc.docstatus != 1:
+        return
+
+    if not doc.razorpayx_account:
+        return
+
+    if doc.payment_type != "Pay":
+        return
+
+    if doc.razorpayx_payout_id or doc.razorpayx_payout_link_id:
+        return
 
     if not doc.make_bank_online_payment or is_amended_pe_processed(doc):
         return
@@ -269,18 +218,13 @@ def make_payout_with_razorpayx(doc) -> dict | None:
 
 
 def handle_payout_cancellation(doc):
+    if not doc.razorpayx_account:
+        return
+
     if not doc.make_bank_online_payment or is_payout_already_cancelled(doc):
         return
 
-    if not can_cancel_payout(doc):
-        frappe.throw(
-            title=_("Cannot Cancel Payment Entry"),
-            msg=_(
-                "Payment Entry cannot be cancelled as Payout is already in <strong>{0}</strong> state."
-            ).format(doc.razorpayx_payout_status),
-        )
-
-    if should_auto_cancel_payout(doc.razorpayx_account):
+    if can_cancel_payout(doc) and should_auto_cancel_payout(doc.razorpayx_account):
         PayoutWithPaymentEntry(doc).cancel()
 
 
@@ -317,11 +261,11 @@ def is_payout_already_cancelled(doc) -> bool:
 
     :param doc: Payment Entry Document
     """
+    # TODO: Duplication in webhooks
     return doc.razorpayx_payout_status.lower() in [
         PAYOUT_STATUS.CANCELLED.value,
         PAYOUT_STATUS.REJECTED.value,
         PAYOUT_STATUS.FAILED.value,
-        PAYOUT_STATUS.REVERSED.value,
     ]
 
 

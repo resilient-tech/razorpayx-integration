@@ -363,7 +363,6 @@ class PayoutWebhook(RazorPayXWebhook):
         if self.status in [
             PAYOUT_STATUS.CANCELLED.value,
             PAYOUT_STATUS.FAILED.value,
-            PAYOUT_STATUS.REVERSED.value,
             PAYOUT_STATUS.REJECTED.value,
         ]:
             return True
@@ -399,14 +398,13 @@ class PayoutLinkWebhook(PayoutWebhook):
         """
         Update Payment Entry based on the webhook status.
 
-        - Update the UTR Number.
         - If failed, cancel the Payment Entry.
             - Change Payment Status to `Cancelled`.
         """
         if not self.should_update_payment_entry():
             return
 
-        values = self.get_updated_reference()
+        values = {}
 
         cancel_pe = self.should_cancel_payment_entry()
 
@@ -416,7 +414,8 @@ class PayoutLinkWebhook(PayoutWebhook):
         if self.id:
             values["razorpayx_payout_link_id"] = self.id
 
-        self.source_doc.db_set(values, notify=True)
+        if values:
+            self.source_doc.db_set(values, notify=True)
 
         if cancel_pe:
             self.cancel_payment_entry()
@@ -610,15 +609,12 @@ def razorpayx_webhook_listener():
     if unsupported_event:
         return
 
-    # TODO: enqueue the webhook processing
-    # frappe.enqueue(
-    #     process_razorpayx_webhook,
-    #     payload=payload,
-    #     integration_request=ir.name,
-    # )
-
-    # TODO: remove this line after testing
-    process_razorpayx_webhook(payload, ir.name)
+    frappe.enqueue(
+        process_razorpayx_webhook,
+        payload=payload,
+        integration_request=ir.name,
+        now=frappe.conf.developer_mode,
+    )
 
 
 def process_razorpayx_webhook(payload: dict, integration_request: str):
@@ -636,6 +632,7 @@ def process_razorpayx_webhook(payload: dict, integration_request: str):
 
 
 ###### UTILITIES ######
+# TODO: is_valid_webhook_signature
 def validate_webhook_signature(
     row_payload: bytes,
     signature: str,

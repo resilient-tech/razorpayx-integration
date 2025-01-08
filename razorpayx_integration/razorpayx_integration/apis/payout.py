@@ -17,7 +17,6 @@ from razorpayx_integration.razorpayx_integration.constants.payouts import (
 from razorpayx_integration.razorpayx_integration.utils.validation import (
     validate_razorpayx_payout_description,
     validate_razorpayx_payout_link_status,
-    validate_razorpayx_payout_mode,
     validate_razorpayx_payout_status,
 )
 
@@ -169,58 +168,6 @@ class RazorPayXPayout(BaseRazorPayXAPI):
 
         return response.get(data)
 
-    def get_all(
-        self,
-        *,
-        filters: dict | None = None,
-        count: int | None = None,
-        source_doctype: str | None = None,
-        source_docname: str | None = None,
-    ) -> list[dict]:
-        """
-        Get all `Payouts` associate with given `RazorPayX` account if count is not given.
-
-        :param filters: Result will be filtered as given filters.
-        :param count: The number of payouts to be retrieved.
-        :param source_doctype: The source document type.
-        :param source_docname: The source document name.
-
-        :raises ValueError: If `mode` or `status` is not valid (if specified).
-
-        ---
-        Example Usage:
-        ```
-        payout = RazorPayXPayout(RAZORPAYX_BANK_ACCOUNT)
-        filters = {
-            "contact_id":"cont_00HjGh1",
-            "fund_account_id":"fa_00HjHue1",
-            "mode":"NEFT",
-            "reference_id":"ACC-PAY-003-2024-06-01",
-            "status":"processing",
-            "from":"2024-01-01"
-            "to":"2024-06-01"
-        }
-        response=payout.get_all(filters)
-        ```
-
-        ---
-        Note:
-        - `from` and `to` can be str,date,datetime (in YYYY-MM-DD).
-
-        ---
-        Reference: https://razorpay.com/docs/api/x/payouts/fetch-all/
-        """
-        if source_doctype and source_docname:
-            self._set_source_to_ir_log(source_doctype, source_docname)
-
-        if not filters:
-            filters = {}
-
-        # account number is mandatory
-        filters["account_number"] = self.razorpayx_account_number
-
-        return super().get_all(filters, count)
-
     def cancel(
         self,
         payout_id: str,
@@ -265,7 +212,7 @@ class RazorPayXPayout(BaseRazorPayXAPI):
 
         self._set_idempotency_key_header(json)
 
-        self._validate_payout_payload(json)
+        self._validate_description(json)
 
         return self.post(json=json, headers=self.payout_headers)
 
@@ -301,7 +248,7 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         ---
         Reference: https://razorpay.com/docs/api/x/payout-idempotency/make-request/
         """
-
+        # TODO: convert other special characters to hyphen
         self.payout_headers["X-Payout-Idempotency"] = self.source_docname
 
     def _get_mapped_payout_request_body(self, payout_details: dict) -> dict:
@@ -404,76 +351,6 @@ class RazorPayXPayout(BaseRazorPayXAPI):
             "notes": get_notes(),
         }
 
-    def _get_party_fund_account_details(self, payout_details: dict) -> dict:
-        """
-        Get a dictionary for `Fund Account` to be used in `Payout`.
-
-        :param data: Request body for `Payout`.
-
-        ---
-        Note:  ⚠️  `party_account_type` must be provided in the `payout_details`.
-
-        ---
-        Fund Account Sample:
-
-        ```py
-        # Bank Account
-        {
-            "account_type": "bank_account",
-            "bank_account": {
-                "name": "Gaurav Kumar",
-                "ifsc": "HDFC0000053",
-                "account_number": "7654321234567890",
-            },
-            "contact": {
-                "name": "Gaurav Kumar",
-                "email": "gauravemail@gmail.com",
-                "contact": "9123456789",
-                "type": "customer",
-                "reference_id": "cont_00HjGh1",
-            },
-        }
-
-        # VPA
-        {
-            "account_type": "vpa",
-            "vpa": {
-                "address": "gauravkumar@upi",
-            },
-            "contact": {
-                "name": "Gaurav Kumar",
-                "email": "gauravemail@gmail.com",
-                "contact": "9123456789",
-                "type": "customer",
-                "reference_id": "cont_00HjGh1",
-            },
-        }
-        ```
-        """
-
-        def get_account_details(account_type: str) -> dict:
-            match account_type:
-                case FUND_ACCOUNT_TYPE.BANK_ACCOUNT.value:
-                    return {
-                        "bank_account": {
-                            "name": payout_details["party_name"],
-                            "ifsc": payout_details["party_bank_ifsc"],
-                            "account_number": payout_details["party_bank_account_no"],
-                        }
-                    }
-                case FUND_ACCOUNT_TYPE.VPA.value:
-                    return {
-                        "vpa": {
-                            "address": payout_details["party_upi_id"],
-                        }
-                    }
-
-        return {
-            "account_type": payout_details["party_account_type"],
-            **get_account_details(payout_details["party_account_type"]),
-            "contact": self._get_party_contact_details(payout_details),
-        }
-
     def _get_party_contact_details(self, payout_details: dict) -> dict:
         """
         Make a dictionary for `Contact` to be used in `Payout`.
@@ -513,24 +390,6 @@ class RazorPayXPayout(BaseRazorPayXAPI):
             "reference_id": payout_details.get("party_id", ""),
         }
 
-    def _get_source_amount(self, json: dict) -> float:
-        """
-        Get the amount from the source document.
-
-        :param json: Payload for `Payout`.
-
-        ---
-        Note: 🟢 Override this method to customize the amount fetching.
-        """
-        amount_field = (
-            self.source_amount_field_map.get(self.source_doctype)
-            or self.DEFAULT_SOURCE_AMOUNT_FIELD
-        )
-
-        return frappe.db.get_value(
-            self.source_doctype, self.source_docname, amount_field
-        )
-
     def _set_source_to_ir_log(self, source_doctype: str, source_docname: str):
         """
         Set the source document details in the Integration Request Log.
@@ -546,55 +405,6 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         )
 
     ### VALIDATIONS ###
-    def _validate_payout_payload(self, json: dict):
-        """
-        Validation before making payout.
-
-        :param json: Payload for `Payout`.
-        """
-        self._validate_amount(json)
-        self._validate_description(json)
-        self._validate_payout_mode(json)
-
-    def _validate_amount(self, json: dict):
-        """
-        Validate the `amount` of the payout.
-
-        Compare amount with source document amount.
-
-        :param json: Payload for `Payout`.
-
-        ---
-        Note: 🟢 Override this method to customize the validation.
-        """
-
-        def format_amount(amount: float) -> str:
-            return fmt_money(amount, currency=PAYOUT_CURRENCY.INR.value)
-
-        source_amount = self._get_source_amount(json)
-        payout_amount = paisa_to_rupees(json["amount"])
-
-        if source_amount == payout_amount:
-            return
-
-        message = _(
-            "The payout amount {0} does not match with the source document amount {1}."
-        ).format(
-            frappe.bold(format_amount(payout_amount)),
-            frappe.bold(format_amount(source_amount)),
-        )
-
-        message += "<br>"
-
-        message += _("Please check the source document {0}.").format(
-            frappe.bold(get_link_to_form(self.source_doctype, self.source_docname))
-        )
-
-        frappe.throw(
-            msg=message,
-            title=_("Amount Mismatch"),
-        )
-
     def _validate_description(self, json: dict):
         """
         Validate the `narration` of the payout.
@@ -606,33 +416,6 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         """
         if narration := json.get("narration"):
             validate_razorpayx_payout_description(narration)
-
-    def _validate_payout_mode(self, json: dict):
-        """
-        Validate the `mode` of the payout.
-
-        :param json: Request or Filter data.
-        """
-        if mode := json.get("mode"):
-            validate_razorpayx_payout_mode(mode)
-
-    def _validate_status(self, json: dict):
-        """
-        Validate the `status` of the payout.
-
-        :param json: Request or Filter data.
-        """
-        if status := json.get("status"):
-            validate_razorpayx_payout_status(status)
-
-    def _validate_and_process_filters(self, filters: dict):
-        """
-        Validation before `get_all` API call.
-
-        :param filters: Filters for fetching filtered response.
-        """
-        self._validate_payout_mode(filters)
-        self._validate_status(filters)
 
 
 class RazorPayXCompositePayout(RazorPayXPayout):
@@ -778,6 +561,76 @@ class RazorPayXCompositePayout(RazorPayXPayout):
 
         return mapped_request
 
+    def _get_party_fund_account_details(self, payout_details: dict) -> dict:
+        """
+        Get a dictionary for `Fund Account` to be used in `Payout`.
+
+        :param data: Request body for `Payout`.
+
+        ---
+        Note:  ⚠️  `party_account_type` must be provided in the `payout_details`.
+
+        ---
+        Fund Account Sample:
+
+        ```py
+        # Bank Account
+        {
+            "account_type": "bank_account",
+            "bank_account": {
+                "name": "Gaurav Kumar",
+                "ifsc": "HDFC0000053",
+                "account_number": "7654321234567890",
+            },
+            "contact": {
+                "name": "Gaurav Kumar",
+                "email": "gauravemail@gmail.com",
+                "contact": "9123456789",
+                "type": "customer",
+                "reference_id": "cont_00HjGh1",
+            },
+        }
+
+        # VPA
+        {
+            "account_type": "vpa",
+            "vpa": {
+                "address": "gauravkumar@upi",
+            },
+            "contact": {
+                "name": "Gaurav Kumar",
+                "email": "gauravemail@gmail.com",
+                "contact": "9123456789",
+                "type": "customer",
+                "reference_id": "cont_00HjGh1",
+            },
+        }
+        ```
+        """
+
+        def get_account_details(account_type: str) -> dict:
+            match account_type:
+                case FUND_ACCOUNT_TYPE.BANK_ACCOUNT.value:
+                    return {
+                        "bank_account": {
+                            "name": payout_details["party_name"],
+                            "ifsc": payout_details["party_bank_ifsc"],
+                            "account_number": payout_details["party_bank_account_no"],
+                        }
+                    }
+                case FUND_ACCOUNT_TYPE.VPA.value:
+                    return {
+                        "vpa": {
+                            "address": payout_details["party_upi_id"],
+                        }
+                    }
+
+        return {
+            "account_type": payout_details["party_account_type"],
+            **get_account_details(payout_details["party_account_type"]),
+            "contact": self._get_party_contact_details(payout_details),
+        }
+
 
 class RazorPayXLinkPayout(RazorPayXPayout):
     """
@@ -897,58 +750,6 @@ class RazorPayXLinkPayout(RazorPayXPayout):
             source_docname=source_docname,
         )
 
-    def get_all(
-        self,
-        *,
-        filters: dict | None = None,
-        count: dict | None = None,
-        source_doctype: str | None = None,
-        source_docname: str | None = None,
-    ) -> list[dict]:
-        """
-        Get all `Payout Links` associate with given `RazorPayX` account if count is not given.
-
-        :param filters: Result will be filtered as given filters.
-        :param count: The number of payouts to be retrieved.
-        :param source_doctype: The source document type.
-        :param source_docname: The source document name.
-
-        :raises ValueError: If `status` is not valid (if specified).
-
-        ---
-        Example Usage:
-        ```
-        link_payout = RazorPayXLinkPayout(RAZORPAYX_BANK_ACCOUNT)
-        filters = {
-            "id":"poutlk_jkHgLM02",
-            "contact_id":"cont_00HjGh1",
-            "contact_phone_number":"9123456789",
-            "contact_email":"gaurvaexmaple@gmail.com",
-            "purpose":"payout",
-            "fund_account_id":"fa_00HjHue1",
-            "receipt":"ACC-PAY-003-2024-06-01",
-            "short_url":"https://rzp.io/p/abc",
-            "status":"processing",
-            "from":"2024-01-01"
-            "to":"2024-06-01"
-        }
-        response=link_payout.get_all(filters)
-        ```
-
-        ---
-        Note:
-        - `from` and `to` can be str,date,datetime (in YYYY-MM-DD).
-
-        ---
-        Reference: https://razorpay.com/docs/api/x/payouts/fetch-all/
-        """
-        return super().get_all(
-            filters=filters,
-            count=count,
-            source_doctype=source_doctype,
-            source_docname=source_docname,
-        )
-
     def cancel(
         self,
         payout_link_id: str,
@@ -1042,21 +843,3 @@ class RazorPayXLinkPayout(RazorPayXPayout):
         Note: 🟢 Override this method to customize the validation.
         """
         validate_razorpayx_payout_description(json["description"])
-
-    def _validate_status(self, json):
-        """
-        Validate the `status` of the payout link.
-
-        :param json: Request or Filter data.
-
-        """
-        if status := json.get("status"):
-            validate_razorpayx_payout_link_status(status)
-
-    def _validate_and_process_filters(self, filters):
-        """
-        Validation before `get_all` API call.
-
-        :param filters: Filters for fetching filtered response.
-        """
-        self._validate_status(filters)
