@@ -21,28 +21,28 @@ def setup_customizations():
 
 
 def make_roles_and_permissions():
-    click.secho(f"\nCreating Roles and Permissions for {APP_NAME}...", fg="blue")
+    click.secho("Creating Roles and Permissions...", fg="blue")
 
     make_payment_utils_roles_and_permissions()
     make_razorpayx_roles_and_permissions()
 
 
 def make_custom_fields():
-    click.secho(f"\nCreating Custom Fields for {APP_NAME}...", fg="blue")
+    click.secho("Creating Custom Fields...", fg="blue")
 
     make_payment_utils_custom_fields()
     make_razorpayx_custom_fields()
 
 
 def make_property_setters():
-    click.secho(f"\nCreating Property Setters for {APP_NAME}...", fg="blue")
+    click.secho("Creating Property Setters...", fg="blue")
 
     make_payment_utils_property_setters()
     make_razorpayx_property_setters()
 
 
 def make_workflows():
-    click.secho(f"\nCreating Workflows for {APP_NAME}...", fg="blue")
+    click.secho("Creating Workflows...", fg="blue")
 
     make_payment_utils_workflows()
     make_razorpayx_workflows()
@@ -57,28 +57,28 @@ def delete_customizations():
 
 
 def delete_custom_fields():
-    click.secho(f"\nDeleting Custom Fields of {APP_NAME}...", fg="blue")
+    click.secho("Deleting Custom Fields...", fg="blue")
 
     delete_razorpayx_custom_fields()
     delete_payment_utils_custom_fields()
 
 
 def delete_property_setters():
-    click.secho(f"\nDeleting Property Setters off {APP_NAME}...", fg="blue")
+    click.secho("Deleting Property Setters...", fg="blue")
 
     delete_razorpayx_property_setters()
     delete_payment_utils_property_setters()
 
 
 def delete_workflows():
-    click.secho(f"\nDeleting Workflows of {APP_NAME}...", fg="blue")
+    click.secho("Deleting Workflows...", fg="blue")
 
     delete_razorpayx_workflows()
     delete_payment_utils_workflows()
 
 
 def delete_role_and_permissions():
-    click.secho(f"\nDeleting Roles and Permissions of {APP_NAME}...", fg="blue")
+    click.secho("Deleting Roles and Permissions...", fg="blue")
 
     delete_razorpayx_role_and_permissions()
     delete_payment_utils_role_and_permissions()

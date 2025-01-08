@@ -19,4 +19,4 @@ def before_uninstall():
         )
         raise e
 
-    click.secho(f"\nThank you for using {APP_NAME}!", fg="green")
+    click.secho(f"Thank you for using {APP_NAME}!", fg="green")
