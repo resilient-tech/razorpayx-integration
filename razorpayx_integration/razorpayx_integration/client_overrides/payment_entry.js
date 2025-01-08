@@ -60,8 +60,15 @@ frappe.ui.form.on("Payment Entry", {
 		disable_payout_fields_in_amendment(frm);
 
 		// TODO: permission check for showing the button
-		if (!frm.doc.make_bank_online_payment && frm.doc.docstatus === 1 && frm.doc.payment_type === "Pay") {
-			frm.add_custom_button(__("Make Payout"), () => show_make_payout_dialog(frm));
+		if (
+			!frm.doc.make_bank_online_payment &&
+			frm.doc.docstatus === 1 &&
+			frm.doc.payment_type === "Pay" &&
+			frm.doc.mode_of_payment !== "Cash"
+		) {
+			frm.add_custom_button(__("{0} Make Payout", [frappe.utils.icon("expenses")]), () =>
+				show_make_payout_dialog(frm)
+			);
 		}
 	},
 
@@ -227,6 +234,11 @@ async function show_make_payout_dialog(frm) {
 			{
 				fieldname: "account_cb",
 				fieldtype: "Column Break",
+			},
+			{
+				fieldname: "image_section",
+				fieldtype: "HTML",
+				options: `<img src="/assets/razorpayx_integration/images/RazorpayX-logo.png" />`,
 			},
 			{
 				fieldname: "party_section_break",
