@@ -49,8 +49,3 @@ def delete_razorpayx_property_setters():
 def delete_razorpayx_role_and_permissions():
     # TODO
     delete_role_and_permissions(ROLES)
-
-
-def delete_razorpayx_workflows():
-    # TODO
-    delete_workflows(WORKFLOWS)

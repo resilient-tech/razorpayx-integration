@@ -68,8 +68,3 @@ def delete_payment_utils_property_setters():
 def delete_payment_utils_role_and_permissions():
     # TODO
     delete_role_and_permissions(ROLES)
-
-
-def delete_payment_utils_workflows():
-    # TODO
-    delete_workflows(WORKFLOWS)

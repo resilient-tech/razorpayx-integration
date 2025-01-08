@@ -18,7 +18,8 @@ BLOCK_AUTO_PAYMENT = {
     "fieldname": "block_auto_payment",
     "label": "Block Auto Payment",
     "fieldtype": "Check",
-    "description": "Auto payment will be blocked for this party",
+    "description": "Automatic payment entries will not be created for this party",
+    "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
 }
 
 
@@ -51,7 +52,7 @@ CUSTOM_FIELDS = {
             "label": "UPI ID",
             "fieldtype": "Data",
             "insert_after": "online_payment_cb",
-            "placeholder": "Eg. 90876543@okicici",
+            "placeholder": "Eg. 9999999999@okicici",
             "depends_on": f"eval: doc.default_online_payment_mode === '{PAYOUT_MODE.UPI.value}'",
             "mandatory_depends_on": f"eval: doc.default_online_payment_mode === '{PAYOUT_MODE.UPI.value}'",
             "no_copy": 1,
@@ -71,37 +72,10 @@ CUSTOM_FIELDS = {
     ],
     "Payment Entry": [
         {
-            "fieldname": "party_bank_account_no",
-            "label": "Party Bank Account No",
-            "fieldtype": "Data",
-            "insert_after": "party_bank_account",
-            "fetch_from": "party_bank_account.bank_account_no",  # Note: update at integration level if required
-            "read_only": 1,
-            "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
-        },
-        {
-            "fieldname": "party_bank_ifsc",
-            "label": "Party Bank IFSC Code",
-            "fieldtype": "Data",
-            "insert_after": "party_bank_account_no",
-            "fetch_from": "party_bank_account.branch_code",  # Note: update at integration level if required
-            "read_only": 1,
-            "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
-        },
-        {
-            "fieldname": "party_upi_id",
-            "label": "Party UPI ID",
-            "fieldtype": "Data",
-            "insert_after": "party_bank_ifsc",
-            "fetch_from": "party_bank_account.upi_id",  # Note: update at integration level if required
-            "read_only": 1,
-            "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
-        },
-        {
             "fieldname": "contact_mobile",
             "label": "Mobile",
             "fieldtype": "Data",
-            "insert_after": "contact_person",
+            "insert_after": "party_name",
             "options": "Phone",
             "depends_on": "eval: doc.contact_person",
             "read_only": 1,
@@ -122,6 +96,38 @@ CUSTOM_FIELDS = {
             "fieldtype": "Check",
             "insert_after": "online_payment_section",
             "description": "Make online payment using <strong>Payments Integration</strong>",
+            "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
+        },
+        {
+            "fieldname": "party_upi_id",
+            "label": "Party UPI ID",
+            "fieldtype": "Data",
+            "insert_after": "make_bank_online_payment",
+            "fetch_from": "party_bank_account.upi_id",  # Note: update at integration level if required
+            "read_only": 1,
+            "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
+        },
+        {
+            "fieldname": "cb_online_payment_section",
+            "fieldtype": "Column Break",
+            "insert_after": "party_upi_id",
+        },
+        {
+            "fieldname": "party_bank_account_no",
+            "label": "Party Bank Account No",
+            "fieldtype": "Data",
+            "insert_after": "cb_online_payment_section",
+            "fetch_from": "party_bank_account.bank_account_no",  # Note: update at integration level if required
+            "read_only": 1,
+            "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
+        },
+        {
+            "fieldname": "party_bank_ifsc",
+            "label": "Party Bank IFSC Code",
+            "fieldtype": "Data",
+            "insert_after": "party_bank_account_no",
+            "fetch_from": "party_bank_account.branch_code",  # Note: update at integration level if required
+            "read_only": 1,
             "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
         },
     ],

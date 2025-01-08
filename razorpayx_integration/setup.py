@@ -70,13 +70,6 @@ def delete_property_setters():
     delete_payment_utils_property_setters()
 
 
-def delete_workflows():
-    click.secho("Deleting Workflows...", fg="blue")
-
-    delete_razorpayx_workflows()
-    delete_payment_utils_workflows()
-
-
 def delete_role_and_permissions():
     click.secho("Deleting Roles and Permissions...", fg="blue")
 

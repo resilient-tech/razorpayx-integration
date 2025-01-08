@@ -6,25 +6,25 @@ from razorpayx_integration.payment_utils.constants.workflows import (
     WORKFLOW_STATE,
 )
 
-REJECTED_STATES = [
-    WORKFLOW_STATE.REJECTED.value,
-    WORKFLOW_STATE.CANCELLED.value,
-]
+# REJECTED_STATES = [
+#     WORKFLOW_STATE.REJECTED.value,
+#     WORKFLOW_STATE.CANCELLED.value,
+# ]
 
 
-def validate(doc, method=None):
-    validate_rejected_states(doc)
+# def validate(doc, method=None):
+#     validate_rejected_states(doc)
 
 
-def validate_rejected_states(doc):
-    """
-    Throws an error if the `Bank Account` is in rejected states and the user tries to update it.
+# def validate_rejected_states(doc):
+#     """
+#     Throws an error if the `Bank Account` is in rejected states and the user tries to update it.
 
-    - Rejected states: `Rejected`, `Cancelled`
-    """
-    previous_doc = doc.get_doc_before_save() or frappe._dict()
+#     - Rejected states: `Rejected`, `Cancelled`
+#     """
+#     previous_doc = doc.get_doc_before_save() or frappe._dict()
 
-    if previous_doc.razorpayx_workflow_state not in REJECTED_STATES:
-        return
+#     if previous_doc.razorpayx_workflow_state not in REJECTED_STATES:
+#         return
 
-    frappe.throw(title=_("Invalid Operation"), msg=_("Cannot Update Bank Account"))
+#     frappe.throw(title=_("Invalid Operation"), msg=_("Cannot Update Bank Account"))

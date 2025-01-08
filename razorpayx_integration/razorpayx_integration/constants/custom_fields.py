@@ -24,7 +24,7 @@ CUSTOM_FIELDS = {
             "fieldname": "razorpayx_payout_section",
             "label": "RazorPayX Payout Details",
             "fieldtype": "Section Break",
-            "insert_after": "make_bank_online_payment",  ## Insert After `Make Online Payment` field (Payment Utils Custom Field)
+            "insert_after": "party_bank_ifsc",  ## Insert After `Make Online Payment` field (Payment Utils Custom Field)
             "depends_on": "eval: doc.make_bank_online_payment && doc.party_bank_account",
             "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
         },

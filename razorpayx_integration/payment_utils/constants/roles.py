@@ -86,4 +86,25 @@ ROLES = [
         "permlevel": 0,
         "permissions": PERMISSIONS["User"],
     },
+    # Customer
+    {
+        "doctype": "Customer",
+        "role_name": ROLE_PROFILE.AUTO_PAYMENTS_MANAGER.value,
+        "permlevel": 0,
+        "permissions": PERMISSIONS["User"],
+    },
+    # Supplier
+    {
+        "doctype": "Supplier",
+        "role_name": ROLE_PROFILE.AUTO_PAYMENTS_MANAGER.value,
+        "permlevel": 0,
+        "permissions": PERMISSIONS["User"],
+    },
+    # Employee
+    {
+        "doctype": "Employee",
+        "role_name": ROLE_PROFILE.AUTO_PAYMENTS_MANAGER.value,
+        "permlevel": 0,
+        "permissions": PERMISSIONS["User"],
+    },
 ]
