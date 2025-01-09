@@ -52,7 +52,6 @@ const RAZORPAYX_DOCTYPE = "RazorPayX Integration Setting";
 frappe.ui.form.on("Payment Entry", {
 	setup: function (frm) {
 		frm.add_fetch("party_bank_account", "default_online_payment_mode", "razorpayx_payout_mode");
-		frm.add_fetch("razorpayx_account", "bank_account", "bank_account");
 	},
 
 	refresh: function (frm) {
@@ -73,8 +72,22 @@ frappe.ui.form.on("Payment Entry", {
 	},
 
 	bank_account: async function (frm) {
+		// fetch razorpayx_integration account
 		if (!frm.doc.bank_account) {
 			frm.set_value("razorpayx_account", "");
+		} else {
+			// TODO: use API (get_associated_razorpayx_account) to get associated RazorpayX account
+			const response = await frappe.db.get_value(
+				"RazorPayX Integration Setting",
+				{
+					bank_account: frm.doc.bank_account,
+				},
+				"name"
+			);
+
+			const { name } = response.message || {};
+
+			frm.set_value("razorpayx_account", name);
 		}
 	},
 
