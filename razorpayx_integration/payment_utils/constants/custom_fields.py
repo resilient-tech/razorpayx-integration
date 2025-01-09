@@ -34,7 +34,7 @@ CUSTOM_FIELDS = {
             "depends_on": "eval: !doc.is_company_account && doc.party_type && doc.party",
         },
         {
-            "fieldname": "default_online_payment_mode",
+            "fieldname": "online_payment_mode",
             "label": "Default Online Payment Mode",
             "fieldtype": "Select",
             "insert_after": "online_payment_section",
@@ -44,7 +44,7 @@ CUSTOM_FIELDS = {
         {
             "fieldname": "online_payment_cb",
             "fieldtype": "Column Break",
-            "insert_after": "default_online_payment_mode",
+            "insert_after": "online_payment_mode",
         },
         # For `UPI` payment mode
         {
@@ -53,8 +53,8 @@ CUSTOM_FIELDS = {
             "fieldtype": "Data",
             "insert_after": "online_payment_cb",
             "placeholder": "Eg. 9999999999@okicici",
-            "depends_on": f"eval: doc.default_online_payment_mode === '{PAYOUT_MODE.UPI.value}'",
-            "mandatory_depends_on": f"eval: doc.default_online_payment_mode === '{PAYOUT_MODE.UPI.value}'",
+            "depends_on": f"eval: doc.online_payment_mode === '{PAYOUT_MODE.UPI.value}'",
+            "mandatory_depends_on": f"eval: doc.online_payment_mode === '{PAYOUT_MODE.UPI.value}'",
             "no_copy": 1,
         },
     ],

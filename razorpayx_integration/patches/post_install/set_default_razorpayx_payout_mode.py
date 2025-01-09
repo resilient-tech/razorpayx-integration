@@ -14,7 +14,7 @@ def execute():
 
     (
         frappe.qb.update(BA)
-        .set(BA.default_online_payment_mode, USER_PAYOUT_MODE.BANK.value)
-        .where(BA.default_online_payment_mode.isnull())
+        .set(BA.online_payment_mode, USER_PAYOUT_MODE.BANK.value)
+        .where(BA.online_payment_mode.isnull())
         .run()
     )

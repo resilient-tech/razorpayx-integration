@@ -76,7 +76,7 @@ def validate_payout_mode(doc):
         doc.razorpayx_payout_mode = frappe.get_value(
             "Bank Account",
             doc.party_bank_account,
-            "default_online_payment_mode",
+            "online_payment_mode",
         )
 
     validate_razorpayx_user_payout_mode(doc.razorpayx_payout_mode)

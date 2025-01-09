@@ -67,7 +67,7 @@ PROPERTY_SETTERS = [
     ## Bank Account ##
     {
         "doctype": "Bank Account",
-        "fieldname": "default_online_payment_mode",
+        "fieldname": "online_payment_mode",
         "property": "options",
         "property_type": "Data",
         "value": USER_PAYOUT_MODE.values_as_string(),

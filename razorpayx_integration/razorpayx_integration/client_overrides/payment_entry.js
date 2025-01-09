@@ -51,7 +51,7 @@ const RAZORPAYX_DOCTYPE = "RazorPayX Integration Setting";
 // ############ DOC EVENTS ############ //
 frappe.ui.form.on("Payment Entry", {
 	setup: function (frm) {
-		frm.add_fetch("party_bank_account", "default_online_payment_mode", "razorpayx_payout_mode");
+		frm.add_fetch("party_bank_account", "online_payment_mode", "razorpayx_payout_mode");
 	},
 
 	refresh: function (frm) {
@@ -419,13 +419,9 @@ async function show_make_payout_dialog(frm) {
 async function set_default_payout_mode(party_bank_account, dialog) {
 	if (!party_bank_account) return;
 
-	const response = await frappe.db.get_value(
-		"Bank Account",
-		party_bank_account,
-		"default_online_payment_mode"
-	);
+	const response = await frappe.db.get_value("Bank Account", party_bank_account, "online_payment_mode");
 
-	dialog.set_value("razorpayx_payout_mode", response.message.default_online_payment_mode);
+	dialog.set_value("razorpayx_payout_mode", response.message.online_payment_mode);
 }
 
 async function set_party_bank_details(party_bank_account, dialog) {
@@ -435,7 +431,7 @@ async function set_party_bank_details(party_bank_account, dialog) {
 		"branch_code as party_bank_ifsc",
 		"bank_account_no as party_bank_account_no",
 		"upi_id as party_upi_id",
-		"default_online_payment_mode as razorpayx_payout_mode",
+		"online_payment_mode as razorpayx_payout_mode",
 	]);
 
 	dialog.set_values(response.message);
