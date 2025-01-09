@@ -293,6 +293,7 @@ def cancel_payout_and_payout_link(doctype: str, docname: str):
 
 
 @frappe.whitelist()
+# TODO: do not use kwargs use individual fields and validate them first!
 def make_payout_with_payment_entry(docname: str, **kwargs):
     """
     Make Payout or Payout Link with Payment Entry.
