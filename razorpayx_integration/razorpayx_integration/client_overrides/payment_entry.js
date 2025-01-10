@@ -1,14 +1,9 @@
 // TODO: update Party Bank Account filters
 // TODO: show it will pay by razorpayx
-// TODO: RazorpayX status fields also allow for edit after submit
-// TODO: Backend validation for RazorpayX status fields !!!
 
-// TODO: Update CF and CP for Payment Entry
-// TODO: Work with new design for Payment Entry ???
 // TODO: Improve UX and UI for Payment Entry
 
 // TODO: for UX: change submit button label to `Pay and Submit`
-// TODO: Button to create RazorpayX payout after submit if not paid by RazorpayX
 
 // ############ CONSTANTS ############ //
 const BASE_API_PATH = "razorpayx_integration.razorpayx_integration.server_overrides.payment_entry";
