@@ -50,10 +50,6 @@ const RAZORPAYX_DOCTYPE = "RazorPayX Integration Setting";
 
 // ############ DOC EVENTS ############ //
 frappe.ui.form.on("Payment Entry", {
-	setup: function (frm) {
-		frm.add_fetch("party_bank_account", "online_payment_mode", "razorpayx_payout_mode");
-	},
-
 	refresh: function (frm) {
 		// Do not allow to edit fields if Payment is processed by RazorpayX in amendment
 		disable_payout_fields_in_amendment(frm);

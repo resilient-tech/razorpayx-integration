@@ -72,6 +72,20 @@ PROPERTY_SETTERS = [
         "property_type": "Data",
         "value": USER_PAYOUT_MODE.values_as_string(),
     },
+    {
+        "doctype": "Bank Account",
+        "fieldname": "bank_account_no",
+        "property": "mandatory_depends_on",
+        "property_type": "Data",
+        "value": f"eval: doc.online_payment_mode === '{USER_PAYOUT_MODE.BANK.value}'",
+    },
+    {
+        "doctype": "Bank Account",
+        "fieldname": "branch_code",
+        "property": "mandatory_depends_on",
+        "property_type": "Data",
+        "value": f"eval: doc.online_payment_mode === '{USER_PAYOUT_MODE.BANK.value}'",
+    },
 ]
 
 for doctype, fields in STANDARD_FIELDS_TO_HIDE.items():

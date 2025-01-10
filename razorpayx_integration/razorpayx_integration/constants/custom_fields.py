@@ -24,7 +24,7 @@ CUSTOM_FIELDS = {
             "fieldname": "razorpayx_payout_section",
             "label": "RazorPayX Payout Details",
             "fieldtype": "Section Break",
-            "insert_after": "party_bank_ifsc",  ## Insert After `Make Online Payment` field (Payment Utils Custom Field)
+            "insert_after": "party_bank_ifsc",  ## Insert After `PARTY BANK IFSC` field (Payment Utils Custom Field)
             "depends_on": "eval: doc.make_bank_online_payment && doc.party_bank_account",
             "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
         },
@@ -44,9 +44,12 @@ CUSTOM_FIELDS = {
             "label": "RazorPayX Payout Mode",
             "fieldtype": "Select",
             "insert_after": "razorpayx_account",
+            "fetch_from": "party_bank_account.online_payment_mode",
             "options": USER_PAYOUT_MODE.values_as_string(),
-            "depends_on": "eval: doc.make_bank_online_payment && doc.razorpayx_account && doc.party_bank_account",
-            "mandatory_depends_on": "eval: doc.make_bank_online_payment && doc.razorpayx_account && doc.party_bank_account",
+            "default": USER_PAYOUT_MODE.LINK.value,
+            "read_only": 1,
+            "depends_on": "eval: doc.make_bank_online_payment && doc.razorpayx_account",
+            "mandatory_depends_on": "eval: doc.make_bank_online_payment && doc.razorpayx_account",
             "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
         },
         {
