@@ -15,7 +15,7 @@ from razorpayx_integration.razorpayx_integration.constants.payouts import (
     USER_PAYOUT_MODE,
 )
 from razorpayx_integration.razorpayx_integration.utils import (
-    get_razorpayx_account,
+    get_razorpayx_account_from_company_bank_account,
 )
 from razorpayx_integration.razorpayx_integration.utils.payout import (
     PayoutWithPaymentEntry,
@@ -118,7 +118,9 @@ def validate_payout_mode(doc):
 
 def set_razorpayx_account(doc):
     if not doc.razorpayx_account:
-        doc.razorpayx_account = get_razorpayx_account(doc.bank_account)
+        doc.razorpayx_account = get_razorpayx_account_from_company_bank_account(
+            doc.bank_account
+        )
 
 
 def validate_doc_company(doc):
@@ -310,7 +312,9 @@ def make_payout_with_payment_entry(docname: str, **kwargs):
     kwargs.pop("cmd")
     doc.db_set(
         {
-            "razorpayx_account": get_razorpayx_account(kwargs["bank_account"]),
+            "razorpayx_account": get_razorpayx_account_from_company_bank_account(
+                kwargs["bank_account"]
+            ),
             "make_bank_online_payment": 1,
             **kwargs,
         }

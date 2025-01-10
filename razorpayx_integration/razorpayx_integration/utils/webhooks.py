@@ -21,6 +21,9 @@ from razorpayx_integration.razorpayx_integration.constants.webhooks import (
     EVENTS_TYPE,
     SUPPORTED_EVENTS,
 )
+from razorpayx_integration.razorpayx_integration.utils import (
+    get_razorpayx_account_from_account_id,
+)
 
 # API: TUNNEL_URL/api/method/razorpayx_integration.razorpayx_integration.utils.webhooks.razorpayx_webhook_listener
 # regenerate code: lt --port 8001
@@ -88,7 +91,7 @@ class RazorPayXWebhook:
         if not self.account_id:
             self.account_id = self.payload.get("account_id")
 
-        self.razorpayx_account = get_razorpayx_integration_account(self.account_id)
+        self.razorpayx_account = get_razorpayx_account_from_account_id(self.account_id)
 
     def set_common_payload_attributes(self):
         """
@@ -668,7 +671,7 @@ def validate_webhook_signature(
         divider = f"\n\n{'-' * 25}\n\n"
         message = f"Request Headers:\n{request_headers}"
         message += divider
-        message += f"Webhook Payload:\n{frappe.as_json(payload,indent=2)}"
+        message += f"Webhook Payload:\n{frappe.as_json(payload, indent=2)}"
         message += divider
         message += f"{frappe.get_traceback()}"
 
@@ -692,28 +695,11 @@ def get_webhook_secret(account_id: str | None = None) -> str | None:
     if not account_id:
         return
 
-    account_name = get_razorpayx_integration_account(account_id)
+    account_name = get_razorpayx_account_from_account_id(account_id)
 
     if not account_name:
         return
 
     return get_decrypted_password(
         RAZORPAYX_INTEGRATION_DOCTYPE, account_name, "webhook_secret"
-    )
-
-
-@frappe.request_cache
-def get_razorpayx_integration_account(account_id: str) -> str | None:
-    """
-    Get the account integration name from the account id.
-
-    :param account_id: RazorpayX Account ID (Business ID).
-
-    ---
-    Note: `account_id` should be in the format `acc_XXXXXX`.
-    """
-    return frappe.get_value(
-        RAZORPAYX_INTEGRATION_DOCTYPE,
-        {"account_id": account_id.removeprefix("acc_")},
-        "name",
     )
