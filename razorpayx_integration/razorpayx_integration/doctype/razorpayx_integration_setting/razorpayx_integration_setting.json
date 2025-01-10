@@ -183,7 +183,7 @@
   },
   {
    "default": "0",
-   "description": "<strong>Payout</strong> and <strong>Payout Link</strong> will be automatically cancelled after <i> Payment Entry </i> cancellation if possible.",
+   "description": "<strong>Payout</strong> and <strong>Payout Link</strong> will be automatically cancelled on <i> Payment Entry </i> cancellation if possible.",
    "fieldname": "auto_cancel_payout",
    "fieldtype": "Check",
    "label": "Automatically Cancel Payout on Payment Entry Cancellation"
@@ -196,7 +196,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-01-07 10:59:39.983102",
+ "modified": "2025-01-10 18:37:30.308912",
  "modified_by": "Administrator",
  "module": "Razorpayx Integration",
  "name": "RazorPayX Integration Setting",
