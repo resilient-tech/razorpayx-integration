@@ -6,7 +6,6 @@ from frappe import _
 from frappe.model.document import Document
 
 from razorpayx_integration.constants import RAZORPAYX
-from razorpayx_integration.payment_utils.constants.workflows import WORKFLOW_STATE
 
 
 class RazorPayXIntegrationSetting(Document):
@@ -66,16 +65,6 @@ class RazorPayXIntegrationSetting(Document):
                 msg=_("Bank Account not found."),
                 title=_("Invalid Bank Account"),
             )
-
-        # ! ERROR: Maybe fails
-        # if (
-        #     bank_account.razorpayx_workflow_state
-        #     and bank_account.razorpayx_workflow_state != WORKFLOW_STATE.APPROVED.value
-        # ):
-        #     frappe.throw(
-        #         msg=_("Bank Account is not approved. Please approve it first."),
-        #         title=_("Invalid Bank Account"),
-        #     )
 
         if bank_account.disabled:
             frappe.throw(
