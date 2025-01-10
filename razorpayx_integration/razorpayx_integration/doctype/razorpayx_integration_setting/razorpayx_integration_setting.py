@@ -38,13 +38,26 @@ class RazorPayXIntegrationSetting(Document):
         self.validate_bank_account()
 
     def validate_api_credentials(self):
+        from razorpayx_integration.razorpayx_integration.apis.test import (
+            RazorPayXTestAPI,
+        )
+
+        if self.disabled:
+            return
+
         if not self.key_id or not self.key_secret:
             frappe.throw(
                 msg=_("Please set {0} API credentials.").format(RAZORPAYX),
                 title=_("API Credentials Are Missing"),
             )
 
-        # TODO: use details to fetch account statement for one day and check if it is working.
+        RazorPayXTestAPI(
+            self.key_id,
+            self.key_secret,
+            self.account_number,
+            self.doctype,
+            self.name,
+        ).validate_credentials()
 
     def validate_bank_account(self):
         if not self.bank_account:
@@ -56,7 +69,7 @@ class RazorPayXIntegrationSetting(Document):
         bank_account = frappe.get_value(
             "Bank Account",
             self.bank_account,
-            ["disabled", "razorpayx_workflow_state", "is_company_account"],
+            ["disabled", "is_company_account"],
             as_dict=True,
         )
 
