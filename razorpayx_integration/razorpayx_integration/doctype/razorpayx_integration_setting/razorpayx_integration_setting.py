@@ -7,6 +7,9 @@ from frappe.model.document import Document
 
 from razorpayx_integration.constants import RAZORPAYX
 
+# TODO: fetch balance
+# TODO: set templates for payment success and failure
+
 
 class RazorPayXIntegrationSetting(Document):
     # begin: auto-generated types
