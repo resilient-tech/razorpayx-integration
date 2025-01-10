@@ -7,7 +7,6 @@ STANDARD_FIELDS_TO_HIDE = {"Employee": ["bank_name", "bank_ac_no", "iban"]}
 # PE mandatory fields on `make_bank_online_payment`
 PE_MANDATORY_FIELDS_FOR_PAYMENT = [
     "bank_account",  # Company Bank Account
-    "party_bank_account",
 ]
 
 UPI_MODE_CONDITION = f"eval: doc.make_bank_online_payment && doc.razorpayx_account && doc.razorpayx_payout_mode === '{USER_PAYOUT_MODE.UPI.value}'"

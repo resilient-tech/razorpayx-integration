@@ -87,7 +87,7 @@ CUSTOM_FIELDS = {
             "label": "Online Payment Details",
             "fieldtype": "Section Break",
             "insert_after": "contact_email",
-            "depends_on": "eval: doc.payment_type=='Pay' && doc.mode_of_payment!='Cash'",
+            "depends_on": "eval: doc.payment_type=='Pay' && doc.mode_of_payment!='Cash' && doc.party && doc.party_type && doc.paid_to_account_currency === 'INR'",
             "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
         },
         {
@@ -99,24 +99,24 @@ CUSTOM_FIELDS = {
             "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
         },
         {
+            "fieldname": "cb_online_payment_section",
+            "fieldtype": "Column Break",
+            "insert_after": "make_bank_online_payment",
+        },
+        {
             "fieldname": "party_upi_id",
             "label": "Party UPI ID",
             "fieldtype": "Data",
-            "insert_after": "make_bank_online_payment",
+            "insert_after": "cb_online_payment_section",
             "fetch_from": "party_bank_account.upi_id",  # Note: update at integration level if required
             "read_only": 1,
             "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
         },
         {
-            "fieldname": "cb_online_payment_section",
-            "fieldtype": "Column Break",
-            "insert_after": "party_upi_id",
-        },
-        {
             "fieldname": "party_bank_account_no",
             "label": "Party Bank Account No",
             "fieldtype": "Data",
-            "insert_after": "cb_online_payment_section",
+            "insert_after": "party_upi_id",
             "fetch_from": "party_bank_account.bank_account_no",  # Note: update at integration level if required
             "read_only": 1,
             "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,

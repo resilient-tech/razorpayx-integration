@@ -25,7 +25,7 @@ CUSTOM_FIELDS = {
             "label": "RazorPayX Payout Details",
             "fieldtype": "Section Break",
             "insert_after": "party_bank_ifsc",  ## Insert After `PARTY BANK IFSC` field (Payment Utils Custom Field)
-            "depends_on": "eval: doc.make_bank_online_payment && doc.party_bank_account",
+            "depends_on": "eval: doc.make_bank_online_payment && doc.party && doc.party_type",
             "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
         },
         {
