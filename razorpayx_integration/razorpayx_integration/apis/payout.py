@@ -158,8 +158,8 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         ---
         Reference: https://razorpay.com/docs/api/x/payouts/fetch-with-id
         """
-        if source_doctype and source_docname:
-            self._set_source_to_ir_log(source_doctype, source_docname)
+        self.source_doctype = source_doctype
+        self.source_docname = source_docname
 
         self._set_service_details_to_ir_log("Get Payout by ID")
 
@@ -189,8 +189,8 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         ---
         Reference: https://razorpay.com/docs/api/x/payouts/cancel
         """
-        if source_doctype and source_docname:
-            self._set_source_to_ir_log(source_doctype, source_docname)
+        self.source_doctype = source_doctype
+        self.source_docname = source_docname
 
         self._set_service_details_to_ir_log("Cancel Payout")
 
@@ -210,9 +210,6 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         # to ease the validation
         self.source_doctype = json["notes"]["source_doctype"]
         self.source_docname = json["notes"]["source_docname"]
-
-        # set values for Integration Request Log
-        self._set_source_to_ir_log(self.source_doctype, self.source_docname)
 
         self._set_idempotency_key_header(json)
 
@@ -393,20 +390,6 @@ class RazorPayXPayout(BaseRazorPayXAPI):
             "type": get_type(),
             "reference_id": payout_details.get("party_id", ""),
         }
-
-    def _set_source_to_ir_log(self, source_doctype: str, source_docname: str):
-        """
-        Set the source document details in the Integration Request Log.
-
-        :param source_doctype: The source document type.
-        :param source_docname: The source document name.
-        """
-        self.default_log_values.update(
-            {
-                "reference_doctype": source_doctype,
-                "reference_name": source_docname,
-            }
-        )
 
     ### VALIDATIONS ###
     def _validate_description(self, json: dict):

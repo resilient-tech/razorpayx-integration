@@ -216,8 +216,9 @@ class BaseRazorPayXAPI:
         )
 
         # preparing log for Integration Request
+        self._set_source_to_ir_log()
+
         ir_log = frappe._dict(
-            integration_request_service="RazorPayX Integration",
             **self.default_log_values,
             url=request_args.url,
             data=request_args.params,
@@ -261,6 +262,9 @@ class BaseRazorPayXAPI:
                 ir_log.output = response_json.copy()
 
             self._mask_sensitive_info(ir_log)
+
+            if not ir_log.integration_request_service:
+                ir_log.integration_request_service = "RazorPayX Integration"
 
             enqueue_integration_request(**ir_log)
 
@@ -332,9 +336,23 @@ class BaseRazorPayXAPI:
 
         :param service_name: The service name.
         """
-        self.default_log_values[
-            "integration_request_service"
-        ] = f"RazorPayX - {service_name}"
+        self.default_log_values.update(
+            {"integration_request_service": f"RazorPayX - {service_name}"}
+        )
+
+    def _set_source_to_ir_log(self):
+        """
+        Set the source document details in the Integration Request Log.
+        """
+        if not (self.source_doctype and self.source_docname):
+            return
+
+        self.default_log_values.update(
+            {
+                "reference_doctype": self.source_doctype,
+                "reference_name": self.source_docname,
+            }
+        )
 
     def _mask_sensitive_info(self, ir_log: dict):
         """
@@ -406,7 +424,9 @@ class BaseRazorPayXAPI:
                 )
 
             case "Authentication failed":
-                error_msg = _("RazorPayX API credentials are invalid.")
+                error_msg = _(
+                    "RazorPayX API credentials are invalid. Please set valid <strong>Key ID</strong> and <strong>Key Secret</strong>."
+                )
 
             case "The RazorpayX Account number is invalid.":
                 error_msg = _(
