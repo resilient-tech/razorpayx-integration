@@ -8,7 +8,6 @@ from razorpayx_integration.razorpayx_integration.constants.payouts import (
     DESCRIPTION_REGEX,
     FUND_ACCOUNT_TYPE,
     PAYOUT_LINK_STATUS,
-    PAYOUT_MODE,
     PAYOUT_STATUS,
     USER_PAYOUT_MODE,
 )
