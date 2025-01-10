@@ -2,6 +2,9 @@ from datetime import datetime
 
 import frappe
 from frappe import _
+from frappe.core.page.permission_manager.permission_manager import (
+    remove as remove_role_permissions,
+)
 from frappe.permissions import add_permission, update_permission_property
 from frappe.utils import (
     DateTimeLikeObject,
@@ -169,6 +172,8 @@ def make_roles_and_permissions(roles: list[dict]):
 
     Apply roles to the doctypes with the given permissions.
 
+    :param roles: List of roles with permissions.
+
     Structure of the `roles` list:
     ```py
     [
@@ -180,6 +185,7 @@ def make_roles_and_permissions(roles: list[dict]):
         },
         ...,
     ]
+    ```
     """
     create_roles(list({role["role_name"] for role in roles}))
     apply_roles_to_doctype(roles)
@@ -319,6 +325,11 @@ def make_workflow_actions(actions: list[str]):
 
 ### Before Uninstall Setup ###
 def delete_custom_fields(custom_fields: dict):
+    """
+    Delete custom fields from the given doctypes.
+
+    :param custom_fields: {doctype: [fields]}
+    """
     for doctype, fields in custom_fields.items():
         frappe.db.delete(
             "Custom Field",
@@ -332,6 +343,11 @@ def delete_custom_fields(custom_fields: dict):
 
 
 def delete_property_setters(property_setters: list[dict]):
+    """
+    Delete property setters.
+
+    :param property_setters: List of property setters.
+    """
     field_map = {
         "doctype": "doc_type",
         "fieldname": "field_name",
@@ -345,6 +361,58 @@ def delete_property_setters(property_setters: list[dict]):
         frappe.db.delete("Property Setter", property_setter)
 
 
-def delete_role_and_permissions(roles):
-    # TODO: How to delete roles? On deleting roles, what about the permissions? is it deleted automatically?
-    pass
+# TODO: need testing !!
+def delete_roles_and_permissions(roles: list[dict]):
+    """
+    Delete roles.
+
+    :param roles: List of roles.
+
+    Structure of the `roles` list:
+    ```py
+    [
+        {
+            "doctype": "DocType",
+            "role_name": "Role Name",
+            "permlevel": PERMLEVEL,
+            "permissions": ["read", "write", "create", "delete", "submit" ...],
+        },
+        ...,
+    ]
+    ```
+    """
+    remove_permissions(roles)
+    delete_roles(list({role["role_name"] for role in roles}))
+
+
+def remove_permissions(roles: list[dict]):
+    """
+    Remove permissions from the doctypes for the given roles.
+
+    :param roles: List of roles with permissions.
+
+    Structure of the `roles` list:
+    ```py
+    [
+        {
+            "doctype": "DocType",
+            "role_name": "Role Name",
+            "permlevel": PERMLEVEL,
+            "permissions": ["read", "write", "create", "delete", "submit" ...],
+        },
+        ...,
+    ]
+    ```
+    """
+    for role in roles:
+        doctype, role_name, permlevel, permissions = role.values()
+        remove_role_permissions(doctype, role_name, permlevel)
+
+
+def delete_roles(roles: list[str]):
+    """
+    Delete roles with the given names.
+
+    :param roles: List of role names to be deleted.
+    """
+    frappe.db.delete("Role", {"role_name": ("in", roles)})

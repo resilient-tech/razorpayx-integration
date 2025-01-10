@@ -4,7 +4,7 @@ from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
 from razorpayx_integration.payment_utils.utils import (
     delete_custom_fields,
     delete_property_setters,
-    delete_role_and_permissions,
+    delete_roles_and_permissions,
     make_roles_and_permissions,
     make_workflows,
 )
@@ -46,5 +46,4 @@ def delete_razorpayx_property_setters():
 
 
 def delete_razorpayx_role_and_permissions():
-    # TODO
-    delete_role_and_permissions(ROLES)
+    delete_roles_and_permissions(ROLES)

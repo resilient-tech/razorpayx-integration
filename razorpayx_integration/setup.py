@@ -52,7 +52,7 @@ def make_workflows():
 def delete_customizations():
     delete_custom_fields()
     delete_property_setters()
-    delete_role_and_permissions()
+    delete_roles_and_permissions()
 
 
 def delete_custom_fields():
@@ -69,7 +69,7 @@ def delete_property_setters():
     delete_payment_utils_property_setters()
 
 
-def delete_role_and_permissions():
+def delete_roles_and_permissions():
     click.secho("Deleting Roles and Permissions...", fg="blue")
 
     delete_razorpayx_role_and_permissions()
