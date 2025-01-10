@@ -414,9 +414,6 @@ class BaseRazorPayXAPI:
         :param error_msg: RazorPayX API error message.
         :param title: Title of the error message.
         """
-        if not title:
-            title = _("RazorPayX API Failed")
-
         match error_msg:
             case "Different request body sent for the same Idempotency Header":
                 error_msg = _(
@@ -429,14 +426,23 @@ class BaseRazorPayXAPI:
                     "You faced this issue because payment details were changed after the first payment attempt."
                 )
 
+                title = _("Payment Details Changed")
+
             case "Authentication failed":
                 error_msg = _(
                     "RazorPayX API credentials are invalid. Please set valid <strong>Key ID</strong> and <strong>Key Secret</strong>."
                 )
 
+                title = _("RazorPayX Authentication Failed")
+
             case "The RazorpayX Account number is invalid.":
                 error_msg = _(
-                    "Bank Account number is invalid. Please check the Bank Account number."
+                    "Bank Account number is not matching with the <strong>RazorPayX</strong> account. <br> Please set valid <strong>Bank Account</strong>."
                 )
+
+                title = _("Invalid Bank Account Number")
+
+        if not title:
+            title = _("RazorPayX API Failed")
 
         frappe.throw(title=title, msg=error_msg)
