@@ -217,8 +217,8 @@ class BaseRazorPayXAPI:
 
         # preparing log for Integration Request
         ir_log = frappe._dict(
+            integration_request_service="RazorPayX Integration",
             **self.default_log_values,
-            integration_request_service=self._get_ir_service(),
             url=request_args.url,
             data=request_args.params,
             request_headers=request_args.headers.copy(),
@@ -326,11 +326,15 @@ class BaseRazorPayXAPI:
         pass
 
     ### LOGGING ###
-    def _get_ir_service(self):
+    def _set_service_details_to_ir_log(self, service_name: str):
         """
-        Return the service name for the Integration Request Log.
+        Set the service details in the Integration Request Log.
+
+        :param service_name: The service name.
         """
-        return f"RazorPayX Service - {frappe.unscrub(self.BASE_PATH)}"
+        self.default_log_values[
+            "integration_request_service"
+        ] = f"RazorPayX - {service_name}"
 
     def _mask_sensitive_info(self, ir_log: dict):
         """

@@ -23,6 +23,7 @@ class RazorPayXTransaction(BaseRazorPayXAPI):
     # * override base setup
     def setup(self, *args, **kwargs):
         self.account_number = self.razorpayx_account.account_number
+        self.service_set = False
 
     ### APIs ###
     def get_by_id(self, transaction_id: str) -> dict:
@@ -34,6 +35,7 @@ class RazorPayXTransaction(BaseRazorPayXAPI):
         ---
         Reference: https://razorpay.com/docs/api/x/transactions/fetch-with-id
         """
+        self._set_service_details_to_ir_log("Get Transaction By Id")
         return self.get(endpoint=transaction_id)
 
     def get_all(
@@ -88,6 +90,10 @@ class RazorPayXTransaction(BaseRazorPayXAPI):
         # account number is mandatory
         filters["account_number"] = self.account_number
 
+        if not self.service_set:
+            self._set_service_details_to_ir_log("Get All Transactions")
+            self.service_set = False
+
         return super().get_all(filters, count)
 
     def get_transactions_for_today(self, count: int | None = None) -> list[dict] | None:
@@ -100,6 +106,9 @@ class RazorPayXTransaction(BaseRazorPayXAPI):
         Note: If count is not given, it will return all transactions for today.
         """
         today_date = today()
+        self._set_service_details_to_ir_log("Get Transactions For Today")
+        self.service_set = True
+
         return self.get_all(filters={"from": today_date, "to": today_date}, count=count)
 
     def get_transactions_for_date(
@@ -110,4 +119,7 @@ class RazorPayXTransaction(BaseRazorPayXAPI):
 
         :param date: A date string in "YYYY-MM-DD" format or a (datetime,date) object.
         """
+        self._set_service_details_to_ir_log("Get Transactions For Date")
+        self.service_set = True
+
         return self.get_all(filters={"from": date, "to": date}, count=count)

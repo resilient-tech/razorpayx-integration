@@ -20,8 +20,6 @@ from razorpayx_integration.razorpayx_integration.utils.validation import (
     validate_razorpayx_payout_status,
 )
 
-# TODO: in other than payout api add args for ref_doctype and ref_docname? to log in IR
-
 
 class RazorPayXPayout(BaseRazorPayXAPI):
     """
@@ -96,6 +94,7 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         Reference: https://razorpay.com/docs/api/x/payouts/create/bank-account
         """
         payout_details["mode"] = self._get_bank_payment_mode(payout_details)
+        self._set_service_details_to_ir_log("Make Payout to Bank Account")
 
         return self._make_payout(payout_details)
 
@@ -131,6 +130,7 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         Reference: https://razorpay.com/docs/api/x/payouts/create/vpa
         """
         payout_details["mode"] = PAYOUT_MODE.UPI.value
+        self._set_service_details_to_ir_log("Make Payout to UPI ID")
 
         return self._make_payout(payout_details)
 
@@ -161,6 +161,8 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         if source_doctype and source_docname:
             self._set_source_to_ir_log(source_doctype, source_docname)
 
+        self._set_service_details_to_ir_log("Get Payout by ID")
+
         response = self.get(endpoint=payout_id)
 
         if not data:
@@ -189,6 +191,8 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         """
         if source_doctype and source_docname:
             self._set_source_to_ir_log(source_doctype, source_docname)
+
+        self._set_service_details_to_ir_log("Cancel Payout")
 
         return self.post(endpoint=f"{payout_id}/cancel")
 
@@ -471,6 +475,8 @@ class RazorPayXCompositePayout(RazorPayXPayout):
             FUND_ACCOUNT_TYPE.BANK_ACCOUNT.value
         )
 
+        self._set_service_details_to_ir_log("Make Composite Payout to Bank Account")
+
         return self._make_payout(payout_details)
 
     def pay_to_upi_id(self, payout_details: dict) -> dict:
@@ -505,6 +511,8 @@ class RazorPayXCompositePayout(RazorPayXPayout):
         """
         payout_details["mode"] = PAYOUT_MODE.UPI.value
         payout_details["party_account_type"] = FUND_ACCOUNT_TYPE.VPA.value
+
+        self._set_service_details_to_ir_log("Make Composite Payout to UPI ID")
 
         return self._make_payout(payout_details)
 
@@ -684,6 +692,7 @@ class RazorPayXLinkPayout(RazorPayXPayout):
         ---
         Reference: https://razorpay.com/docs/api/x/payout-links/create/use-contact-details/
         """
+        self._set_service_details_to_ir_log("Make Link Payout with Contact Details")
         return self._make_payout(payout_details)
 
     def create_with_razorpayx_contact_id(self, payout_details: dict) -> dict:
@@ -717,6 +726,7 @@ class RazorPayXLinkPayout(RazorPayXPayout):
         ---
         Reference: https://razorpay.com/docs/api/x/payout-links/create/use-contact-id
         """
+        self._set_service_details_to_ir_log("Make Link Payout with Contact ID")
         return self._make_payout(payout_details)
 
     def get_by_id(
@@ -743,6 +753,7 @@ class RazorPayXLinkPayout(RazorPayXPayout):
         ---
         Reference: https://razorpay.com/docs/api/x/payout-links/fetch-with-id
         """
+        self._set_service_details_to_ir_log("Fetch Single Link Payout Details")
         return super().get_by_id(
             payout_link_id,
             data=data,
@@ -769,6 +780,7 @@ class RazorPayXLinkPayout(RazorPayXPayout):
         ---
         Reference: https://razorpay.com/docs/api/x/payout-links/cancel
         """
+        self._set_service_details_to_ir_log("Cancel Link Payout")
         return super().cancel(
             payout_link_id,
             source_doctype=source_doctype,
