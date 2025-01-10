@@ -17,7 +17,6 @@ from razorpayx_integration.payment_utils.utils import (
     delete_custom_fields,
     delete_property_setters,
     delete_role_and_permissions,
-    delete_workflows,
     make_roles_and_permissions,
     make_workflow_actions,
     make_workflow_states,

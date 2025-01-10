@@ -50,7 +50,6 @@ def make_workflows():
 
 ##### Before Uninstall Setup #####
 def delete_customizations():
-    delete_workflows()
     delete_custom_fields()
     delete_property_setters()
     delete_role_and_permissions()
