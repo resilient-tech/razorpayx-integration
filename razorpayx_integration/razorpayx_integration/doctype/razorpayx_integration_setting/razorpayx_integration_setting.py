@@ -51,9 +51,16 @@ class RazorPayXIntegrationSetting(Document):
                 title=_("API Credentials Are Missing"),
             )
 
+        if not (
+            self.has_value_changed("key_id")
+            or self.has_value_changed("key_secret")
+            or self.has_value_changed("account_number")
+        ):
+            return
+
         RazorPayXTestAPI(
             self.key_id,
-            self.key_secret,
+            self.get_password(fieldname="key_secret"),
             self.account_number,
             self.doctype,
             self.name,
