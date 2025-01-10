@@ -72,7 +72,7 @@ CUSTOM_FIELDS = {
             "label": "Payout Description",
             "fieldtype": "Data",
             "insert_after": "razorpayx_payout_cb",
-            "depends_on": "eval: doc.razorpayx_account && doc.party_bank_account",
+            "depends_on": "eval: doc.razorpayx_account",
             "mandatory_depends_on": f"eval:doc.make_bank_online_payment && doc.razorpayx_account && doc.razorpayx_payout_mode === '{USER_PAYOUT_MODE.LINK.value}'",
             "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
         },
