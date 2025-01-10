@@ -361,7 +361,6 @@ def delete_property_setters(property_setters: list[dict]):
         frappe.db.delete("Property Setter", property_setter)
 
 
-# TODO: need testing !!
 def delete_roles_and_permissions(roles: list[dict]):
     """
     Delete roles.
@@ -408,9 +407,7 @@ def remove_permissions(roles: list[dict]):
         try:
             doctype, role_name, permlevel, permissions = role.values()
             remove_role_permissions(doctype, role_name, permlevel)
-        except Exception as e:
-            print("Debugs ....")
-            print(str(e))
+        except Exception:
             pass
 
 
