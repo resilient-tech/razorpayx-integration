@@ -405,8 +405,13 @@ def remove_permissions(roles: list[dict]):
     ```
     """
     for role in roles:
-        doctype, role_name, permlevel, permissions = role.values()
-        remove_role_permissions(doctype, role_name, permlevel)
+        try:
+            doctype, role_name, permlevel, permissions = role.values()
+            remove_role_permissions(doctype, role_name, permlevel)
+        except Exception as e:
+            print("Debugs ....")
+            print(str(e))
+            pass
 
 
 def delete_roles(roles: list[str]):
