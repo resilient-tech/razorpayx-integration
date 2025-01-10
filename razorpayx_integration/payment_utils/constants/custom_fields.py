@@ -30,7 +30,7 @@ CUSTOM_FIELDS = {
             "fieldname": "online_payment_section",
             "label": "Online Payment Details",
             "fieldtype": "Section Break",
-            "insert_after": "bank_account_no",
+            "insert_after": "party",
             "depends_on": "eval: !doc.is_company_account && doc.party_type && doc.party",
         },
         {
@@ -51,7 +51,7 @@ CUSTOM_FIELDS = {
             "fieldname": "upi_id",
             "label": "UPI ID",
             "fieldtype": "Data",
-            "insert_after": "online_payment_cb",
+            "insert_after": "iban",
             "placeholder": "Eg. 9999999999@okicici",
             "depends_on": f"eval: doc.online_payment_mode === '{PAYOUT_MODE.UPI.value}'",
             "mandatory_depends_on": f"eval: doc.online_payment_mode === '{PAYOUT_MODE.UPI.value}'",
