@@ -10,9 +10,9 @@ from razorpayx_integration.razorpayx_integration.constants.payouts import (
     FUND_ACCOUNT_TYPE,
     PAYMENT_MODE_THRESHOLD,
     PAYOUT_CURRENCY,
-    PAYOUT_MODE,
     PAYOUT_PURPOSE,
     PAYOUT_PURPOSE_MAP,
+    RAZORPAYX_PAYOUT_MODE,
 )
 from razorpayx_integration.razorpayx_integration.utils.validation import (
     validate_razorpayx_payout_description,
@@ -129,7 +129,7 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         ---
         Reference: https://razorpay.com/docs/api/x/payouts/create/vpa
         """
-        payout_details["mode"] = PAYOUT_MODE.UPI.value
+        payout_details["mode"] = RAZORPAYX_PAYOUT_MODE.UPI.value
         self._set_service_details_to_ir_log("Make Payout to UPI ID")
 
         return self._make_payout(payout_details)
@@ -228,12 +228,12 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         """
 
         if payout_details.get("pay_instantaneously") is True:
-            return PAYOUT_MODE.IMPS.value
+            return RAZORPAYX_PAYOUT_MODE.IMPS.value
         else:
             if payout_details["amount"] > PAYMENT_MODE_THRESHOLD.NEFT.value:
-                return PAYOUT_MODE.RTGS.value
+                return RAZORPAYX_PAYOUT_MODE.RTGS.value
             else:
-                return PAYOUT_MODE.NEFT.value
+                return RAZORPAYX_PAYOUT_MODE.NEFT.value
 
     def _set_idempotency_key_header(self, json: dict):
         """
@@ -345,7 +345,7 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         return {
             **self.default_payout_request,
             "amount": rupees_to_paisa(payout_details["amount"]),
-            "mode": payout_details.get("mode", PAYOUT_MODE.NEFT.value),
+            "mode": payout_details.get("mode", RAZORPAYX_PAYOUT_MODE.NEFT.value),
             "purpose": get_purpose(),
             "reference_id": get_reference_id(),
             "narration": payout_details.get("description", ""),
@@ -492,7 +492,7 @@ class RazorPayXCompositePayout(RazorPayXPayout):
         ---
         Reference: https://razorpay.com/docs/api/x/payout-composite/create/vpa/
         """
-        payout_details["mode"] = PAYOUT_MODE.UPI.value
+        payout_details["mode"] = RAZORPAYX_PAYOUT_MODE.UPI.value
         payout_details["party_account_type"] = FUND_ACCOUNT_TYPE.VPA.value
 
         self._set_service_details_to_ir_log("Make Composite Payout to UPI ID")
