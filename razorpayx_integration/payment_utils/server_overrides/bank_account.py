@@ -8,10 +8,11 @@ from frappe import _
 
 #### Doc Events ####
 def validate(doc, method=None):
-    validate_bank_ifsc(doc)
+    pass
+    # validate_branch_code(doc) # ! Other countries may have different branch codes format
 
 
-def validate_bank_ifsc(doc, method=None):
+def validate_branch_code(doc, method=None):
     if not doc.branch_code or not doc.has_value_changed("branch_code"):
         return
 
