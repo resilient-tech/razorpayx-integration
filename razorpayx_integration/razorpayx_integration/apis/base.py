@@ -57,6 +57,7 @@ class BaseRazorPayXAPI:
         )
         self.default_headers = {}
         self.default_log_values = {}  # Show value in Integration Request Log
+        self.ir_service_set = False  # Set service details in Integration Request Log
         self.sensitive_infos = ()  # Sensitive info to mask in Integration Request Log
 
         self.setup(*args, **kwargs)
@@ -330,15 +331,20 @@ class BaseRazorPayXAPI:
         pass
 
     ### LOGGING ###
-    def _set_service_details_to_ir_log(self, service_name: str):
+    def _set_service_details_to_ir_log(
+        self, service_name: str, service_set: bool = True
+    ):
         """
         Set the service details in the Integration Request Log.
 
         :param service_name: The service name.
+        :param service_set:  Set flag that service name for Integration request has been set or not.
         """
         self.default_log_values.update(
             {"integration_request_service": f"RazorPayX - {service_name}"}
         )
+
+        self.ir_service_set = service_set
 
     def _set_source_to_ir_log(self):
         """
