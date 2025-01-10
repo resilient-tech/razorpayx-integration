@@ -35,7 +35,7 @@ CUSTOM_FIELDS = {
         },
         {
             "fieldname": "online_payment_mode",
-            "label": "Default Online Payment Mode",
+            "label": "Online Payment Mode",
             "fieldtype": "Select",
             "insert_after": "online_payment_section",
             "options": PAYOUT_MODE.values_as_string(),
