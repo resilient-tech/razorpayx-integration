@@ -363,6 +363,7 @@ class BaseRazorPayXAPI:
         Reference: https://razorpay.com/docs/errors/#sample-code
         """
         error_msg = "There is some error in <strong>RazorPayX</strong>"
+        title = _("RazorPayX API Failed")
 
         if response_json:
             error_msg = (
@@ -371,27 +372,41 @@ class BaseRazorPayXAPI:
                 or error_msg
             )
 
-        self._handle_custom_error(error_msg)
+        self._handle_custom_error(error_msg, title=title)
 
         frappe.throw(
             msg=_(error_msg),
-            title=_("RazorPayX API Failed"),
+            title=title,
         )
 
-    def _handle_custom_error(self, error_msg: str):
+    def _handle_custom_error(self, error_msg: str, title: str | None = None):
         """
         Handle custom error message.
+
+        :param error_msg: RazorPayX API error message.
+        :param title: Title of the error message.
         """
+        if not title:
+            title = _("RazorPayX API Failed")
 
-        if error_msg == "Different request body sent for the same Idempotency Header":
-            msg = _(
-                "Please cancel/delete the current document and pay with a new document."
-            )
+        match error_msg:
+            case "Different request body sent for the same Idempotency Header":
+                error_msg = _(
+                    "Please cancel/delete the current document and pay with a new document."
+                )
 
-            msg += "<br><br>"
+                error_msg += "<br><br>"
 
-            msg += _(
-                "You faced this issue because payment details were changed after the first payment attempt."
-            )
+                error_msg += _(
+                    "You faced this issue because payment details were changed after the first payment attempt."
+                )
 
-            frappe.throw(title=_("RazorPayX API Failed"), msg=msg)
+            case "Authentication failed":
+                error_msg = _("RazorPayX API credentials are invalid.")
+
+            case "The RazorpayX Account number is invalid.":
+                error_msg = _(
+                    "Bank Account number is invalid. Please check the Bank Account number."
+                )
+
+        frappe.throw(title=title, msg=error_msg)
