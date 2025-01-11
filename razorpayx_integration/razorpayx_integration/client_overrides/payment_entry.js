@@ -1,4 +1,3 @@
-// TODO: update Party Bank Account filters
 // TODO: show it will pay by razorpayx
 
 // TODO: Improve UX and UI for Payment Entry
@@ -62,23 +61,9 @@ frappe.ui.form.on("Payment Entry", {
 		}
 	},
 
-	bank_account: async function (frm) {
-		// fetch razorpayx_integration account
-		if (!frm.doc.bank_account) {
-			frm.set_value("razorpayx_account", "");
-		} else {
-			// TODO: use API (get_associated_razorpayx_account) to get associated RazorpayX account
-			const response = await frappe.db.get_value(
-				"RazorPayX Integration Setting",
-				{
-					bank_account: frm.doc.bank_account,
-				},
-				"name"
-			);
-
-			const { name } = response.message || {};
-
-			frm.set_value("razorpayx_account", name);
+	party_bank_account: function (frm) {
+		if (!frm.doc.party_bank_account) {
+			frm.set_value("make_bank_online_payment", PAYOUT_MODES.LINK);
 		}
 	},
 
