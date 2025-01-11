@@ -15,7 +15,7 @@ from razorpayx_integration.razorpayx_integration.constants.payouts import (
     USER_PAYOUT_MODE,
 )
 from razorpayx_integration.razorpayx_integration.utils import (
-    get_razorpayx_account_from_company_bank_account,
+    get_razorpayx_account,
 )
 from razorpayx_integration.razorpayx_integration.utils.payout import (
     PayoutWithPaymentEntry,
@@ -118,9 +118,25 @@ def validate_payout_mode(doc):
 
 def set_razorpayx_account(doc):
     if not doc.razorpayx_account:
-        doc.razorpayx_account = get_razorpayx_account_from_company_bank_account(
-            doc.bank_account
+        razorpayx_account = get_razorpayx_account(
+            identifier=doc.bank_account,
+            search_by="bank_account",
+            fields=["name", "disabled"],
         )
+
+        if not razorpayx_account:
+            return
+
+        if razorpayx_account.disabled:
+            frappe.throw(
+                msg=_("RazorpayX Account <strong>{0}</strong> is disabled.").format(
+                    razorpayx_account.name
+                ),
+                title=_("Disabled RazorpayX Account"),
+                exc=frappe.ValidationError,
+            )
+
+        doc.razorpayx_account = razorpayx_account.name
 
 
 def validate_doc_company(doc):
