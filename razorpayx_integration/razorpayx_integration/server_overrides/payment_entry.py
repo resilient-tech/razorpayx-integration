@@ -328,9 +328,6 @@ def make_payout_with_payment_entry(docname: str, **kwargs):
     kwargs.pop("cmd")
     doc.db_set(
         {
-            "razorpayx_account": get_razorpayx_account_from_company_bank_account(
-                kwargs["bank_account"]
-            ),
             "make_bank_online_payment": 1,
             **kwargs,
         }
