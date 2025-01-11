@@ -41,7 +41,7 @@ class RazorPayXIntegrationSetting(Document):
         self.validate_bank_account()
 
     def validate_api_credentials(self):
-        from razorpayx_integration.razorpayx_integration.apis.test import (
+        from razorpayx_integration.razorpayx_integration.apis.test_razorpayx import (
             RazorPayXTestAPI,
         )
 
