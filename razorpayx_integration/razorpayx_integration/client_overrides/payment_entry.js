@@ -61,6 +61,16 @@ frappe.ui.form.on("Payment Entry", {
 		}
 	},
 
+	validate: function (frm) {
+		if (frm.doc.make_bank_online_payment && !frm.doc.reference_no) {
+			frm.set_value("reference_no", "*** UTR WILL BE SET AUTOMATICALLY ***");
+		}
+
+		if (frm.doc.payment_type !== "Pay") {
+			frm.set_value("make_bank_online_payment", 0);
+		}
+	},
+
 	party_bank_account: function (frm) {
 		if (!frm.doc.party_bank_account) {
 			frm.set_value("make_bank_online_payment", PAYOUT_MODES.LINK);
@@ -69,8 +79,7 @@ frappe.ui.form.on("Payment Entry", {
 
 	contact_person: function (frm) {
 		if (!frm.doc.contact_person) {
-			frm.set_value("contact_mobile", "");
-			frm.set_value("contact_email", "");
+			reset_values(frm, "contact_email", "contact_mobile");
 		}
 	},
 
@@ -103,6 +112,11 @@ frappe.ui.form.on("Payment Entry", {
 		});
 	},
 });
+
+// ############ HELPERS ############ //
+function reset_values(frm, ...fields) {
+	fields.forEach((field) => frm.set_value(field, ""));
+}
 
 // ############ PE CANCEL HELPERS ############ //
 /**
