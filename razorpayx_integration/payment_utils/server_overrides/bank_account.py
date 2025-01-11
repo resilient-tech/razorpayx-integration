@@ -5,6 +5,8 @@ import frappe
 import requests
 from frappe import _
 
+from razorpayx_integration.payment_utils.utils.validations import validate_ifsc_code
+
 
 #### Doc Events ####
 def validate(doc, method=None):
@@ -16,13 +18,4 @@ def validate_branch_code(doc, method=None):
     if not doc.branch_code or not doc.has_value_changed("branch_code"):
         return
 
-    try:
-        response = requests.get(f"https://ifsc.razorpay.com/{doc.branch_code}")
-    except Exception:
-        return
-
-    if response.status_code != 200:
-        frappe.throw(
-            msg=_("Invalid Branch Code: <strong>{0}</strong>").format(doc.branch_code),
-            title=_("Invalid Branch Code"),
-        )
+    validate_ifsc_code(doc.branch_code)
