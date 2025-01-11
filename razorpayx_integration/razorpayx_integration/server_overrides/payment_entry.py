@@ -91,7 +91,7 @@ def validate_payout_mode(doc):
             )
 
     elif doc.razorpayx_payout_mode == USER_PAYOUT_MODE.LINK.value:
-        if not doc.contact_mobile or not doc.contact_email:
+        if not (doc.contact_mobile or doc.contact_email):
             frappe.throw(
                 msg=_(
                     "Any one of Contact's Mobile or  Email is mandatory to make payment with Link."
