@@ -1,4 +1,4 @@
-import json
+from typing import Literal
 
 import frappe
 from frappe import _
@@ -6,38 +6,36 @@ from frappe import _
 from razorpayx_integration.constants import RAZORPAYX_INTEGRATION_DOCTYPE
 
 
-@frappe.whitelist()
-def get_razorpayx_account_from_company_bank_account(
-    company_bank_account: str,
-) -> str | None:
-    """
-    Fetch the RazorpayX Account Integration name from the Company Bank Account.
-
-    :param company_bank_account: Company Bank Account.
-    """
-    frappe.has_permission(RAZORPAYX_INTEGRATION_DOCTYPE, throw=True)
-
-    return frappe.db.get_value(
-        RAZORPAYX_INTEGRATION_DOCTYPE,
-        {"bank_account": company_bank_account},
-        "name",
-    )
-
-
+# TODO: use this function to get the RazorpayX Account Integration name
 @frappe.request_cache
-def get_razorpayx_account_from_account_id(account_id: str) -> str | None:
+def get_razorpayx_account(
+    identifier: str,
+    search_by: Literal["bank_account", "account_id"],
+    fields: list[str] | None = None,
+    as_dict: bool = True,
+) -> dict[str, str] | None:
     """
-    Get the account integration name from the account id.
+    Fetch the RazorpayX Account Integration name based on the identifier.
 
-    :param account_id: RazorpayX Account ID (Business ID).
+    :param identifier: The identifier to search by.
+    :param search_by: Field to search by.
+    :param fields: Fields to fetch.
+    :param as_dict: Return as dict or not.
 
     ---
-    Note: `account_id` should be in the format `acc_XXXXXX`.
+    Note:
+    - `bank_account` is company's bank account.
     """
-    return frappe.get_value(
-        RAZORPAYX_INTEGRATION_DOCTYPE,
-        {"account_id": account_id.removeprefix("acc_")},
-        "name",
+    if search_by == "account_id" and identifier.startswith("acc_"):
+        identifier = identifier.removeprefix("acc_")
+
+    return frappe.db.get_value(
+        doctype=RAZORPAYX_INTEGRATION_DOCTYPE,
+        filters={
+            search_by: identifier,
+        },
+        fieldname=fields or "name",
+        as_dict=as_dict,
     )
 
 
