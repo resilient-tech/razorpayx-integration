@@ -1,4 +1,5 @@
 import frappe
+from erpnext.accounts.doctype.payment_entry.payment_entry import PaymentEntry
 from frappe import _
 from frappe.contacts.doctype.contact.contact import get_contact_details
 from frappe.utils import get_link_to_form
@@ -21,20 +22,20 @@ from razorpayx_integration.razorpayx_integration.utils.validation import (
 
 
 #### DOC EVENTS ####
-def onload(doc, method=None):
+def onload(doc: PaymentEntry, method=None):
     doc.set_onload("disable_payout_fields", is_amended_pe_processed(doc))
 
 
-def validate(doc, method=None):
+def validate(doc: PaymentEntry, method=None):
     validate_amended_pe(doc)
     validate_online_payment_requirements(doc)
 
 
-def on_submit(doc, method=None):
+def on_submit(doc: PaymentEntry, method=None):
     make_payout_with_razorpayx(doc)
 
 
-def before_cancel(doc, method=None):
+def before_cancel(doc: PaymentEntry, method=None):
     if doc.flags.__canceled_by_rpx:
         return
 
@@ -42,7 +43,7 @@ def before_cancel(doc, method=None):
 
 
 #### VALIDATIONS ####
-def validate_amended_pe(doc):
+def validate_amended_pe(doc: PaymentEntry):
     """
     If the amended Payment Entry is processed via RazorPayX, then do not allow to change Payout Fields.
 
@@ -104,7 +105,7 @@ def validate_amended_pe(doc):
             )
 
 
-def validate_online_payment_requirements(doc):
+def validate_online_payment_requirements(doc: PaymentEntry):
     if not doc.make_bank_online_payment:
         return
 
@@ -119,7 +120,7 @@ def validate_online_payment_requirements(doc):
 
 
 # TODO: make it more simple?
-def validate_razorpayx_account(doc, throw: bool = False):
+def validate_razorpayx_account(doc: PaymentEntry, throw: bool = False):
     set_razorpayx_account(doc, throw)
 
     # Always throw error if account is disabled
@@ -133,7 +134,7 @@ def validate_razorpayx_account(doc, throw: bool = False):
         )
 
 
-def validate_payout_details(doc):
+def validate_payout_details(doc: PaymentEntry):
     set_party_bank_details(doc)
     set_payout_mode(doc)
 
@@ -153,7 +154,7 @@ def validate_payout_details(doc):
     validate_link_payout_mode(doc)
 
 
-def validate_bank_payout_mode(doc):
+def validate_bank_payout_mode(doc: PaymentEntry):
     if doc.razorpayx_payout_mode != USER_PAYOUT_MODE.BANK.value:
         return
 
@@ -186,7 +187,7 @@ def validate_bank_payout_mode(doc):
         )
 
 
-def validate_upi_payout_mode(doc):
+def validate_upi_payout_mode(doc: PaymentEntry):
     if doc.razorpayx_payout_mode != USER_PAYOUT_MODE.UPI.value:
         return
 
@@ -210,7 +211,7 @@ def validate_upi_payout_mode(doc):
         )
 
 
-def validate_link_payout_mode(doc):
+def validate_link_payout_mode(doc: PaymentEntry):
     if doc.razorpayx_payout_mode != USER_PAYOUT_MODE.LINK.value:
         return
 
@@ -252,7 +253,7 @@ def validate_link_payout_mode(doc):
 
 #### VALIDATION'S HELPERS ####
 # TODO: make it more simple?
-def set_razorpayx_account(doc, throw: bool = False):
+def set_razorpayx_account(doc: PaymentEntry, throw: bool = False):
     if not doc.bank_account and throw:
         frappe.throw(
             msg=_("Bank Account is mandatory to make payment."),
@@ -284,7 +285,7 @@ def set_razorpayx_account(doc, throw: bool = False):
     )
 
 
-def set_party_bank_details(doc):
+def set_party_bank_details(doc: PaymentEntry):
     doc.party_bank_details = frappe._dict()
 
     if (
@@ -305,7 +306,7 @@ def set_party_bank_details(doc):
         )
 
 
-def set_payout_mode(doc):
+def set_payout_mode(doc: PaymentEntry):
     if doc.razorpayx_payout_mode:
         return
 
@@ -316,7 +317,7 @@ def set_payout_mode(doc):
 
 
 ### ACTIONS ###
-def make_payout_with_razorpayx(doc) -> dict | None:
+def make_payout_with_razorpayx(doc: PaymentEntry) -> dict | None:
     if doc.docstatus != 1:
         return
 
@@ -335,7 +336,7 @@ def make_payout_with_razorpayx(doc) -> dict | None:
     return PayoutWithPaymentEntry(doc).make_payout()
 
 
-def handle_payout_cancellation(doc):
+def handle_payout_cancellation(doc: PaymentEntry):
     if not doc.razorpayx_account:
         return
 
@@ -347,7 +348,7 @@ def handle_payout_cancellation(doc):
 
 
 ### UTILITY ###
-def is_amended_pe_processed(doc) -> bool | int:
+def is_amended_pe_processed(doc: PaymentEntry) -> bool | int:
     """
     Check if the amended Payment Entry is processed via RazorPayX or not.
 
@@ -363,7 +364,7 @@ def is_amended_pe_processed(doc) -> bool | int:
     )
 
 
-def can_cancel_payout(doc) -> bool | int:
+def can_cancel_payout(doc: PaymentEntry) -> bool | int:
     """
     Check if the Payout can be cancelled or not.
 
@@ -375,7 +376,7 @@ def can_cancel_payout(doc) -> bool | int:
     ]
 
 
-def is_payout_already_cancelled(doc) -> bool:
+def is_payout_already_cancelled(doc: PaymentEntry) -> bool:
     """
     Check if the Payout is already cancelled or not.
 
