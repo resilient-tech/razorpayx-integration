@@ -408,19 +408,13 @@ async function show_make_payout_dialog(frm) {
 				},
 				freeze: true,
 				freeze_message: __("Making Payout via RazorPayX..."),
-				callback: (response) => {
-					if (!response.message) {
-						frappe.show_alert({
-							message: __("Failed to make payout. Please try again."),
-							indicator: "red",
-						});
-					} else {
-						frappe.show_alert({
-							message: __("Payout has been made successfully."),
-							indicator: "green",
-						});
-					}
+				callback: (r) => {
+					if (r.exc) return;
 
+					frappe.show_alert({
+						message: __("Payout has been made successfully."),
+						indicator: "green",
+					});
 					frm.reload_doc();
 				},
 			});

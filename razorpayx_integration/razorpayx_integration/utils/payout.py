@@ -334,13 +334,7 @@ class PayoutWithPaymentEntry(PayoutWithDocType):
     ### APIs ###
     def make_payout(self) -> dict | None:
         response = super().make_payout()
-
-        if not response:
-            return
-
         self._update_payment_entry(response)
-
-        return response
 
     def cancel_payout_and_payout_link(self) -> dict:
         """
