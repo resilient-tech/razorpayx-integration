@@ -39,6 +39,20 @@ def get_razorpayx_account(
     )
 
 
+@frappe.whitelist()
+def get_razorpayx_account_by_bank_account(bank_account: str) -> str | None:
+    """
+    Get the RazorpayX Account Integration name based on the bank account.
+
+    :param bank_account: Company's bank account.
+    """
+    frappe.has_permission("Payment Entry", throw=True)
+
+    account = get_razorpayx_account(bank_account, "bank_account")
+
+    return account.get("name") if account else None
+
+
 def get_enabled_razorpayx_accounts() -> list[str]:
     return frappe.get_all(
         RAZORPAYX_INTEGRATION_DOCTYPE,

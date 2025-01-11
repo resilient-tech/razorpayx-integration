@@ -66,8 +66,23 @@ frappe.ui.form.on("Payment Entry", {
 			frm.set_value("reference_no", "*** UTR WILL BE SET AUTOMATICALLY ***");
 		}
 
-		if (frm.doc.payment_type !== "Pay") {
+		if (frm.doc.payment_type !== "Pay" || !frm.doc.razorpayx_account) {
 			frm.set_value("make_bank_online_payment", 0);
+		}
+	},
+
+	bank_account: async function (frm) {
+		if (!frm.doc.bank_account) {
+			frm.set_value("razorpayx_account", "");
+			frm.set_value("make_bank_online_payment", 0);
+		} else {
+			const account = await frappe.xcall(
+				"razorpayx_integration.razorpayx_integration.utils.get_razorpayx_account_by_bank_account",
+				{
+					bank_account: frm.doc.bank_account,
+				}
+			);
+			frm.set_value("razorpayx_account", account);
 		}
 	},
 
@@ -80,6 +95,19 @@ frappe.ui.form.on("Payment Entry", {
 	contact_person: function (frm) {
 		if (!frm.doc.contact_person) {
 			reset_values(frm, "contact_email", "contact_mobile");
+		}
+	},
+
+	make_bank_online_payment: function (frm) {
+		if (!frm.doc.make_bank_online_payment) return;
+
+		if (!frm.doc.razorpayx_account) {
+			frappe.show_alert({
+				message: __("RazorpayX account not found. <br> Please set associate company's bank account."),
+				indicator: "orange",
+			});
+
+			frm.set_value("make_bank_online_payment", 0);
 		}
 	},
 
