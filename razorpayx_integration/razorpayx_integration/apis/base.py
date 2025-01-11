@@ -59,6 +59,7 @@ class BaseRazorPayXAPI:
         self.default_log_values = {}  # Show value in Integration Request Log
         self.ir_service_set = False  # Set service details in Integration Request Log
         self.sensitive_infos = ()  # Sensitive info to mask in Integration Request Log
+        self.place_holder = "************"
 
         self.setup(*args, **kwargs)
 

@@ -36,6 +36,8 @@ class RazorPayXTestAPI(BaseRazorPayXAPI):
         self._set_service_details_to_ir_log("Validate API Credentials")
         self.set_base_path("transactions")
 
+        self.sensitive_infos += ("output", "url", "data")
+
         self.get_all(filters={"account_number": self.account_number}, count=1)
 
     def set_base_path(self, path: str):
@@ -43,3 +45,16 @@ class RazorPayXTestAPI(BaseRazorPayXAPI):
         Set API path.
         """
         self.BASE_PATH = path
+
+    def _mask_sensitive_info(self, ir_log: dict):
+        """
+        Mask sensitive info in Integration Request Log.
+        """
+        if not self.sensitive_infos:
+            return
+
+        for key in self.sensitive_infos:
+            if key == "output" and ir_log.error:
+                continue
+
+            ir_log[key] = "*****"
