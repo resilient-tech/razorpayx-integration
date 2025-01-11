@@ -86,7 +86,7 @@ class BaseRazorPayXAPI:
         if not self.razorpayx_account.webhook_secret:
             frappe.msgprint(
                 msg=_(
-                    "Webhook Secret is missing! <br>You will not receive any updates!"
+                    "RazorPayX Webhook Secret is missing! <br> You will not receive any updates!"
                 ),
                 indicator="yellow",
                 alert=True,
