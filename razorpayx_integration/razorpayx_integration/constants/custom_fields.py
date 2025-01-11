@@ -11,6 +11,9 @@ Note:
 """
 
 from razorpayx_integration.constants import RAZORPAYX_INTEGRATION_DOCTYPE
+from razorpayx_integration.payment_utils.constants.custom_fields import (
+    BASE_CONDITION_TO_MAKE_ONLINE_PAYMENT,
+)
 from razorpayx_integration.payment_utils.constants.roles import PERMISSION_LEVEL
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
     PAYOUT_STATUS,
@@ -25,7 +28,7 @@ CUSTOM_FIELDS = {
             "label": "RazorPayX Payout Details",
             "fieldtype": "Section Break",
             "insert_after": "party_bank_ifsc",  ## Insert After `PARTY BANK IFSC` field (Payment Utils Custom Field)
-            "depends_on": "eval: doc.make_bank_online_payment && doc.party && doc.party_type",
+            "depends_on": f"eval: {BASE_CONDITION_TO_MAKE_ONLINE_PAYMENT} && doc.razorpayx_account",
             "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
         },
         {

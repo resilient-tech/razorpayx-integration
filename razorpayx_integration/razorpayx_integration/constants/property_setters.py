@@ -1,3 +1,6 @@
+from razorpayx_integration.payment_utils.constants.custom_fields import (
+    BASE_CONDITION_TO_MAKE_ONLINE_PAYMENT,
+)
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
     USER_PAYOUT_MODE,
 )
@@ -67,6 +70,27 @@ PROPERTY_SETTERS = [
         "property": "depends_on",
         "property_type": "Data",
         "value": BANK_MODE_CONDITION,
+    },
+    {
+        "doctype": "Payment Entry",
+        "fieldname": "online_payment_section",
+        "property": "depends_on",
+        "property_type": "Data",
+        "value": f"eval: {BASE_CONDITION_TO_MAKE_ONLINE_PAYMENT} && doc.razorpayx_account",
+    },
+    {
+        "doctype": "Payment Entry",
+        "fieldname": "make_bank_online_payment",
+        "property": "depends_on",
+        "property_type": "Data",
+        "value": f"eval: {BASE_CONDITION_TO_MAKE_ONLINE_PAYMENT} && doc.razorpayx_account",
+    },
+    {
+        "doctype": "Payment Entry",
+        "fieldname": "bank_account",
+        "property": "description",
+        "property_type": "Data",
+        "value": "Reselect the <strong>Company Bank Account</strong> if payment options are not visible.",
     },
     ## Bank Account ##
     {

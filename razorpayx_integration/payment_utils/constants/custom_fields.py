@@ -13,6 +13,8 @@ Note:
 from razorpayx_integration.payment_utils.constants.payouts import PAYOUT_MODE
 from razorpayx_integration.payment_utils.constants.roles import PERMISSION_LEVEL
 
+BASE_CONDITION_TO_MAKE_ONLINE_PAYMENT = "doc.payment_type=='Pay' && doc.mode_of_payment!='Cash' && doc.party && doc.party_type && doc.paid_from_account_currency === 'INR'"
+
 # TODO: permission level are left to add
 BLOCK_AUTO_PAYMENT = {
     "fieldname": "block_auto_payment",
@@ -87,7 +89,7 @@ CUSTOM_FIELDS = {
             "label": "Online Payment Details",
             "fieldtype": "Section Break",
             "insert_after": "contact_email",
-            "depends_on": "eval: doc.payment_type=='Pay' && doc.mode_of_payment!='Cash' && doc.party && doc.party_type && doc.paid_to_account_currency === 'INR'",
+            "depends_on": f"eval: {BASE_CONDITION_TO_MAKE_ONLINE_PAYMENT}",
             "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
         },
         {
