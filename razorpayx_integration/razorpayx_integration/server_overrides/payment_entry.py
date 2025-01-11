@@ -26,7 +26,7 @@ def onload(doc, method=None):
 
 
 def validate(doc, method=None):
-    validate_amended_details(doc)
+    validate_amended_pe(doc)
     validate_online_payment_requirements(doc)
 
 
@@ -42,15 +42,15 @@ def before_cancel(doc, method=None):
 
 
 #### VALIDATIONS ####
-def validate_amended_details(doc):
-    # TODO: can use `frappe.db.get_value` for better performance
-    if not doc.amended_from or not is_amended_pe_processed(doc):
+def validate_amended_pe(doc):
+    """
+    If the amended Payment Entry is processed via RazorPayX, then do not allow to change Payout Fields.
+
+    :param doc: Payment Entry Document
+    """
+    if not doc.amended_from:
         return
 
-    amended_from_doc = frappe.get_doc("Payment Entry", doc.amended_from)
-
-    # Payments Related Fields
-    # TODO: accurate fields ?
     payout_fields = [
         # Common
         "payment_type",
@@ -77,6 +77,16 @@ def validate_amended_details(doc):
         "razorpayx_payout_id",
         "razorpayx_payout_link_id",
     ]
+
+    amended_from_doc = frappe.db.get_value(
+        "Payment Entry",
+        doc.amended_from,
+        payout_fields,
+        as_dict=True,
+    )
+
+    if not amended_from_doc or not amended_from_doc.make_bank_online_payment:
+        return
 
     for field in payout_fields:
         if doc.get(field) != amended_from_doc.get(field):
@@ -346,8 +356,10 @@ def is_amended_pe_processed(doc) -> bool | int:
     if not doc.amended_from:
         return False
 
-    return frappe.get_value(
-        "Payment Entry", doc.amended_from, "make_bank_online_payment"
+    return frappe.db.get_value(
+        doctype="Payment Entry",
+        filters=doc.amended_from,
+        fieldname="make_bank_online_payment",
     )
 
 
