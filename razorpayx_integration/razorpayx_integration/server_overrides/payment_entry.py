@@ -37,11 +37,6 @@ def onload(doc, method=None):
 
 
 def validate(doc, method=None):
-    set_razorpayx_account(doc)
-
-    if not doc.razorpayx_account:
-        return
-
     validate_online_payment_requirements(doc)
 
 
@@ -61,12 +56,14 @@ def validate_online_payment_requirements(doc):
     # Validation for amended details to be same of processed payout
     validate_amended_details(doc)
 
-    # Validation for user to make payment
     if not doc.make_bank_online_payment:
         return
 
-    # TODO: set razorpayx account if not already set
-    # Ignore if razorpayx account is not set
+    set_razorpayx_account(doc)
+
+    if not doc.razorpayx_account:
+        return
+
     validate_payout_mode(doc)
     validate_upi_id(doc)
 
@@ -117,26 +114,25 @@ def validate_payout_mode(doc):
 
 
 def set_razorpayx_account(doc):
-    if not doc.razorpayx_account:
-        razorpayx_account = get_razorpayx_account(
-            identifier=doc.bank_account,
-            search_by="bank_account",
-            fields=["name", "disabled"],
+    razorpayx_account = get_razorpayx_account(
+        identifier=doc.bank_account,
+        search_by="bank_account",
+        fields=["name", "disabled"],
+    )
+
+    if not razorpayx_account:
+        return
+
+    if razorpayx_account.disabled:
+        frappe.throw(
+            msg=_("RazorpayX Account <strong>{0}</strong> is disabled.").format(
+                razorpayx_account.name
+            ),
+            title=_("Disabled RazorpayX Account"),
+            exc=frappe.ValidationError,
         )
 
-        if not razorpayx_account:
-            return
-
-        if razorpayx_account.disabled:
-            frappe.throw(
-                msg=_("RazorpayX Account <strong>{0}</strong> is disabled.").format(
-                    razorpayx_account.name
-                ),
-                title=_("Disabled RazorpayX Account"),
-                exc=frappe.ValidationError,
-            )
-
-        doc.razorpayx_account = razorpayx_account.name
+    doc.razorpayx_account = razorpayx_account.name
 
 
 def validate_doc_company(doc):
