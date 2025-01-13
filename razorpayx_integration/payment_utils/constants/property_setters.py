@@ -14,11 +14,4 @@ PROPERTY_SETTERS = [
         "property_type": "Check",
         "value": 1,
     },
-    {
-        "doctype": "Bank Account",
-        "doctype_or_docfield": "DocType",
-        "property": "search_fields",
-        "property_type": "Data",
-        "value": "online_payment_mode,bank,account",  # TODO: not working !!
-    },
 ]

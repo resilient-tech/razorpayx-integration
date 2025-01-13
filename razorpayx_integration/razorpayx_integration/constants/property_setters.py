@@ -16,9 +16,7 @@ UPI_MODE_CONDITION = f"eval: doc.make_bank_online_payment && doc.razorpayx_payou
 BANK_MODE_CONDITION = f"eval: doc.make_bank_online_payment && doc.razorpayx_payout_mode === '{USER_PAYOUT_MODE.BANK.value}'"
 LINK_MODE_CONDITION = f"eval: doc.make_bank_online_payment && doc.razorpayx_payout_mode === '{USER_PAYOUT_MODE.LINK.value}'"
 
-MANDATORY_BANK_DETAILS_CONDITION = (
-    f"eval: doc.party_type && doc.party && doc.online_payment_mode === '{USER_PAYOUT_MODE.BANK.value}'",
-)
+MANDATORY_BANK_DETAILS_CONDITION = f"eval: doc.party_type && doc.party && doc.online_payment_mode === '{USER_PAYOUT_MODE.BANK.value}'"
 
 PROPERTY_SETTERS = [
     ## Payment Entry ##
