@@ -362,14 +362,19 @@ def make_payout_with_razorpayx(doc: PaymentEntry, throw=False):
     PayoutWithPaymentEntry(doc).make_payout()
 
 
-def handle_payout_cancellation(doc: PaymentEntry):
-    if not doc.razorpayx_account:
+def handle_payout_cancellation(
+    doc: PaymentEntry, *, auto_cancel: bool = False, throw: bool = False
+):
+    if not can_cancel_payout(doc):
+        if throw:
+            frappe.throw(
+                title=_("Invalid Action"),
+                msg=_("Payout cannot be cancelled."),
+            )
+
         return
 
-    if not doc.make_bank_online_payment or is_payout_already_cancelled(doc):
-        return
-
-    if can_cancel_payout(doc) and should_auto_cancel_payout(doc.razorpayx_account):
+    if auto_cancel or should_auto_cancel_payout(doc.razorpayx_account):
         PayoutWithPaymentEntry(doc).cancel()
 
 
@@ -396,24 +401,15 @@ def can_cancel_payout(doc: PaymentEntry) -> bool | int:
 
     :param doc: Payment Entry Document
     """
-    return doc.make_bank_online_payment and doc.razorpayx_payout_status.lower() in [
-        PAYOUT_STATUS.NOT_INITIATED.value,
-        PAYOUT_STATUS.QUEUED.value,
-    ]
-
-
-def is_payout_already_cancelled(doc: PaymentEntry) -> bool:
-    """
-    Check if the Payout is already cancelled or not.
-
-    :param doc: Payment Entry Document
-    """
-    # TODO: Duplication in webhooks
-    return doc.razorpayx_payout_status.lower() in [
-        PAYOUT_STATUS.CANCELLED.value,
-        PAYOUT_STATUS.REJECTED.value,
-        PAYOUT_STATUS.FAILED.value,
-    ]
+    return (
+        doc.razorpayx_payout_status.lower()
+        in [
+            PAYOUT_STATUS.NOT_INITIATED.value,
+            PAYOUT_STATUS.QUEUED.value,
+        ]
+        and doc.razorpayx_account
+        and doc.make_bank_online_payment
+    )
 
 
 def can_make_payout(doc: PaymentEntry) -> bool:
@@ -435,6 +431,7 @@ def can_make_payout(doc: PaymentEntry) -> bool:
 
 ### APIs ###
 @frappe.whitelist()
+# TODO: permissions !
 def should_auto_cancel_payout(razorpayx_account: str) -> bool | int:
     """
     Check if the Payout should be auto cancelled or not.
@@ -449,11 +446,12 @@ def should_auto_cancel_payout(razorpayx_account: str) -> bool | int:
 
 
 @frappe.whitelist()
+# TODO: permissions !
 def cancel_payout_and_payout_link(doctype: str, docname: str):
     frappe.has_permission("Payment Entry", throw=True)
 
     doc = frappe.get_cached_doc(doctype, docname)
-    PayoutWithPaymentEntry(doc).cancel()
+    handle_payout_cancellation(doc, auto_cancel=True, throw=True)
 
 
 @frappe.whitelist()
