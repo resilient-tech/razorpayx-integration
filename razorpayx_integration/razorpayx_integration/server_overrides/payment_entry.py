@@ -31,11 +31,12 @@ def validate(doc: PaymentEntry, method=None):
     validate_online_payment_requirements(doc)
 
 
-def on_submit(doc: PaymentEntry, method=None):
+def before_submit(doc: PaymentEntry, method=None):
     if not (doc.make_bank_online_payment and doc.razorpayx_account):
         reset_razorpayx_fields(doc)
-        return
 
+
+def on_submit(doc: PaymentEntry, method=None):
     make_payout_with_razorpayx(doc)
 
 
