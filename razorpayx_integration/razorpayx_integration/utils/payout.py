@@ -332,7 +332,7 @@ class PayoutWithPaymentEntry(PayoutWithDocType):
         super().__init__(payment_entry)
 
     ### APIs ###
-    def make_payout(self) -> dict | None:
+    def make_payout(self):
         response = super().make_payout()
         self._update_payment_entry(response)
 
