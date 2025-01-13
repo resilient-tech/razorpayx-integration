@@ -32,6 +32,10 @@ def validate(doc: PaymentEntry, method=None):
 
 
 def on_submit(doc: PaymentEntry, method=None):
+    if not (doc.make_bank_online_payment and doc.razorpayx_account):
+        reset_razorpayx_fields(doc)
+        return
+
     make_payout_with_razorpayx(doc)
 
 
@@ -249,7 +253,7 @@ def validate_link_payout_mode(doc: PaymentEntry):
         )
 
 
-#### VALIDATION'S HELPERS ####
+#### EVENT'S HELPERS ####
 # TODO: make it more simple?
 def set_razorpayx_account(doc: PaymentEntry, throw: bool = False):
     if not doc.bank_account and throw:
@@ -325,6 +329,20 @@ def set_reference_no(doc: PaymentEntry):
         return
 
     doc.reference_no = "*** UTR WILL BE SET AUTOMATICALLY ***"
+
+
+def reset_razorpayx_fields(doc: PaymentEntry):
+    fields = {
+        "make_bank_online_payment": 0,
+        "razorpayx_account": "",
+        "razorpayx_payout_mode": USER_PAYOUT_MODE.LINK.value,
+        "razorpayx_payout_desc": "",
+        "razorpayx_payout_status": PAYOUT_STATUS.NOT_INITIATED.value.title(),
+        "razorpayx_pay_instantaneously": 0,
+    }
+
+    for field, value in fields.items():
+        doc[field] = value
 
 
 ### ACTIONS ###
