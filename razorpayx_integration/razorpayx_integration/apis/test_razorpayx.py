@@ -38,6 +38,10 @@ class RazorPayXTestAPI(BaseRazorPayXAPI):
 
         self.sensitive_infos += ("output", "url", "data")
 
+        # for new document doc is still not saved in db
+        self.source_docname = ""
+        self.source_doctype = ""
+
         self.get_all(filters={"account_number": self.account_number}, count=1)
 
     def set_base_path(self, path: str):
