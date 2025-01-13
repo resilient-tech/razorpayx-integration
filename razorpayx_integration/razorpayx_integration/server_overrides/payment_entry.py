@@ -347,20 +347,16 @@ def reset_razorpayx_fields(doc: PaymentEntry):
 
 
 ### ACTIONS ###
-def make_payout_with_razorpayx(doc: PaymentEntry) -> dict | None:
-    if doc.docstatus != 1:
-        return
+def make_payout_with_razorpayx(doc: PaymentEntry, throw=False):
+    if not can_make_payout(doc):
+        if throw:
+            frappe.throw(
+                msg=_(
+                    "Payout cannot be made for this Payment Entry. Please check the details."
+                ),
+                title=_("Invalid Payment Entry"),
+            )
 
-    if not doc.razorpayx_account:
-        return
-
-    if doc.payment_type != "Pay":
-        return
-
-    if doc.razorpayx_payout_id or doc.razorpayx_payout_link_id:
-        return
-
-    if not doc.make_bank_online_payment or is_amended_pe_processed(doc):
         return
 
     PayoutWithPaymentEntry(doc).make_payout()
@@ -418,6 +414,23 @@ def is_payout_already_cancelled(doc: PaymentEntry) -> bool:
         PAYOUT_STATUS.REJECTED.value,
         PAYOUT_STATUS.FAILED.value,
     ]
+
+
+def can_make_payout(doc: PaymentEntry) -> bool:
+    """
+    Check if the Payout can be made or not.
+
+    :param doc: Payment Entry Document
+    """
+    return (
+        doc.docstatus == 1
+        and doc.payment_type == "Pay"
+        and doc.make_bank_online_payment
+        and doc.razorpayx_account
+        and not doc.razorpayx_payout_id
+        and not doc.razorpayx_payout_link_id
+        and not is_amended_pe_processed(doc)
+    )
 
 
 ### APIs ###
