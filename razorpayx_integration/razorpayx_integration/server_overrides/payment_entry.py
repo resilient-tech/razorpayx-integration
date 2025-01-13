@@ -435,7 +435,7 @@ def reset_razorpayx_fields(doc: PaymentEntry):
     ]
 
     for field in fields:
-        doc[field] = ""
+        doc.set(field, "")
 
 
 ### ACTIONS ###
