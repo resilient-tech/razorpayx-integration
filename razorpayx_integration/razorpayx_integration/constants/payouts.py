@@ -84,7 +84,13 @@ class PAYOUT_LINK_STATUS(BaseEnum):
     EXPIRED = "expired"
 
 
+# TODO: concern with @smit_vora
 class PAYMENT_MODE_THRESHOLD(BaseEnum):
+    """
+    Reference:
+    - https://www.bankbazaar.com/ifsc/difference-neft-rtgs-imps.html
+    """
+
     UPI = 1_00_000  # 1 Lakh INR
     NEFT = 2_00_000  # 2 Lakh INR
     IMPS = 5_00_000  # 5 Lakh INR

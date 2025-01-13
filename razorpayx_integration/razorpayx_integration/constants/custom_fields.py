@@ -16,6 +16,7 @@ from razorpayx_integration.payment_utils.constants.custom_fields import (
 )
 from razorpayx_integration.payment_utils.constants.roles import PERMISSION_LEVEL
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
+    PAYMENT_MODE_THRESHOLD,
     PAYOUT_STATUS,
     USER_PAYOUT_MODE,
 )
@@ -60,7 +61,7 @@ CUSTOM_FIELDS = {
             "label": "Pay Instantaneously",
             "fieldtype": "Check",
             "insert_after": "razorpayx_payout_mode",
-            "depends_on": f"eval: doc.razorpayx_payout_mode === '{USER_PAYOUT_MODE.BANK.value}'",
+            "depends_on": f"eval: doc.razorpayx_payout_mode === '{USER_PAYOUT_MODE.BANK.value}' && doc.paid_amount <= {PAYMENT_MODE_THRESHOLD.IMPS.value}",
             "description": "Payment will be done with <strong>IMPS</strong> mode.",
             "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
         },
