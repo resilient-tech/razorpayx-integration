@@ -116,6 +116,7 @@ def validate_online_payment_requirements(doc: PaymentEntry):
         doc.make_bank_online_payment = 0
         return
 
+    set_mandatory_payout_details(doc)
     validate_payout_details(doc)
 
 
@@ -135,9 +136,6 @@ def validate_razorpayx_account(doc: PaymentEntry, throw: bool = False):
 
 
 def validate_payout_details(doc: PaymentEntry):
-    set_party_bank_details(doc)
-    set_payout_mode(doc)
-
     if doc.party_bank_account and doc.party_account_details.disabled:
         frappe.throw(
             msg=_("Party's Bank Account <strong>{0}</strong> is disabled.").format(
@@ -285,6 +283,12 @@ def set_razorpayx_account(doc: PaymentEntry, throw: bool = False):
     )
 
 
+def set_mandatory_payout_details(doc: PaymentEntry):
+    set_party_bank_details(doc)
+    set_payout_mode(doc)
+    set_reference_no(doc)
+
+
 def set_party_bank_details(doc: PaymentEntry):
     doc.party_bank_details = frappe._dict()
 
@@ -314,6 +318,13 @@ def set_payout_mode(doc: PaymentEntry):
         doc.razorpayx_payout_mode = doc.party_bank_details.payment_mode
     else:
         doc.razorpayx_payout_mode = USER_PAYOUT_MODE.LINK.value
+
+
+def set_reference_no(doc: PaymentEntry):
+    if doc.reference_no:
+        return
+
+    doc.reference_no = "*** UTR WILL BE SET AUTOMATICALLY ***"
 
 
 ### ACTIONS ###
