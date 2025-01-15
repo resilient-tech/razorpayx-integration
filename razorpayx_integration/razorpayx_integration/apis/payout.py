@@ -161,7 +161,8 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         self.source_doctype = source_doctype
         self.source_docname = source_docname
 
-        self._set_service_details_to_ir_log("Get Payout by ID")
+        if not self.ir_service_set:
+            self._set_service_details_to_ir_log("Get Payout by ID")
 
         response = self.get(endpoint=payout_id)
 
@@ -192,7 +193,8 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         self.source_doctype = source_doctype
         self.source_docname = source_docname
 
-        self._set_service_details_to_ir_log("Cancel Payout")
+        if not self.ir_service_set:
+            self._set_service_details_to_ir_log("Cancel Payout")
 
         return self.post(endpoint=f"{payout_id}/cancel")
 
@@ -214,6 +216,9 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         self._set_idempotency_key_header(json)
 
         self._validate_description(json)
+
+        if not self.ir_service_set:
+            self._set_service_details_to_ir_log("Make Payout")
 
         return self.post(json=json, headers=self.payout_headers)
 
