@@ -558,7 +558,7 @@ def should_auto_cancel_payout(razorpayx_account: str) -> bool | int:
 
 @frappe.whitelist()
 # TODO: permissions !
-def cancel_payout_and_payout_link(doctype: str, docname: str):
+def cancel_payout(doctype: str, docname: str):
     frappe.has_permission("Payment Entry", throw=True)
 
     doc = frappe.get_cached_doc(doctype, docname)

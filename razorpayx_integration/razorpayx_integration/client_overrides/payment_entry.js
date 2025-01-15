@@ -209,7 +209,7 @@ function show_cancel_payout_dialog(frm, callback) {
 		primary_action: async (values) => {
 			if (values.cancel_payout) {
 				await frappe.call({
-					method: `${BASE_API_PATH}.cancel_payout_and_payout_link`,
+					method: `${BASE_API_PATH}.cancel_payout`,
 					args: {
 						doctype: frm.doctype,
 						docname: frm.docname,
