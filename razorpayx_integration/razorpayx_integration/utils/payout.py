@@ -287,7 +287,7 @@ class PayoutWithPaymentEntry(PayoutWithDocument):
             values["razorpayx_payout_link_id"] = id
 
         if values:
-            self.doc.db_set(values, update_modified=True)
+            self.doc.db_set(values, notify=True)  # TODO: check reload doc in dialog JS
 
     ### HELPERS ###
     def _get_razorpayx_account(self) -> str:
