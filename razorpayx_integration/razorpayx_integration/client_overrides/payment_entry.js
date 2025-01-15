@@ -69,6 +69,8 @@ frappe.ui.form.on("Payment Entry", {
 		if (frm.doc.payment_type !== "Pay" || !frm.doc.razorpayx_account) {
 			frm.set_value("make_bank_online_payment", 0);
 		}
+
+		reset_contact_details(frm);
 	},
 
 	bank_account: async function (frm) {
@@ -93,9 +95,7 @@ frappe.ui.form.on("Payment Entry", {
 	},
 
 	contact_person: function (frm) {
-		if (!frm.doc.contact_person) {
-			reset_values(frm, "contact_email", "contact_mobile");
-		}
+		reset_contact_details(frm);
 	},
 
 	make_bank_online_payment: function (frm) {
@@ -144,6 +144,12 @@ frappe.ui.form.on("Payment Entry", {
 // ############ HELPERS ############ //
 function reset_values(frm, ...fields) {
 	fields.forEach((field) => frm.set_value(field, ""));
+}
+
+function reset_contact_details(frm) {
+	if (!frm.doc.contact_person) {
+		reset_values(frm, "contact_email", "contact_mobile");
+	}
 }
 
 // ############ PE CANCEL HELPERS ############ //
