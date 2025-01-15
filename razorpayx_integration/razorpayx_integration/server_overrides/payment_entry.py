@@ -161,7 +161,8 @@ def validate_party_bank_account(doc: PaymentEntry):
 
     :param doc: Payment Entry Document
     """
-    if doc.party_bank_account and doc.party_account_details.disabled:
+
+    if doc.party_bank_account and doc.party_bank_account_details.disabled:
         frappe.throw(
             msg=_("Party's Bank Account <strong>{0}</strong> is disabled.").format(
                 doc.party_bank_account
@@ -212,7 +213,7 @@ def validate_bank_payout_mode(doc: PaymentEntry):
 
     validate_ifsc_code(doc.party_bank_ifsc)
 
-    if doc.party_bank_account_no != doc.party_bank_details.account_no:
+    if doc.party_bank_account_no != doc.party_bank_account_details.account_no:
         frappe.throw(
             msg=_(
                 "Party's Bank Account No <strong>{0}</strong> does not match with selected Party's Bank Account."
@@ -220,7 +221,7 @@ def validate_bank_payout_mode(doc: PaymentEntry):
             title=_("Invalid Bank Account No"),
         )
 
-    if doc.party_bank_ifsc != doc.party_bank_details.ifsc_code:
+    if doc.party_bank_ifsc != doc.party_bank_account_details.ifsc_code:
         frappe.throw(
             msg=_(
                 "Party's Bank IFSC Code <strong>{0}</strong> does not match with selected Party's Bank Account."
@@ -249,7 +250,7 @@ def validate_upi_payout_mode(doc: PaymentEntry):
             exc=frappe.MandatoryError,
         )
 
-    if doc.party_upi_id != doc.party_bank_details.upi_id:
+    if doc.party_upi_id != doc.party_bank_account_details.upi_id:
         frappe.throw(
             msg=_(
                 "Party's UPI ID <strong>{0}</strong> does not match with selected Party's Bank Account."
@@ -374,13 +375,13 @@ def set_party_bank_details(doc: PaymentEntry):
 
     Note: It is a not an actual field, it is temporary stored for validation.
     """
-    doc.party_bank_details = frappe._dict()
+    doc.party_bank_account_details = frappe._dict()
 
     if (
         doc.party_bank_account
         and doc.razorpayx_payout_mode != USER_PAYOUT_MODE.LINK.value
     ):
-        doc.party_bank_details = frappe.db.get_value(
+        doc.party_bank_account_details = frappe.db.get_value(
             "Bank Account",
             doc.party_bank_account,
             [
