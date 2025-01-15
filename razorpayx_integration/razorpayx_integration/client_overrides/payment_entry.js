@@ -112,17 +112,13 @@ frappe.ui.form.on("Payment Entry", {
 	},
 
 	before_cancel: async function (frm) {
-		if (!frm.doc.make_bank_online_payment || is_payout_already_cancelled(frm)) return;
-
-		// Check Payout is cancellable or not
-		if (!can_cancel_payout(frm)) {
-			frappe.throw({
-				message: __(
-					"Payment Entry cannot be cancelled as Payout is already in <strong>{0}</strong> state.",
-					[frm.doc.razorpayx_payout_status]
-				),
-				title: __("Cannot Cancel Payment Entry"),
-			});
+		if (
+			!frm.doc.make_bank_online_payment ||
+			!frm.doc.razorpayx_account ||
+			!can_cancel_payout(frm) ||
+			is_payout_already_cancelled(frm)
+		) {
+			return;
 		}
 
 		const auto_cancel_payout = await should_auto_cancel_payout(frm);
@@ -159,10 +155,7 @@ function reset_contact_details(frm) {
  * @returns {boolean} `true` if the payout can be cancelled, otherwise `false`
  */
 function can_cancel_payout(frm) {
-	return (
-		frm.doc.make_bank_online_payment &&
-		["Not Initiated", "Queued"].includes(frm.doc.razorpayx_payout_status)
-	);
+	return ["Not Initiated", "Queued"].includes(frm.doc.razorpayx_payout_status);
 }
 
 /**
