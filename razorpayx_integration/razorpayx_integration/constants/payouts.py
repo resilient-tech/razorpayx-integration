@@ -5,8 +5,11 @@ DESCRIPTION_REGEX = r"^[a-zA-Z0-9 ]{1,30}$"
 
 
 ### ENUMS ###
-# TODO ? How to map this with ERPNext DocType and RazorPayX Contact Type
 class CONTACT_TYPE(BaseEnum):
+    """
+    Default Contact Type available in RazorPayX.
+    """
+
     EMPLOYEE = "employee"
     SUPPLIER = "vendor"
     CUSTOMER = "customer"
@@ -20,6 +23,10 @@ class FUND_ACCOUNT_TYPE(BaseEnum):
 
 
 class USER_PAYOUT_MODE(BaseEnum):
+    """
+    Custom Payout Mode for ERPNext User.
+    """
+
     BANK = "NEFT/RTGS"  # NEFT/RTGS will be decided based on the amount at payout time
     UPI = "UPI"
     LINK = "Link"
@@ -39,6 +46,10 @@ class PAYOUT_CURRENCY(BaseEnum):
 
 
 class PAYOUT_PURPOSE(BaseEnum):
+    """
+    Default payout purpose available in RazorpayX.
+    """
+
     REFUND = "refund"
     CASH_BACK = "cashback"
     PAYOUT = "payout"
