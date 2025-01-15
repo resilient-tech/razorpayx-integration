@@ -289,7 +289,9 @@ def validate_link_payout_mode(doc: PaymentEntry):
     # Validate email and contact is correct or not
     contact_details = get_contact_details(doc.contact_person)
 
-    if doc.contact_mobile and doc.contact_mobile != contact_details.get("mobile_no"):
+    if doc.contact_mobile and doc.contact_mobile != contact_details.get(
+        "contact_mobile"
+    ):
         frappe.throw(
             msg=_(
                 "Contact's Mobile <strong>{0}</strong> does not match with selected Contact."
@@ -297,7 +299,7 @@ def validate_link_payout_mode(doc: PaymentEntry):
             title=_("Invalid Mobile"),
         )
 
-    if doc.contact_email and doc.contact_email != contact_details.get("email_id"):
+    if doc.contact_email and doc.contact_email != contact_details.get("contact_email"):
         frappe.throw(
             msg=_(
                 "Contact's Email <strong>{0}</strong> does not match with selected Contact."
@@ -319,13 +321,14 @@ def set_razorpayx_account(doc: PaymentEntry, throw: bool = False):
     """
     doc.razorpayx_account = ""
 
-    if not doc.bank_account and throw:
-        frappe.throw(
-            msg=_("Bank Account is mandatory to make payment."),
-            title=_("Mandatory Fields Missing"),
-            exc=frappe.MandatoryError,
-        )
-    else:
+    if not doc.bank_account:
+        if throw:
+            frappe.throw(
+                msg=_("Bank Account is mandatory to make payment."),
+                title=_("Mandatory Fields Missing"),
+                exc=frappe.MandatoryError,
+            )
+
         return
 
     # Fetch RazorpayX Account based on Bank Account
