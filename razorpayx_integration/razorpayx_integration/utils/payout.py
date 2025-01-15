@@ -38,14 +38,14 @@ class PAYOUT_CHANNEL(BaseEnum):
     # LINK_CONTACT_ID = "link.contact_id"  # RazorPayX Contact ID # ! Not Supported
 
 
-class PayoutWithDocType(ABC):
+class PayoutWithDocument(ABC):
     """
-    Make RazorPayx Payout with given DocType.
+    Make RazorPayx Payout with given Document.
 
     - Base class for making payout with doctypes.
     - It is recommended to use `Submittable` doctype for making payout.
 
-    :param doc: DocType instance.
+    :param doc: Document instance.
     """
 
     ### SETUPS ###
@@ -229,7 +229,7 @@ class PayoutWithDocType(ABC):
         pass
 
 
-class PayoutWithPaymentEntry(PayoutWithDocType):
+class PayoutWithPaymentEntry(PayoutWithDocument):
     """
     Make RazorPayx Payout with Payment Entry.
 
