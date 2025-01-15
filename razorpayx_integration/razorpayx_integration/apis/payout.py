@@ -741,7 +741,7 @@ class RazorPayXLinkPayout(RazorPayXPayout):
         ---
         Reference: https://razorpay.com/docs/api/x/payout-links/fetch-with-id
         """
-        self._set_service_details_to_ir_log("Fetch Single Link Payout Details")
+        self._set_service_details_to_ir_log("Fetch Single Payout Link Details")
         return super().get_by_id(
             payout_link_id,
             data=data,
@@ -768,7 +768,7 @@ class RazorPayXLinkPayout(RazorPayXPayout):
         ---
         Reference: https://razorpay.com/docs/api/x/payout-links/cancel
         """
-        self._set_service_details_to_ir_log("Cancel Link Payout")
+        self._set_service_details_to_ir_log("Cancel Payout Link")
         return super().cancel(
             payout_link_id,
             source_doctype=source_doctype,
