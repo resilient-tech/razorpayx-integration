@@ -4,29 +4,12 @@ import frappe
 from frappe import _
 
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
-    CONTACT_TYPE,
     DESCRIPTION_REGEX,
     FUND_ACCOUNT_TYPE,
     PAYOUT_LINK_STATUS,
     PAYOUT_STATUS,
     USER_PAYOUT_MODE,
 )
-
-
-def validate_razorpayx_contact_type(type: str):
-    """
-    :raises frappe.ValidationError: If the type is not valid.
-    """
-    if CONTACT_TYPE.has_value(type):
-        return
-
-    frappe.throw(
-        msg=_("Invalid contact type: {0}. <br> Must be one of : <br> {1}").format(
-            type, CONTACT_TYPE.values_as_html_list()
-        ),
-        title=_("Invalid RazorPayX Contact Type"),
-        exc=frappe.ValidationError,
-    )
 
 
 def validate_razorpayx_fund_account_type(type: str):
