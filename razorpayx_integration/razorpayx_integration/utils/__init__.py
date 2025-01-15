@@ -39,6 +39,7 @@ def get_razorpayx_account(
     )
 
 
+# TODO: permission check ?
 @frappe.whitelist()
 def get_razorpayx_account_by_bank_account(bank_account: str) -> str | None:
     """
