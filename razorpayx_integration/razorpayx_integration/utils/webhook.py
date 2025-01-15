@@ -270,7 +270,11 @@ class PayoutWebhook(RazorPayXWebhook):
 
         Note: Source doc (Payment Entry) is set here.
         """
-        return bool(self.get_source_doc() and self.is_order_maintained())
+        return bool(
+            self.source_doctype == "Payment Entry"
+            and self.get_source_doc()
+            and self.is_order_maintained()
+        )
 
     def is_order_maintained(self) -> bool:
         """
