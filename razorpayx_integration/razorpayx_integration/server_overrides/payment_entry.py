@@ -36,7 +36,7 @@ def validate(doc: PaymentEntry, method=None):
 
 
 def before_submit(doc: PaymentEntry, method=None):
-    if not (doc.make_bank_online_payment and doc.razorpayx_account):
+    if not doc.make_bank_online_payment:
         reset_razorpayx_fields(doc)
 
 
@@ -435,9 +435,12 @@ def reset_razorpayx_fields(doc: PaymentEntry):
     Reset RazorPayX payout fields.
 
     :param doc: Payment Entry Document
+
+    ---
+    Note: Account does not reset because it is based on Bank Account.
     """
     fields = [
-        "razorpayx_account",
+        # "razorpayx_account",
         "razorpayx_payout_desc",
         "razorpayx_payout_id",
         "razorpayx_payout_link_id",
