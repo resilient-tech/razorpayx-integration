@@ -236,12 +236,11 @@ class PayoutWebhook(RazorPayXWebhook):
     ### UTILITIES ###
     def get_source_doc(self):
         """
-        Get the source doc.
+        Get and Set the source doc.
 
-        Also set the source doc if not set.
+        Fetch last created Payment Entry based on the id fields.
 
-        Note: Call this manually in the sub class if needed, because the source doc
-        is not set in the `setup_webhook_payload` method.
+        - `Doctype` and `Docname` in the `notes` may be get cancelled and amended.
         """
         field_mapper = {
             EVENTS_TYPE.PAYOUT.value: "razorpayx_payout_id",
@@ -249,18 +248,23 @@ class PayoutWebhook(RazorPayXWebhook):
             EVENTS_TYPE.PAYOUT_LINK.value: "razorpayx_payout_link_id",
         }
 
-        if self.source_doctype and self.source_doctype != "Payment Entry":
+        if not self.id or not self.event_type:
             return
 
-        if self.source_doctype and self.source_docname:
-            self.source_doc = frappe.get_doc("Payment Entry", self.source_docname)
-            # TODO: ? what if it is deleted?
-        elif self.id and self.event_type:
-            id_field = field_mapper.get(self.event_type)
+        id_field = field_mapper.get(self.event_type) or "razorpayx_payout_id"
+        doctype = self.source_doctype or "Payment Entry"
 
-            self.source_doc = frappe.get_doc(
-                "Payment Entry", {id_field: self.id, "docstatus": 1}
-            )
+        docname = frappe.db.get_value(
+            doctype=doctype,
+            filters={id_field: self.id},
+            pluck="name",
+            order_by="creation desc",
+        )
+
+        if not docname:
+            return
+
+        self.source_doc = frappe.get_doc(doctype, docname)
 
         return self.source_doc
 
@@ -562,7 +566,6 @@ WEBHOOK_PROCESSORS_MAP = {
 }
 
 
-# TODO: Go through this ....
 ###### APIs ######
 @frappe.whitelist(allow_guest=True)
 def razorpayx_webhook_listener():
