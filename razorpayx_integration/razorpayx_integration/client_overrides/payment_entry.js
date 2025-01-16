@@ -1,5 +1,3 @@
-// TODO: show it will pay by razorpayx
-
 // TODO: Improve UX and UI for Payment Entry
 
 // TODO: for UX: change submit button label to `Pay and Submit`
@@ -52,11 +50,13 @@ frappe.ui.form.on("Payment Entry", {
 
 		const can_show_payout_button = await can_show_payout_btn(frm);
 
-		if (!can_show_payout_button) return;
+		if (can_show_payout_button) {
+			frm.add_custom_button(__("{0} Make Payout", [frappe.utils.icon("expenses")]), () =>
+				show_make_payout_dialog(frm)
+			);
+		}
 
-		frm.add_custom_button(__("{0} Make Payout", [frappe.utils.icon("expenses")]), () =>
-			show_make_payout_dialog(frm)
-		);
+		set_razorpayx_state_description(frm);
 	},
 
 	validate: function (frm) {
@@ -139,6 +139,44 @@ function reset_contact_details(frm) {
 	if (!frm.doc.contact_person) {
 		reset_values(frm, "contact_email", "contact_mobile");
 	}
+}
+
+function set_razorpayx_state_description(frm) {
+	if (
+		frm.doc.docstatus === 0 ||
+		frm.doc.payment_type !== "Pay" ||
+		!frm.doc.make_bank_online_payment ||
+		!frm.doc.razorpayx_account
+	) {
+		return;
+	}
+
+	const status = frm.doc.razorpayx_payout_status;
+
+	const description = `<div style="height: 30px;"
+							class="d-flex indicator ${get_indicator(status)} align-item-center justify-content-center" >
+							<strong>${status}</strong>
+							<img src="/assets/razorpayx_integration/images/RPX-logo.png" class="img-fluid" style="height: 100%; width: auto; margin-left: auto" />
+						</div>`;
+
+	frm.get_field("payment_type").set_new_description(description);
+}
+
+function get_indicator(status) {
+	const indicator = {
+		"Not Initiated": "cyan",
+		Queued: "yellow",
+		Pending: "yellow",
+		Scheduled: "purple",
+		Processing: "blue",
+		Processed: "green",
+		Failed: "red",
+		Cancelled: "red",
+		Rejected: "red",
+		Reversed: "red",
+	};
+
+	return indicator[status] || "grey";
 }
 
 // ############ PE CANCEL HELPERS ############ //
