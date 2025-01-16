@@ -235,16 +235,17 @@ async function can_show_payout_btn(frm) {
 		return false;
 	}
 
-	return true;
+	const args = {
+		payment_entry: frm.doc.name,
+	};
 
-	// TODO: how to handle this? maybe account not available at the time of creation
-	// TODO: Or SKip particular Accouny?
-	// const has_permission = await frappe.xcall(`${PE_BASE_PATH}.user_has_payout_permissions`, {
-	// 	razorpayx_account: frm.doc.razorpayx_account,
-	// 	payment_entry: frm.doc.name,
-	// });
+	if (frm.doc.razorpayx_account) {
+		args.razorpayx_account = frm.doc.razorpayx_account;
+	}
 
-	// return has_permission;
+	const has_permission = await frappe.xcall(`${PE_BASE_PATH}.user_has_payout_permissions`, args);
+
+	return has_permission;
 }
 
 async function show_make_payout_dialog(frm) {
