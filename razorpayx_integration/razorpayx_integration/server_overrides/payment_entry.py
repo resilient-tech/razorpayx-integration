@@ -412,10 +412,13 @@ def set_payout_mode(doc: PaymentEntry):
     if doc.razorpayx_payout_mode:
         return
 
-    if doc.party_bank_account:
-        doc.razorpayx_payout_mode = doc.party_bank_details.payment_mode
-    else:
-        doc.razorpayx_payout_mode = USER_PAYOUT_MODE.LINK.value
+    def get_mode():
+        if doc.party_bank_account:
+            return doc.party_bank_details.payment_mode
+
+        return USER_PAYOUT_MODE.LINK
+
+    doc.db_set("razorpayx_payout_mode", get_mode())
 
 
 def set_reference_no(doc: PaymentEntry):
@@ -427,7 +430,7 @@ def set_reference_no(doc: PaymentEntry):
     if doc.reference_no:
         return
 
-    doc.reference_no = "*** UTR WILL BE SET AUTOMATICALLY ***"
+    doc.db_set("reference_no", "*** UTR WILL BE SET AUTOMATICALLY ***")
 
 
 def reset_razorpayx_fields(doc: PaymentEntry):
