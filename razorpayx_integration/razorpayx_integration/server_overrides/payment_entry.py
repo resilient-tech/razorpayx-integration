@@ -356,7 +356,7 @@ def set_razorpayx_account(doc: PaymentEntry, throw: bool = False):
             exc=frappe.ValidationError,
         )
     elif account := doc.razorpayx_account_details.get("name"):
-        doc.razorpayx_account = account
+        doc.db_set("razorpayx_account", account)
 
 
 def set_missing_payout_details(doc: PaymentEntry):
