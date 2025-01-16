@@ -5,7 +5,7 @@
 // TODO: for UX: change submit button label to `Pay and Submit`
 
 // ############ CONSTANTS ############ //
-const BASE_API_PATH = "razorpayx_integration.razorpayx_integration.server_overrides.payment_entry";
+const PE_BASE_PATH = "razorpayx_integration.razorpayx_integration.server_overrides.payment_entry";
 
 const PAYOUT_MODES = {
 	BANK: "NEFT/RTGS",
@@ -44,21 +44,17 @@ const RAZORPAYX_DOCTYPE = "RazorPayX Integration Setting";
 
 // ############ DOC EVENTS ############ //
 frappe.ui.form.on("Payment Entry", {
-	refresh: function (frm) {
+	refresh: async function (frm) {
 		// Do not allow to edit fields if Payment is processed by RazorpayX in amendment
 		disable_payout_fields_in_amendment(frm);
 
-		// TODO: permission check for showing the button
-		if (
-			!frm.doc.make_bank_online_payment &&
-			frm.doc.docstatus === 1 &&
-			frm.doc.payment_type === "Pay" &&
-			frm.doc.mode_of_payment !== "Cash"
-		) {
-			frm.add_custom_button(__("{0} Make Payout", [frappe.utils.icon("expenses")]), () =>
-				show_make_payout_dialog(frm)
-			);
-		}
+		const can_show_payout_button = await can_show_payout_btn(frm);
+
+		if (!can_show_payout_button) return;
+
+		frm.add_custom_button(__("{0} Make Payout", [frappe.utils.icon("expenses")]), () =>
+			show_make_payout_dialog(frm)
+		);
 	},
 
 	validate: function (frm) {
@@ -165,7 +161,7 @@ function can_cancel_payout(frm) {
  * @returns {Promise<boolean>} The value of `auto_cancel_payout
  */
 async function should_auto_cancel_payout(frm) {
-	const auto_cancel = await frappe.xcall(`${BASE_API_PATH}.should_auto_cancel_payout`, {
+	const auto_cancel = await frappe.xcall(`${PE_BASE_PATH}.should_auto_cancel_payout`, {
 		razorpayx_account: frm.doc.razorpayx_account,
 	});
 
@@ -209,7 +205,7 @@ function show_cancel_payout_dialog(frm, callback) {
 		primary_action: async (values) => {
 			if (values.cancel_payout) {
 				await frappe.call({
-					method: `${BASE_API_PATH}.cancel_payout`,
+					method: `${PE_BASE_PATH}.cancel_payout`,
 					args: {
 						doctype: frm.doctype,
 						docname: frm.docname,
@@ -230,6 +226,26 @@ function show_cancel_payout_dialog(frm, callback) {
 }
 
 // ############ MAKING PAYOUT HELPERS ############ //
+async function can_show_payout_btn(frm) {
+	if (
+		!frm.doc.razorpayx_account ||
+		frm.doc.docstatus !== 1 ||
+		frm.doc.make_bank_online_payment ||
+		frm.doc.payment_type !== "Pay" ||
+		frm.doc.paid_from_account_currency !== "INR" ||
+		frm.doc.mode_of_payment === "Cash"
+	) {
+		return false;
+	}
+
+	const has_permission = await frappe.xcall(`${PE_BASE_PATH}.user_has_payout_permissions`, {
+		razorpayx_account: frm.doc.razorpayx_account,
+		payment_entry: frm.doc.name,
+	});
+
+	return has_permission;
+}
+
 async function show_make_payout_dialog(frm) {
 	// depends on conditions
 	const DEPENDS_ON_BANK = `doc.razorpayx_payout_mode === '${PAYOUT_MODES.BANK}'`;
@@ -400,7 +416,7 @@ async function show_make_payout_dialog(frm) {
 		primary_action_label: __("Make Payout"),
 		primary_action: (values) => {
 			frappe.call({
-				method: `${BASE_API_PATH}.make_payout_with_payment_entry`,
+				method: `${PE_BASE_PATH}.make_payout_with_payment_entry`,
 				args: {
 					docname: frm.docname,
 					...values,
