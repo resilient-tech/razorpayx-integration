@@ -40,7 +40,7 @@ const PAYOUT_FIELDS = [
 	"razorpayx_payout_link_id",
 ];
 
-const RAZORPAYX_DOCTYPE = "RazorPayX Integration Setting";
+const INTEGRATION_DOCTYPE = "RazorPayX Integration Setting";
 
 // ############ DOC EVENTS ############ //
 frappe.ui.form.on("Payment Entry", {
