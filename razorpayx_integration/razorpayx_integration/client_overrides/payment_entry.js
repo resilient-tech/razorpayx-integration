@@ -204,8 +204,8 @@ function show_cancel_payout_dialog(frm, callback) {
 				await frappe.call({
 					method: `${PE_BASE_PATH}.cancel_payout`,
 					args: {
-						doctype: frm.doctype,
 						docname: frm.docname,
+						razorpayx_account: frm.doc.razorpayx_account,
 					},
 				});
 
