@@ -264,7 +264,9 @@ async function show_make_payout_dialog(frm) {
 			{
 				fieldname: "image_html",
 				fieldtype: "HTML",
-				options: `<img src="/assets/razorpayx_integration/images/RazorpayX-logo.png" />`,
+				options: `<div class="d-flex justify-content-center align-items-center">
+							<img src="/assets/razorpayx_integration/images/RPX-logo.png" class="img-fluid" style="height: 100px; width: auto;" />
+						</div>`,
 			},
 			{
 				fieldname: "account_section_break",
@@ -308,11 +310,6 @@ async function show_make_payout_dialog(frm) {
 					set_bank_account_description(dialog);
 				},
 			},
-			{
-				fieldname: "account_cb",
-				fieldtype: "Column Break",
-			},
-
 			{
 				fieldname: "party_section_break",
 				label: __("Party Details"),
@@ -542,7 +539,7 @@ function set_bank_account_description(dialog) {
 	if (dialog.get_value("razorpayx_account") || !dialog.get_value("bank_account")) {
 		bank_field.set_empty_description();
 	} else {
-		const description = `<div class="text-warning">
+		const description = `<div class="text-warning font-weight-bold">
 								${frappe.utils.icon("solid-warning")}
 								${__("RazorPayX Account not Found !")}
 							</div>`;
