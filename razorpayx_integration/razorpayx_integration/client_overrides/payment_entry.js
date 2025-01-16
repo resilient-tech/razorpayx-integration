@@ -42,21 +42,31 @@ const INTEGRATION_DOCTYPE = "RazorPayX Integration Setting";
 
 const IMPS_LIMIT = 5_00_000;
 
+const PAY_ICON = "expenses";
+
 // ############ DOC EVENTS ############ //
 frappe.ui.form.on("Payment Entry", {
 	refresh: async function (frm) {
 		// Do not allow to edit fields if Payment is processed by RazorpayX in amendment
 		disable_payout_fields_in_amendment(frm);
 
+		if (!is_base_payout_condition_met(frm)) {
+			return;
+		}
+
+		// change UI only when these conditions are met
+		if (frm.doc.make_bank_online_payment && frm.doc.razorpayx_account) {
+			update_submit_button_label(frm);
+			set_razorpayx_state_description(frm);
+		}
+
 		const can_show_payout_button = await can_show_payout_btn(frm);
 
 		if (can_show_payout_button) {
-			frm.add_custom_button(__("{0} Make Payout", [frappe.utils.icon("expenses")]), () =>
+			frm.add_custom_button(__("{0} Make Payout", [frappe.utils.icon(PAY_ICON)]), () =>
 				show_make_payout_dialog(frm)
 			);
 		}
-
-		set_razorpayx_state_description(frm);
 	},
 
 	validate: function (frm) {
@@ -131,6 +141,14 @@ frappe.ui.form.on("Payment Entry", {
 });
 
 // ############ HELPERS ############ //
+function is_base_payout_condition_met(frm) {
+	return (
+		frm.doc.payment_type === "Pay" &&
+		frm.doc.paid_from_account_currency === "INR" &&
+		frm.doc.mode_of_payment !== "Cash"
+	);
+}
+
 function reset_values(frm, ...fields) {
 	fields.forEach((field) => frm.set_value(field, ""));
 }
@@ -141,15 +159,20 @@ function reset_contact_details(frm) {
 	}
 }
 
+function update_submit_button_label(frm) {
+	if (frm.doc.docstatus !== 1) return;
+
+	frm.page.set_primary_action(
+		__("Pay and Submit"),
+		() => {
+			frm.savesubmit();
+		},
+		PAY_ICON
+	);
+}
+
 function set_razorpayx_state_description(frm) {
-	if (
-		frm.doc.docstatus === 0 ||
-		frm.doc.payment_type !== "Pay" ||
-		!frm.doc.make_bank_online_payment ||
-		!frm.doc.razorpayx_account
-	) {
-		return;
-	}
+	if (frm.doc.docstatus === 0) return;
 
 	const status = frm.doc.razorpayx_payout_status;
 
@@ -265,9 +288,6 @@ async function can_show_payout_btn(frm) {
 	if (
 		frm.doc.docstatus !== 1 ||
 		frm.doc.make_bank_online_payment ||
-		frm.doc.payment_type !== "Pay" ||
-		frm.doc.paid_from_account_currency !== "INR" ||
-		frm.doc.mode_of_payment === "Cash" ||
 		frm.doc.razorpayx_payout_status !== "Not Initiated"
 	) {
 		return false;
