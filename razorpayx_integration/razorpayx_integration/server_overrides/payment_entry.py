@@ -573,8 +573,8 @@ def cancel_payout(docname: str, razorpayx_account: str):
     :param razorpayx_account: RazorPayX Account name associated to company bank account
     """
     user_has_payout_permissions(
-        razorpayx_account,
         docname,
+        razorpayx_account,
         pe_permission="cancel",
         throw=True,
     )
@@ -592,7 +592,7 @@ def make_payout_with_payment_entry(docname: str, razorpayx_account: str, **kwarg
     :param docname: Payment Entry name
     :param razorpayx_account: RazorPayX Account name associated to company bank account
     """
-    user_has_payout_permissions(razorpayx_account, docname, throw=True)
+    user_has_payout_permissions(docname, razorpayx_account, throw=True)
 
     doc = frappe.get_doc("Payment Entry", docname)
     doc.has_permission("submit")
@@ -612,9 +612,10 @@ def make_payout_with_payment_entry(docname: str, razorpayx_account: str, **kwarg
 
 
 @frappe.whitelist()
+# TODO: concern with @smit_vora
 def user_has_payout_permissions(
-    razorpayx_account: str,
     payment_entry: str,
+    razorpayx_account: str | None = None,
     *,
     pe_permission: Literal["submit", "cancel"] = "submit",
     throw: bool = False,
@@ -624,25 +625,36 @@ def user_has_payout_permissions(
 
     Permission Check:
     - Can access the integration doctypes
-    - Can access particular RazorPayX Account
+    - Can access particular RazorPayX Account (if provided)
     - Can access particular Payment Entry
 
-    :param razorpayx_account: RazorPayX Account name
     :param payment_entry: Payment Entry name
+    :param razorpayx_account: RazorPayX Account name
     :param pe_permission: Payment Entry Permission to check
     :param throw: Throw error if permission is not granted
     """
-    return (
-        frappe.has_permission(INTEGRATION_DOCTYPE, throw=throw)
-        and frappe.has_permission(
+    has_pe_permission = frappe.has_permission(
+        doctype="Payment Entry",
+        doc=payment_entry,
+        ptype=pe_permission,
+        throw=throw,
+    )
+
+    has_integration_permission = frappe.has_permission(
+        INTEGRATION_DOCTYPE,
+        throw=throw,
+    )
+
+    has_razorpayx_account_permission = True
+    if razorpayx_account:
+        has_razorpayx_account_permission = frappe.has_permission(
             doctype=INTEGRATION_DOCTYPE,
             doc=razorpayx_account,
             throw=throw,
         )
-        and frappe.has_permission(
-            doctype="Payment Entry",
-            doc=payment_entry,
-            ptype=pe_permission,
-            throw=throw,
-        )
+
+    return (
+        has_pe_permission
+        and has_integration_permission
+        and has_razorpayx_account_permission
     )
