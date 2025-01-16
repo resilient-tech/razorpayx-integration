@@ -569,7 +569,12 @@ def cancel_payout(docname: str, razorpayx_account: str):
     :param docname: Payment Entry name
     :param razorpayx_account: RazorPayX Account name associated to company bank account
     """
-    user_has_payout_permissions(razorpayx_account, docname, throw=True)
+    user_has_payout_permissions(
+        razorpayx_account,
+        docname,
+        pe_permission="cancel",
+        throw=True,
+    )
 
     doc = frappe.get_cached_doc("Payment Entry", docname)
     handle_payout_cancellation(doc, auto_cancel=True, throw=True)
