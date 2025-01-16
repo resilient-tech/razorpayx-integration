@@ -83,7 +83,7 @@ frappe.ui.form.on("Payment Entry", {
 
 	party_bank_account: function (frm) {
 		if (!frm.doc.party_bank_account) {
-			frm.set_value("make_bank_online_payment", PAYOUT_MODES.LINK);
+			frm.set_value("razorpayx_payout_mode", PAYOUT_MODES.LINK);
 		}
 	},
 
@@ -229,7 +229,8 @@ async function can_show_payout_btn(frm) {
 		frm.doc.make_bank_online_payment ||
 		frm.doc.payment_type !== "Pay" ||
 		frm.doc.paid_from_account_currency !== "INR" ||
-		frm.doc.mode_of_payment === "Cash"
+		frm.doc.mode_of_payment === "Cash" ||
+		frm.doc.razorpayx_payout_status !== "Not Initiated"
 	) {
 		return false;
 	}
@@ -448,10 +449,13 @@ async function show_make_payout_dialog(frm) {
 				method: `${PE_BASE_PATH}.make_payout_with_payment_entry`,
 				args: {
 					docname: frm.docname,
+					razorpayx_account: values.razorpayx_account,
 					...values,
 				},
 				freeze: true,
+				// TODO: Can show Image here?
 				freeze_message: __("Making Payout via RazorPayX..."),
+
 				callback: (r) => {
 					if (r.exc) return;
 
@@ -459,7 +463,6 @@ async function show_make_payout_dialog(frm) {
 						message: __("Payout has been made successfully."),
 						indicator: "green",
 					});
-					frm.reload_doc();
 				},
 			});
 
