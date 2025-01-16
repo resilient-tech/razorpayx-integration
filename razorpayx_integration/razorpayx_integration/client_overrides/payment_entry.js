@@ -42,6 +42,8 @@ const PAYOUT_FIELDS = [
 
 const INTEGRATION_DOCTYPE = "RazorPayX Integration Setting";
 
+const IMPS_LIMIT = 5_00_000;
+
 // ############ DOC EVENTS ############ //
 frappe.ui.form.on("Payment Entry", {
 	refresh: async function (frm) {
@@ -74,12 +76,7 @@ frappe.ui.form.on("Payment Entry", {
 			frm.set_value("razorpayx_account", "");
 			frm.set_value("make_bank_online_payment", 0);
 		} else {
-			const account = await frappe.xcall(
-				"razorpayx_integration.razorpayx_integration.utils.get_razorpayx_account_by_bank_account",
-				{
-					bank_account: frm.doc.bank_account,
-				}
-			);
+			const account = await get_razorpayx_account(frm.doc.bank_account);
 			frm.set_value("razorpayx_account", account);
 		}
 	},
@@ -228,7 +225,6 @@ function show_cancel_payout_dialog(frm, callback) {
 // ############ MAKING PAYOUT HELPERS ############ //
 async function can_show_payout_btn(frm) {
 	if (
-		!frm.doc.razorpayx_account ||
 		frm.doc.docstatus !== 1 ||
 		frm.doc.make_bank_online_payment ||
 		frm.doc.payment_type !== "Pay" ||
@@ -238,23 +234,36 @@ async function can_show_payout_btn(frm) {
 		return false;
 	}
 
-	const has_permission = await frappe.xcall(`${PE_BASE_PATH}.user_has_payout_permissions`, {
-		razorpayx_account: frm.doc.razorpayx_account,
-		payment_entry: frm.doc.name,
-	});
+	return true;
 
-	return has_permission;
+	// TODO: how to handle this? maybe account not available at the time of creation
+	// TODO: Or SKip particular Accouny?
+	// const has_permission = await frappe.xcall(`${PE_BASE_PATH}.user_has_payout_permissions`, {
+	// 	razorpayx_account: frm.doc.razorpayx_account,
+	// 	payment_entry: frm.doc.name,
+	// });
+
+	// return has_permission;
 }
 
 async function show_make_payout_dialog(frm) {
 	// depends on conditions
-	const DEPENDS_ON_BANK = `doc.razorpayx_payout_mode === '${PAYOUT_MODES.BANK}'`;
-	const DEPENDS_ON_UPI = `doc.razorpayx_payout_mode === '${PAYOUT_MODES.UPI}'`;
-	const DEPENDS_ON_LINK = `doc.razorpayx_payout_mode === '${PAYOUT_MODES.LINK}'`;
+	const BANK_MODE = `doc.razorpayx_payout_mode === '${PAYOUT_MODES.BANK}'`;
+	const UPI_MODE = `doc.razorpayx_payout_mode === '${PAYOUT_MODES.UPI}'`;
+	const LINK_MODE = `doc.razorpayx_payout_mode === '${PAYOUT_MODES.LINK}'`;
 
 	const dialog = new frappe.ui.Dialog({
 		title: __("Enter Payout Details"),
 		fields: [
+			{
+				fieldname: "image_section",
+				fieldtype: "Section Break",
+			},
+			{
+				fieldname: "image_html",
+				fieldtype: "HTML",
+				options: `<img src="/assets/razorpayx_integration/images/RazorpayX-logo.png" />`,
+			},
 			{
 				fieldname: "account_section_break",
 				label: __("Company Account Details"),
@@ -267,29 +276,46 @@ async function show_make_payout_dialog(frm) {
 				options: "Bank Account",
 				default: frm.doc.bank_account,
 				reqd: 1,
-				read_only: frm.doc.bank_account ? 1 : 0,
 				get_query: function () {
-					return {
-						filters: {
-							is_company_account: 1,
-							company: frm.doc.company,
-						},
+					const filters = {
+						is_company_account: 1,
+						company: frm.doc.company,
 					};
+
+					// at the time of creation, razorpayx_account is not available so refetching it
+					if (frm.doc.bank_account) {
+						filters.name = frm.doc.bank_account;
+					}
+
+					return { filters };
+				},
+				onchange: async function () {
+					set_razorpayx_account(dialog);
+				},
+			},
+			{
+				fieldname: "razorpayx_account",
+				label: __("RazorpayX Account"),
+				fieldtype: "Link",
+				options: INTEGRATION_DOCTYPE,
+				default: frm.doc.razorpayx_account,
+				reqd: 1,
+				hidden: 1,
+				read_only: 1,
+				onchange: async function () {
+					set_bank_account_description(dialog);
 				},
 			},
 			{
 				fieldname: "account_cb",
 				fieldtype: "Column Break",
 			},
-			{
-				fieldname: "image_section",
-				fieldtype: "HTML",
-				options: `<img src="/assets/razorpayx_integration/images/RazorpayX-logo.png" />`,
-			},
+
 			{
 				fieldname: "party_section_break",
 				label: __("Party Details"),
 				fieldtype: "Section Break",
+				depends_on: "eval: doc.razorpayx_account",
 			},
 			{
 				fieldname: "party_bank_account",
@@ -297,7 +323,6 @@ async function show_make_payout_dialog(frm) {
 				fieldtype: "Link",
 				options: "Bank Account",
 				default: frm.doc.party_bank_account,
-				reqd: 1,
 				read_only: frm.doc.party_bank_account ? 1 : 0,
 				get_query: function () {
 					return {
@@ -309,16 +334,20 @@ async function show_make_payout_dialog(frm) {
 					};
 				},
 				onchange: async function () {
-					set_party_bank_details(dialog.get_value("party_bank_account"), dialog);
+					set_party_bank_details(dialog);
 				},
+			},
+			{
+				fieldname: "party_cb",
+				fieldtype: "Column Break",
 			},
 			{
 				fieldname: "party_bank_account_no",
 				label: "Party Bank Account No",
 				fieldtype: "Data",
 				read_only: 1,
-				depends_on: `eval: ${DEPENDS_ON_BANK}`,
-				mandatory_depends_on: `eval: ${DEPENDS_ON_BANK}`,
+				depends_on: `eval: ${BANK_MODE}`,
+				mandatory_depends_on: `eval: ${BANK_MODE}`,
 				default: frm.doc.party_bank_account_no,
 			},
 			{
@@ -326,8 +355,8 @@ async function show_make_payout_dialog(frm) {
 				label: "Party Bank IFSC Code",
 				fieldtype: "Data",
 				read_only: 1,
-				depends_on: `eval: ${DEPENDS_ON_BANK}`,
-				mandatory_depends_on: `eval: ${DEPENDS_ON_BANK}`,
+				depends_on: `eval: ${BANK_MODE}`,
+				mandatory_depends_on: `eval: ${BANK_MODE}`,
 				default: frm.doc.party_bank_ifsc,
 			},
 			{
@@ -335,14 +364,11 @@ async function show_make_payout_dialog(frm) {
 				label: "Party UPI ID",
 				fieldtype: "Data",
 				read_only: 1,
-				depends_on: `eval: ${DEPENDS_ON_UPI}`,
-				mandatory_depends_on: `eval: ${DEPENDS_ON_UPI}`,
+				depends_on: `eval: ${UPI_MODE}`,
+				mandatory_depends_on: `eval: ${UPI_MODE}`,
 				default: frm.doc.party_upi_id,
 			},
-			{
-				fieldname: "party_cb",
-				fieldtype: "Column Break",
-			},
+
 			{
 				fieldname: "contact_person",
 				label: __("Contact"),
@@ -350,8 +376,8 @@ async function show_make_payout_dialog(frm) {
 				options: "Contact",
 				default: frm.doc.contact_person,
 				read_only: frm.doc.contact_person ? 1 : 0,
-				depends_on: `eval: ${DEPENDS_ON_LINK}`,
-				mandatory_depends_on: `eval: ${DEPENDS_ON_LINK}`,
+				depends_on: `eval: ${LINK_MODE}`,
+				mandatory_depends_on: `eval: ${LINK_MODE}`,
 				get_query: function () {
 					return {
 						filters: {
@@ -361,7 +387,7 @@ async function show_make_payout_dialog(frm) {
 					};
 				},
 				onchange: async function () {
-					set_contact_details(dialog.get_value("contact_person"), dialog);
+					set_contact_details(dialog);
 				},
 			},
 			{
@@ -369,8 +395,8 @@ async function show_make_payout_dialog(frm) {
 				label: "Email",
 				fieldtype: "Data",
 				options: "Email",
-				depends_on: `eval: ${DEPENDS_ON_LINK} && doc.contact_person`,
-				mandatory_depends_on: `eval: ${DEPENDS_ON_LINK}`,
+				depends_on: `eval: ${LINK_MODE} && doc.contact_person && doc.contact_email`,
+				mandatory_depends_on: `eval: ${LINK_MODE}`,
 				read_only: 1,
 				default: frm.doc.contact_email,
 			},
@@ -379,7 +405,7 @@ async function show_make_payout_dialog(frm) {
 				label: "Mobile",
 				fieldtype: "Data",
 				options: "Phone",
-				depends_on: `eval: ${DEPENDS_ON_LINK} && doc.contact_person`,
+				depends_on: `eval: ${LINK_MODE} && doc.contact_person && doc.contact_mobile`,
 				read_only: 1,
 				default: frm.doc.contact_mobile,
 			},
@@ -387,12 +413,15 @@ async function show_make_payout_dialog(frm) {
 				fieldname: "payment_section_break",
 				label: __("Payment Details"),
 				fieldtype: "Section Break",
+				depends_on: "eval: doc.razorpayx_account",
 			},
 			{
 				fieldname: "razorpayx_payout_mode",
 				label: __("Payout Mode"),
 				fieldtype: "Select",
 				options: Object.values(PAYOUT_MODES),
+				default: PAYOUT_MODES.LINK,
+				read_only: 1,
 				reqd: 1,
 			},
 			{
@@ -400,7 +429,7 @@ async function show_make_payout_dialog(frm) {
 				label: "Pay Instantaneously",
 				fieldtype: "Check",
 				description: "Payment will be done with <strong>IMPS</strong> mode.",
-				depends_on: `eval: ${DEPENDS_ON_BANK}`,
+				depends_on: `eval: ${BANK_MODE} && ${frm.doc.paid_amount <= IMPS_LIMIT}`,
 			},
 			{
 				fieldname: "party_cb",
@@ -410,7 +439,7 @@ async function show_make_payout_dialog(frm) {
 				fieldname: "razorpayx_payout_desc",
 				label: __("Payout Description"),
 				fieldtype: "Data",
-				mandatory_depends_on: `eval: ${DEPENDS_ON_LINK}`,
+				mandatory_depends_on: `eval: ${LINK_MODE}`,
 			},
 		],
 		primary_action_label: __("Make Payout"),
@@ -438,9 +467,10 @@ async function show_make_payout_dialog(frm) {
 		},
 	});
 
-	set_default_payout_mode(frm.doc.party_bank_account, dialog);
-
 	dialog.show();
+
+	set_default_payout_mode(frm.doc.party_bank_account, dialog);
+	set_bank_account_description(dialog);
 }
 
 async function set_default_payout_mode(party_bank_account, dialog) {
@@ -451,8 +481,13 @@ async function set_default_payout_mode(party_bank_account, dialog) {
 	dialog.set_value("razorpayx_payout_mode", response.message.online_payment_mode);
 }
 
-async function set_party_bank_details(party_bank_account, dialog) {
-	if (!party_bank_account) return;
+async function set_party_bank_details(dialog) {
+	const party_bank_account = dialog.get_value("party_bank_account");
+
+	if (!party_bank_account) {
+		dialog.set_value("razorpayx_payout_mode", PAYOUT_MODES.LINK);
+		return;
+	}
 
 	const response = await frappe.db.get_value("Bank Account", party_bank_account, [
 		"branch_code as party_bank_ifsc",
@@ -464,8 +499,16 @@ async function set_party_bank_details(party_bank_account, dialog) {
 	dialog.set_values(response.message);
 }
 
-async function set_contact_details(contact_person, dialog) {
-	if (!contact_person) return;
+async function set_contact_details(dialog) {
+	const contact_person = dialog.get_value("contact_person");
+
+	if (!contact_person) {
+		dialog.set_values({
+			contact_email: "",
+			contact_mobile: "",
+		});
+		return;
+	}
 
 	const response = await frappe.call({
 		method: "frappe.contacts.doctype.contact.contact.get_contact_details",
@@ -478,6 +521,31 @@ async function set_contact_details(contact_person, dialog) {
 	});
 }
 
+async function set_razorpayx_account(dialog) {
+	const bank_account = dialog.get_value("bank_account");
+
+	if (!bank_account) {
+		dialog.set_value("razorpayx_account", "");
+	} else {
+		const account = await get_razorpayx_account(bank_account);
+		dialog.set_value("razorpayx_account", account ? account : "");
+	}
+}
+
+function set_bank_account_description(dialog) {
+	const bank_field = dialog.get_field("bank_account");
+
+	if (dialog.get_value("razorpayx_account") || !dialog.get_value("bank_account")) {
+		bank_field.set_empty_description();
+	} else {
+		const description = `<div class="text-warning">
+								${frappe.utils.icon("solid-warning")}
+								${__("RazorPayX Account not Found !")}
+							</div>`;
+
+		bank_field.set_new_description(description);
+	}
+}
 // ############ VALIDATIONS ############ //
 /**
  * If current Payment Entry is amended from another Payment Entry,
