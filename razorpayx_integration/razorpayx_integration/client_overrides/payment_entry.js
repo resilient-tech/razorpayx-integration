@@ -503,3 +503,17 @@ async function disable_payout_fields_in_amendment(frm) {
 
 	frm.toggle_enable(PAYOUT_FIELDS, disable_payout_fields ? 0 : 1);
 }
+
+// ############ UTILITY ############ //
+async function get_razorpayx_account(bank_account) {
+	if (!bank_account) return;
+
+	const account = await frappe.xcall(
+		"razorpayx_integration.razorpayx_integration.utils.get_razorpayx_account_by_bank_account",
+		{
+			bank_account: bank_account,
+		}
+	);
+
+	return account;
+}
