@@ -1,10 +1,14 @@
+from typing import Literal
+
 import frappe
 from erpnext.accounts.doctype.payment_entry.payment_entry import PaymentEntry
 from frappe import _
 from frappe.contacts.doctype.contact.contact import get_contact_details
 from frappe.utils import get_link_to_form
 
-from razorpayx_integration.constants import RAZORPAYX_INTEGRATION_DOCTYPE
+from razorpayx_integration.constants import (
+    RAZORPAYX_INTEGRATION_DOCTYPE as INTEGRATION_DOCTYPE,
+)
 from razorpayx_integration.payment_utils.utils.validations import validate_ifsc_code
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
     PAYOUT_STATUS,
@@ -110,16 +114,17 @@ def validate_amended_pe(doc: PaymentEntry):
             )
 
 
-def validate_payout_details(doc: PaymentEntry):
+def validate_payout_details(doc: PaymentEntry, throw=False):
     """
     Validate Payout details of RazorPayX.
 
-    :param doc: Payment Entry Document
+    :param doc: Payment Entry
+    :param throw: Throw error if Payout details are not valid otherwise just return
     """
     if not doc.make_bank_online_payment:
         return
 
-    validate_razorpayx_account(doc)
+    validate_razorpayx_account(doc, throw=throw)
 
     # Maybe other Integration is used to make payment instead of RazorPayX
     if not doc.razorpayx_account:
@@ -542,7 +547,7 @@ def can_make_payout(doc: PaymentEntry) -> bool:
 
 ### APIs ###
 @frappe.whitelist()
-# TODO: permissions !
+# TODO: permissions ?!
 def should_auto_cancel_payout(razorpayx_account: str) -> bool | int:
     """
     Check if the Payout should be auto cancelled or not.
@@ -552,37 +557,41 @@ def should_auto_cancel_payout(razorpayx_account: str) -> bool | int:
     frappe.has_permission("Payment Entry", throw=True)
 
     return frappe.db.get_value(
-        RAZORPAYX_INTEGRATION_DOCTYPE, razorpayx_account, "auto_cancel_payout"
+        INTEGRATION_DOCTYPE, razorpayx_account, "auto_cancel_payout"
     )
 
 
 @frappe.whitelist()
-# TODO: permissions !
-def cancel_payout(doctype: str, docname: str):
-    frappe.has_permission("Payment Entry", throw=True)
+def cancel_payout(docname: str, razorpayx_account: str):
+    """
+    Cancel Payout or Payout Link for the Payment Entry.
 
-    doc = frappe.get_cached_doc(doctype, docname)
+    :param docname: Payment Entry name
+    :param razorpayx_account: RazorPayX Account name associated to company bank account
+    """
+    user_has_payout_permissions(razorpayx_account, docname, throw=True)
+
+    doc = frappe.get_cached_doc("Payment Entry", docname)
     handle_payout_cancellation(doc, auto_cancel=True, throw=True)
 
 
 @frappe.whitelist()
-# TODO: do not use kwargs use individual fields and validate them first!
-def make_payout_with_payment_entry(docname: str, **kwargs):
+# TODO: ? kwargs is good or not?
+def make_payout_with_payment_entry(docname: str, razorpayx_account: str, **kwargs):
     """
     Make Payout or Payout Link with Payment Entry.
 
     :param docname: Payment Entry name
-    :param kwargs: Payout details
-
+    :param razorpayx_account: RazorPayX Account name associated to company bank account
     """
-    # Has role payment manager
-    frappe.has_permission(RAZORPAYX_INTEGRATION_DOCTYPE, throw=True)
+    user_has_payout_permissions(razorpayx_account, docname, throw=True)
 
     doc = frappe.get_doc("Payment Entry", docname)
-    # check razorpayx account doc permission ("read")
     doc.has_permission("submit")
 
-    kwargs.pop("cmd")
+    kwargs.pop("cmd")  # unwanted key
+
+    # Set the fields to make payout
     doc.db_set(
         {
             "make_bank_online_payment": 1,
@@ -590,10 +599,42 @@ def make_payout_with_payment_entry(docname: str, **kwargs):
         }
     )
 
-    validate_payout_details(doc)
-    response = make_payout_with_razorpayx(doc)
+    validate_payout_details(doc, throw=True)
+    make_payout_with_razorpayx(doc)
 
-    if not response:
-        doc.db_set("make_bank_online_payment", 0, update_modified=False)
 
-    return response
+@frappe.whitelist()
+def user_has_payout_permissions(
+    razorpayx_account: str,
+    payment_entry: str,
+    *,
+    pe_permission: Literal["submit", "cancel"] = "submit",
+    throw: bool = False,
+):
+    """
+    Check RazorPayX related permissions for the user.
+
+    Permission Check:
+    - Can access the integration doctypes
+    - Can access particular RazorPayX Account
+    - Can access particular Payment Entry
+
+    :param razorpayx_account: RazorPayX Account name
+    :param payment_entry: Payment Entry name
+    :param pe_permission: Payment Entry Permission to check
+    :param throw: Throw error if permission is not granted
+    """
+    return (
+        frappe.has_permission(INTEGRATION_DOCTYPE, throw=throw)
+        and frappe.has_permission(
+            doctype=INTEGRATION_DOCTYPE,
+            doc=razorpayx_account,
+            throw=throw,
+        )
+        and frappe.has_permission(
+            doctype="Payment Entry",
+            doc=payment_entry,
+            ptype=pe_permission,
+            throw=throw,
+        )
+    )
