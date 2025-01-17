@@ -27,7 +27,7 @@ from razorpayx_integration.razorpayx_integration.utils.validation import (
 
 #### DOC EVENTS ####
 def onload(doc: PaymentEntry, method=None):
-    doc.set_onload("disable_payout_fields", is_amended_pe_processed(doc))
+    doc.set_onload("amended_pe_processed", is_amended_pe_processed(doc))
 
 
 def validate(doc: PaymentEntry, method=None):
