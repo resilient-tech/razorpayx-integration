@@ -179,10 +179,7 @@ function set_razorpayx_state_description(frm) {
 	// eslint-disable-next-line
 	const description = `<div class="d-flex indicator ${get_indicator(status)} align-item-center justify-content-center">
 		<strong>${status}</strong>
-		<div style="height: 25px; margin-left: auto;" class="d-flex align-items-center">
-			<i>${__("via")}</i>
-			<img src="/assets/razorpayx_integration/images/razorpayx-logo.png" class="img-fluid" style="height: 100%; width: auto;" />
-		</div>
+		${get_rpx_img_container("via")}
 	</div>`;
 
 	frm.get_field("payment_type").set_new_description(description);
@@ -216,6 +213,17 @@ function get_indicator(status) {
 	};
 
 	return indicator[status] || "grey";
+}
+
+function get_rpx_img_container(txt, italic = true, styles = "", classes = "") {
+	function get_txt() {
+		return italic ? `<i>${__(txt)}</i>` : `<span>${__(txt)}</span>`;
+	}
+
+	return `<div style="height: 25px; margin-left: auto; ${styles}" class="d-flex align-items-center ${classes}">
+			${get_txt()}
+			<img src="/assets/razorpayx_integration/images/razorpayx-logo.png" class="img-fluid" style="height: 100%; width: auto;" />
+		</div>`;
 }
 
 // ############ PE CANCEL HELPERS ############ //
@@ -332,17 +340,6 @@ async function show_make_payout_dialog(frm) {
 		title: __("Enter Payout Details"),
 		fields: [
 			{
-				fieldname: "image_section",
-				fieldtype: "Section Break",
-			},
-			{
-				fieldname: "image_html",
-				fieldtype: "HTML",
-				options: `<div class="d-flex justify-content-center align-items-center">
-							<img src="/assets/razorpayx_integration/images/razorpayx-logo.png" class="img-fluid" style="height: 100px; width: auto;" />
-						</div>`,
-			},
-			{
 				fieldname: "account_section_break",
 				label: __("Company Account Details"),
 				fieldtype: "Section Break",
@@ -370,6 +367,10 @@ async function show_make_payout_dialog(frm) {
 				onchange: async function () {
 					set_razorpayx_account(dialog);
 				},
+			},
+			{
+				fieldname: "account_cb",
+				fieldtype: "Column Break",
 			},
 			{
 				fieldname: "razorpayx_account",
@@ -610,16 +611,25 @@ async function set_razorpayx_account(dialog) {
 function set_bank_account_description(dialog) {
 	const bank_field = dialog.get_field("bank_account");
 
-	if (dialog.get_value("razorpayx_account") || !dialog.get_value("bank_account")) {
+	if (!dialog.get_value("bank_account")) {
 		bank_field.set_empty_description();
-	} else {
-		const description = `<div class="text-warning font-weight-bold">
-								${frappe.utils.icon("solid-warning")}
-								${__("RazorPayX Account not Found !")}
-							</div>`;
-
-		bank_field.set_new_description(description);
+		return;
 	}
+
+	let description = "";
+
+	if (dialog.get_value("razorpayx_account")) {
+		description = `<div class="d-flex align-items-center justify-content-end">
+								${get_rpx_img_container("pay via")}
+						</div>`;
+	} else {
+		description = `<div class="text-danger font-weight-bold">
+								${frappe.utils.icon("solid-error")}
+								${__("RazorPayX Account not Found !")}
+						</div>`;
+	}
+
+	bank_field.set_new_description(description);
 }
 // ############ VALIDATIONS ############ //
 /**
