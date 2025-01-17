@@ -175,11 +175,15 @@ function set_razorpayx_state_description(frm) {
 
 	const status = frm.doc.razorpayx_payout_status;
 
-	const description = `<div style="height: 30px;"
-							class="d-flex indicator ${get_indicator(status)} align-item-center justify-content-center" >
-							<strong>${status}</strong>
-							<img src="/assets/razorpayx_integration/images/razorpayx-logo.png" class="img-fluid" style="height: 100%; width: auto; margin-left: auto" />
-						</div>`;
+	// prettier-ignore
+	// eslint-disable-next-line
+	const description = `<div class="d-flex indicator ${get_indicator(status)} align-item-center justify-content-center">
+		<strong>${status}</strong>
+		<div style="height: 25px; margin-left: auto;" class="d-flex align-items-center">
+			<i>${__("via")}</i>
+			<img src="/assets/razorpayx_integration/images/razorpayx-logo.png" class="img-fluid" style="height: 100%; width: auto;" />
+		</div>
+	</div>`;
 
 	frm.get_field("payment_type").set_new_description(description);
 }
