@@ -178,9 +178,9 @@ function set_razorpayx_state_description(frm) {
 	// prettier-ignore
 	// eslint-disable-next-line
 	const description = `<div class="d-flex indicator ${get_indicator(status)} align-item-center justify-content-center">
-		<strong>${status}</strong>
-		${get_rpx_img_container("via")}
-	</div>`;
+							<strong>${status}</strong>
+							${get_rpx_img_container("via")}
+						</div>`;
 
 	frm.get_field("payment_type").set_new_description(description);
 }
