@@ -1,7 +1,3 @@
-// TODO: Improve UX and UI for Payment Entry
-
-// TODO: for UX: change submit button label to `Pay and Submit`
-
 // ############ CONSTANTS ############ //
 const PE_BASE_PATH = "razorpayx_integration.razorpayx_integration.server_overrides.payment_entry";
 
@@ -49,6 +45,7 @@ frappe.ui.form.on("Payment Entry", {
 	refresh: async function (frm) {
 		// Do not allow to edit fields if Payment is processed by RazorpayX in amendment
 		disable_payout_fields_in_amendment(frm);
+		frm.get_field("payment_type").set_empty_description();
 
 		if (!is_base_payout_condition_met(frm)) {
 			return;
@@ -160,7 +157,7 @@ function reset_contact_details(frm) {
 }
 
 function update_submit_button_label(frm) {
-	if (frm.doc.docstatus !== 1) return;
+	if (frm.doc.docstatus !== 0 || frm.doc.__islocal) return;
 
 	frm.page.set_primary_action(
 		__("Pay and Submit"),
@@ -172,7 +169,7 @@ function update_submit_button_label(frm) {
 }
 
 function set_razorpayx_state_description(frm) {
-	if (frm.doc.docstatus === 0) return;
+	if (frm.doc.__islocal) return;
 
 	const status = frm.doc.razorpayx_payout_status;
 
@@ -616,7 +613,7 @@ function set_bank_account_description(dialog) {
 async function disable_payout_fields_in_amendment(frm) {
 	if (!frm.doc.amended_from) return;
 
-	let disable_payout_fields = frm.doc.__onload?.disable_payout_fields;
+	let disable_payout_fields = frm.doc.__onload?.amended_pe_processed;
 
 	if (disable_payout_fields === undefined) {
 		const response = await frappe.db.get_value(
