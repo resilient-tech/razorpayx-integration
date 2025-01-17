@@ -526,9 +526,7 @@ async function show_make_payout_dialog(frm) {
 					...values,
 				},
 				freeze: true,
-				// TODO: Can show Image here?
-				freeze_message: __("Making Payout via RazorPayX..."),
-
+				freeze_message: __("Making Payout ..."),
 				callback: (r) => {
 					if (r.exc) return;
 
