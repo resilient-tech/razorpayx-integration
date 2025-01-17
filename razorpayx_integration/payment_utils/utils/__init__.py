@@ -358,9 +358,7 @@ def delete_property_setters(property_setters: list[dict]):
             if key in property_setter:
                 property_setter[fieldname] = property_setter.pop(key)
 
-        print(property_setter)
-        print("+++++")
-        frappe.db.delete("Property Setter", property_setter, debug=True)
+        frappe.db.delete("Property Setter", property_setter)
 
 
 def delete_roles_and_permissions(roles: list[dict]):
