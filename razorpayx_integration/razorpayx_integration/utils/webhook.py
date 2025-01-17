@@ -611,7 +611,7 @@ def razorpayx_webhook_listener():
     ir_log = {
         "request_id": event_id,
         "status": "Completed",
-        "integration_request_service": f"RazorPayX Webhook Event - {event or 'Unknown'}",
+        "integration_request_service": f"RazorPayX - {event or 'Unknown'}",
         "request_headers": request_headers,
         "data": payload,
         "is_remote_request": True,
