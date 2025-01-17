@@ -56,6 +56,7 @@ frappe.ui.form.on("Payment Entry", {
 		if (frm.doc.make_bank_online_payment && frm.doc.razorpayx_account) {
 			update_submit_button_label(frm);
 			set_razorpayx_state_description(frm);
+			set_reference_no_description(frm);
 		}
 
 		const can_show_payout_button = await can_show_payout_btn(frm);
@@ -181,6 +182,19 @@ function set_razorpayx_state_description(frm) {
 						</div>`;
 
 	frm.get_field("payment_type").set_new_description(description);
+}
+
+function set_reference_no_description(frm) {
+	if (
+		["Not Initiated", "Queued", "Processing", "Pending", "Scheduled"].includes(
+			frm.doc.razorpayx_payout_status
+		)
+	)
+		return;
+
+	frm.get_field("reference_no").set_new_description(
+		__("This is <strong>UTR</strong> of the transaction done through <strong>RazorPayX</strong>")
+	);
 }
 
 function get_indicator(status) {
