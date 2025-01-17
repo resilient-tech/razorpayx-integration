@@ -159,7 +159,7 @@ function reset_contact_details(frm) {
 }
 
 function update_submit_button_label(frm) {
-	if (frm.doc.docstatus !== 0 || frm.doc.__islocal) return;
+	if (frm.doc.docstatus !== 0 || frm.doc.__islocal || frm.doc?.__onload?.amended_pe_processed) return;
 
 	frm.page.set_primary_action(
 		__("Pay and Submit"),
