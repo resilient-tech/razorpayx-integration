@@ -178,7 +178,7 @@ function set_razorpayx_state_description(frm) {
 	const description = `<div style="height: 30px;"
 							class="d-flex indicator ${get_indicator(status)} align-item-center justify-content-center" >
 							<strong>${status}</strong>
-							<img src="/assets/razorpayx_integration/images/RPX-logo.png" class="img-fluid" style="height: 100%; width: auto; margin-left: auto" />
+							<img src="/assets/razorpayx_integration/images/razorpayx-logo.png" class="img-fluid" style="height: 100%; width: auto; margin-left: auto" />
 						</div>`;
 
 	frm.get_field("payment_type").set_new_description(description);
@@ -335,7 +335,7 @@ async function show_make_payout_dialog(frm) {
 				fieldname: "image_html",
 				fieldtype: "HTML",
 				options: `<div class="d-flex justify-content-center align-items-center">
-							<img src="/assets/razorpayx_integration/images/RPX-logo.png" class="img-fluid" style="height: 100px; width: auto;" />
+							<img src="/assets/razorpayx_integration/images/razorpayx-logo.png" class="img-fluid" style="height: 100px; width: auto;" />
 						</div>`,
 			},
 			{

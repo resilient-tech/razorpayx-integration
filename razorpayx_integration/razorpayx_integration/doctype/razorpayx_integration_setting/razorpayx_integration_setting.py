@@ -7,7 +7,6 @@ from frappe.model.document import Document
 
 from razorpayx_integration.constants import RAZORPAYX
 
-# TODO: fetch balance
 # TODO: set templates for payment success and failure
 
 
@@ -41,7 +40,7 @@ class RazorPayXIntegrationSetting(Document):
         self.validate_bank_account()
 
     def validate_api_credentials(self):
-        from razorpayx_integration.razorpayx_integration.apis.test_razorpayx import (
+        from razorpayx_integration.razorpayx_integration.apis.validate_razorpayx import (
             RazorPayXTestAPI,
         )
 

@@ -49,16 +49,3 @@ class RazorPayXTestAPI(BaseRazorPayXAPI):
         Set API path.
         """
         self.BASE_PATH = path
-
-    def _mask_sensitive_info(self, ir_log: dict):
-        """
-        Mask sensitive info in Integration Request Log.
-        """
-        if not self.sensitive_infos:
-            return
-
-        for key in self.sensitive_infos:
-            if key == "output" and ir_log.error:
-                continue
-
-            ir_log[key] = "*****"
