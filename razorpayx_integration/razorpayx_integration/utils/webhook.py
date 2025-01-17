@@ -680,6 +680,9 @@ def is_valid_webhook_signature(
     webhook_secret = get_webhook_secret(payload.get("account_id"))
 
     try:
+        if not webhook_secret:
+            raise Exception("RazorPayX Webhook Secret Not Found")
+
         if signature != get_expected_signature(webhook_secret):
             raise Exception("RazorPayX Webhook Signature Mismatch")
 
@@ -687,7 +690,7 @@ def is_valid_webhook_signature(
 
     except Exception:
         divider = f"\n\n{'-' * 25}\n\n"
-        message = f"Request Headers:\n{request_headers}"
+        message = f"Request Headers:\n{request_headers.strip()}"
         message += divider
         message += f"Webhook Payload:\n{frappe.as_json(payload, indent=2)}"
         message += divider
@@ -715,7 +718,7 @@ def get_webhook_secret(account_id: str | None = None) -> str | None:
 
     account = get_razorpayx_account(identifier=account_id, search_by="account_id")
 
-    if not account or account.name:
+    if not account or not account.name:
         return
 
     return get_decrypted_password(
