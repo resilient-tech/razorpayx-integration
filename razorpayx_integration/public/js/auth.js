@@ -86,19 +86,20 @@ Object.assign(payment_utils, {
 		switch (authentication.verification.method) {
 			case this.AUTH_METHODS.AUTHENTICATOR_APP:
 				data.title = __("Authenticate using OTP App");
-				data.description = get_description("Enter Code displayed in OTP App");
+				data.description = get_description("Enter Code displayed in OTP App.");
 				break;
 			case this.AUTH_METHODS.SMS:
 				data.title = __("Authenticate using SMS");
-				data.description = get_description("Enter OTP sent to your mobile number");
+				data.description = get_description("Enter OTP sent to your mobile number.");
 				break;
 			case this.AUTH_METHODS.EMAIL:
 				data.title = __("Authenticate using Email");
-				data.description = get_description("Enter OTP sent to your email address");
+				data.description = get_description("Enter OTP sent to your email address.");
 				break;
 			case this.AUTH_METHODS.PASSWORD:
 				data.title = __("Authenticate using Password");
-				data.description = get_description("Enter your user password");
+				data.description = get_description("Enter your user password.");
+				data.label = __("Password");
 				data.fieldtype = "Password";
 				break;
 		}
