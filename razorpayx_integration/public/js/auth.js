@@ -40,7 +40,8 @@ Object.assign(payment_utils, {
 			primary_action: async (values) => {
 				const { verified, message } = await this.verify_otp(
 					values.authenticator,
-					generation_details.auth_id
+					generation_details.auth_id,
+					generation_details.method === this.AUTH_METHODS.PASSWORD
 				);
 
 				if (verified) {
@@ -88,10 +89,17 @@ Object.assign(payment_utils, {
 	 * }
 	 * ```
 	 */
-	async verify_otp(authenticator, auth_id) {
-		const response = await frappe.call(`${BASE_AUTH_PATH}.verify_otp`, {
-			otp: authenticator,
-			auth_id: auth_id,
+	async verify_otp(authenticator, auth_id, is_password = false) {
+		const get_freeze_message = () => (is_password ? __("Verifying Password...") : __("Verifying OTP..."));
+
+		const response = await frappe.call({
+			method: `${BASE_AUTH_PATH}.verify_otp`,
+			args: {
+				otp: authenticator,
+				auth_id: auth_id,
+			},
+			freeze: true,
+			freeze_message: get_freeze_message(),
 		});
 
 		return response?.message;
@@ -116,8 +124,13 @@ Object.assign(payment_utils, {
 	 * ```
 	 */
 	async generate_otp(payment_entries) {
-		const response = await frappe.call(`${BASE_AUTH_PATH}.generate_otp`, {
-			payment_entries,
+		const response = await frappe.call({
+			method: `${BASE_AUTH_PATH}.generate_otp`,
+			args: {
+				payment_entries,
+			},
+			freeze: true,
+			freeze_message: __("Processing..."),
 		});
 
 		return response?.message;
