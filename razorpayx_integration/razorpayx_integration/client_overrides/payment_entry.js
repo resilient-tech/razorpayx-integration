@@ -121,11 +121,12 @@ frappe.ui.form.on("Payment Entry", {
 
 		return new Promise((resolve) => {
 			const continue_submission = (auth_id) => {
+				// todo: set auth_id in the form's doc and share to the server
 				frappe.validate = true;
 				resolve();
 			};
 
-			return payment_utils.authenticate_otp(frm.doc.name, continue_submission);
+			return payment_utils.authenticate_otp(frm.docname, continue_submission);
 		});
 	},
 
@@ -538,26 +539,9 @@ async function show_make_payout_dialog(frm) {
 		],
 		primary_action_label: __("Make Payout"),
 		primary_action: (values) => {
-			frappe.call({
-				method: `${PE_BASE_PATH}.make_payout_with_payment_entry`,
-				args: {
-					docname: frm.docname,
-					razorpayx_account: values.razorpayx_account,
-					...values,
-				},
-				freeze: true,
-				freeze_message: __("Making Payout ..."),
-				callback: (r) => {
-					if (r.exc) return;
-
-					frappe.show_alert({
-						message: __("Payout has been made successfully."),
-						indicator: "green",
-					});
-				},
-			});
-
-			dialog.hide();
+			payment_utils.authenticate_otp(frm.docname, (auth_id) =>
+				make_payout(auth_id, frm.docname, values, dialog)
+			);
 		},
 	});
 
@@ -565,6 +549,30 @@ async function show_make_payout_dialog(frm) {
 
 	set_default_payout_mode(frm.doc.party_bank_account, dialog);
 	set_bank_account_description(dialog);
+}
+
+function make_payout(auth_id, docname, values, dialog) {
+	frappe.call({
+		method: `${PE_BASE_PATH}.make_payout_with_payment_entry`,
+		args: {
+			docname: docname,
+			razorpayx_account: values.razorpayx_account,
+			auth_id: auth_id,
+			...values,
+		},
+		freeze: true,
+		freeze_message: __("Making Payout ..."),
+		callback: (r) => {
+			if (r.exc) return;
+
+			frappe.show_alert({
+				message: __("Payout has been made successfully."),
+				indicator: "green",
+			});
+
+			dialog.hide();
+		},
+	});
 }
 
 async function set_default_payout_mode(party_bank_account, dialog) {

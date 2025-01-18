@@ -1,4 +1,6 @@
+import pickle
 from abc import ABC, abstractmethod
+from base64 import b64decode
 
 import frappe
 from erpnext.accounts.doctype.payment_entry.payment_entry import PaymentEntry
@@ -59,11 +61,44 @@ class PayoutWithDocument(ABC):
         self.doc = doc
         self.razorpayx_account = self._get_razorpayx_account()
 
+    ### AUTHORIZATION ###
+    def is_authenticated_payment(self, auth_id: str) -> bool:
+        """
+        Check if the Payment Entry is authenticated or not.
+
+        :param auth_id: Authentication ID
+        """
+        if frappe.flags.authenticated_by_cron_job:
+            return True
+
+        if not frappe.cache.get(f"{auth_id}_authenticated"):
+            frappe.throw(
+                title=_("Unauthorized Access"),
+                msg=_("You are not authorized to access this Payment Entry."),
+                exc=frappe.PermissionError,
+            )
+
+        payment_entries = frappe.cache.get(f"{auth_id}_payment_entries")
+        payment_entries = pickle.loads(b64decode(payment_entries))
+
+        if self.doc.name not in payment_entries:
+            frappe.throw(
+                title=_("Unauthorized Access"),
+                msg=_("This Payment Entry is not authenticated for payment."),
+                exc=frappe.PermissionError,
+            )
+
+        return True
+
     ### APIs ###
-    def make_payout(self) -> dict:
+    def make_payout(self, auth_id: str) -> dict:
         """
         Make payout with given document.
+
+        :param auth_id: Authorization ID for making payout.
         """
+        self.is_authenticated_payment(auth_id)
+
         self._set_payout_channel()
 
         if self.payout_channel not in PAYOUT_CHANNEL.values():
@@ -251,11 +286,13 @@ class PayoutWithPaymentEntry(PayoutWithDocument):
         super().__init__(payment_entry, *args, **kwargs)
 
     ### APIs ###
-    def make_payout(self) -> dict | None:
+    def make_payout(self, auth_id: str) -> dict | None:
         """
         Make payout with given Payment Entry.
+
+        :param auth_id: Authorization ID for making payout.
         """
-        response = super().make_payout()
+        response = super().make_payout(auth_id)
         self._update_pe_after_payout(response)
 
         return response

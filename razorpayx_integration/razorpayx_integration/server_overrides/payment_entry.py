@@ -1,5 +1,3 @@
-import pickle
-from base64 import b64decode
 from typing import Literal
 
 import frappe
@@ -45,7 +43,7 @@ def before_submit(doc: PaymentEntry, method=None):
 
 
 def on_submit(doc: PaymentEntry, method=None):
-    make_payout_with_razorpayx(doc)
+    make_payout_with_razorpayx(doc, "TEMP_AUTH_ID")
 
 
 def before_cancel(doc: PaymentEntry, method=None):
@@ -458,11 +456,12 @@ def reset_razorpayx_fields(doc: PaymentEntry):
 
 
 ### ACTIONS ###
-def make_payout_with_razorpayx(doc: PaymentEntry, throw=False):
+def make_payout_with_razorpayx(doc: PaymentEntry, auth_id: str, throw=False):
     """
     Make Payout with RazorPayX Integration.
 
     :param doc: Payment Entry Document
+    :param auth_id: Authentication ID (after otp or password verification)
     :param throw: Throw error if Payout cannot be made, otherwise just return
     """
     if not can_make_payout(doc):
@@ -476,7 +475,7 @@ def make_payout_with_razorpayx(doc: PaymentEntry, throw=False):
 
         return
 
-    PayoutWithPaymentEntry(doc).make_payout()
+    PayoutWithPaymentEntry(doc).make_payout(auth_id)
 
 
 def handle_payout_cancellation(
@@ -555,36 +554,6 @@ def can_make_payout(doc: PaymentEntry) -> bool:
     )
 
 
-def is_authenticated_payment(auth_id: str, doc_name: str) -> bool:
-    """
-    Check if the Payment Entry is authenticated or not.
-
-    :param auth_id: Authentication ID
-    :param doc_name: Payment Entry name
-    """
-    if frappe.flags.authenticated_by_cron_job:
-        return True
-
-    if frappe.cache.get(f"{auth_id}_authenticated") != "True":
-        frappe.throw(
-            title=_("Unauthorized Access"),
-            msg=_("You are not authorized to access this Payment Entry."),
-            exc=frappe.PermissionError,
-        )
-
-    payment_entries = frappe.cache.get(f"{auth_id}_payment_entries")
-    payment_entries = pickle.loads(b64decode(payment_entries))
-
-    if doc_name not in payment_entries:
-        frappe.throw(
-            title=_("Unauthorized Access"),
-            msg=_("This Payment Entry is not authenticated for payment."),
-            exc=frappe.PermissionError,
-        )
-
-    return True
-
-
 ### APIs ###
 @frappe.whitelist()
 # TODO: permissions ?!
@@ -622,10 +591,13 @@ def cancel_payout(docname: str, razorpayx_account: str):
 
 @frappe.whitelist()
 # TODO: ? kwargs is good or not?
-def make_payout_with_payment_entry(docname: str, razorpayx_account: str, **kwargs):
+def make_payout_with_payment_entry(
+    auth_id: str, docname: str, razorpayx_account: str, **kwargs
+):
     """
     Make Payout or Payout Link with Payment Entry.
 
+    :param auth_id: Authentication ID (after otp or password verification)
     :param docname: Payment Entry name
     :param razorpayx_account: RazorPayX Account name associated to company bank account
     """
@@ -644,7 +616,7 @@ def make_payout_with_payment_entry(docname: str, razorpayx_account: str, **kwarg
     )
 
     validate_payout_details(doc, throw=True)
-    make_payout_with_razorpayx(doc)
+    make_payout_with_razorpayx(doc, auth_id)
 
 
 @frappe.whitelist()
