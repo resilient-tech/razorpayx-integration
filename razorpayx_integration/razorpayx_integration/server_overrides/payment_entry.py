@@ -565,7 +565,7 @@ def is_authenticated_payment(auth_id: str, doc_name: str) -> bool:
     if frappe.flags.authenticated_by_cron_job:
         return True
 
-    if not frappe.cache.get(f"{auth_id}_authenticated"):
+    if frappe.cache.get(f"{auth_id}_authenticated") != "True":
         frappe.throw(
             title=_("Unauthorized Access"),
             msg=_("You are not authorized to access this Payment Entry."),

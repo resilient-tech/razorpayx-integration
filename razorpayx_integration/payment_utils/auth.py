@@ -12,6 +12,7 @@ from frappe.permissions import ALL_USER_ROLE
 from frappe.twofactor import (
     ExpiredLoginException,
     clear_default,
+    delete_qrimage,
     get_default,
     get_link_for_qrcode,
     send_token_via_sms,
@@ -34,7 +35,7 @@ def generate_otp(payment_entries):
 
 @frappe.whitelist()
 def verify_otp(auth_id, otp):
-    return Authenticate2FA(auth_id, otp)
+    return Authenticate2FA(auth_id, otp).verify()
 
 
 @frappe.whitelist()
@@ -42,8 +43,10 @@ def reset_otp_secret(user):
     pass
 
 
+OTP_ISSUER = "Payment Utils"
+
+
 class Trigger2FA:
-    OTP_ISSUER = "Payment Utils"
 
     def __init__(self, payment_entries):
         # self.user = frappe.session.user
@@ -56,9 +59,7 @@ class Trigger2FA:
 
         self.cache_2fa_data(user=self.user, payment_entries=self.payment_entries)
 
-        self.otp_issuer = (
-            f"{get_system_settings('otp_issuer_name')} - {self.OTP_ISSUER}"
-        )
+        self.otp_issuer = f"{get_system_settings('otp_issuer_name')} - {OTP_ISSUER}"
         auth_method = self.get_verification_method()
 
         if auth_method == "Password":
@@ -70,7 +71,7 @@ class Trigger2FA:
                 "prompt": "Confirm your login password",
             }
 
-        self.otp_secret = self.get_otpsecret()
+        self.otp_secret = self.get_otpsecret(self.user)
         self.token = pyotp.TOTP(self.otp_secret).now()
 
         self.cache_2fa_data(otp_secret=self.otp_secret)
@@ -90,7 +91,7 @@ class Trigger2FA:
         if auth_method == "OTP App":
             self.pipeline.execute()
 
-            if self.get_otplogin():
+            if self.get_otplogin(self.user):
                 return self.process_2fa_for_otp_app()
 
             return self.email_2fa_for_otp_app()
@@ -129,14 +130,16 @@ class Trigger2FA:
         # TODO: allow server override from config ???
         return cint(get_system_settings("enable_two_factor_auth"))
 
-    def get_otplogin(self):
-        key = f"{self.user}_{frappe.scrub(self.OTP_ISSUER)}_otplogin"
+    @staticmethod
+    def get_otplogin(user):
+        key = f"{user}_{frappe.scrub(OTP_ISSUER)}_otplogin"
 
         return get_default(key)
 
-    def get_otpsecret(self):
+    @staticmethod
+    def get_otpsecret(user):
         """Set OTP Secret for user even if not set."""
-        key = f"{self.user}_{frappe.scrub(self.OTP_ISSUER)}_otpsecret"
+        key = f"{user}_{frappe.scrub(OTP_ISSUER)}_otpsecret"
 
         if otp_secret := get_default(key):
             return decrypt(otp_secret, key=key)
@@ -193,7 +196,7 @@ class Trigger2FA:
         }
 
     def process_2fa_for_otp_app(self):
-        setup_complete = True if self.get_otplogin() else False
+        setup_complete = True if self.get_otplogin(self.user) else False
 
         return {
             "method": "OTP App",
@@ -259,53 +262,74 @@ class Trigger2FA:
 
 class Authenticate2FA:
     def __init__(self, auth_id, otp):
-        self.verify_otp(auth_id, otp)
+        self.auth_id = auth_id
+        self.otp = otp
+        # self.user = frappe.session.user
+        self.user = "smitvora203@gmail.com"
+        self.tracker = get_login_attempt_tracker(self.user)
 
-    def verify_otp(self, auth_id, otp):
-        user = frappe.session.user
-        self.tracker = get_login_attempt_tracker(user)
-
-        if not (_user := frappe.cache.exists(f"{auth_id}_user")):
+    def verify(self):
+        if not (_user := frappe.cache.get(f"{self.auth_id}_user")):
             raise frappe.AuthenticationError(_("Invalid authentication ID"))
 
-        if user != _user:
+        if self.user != _user.decode("utf-8"):
             raise frappe.AuthenticationError(_("Invalid user authenting ID"))
 
         auth_method = Trigger2FA.get_verification_method()
         if auth_method == "Password":
-            return self.with_password(user, otp)
+            return self.with_password()
 
         if auth_method in ["SMS", "Email"]:
-            pass
+            return self.with_hotp()
 
         if auth_method == "OTP App":
-            pass
-
-        self.otp_secret = self.get_otp_secret()
-        self.token = self.get_token()
-
-        if self.otp == self.token:
-            self.clear_2fa_data()
-            return True
-
-        raise frappe.AuthenticationError(_("Invalid OTP"))
+            return self.with_totp()
 
     ##############################################################################################################
 
-    def with_password(self, user, pwd):
+    def with_password(self):
         try:
-            check_password(user, pwd)
-            self.tracker.add_success_attempt()
-            return True
+            check_password(self.user, self.otp)
+            return self.on_success()
 
         except frappe.AuthenticationError:
-            self.tracker.add_failure_attempt()
-            raise
+            return self.on_failure(_("Incorrect password"))
 
-    def with_hotp(self, auth_id, otp):  # SMS and Email
-        pass
+    def with_hotp(self):  # SMS and Email
+        token = frappe.cache.get(f"{self.auth_id}_token")
+        otp_secret = frappe.cache.get(f"{self.auth_id}_otp_secret")
 
-    def with_totp(self, auth_id, otp):  # OTP App
-        pass
+        if not token or not otp_secret:
+            return self.on_failure(_("Session expired. Please try again."))
 
-    ##############################################################################################################
+        hotp = pyotp.HOTP(otp_secret)
+        if not hotp.verify(self.otp, int(token)):
+            return self.on_failure(_("Invalid verification code"))
+
+        return self.on_success()
+
+    def with_totp(self):  # OTP App
+        otp_secret = frappe.cache.get(f"{self.auth_id}_otp_secret")
+
+        if not otp_secret:
+            return self.on_failure(_("Session expired. Please try again."))
+
+        totp = pyotp.TOTP(otp_secret)
+        if not totp.verify(self.otp):
+            return self.on_failure(_("Invalid verification code"))
+
+        if not Trigger2FA.get_otplogin(self.user):
+            key = f"{self.user}_{frappe.scrub(OTP_ISSUER)}_otplogin"
+            set_default(key, 1)
+            delete_qrimage(self.user)
+
+        return self.on_success()
+
+    def on_success(self):
+        self.tracker.add_success_attempt()
+        frappe.cache.set(f"{self.auth_id}_authenticated", "True", 180)
+        return {"verified": True}
+
+    def on_failure(self, message):
+        self.tracker.add_failure_attempt()
+        return {"verified": False, "message": message}
