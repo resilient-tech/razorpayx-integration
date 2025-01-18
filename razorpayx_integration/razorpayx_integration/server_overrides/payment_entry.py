@@ -26,6 +26,8 @@ from razorpayx_integration.razorpayx_integration.utils.validation import (
     validate_razorpayx_user_payout_mode,
 )
 
+# TODO: also check for currency `INR` of paid amount! (Like base condition for payout)
+
 
 #### DOC EVENTS ####
 def onload(doc: PaymentEntry, method=None):
@@ -630,7 +632,6 @@ def make_payout_with_payment_entry(docname: str, razorpayx_account: str, **kwarg
     user_has_payout_permissions(docname, razorpayx_account, throw=True)
 
     doc = frappe.get_doc("Payment Entry", docname)
-    doc.has_permission("submit")
 
     kwargs.pop("cmd")  # unwanted key
 
