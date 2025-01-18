@@ -120,13 +120,12 @@ frappe.ui.form.on("Payment Entry", {
 		frappe.validate = false;
 
 		return new Promise((resolve) => {
-			const continue_submission = () => {
-				// TODO: accept temp_id ??
+			const continue_submission = (auth_id) => {
 				frappe.validate = true;
 				resolve();
 			};
 
-			return payment_utils.authenticate_otp([frm.doc.name], continue_submission);
+			return payment_utils.authenticate_otp(frm.doc.name, continue_submission);
 		});
 	},
 
