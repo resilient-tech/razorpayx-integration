@@ -28,6 +28,7 @@
       "frappe": true,
       "razorpayx_integration": true,
       "razorpayx": true,
+      "payment_utils": true,
       "Vue": true,
       "SetVueGlobals": true,
       "erpnext": true,
