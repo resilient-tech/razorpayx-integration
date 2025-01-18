@@ -52,7 +52,7 @@ frappe.ui.form.on("Payment Entry", {
 		}
 
 		// change UI only when these conditions are met
-		if (frm.doc.make_bank_online_payment && frm.doc.razorpayx_account) {
+		if (is_razorpayx_condition_met(frm)) {
 			update_submit_button_label(frm);
 			set_razorpayx_state_description(frm);
 			set_reference_no_description(frm);
@@ -112,6 +112,24 @@ frappe.ui.form.on("Payment Entry", {
 		}
 	},
 
+	before_submit: async function (frm) {
+		if (!is_base_payout_condition_met(frm) || !is_razorpayx_condition_met(frm)) {
+			return;
+		}
+
+		frappe.validate = false;
+
+		return new Promise((resolve) => {
+			const continue_submission = () => {
+				// TODO: accept temp_id ??
+				frappe.validate = true;
+				resolve();
+			};
+
+			return payment_utils.authenticate_otp([frm.doc.name], continue_submission);
+		});
+	},
+
 	before_cancel: async function (frm) {
 		if (
 			!frm.doc.make_bank_online_payment ||
@@ -145,6 +163,10 @@ function is_base_payout_condition_met(frm) {
 		frm.doc.paid_from_account_currency === "INR" &&
 		frm.doc.mode_of_payment !== "Cash"
 	);
+}
+
+function is_razorpayx_condition_met(frm) {
+	return frm.doc.make_bank_online_payment && frm.doc.razorpayx_account;
 }
 
 function reset_values(frm, ...fields) {
