@@ -14,4 +14,11 @@ PROPERTY_SETTERS = [
         "property_type": "Check",
         "value": 1,
     },
+    {
+        "doctype": "Payment Entry",
+        "fieldname": "reference_no",
+        "property": "no_copy",
+        "property_type": "Check",
+        "value": 1,
+    },
 ]
