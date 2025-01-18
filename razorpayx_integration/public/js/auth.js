@@ -38,7 +38,7 @@ Object.assign(payment_utils, {
 			fields: fields,
 			primary_action_label: __("Authenticate"),
 			primary_action: async (values) => {
-				const { verified, msg } = await this.verify_otp(
+				const { verified, message } = await this.verify_otp(
 					values.authenticator,
 					generation_details.auth_id
 				);
@@ -53,7 +53,7 @@ Object.assign(payment_utils, {
 				// Invalid OTP or Password
 				const description = `<p class="text-danger font-weight-bold">
 											${frappe.utils.icon("solid-error")} &nbsp;
-											${__(msg || "Invalid! Please try again.")}
+											${__(message || "Invalid! Please try again.")}
 									</p>`;
 
 				dialog.get_field("authenticator").set_new_description(description);
