@@ -51,14 +51,18 @@ Object.assign(payment_utils, {
 				}
 
 				// Invalid OTP or Password
-				const description = `<p class="text-danger font-weight-bold">
-											${frappe.utils.icon("solid-error")} &nbsp;
-											${__(message || "Invalid! Please try again.")}
-									</p>`;
+				const error = `<p class="text-danger font-weight-bold">
+									${frappe.utils.icon("solid-error")} &nbsp;
+									${__(message || "Invalid! Please try again.")}
+								</p>`;
 
-				dialog.get_field("authenticator").set_new_description(description);
-				dialog.set_value("authenticator", "");
-				// TODO: also remove description when starting to type
+				const auth_field = dialog.get_field("authenticator");
+				auth_field.set_new_description(error);
+
+				// reset the description to the original
+				setTimeout(() => {
+					auth_field.set_new_description(auth_field.df.description);
+				}, 3000);
 			},
 		});
 
