@@ -121,8 +121,13 @@ frappe.ui.form.on("Payment Entry", {
 
 		return new Promise((resolve) => {
 			const continue_submission = (auth_id) => {
-				// todo: set auth_id in the form's doc and share to the server
 				frappe.validate = true;
+
+				if (!frm.doc.__onload) {
+					frm.doc.__onload = {};
+				}
+				frm.doc.__onload.auth_id = auth_id;
+
 				resolve();
 			};
 

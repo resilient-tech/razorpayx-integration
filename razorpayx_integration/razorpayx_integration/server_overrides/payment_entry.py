@@ -43,7 +43,7 @@ def before_submit(doc: PaymentEntry, method=None):
 
 
 def on_submit(doc: PaymentEntry, method=None):
-    make_payout_with_razorpayx(doc, "TEMP_AUTH_ID")
+    make_payout_with_razorpayx(doc, doc.__onload["auth_id"])
 
 
 def before_cancel(doc: PaymentEntry, method=None):
