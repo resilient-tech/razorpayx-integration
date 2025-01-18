@@ -25,10 +25,10 @@ Object.assign(payment_utils, {
 
 				// Invalid OTP or Password
 				if (!verified) {
-					const description = `<div class="text-danger font-weight-bold">
-											${frappe.utils.icon("solid-error")}
+					const description = `<p class="text-danger font-weight-bold">
+											${frappe.utils.icon("solid-error")} &nbsp;
 											${__(msg || "Invalid! Please try again.")}
-										</div>`;
+										</p>`;
 
 					dialog.get_field("authenticator").set_new_description(description);
 					dialog.set_value("authenticator", "");
@@ -36,7 +36,7 @@ Object.assign(payment_utils, {
 					return;
 				}
 
-				dialog.close();
+				dialog.hide();
 
 				callback && callback(authentication.temp_id);
 			},
