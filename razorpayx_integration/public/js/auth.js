@@ -46,29 +46,10 @@ Object.assign(payment_utils, {
 	},
 
 	async verify_otp(otp, temp_id) {
-		/*
-		Verify the OTP for the payment entries.
-
-		If 2 factor is on then,
-		- verify OTP
-		- return verified status
-
-		If 2 factor is off then,
-		- Wait for password
-		- Authenticate user
-		- OTP is not verified
-
-		returns like:
-
-		{
-			verified: false,
-			msg: "Invalid OTP"
-
-		}
+		/* // calling API
+		const response = await frappe.call("METHOD", { otp, temp_id });
+		return response?.message;
 		*/
-		// calling API
-		// const response = await frappe.call("METHOD", { otp, temp_id });
-		// return response?.message;
 
 		// TODO: remove~ : Fake response
 		return {
@@ -78,37 +59,10 @@ Object.assign(payment_utils, {
 	},
 
 	async generate_otp(payment_entries) {
-		/*
-		Generate and send OTP for the payment entries.
-
-		If 2 factor is on then,
-		- generate OTP
-		- send OTP to user
-		- authentication method:
-			- OTP App
-			- SMS
-			- Email
-
-		If 2 factor is off then,
-		- Wait for password
-		- Authenticate user
-		- OTP is not generated or sent
-
-		returns like:
-
-		{
-			temp_id: "4656486620",
-			verification: {
-				method: "otp",
-				message: "OTP sent to your mobile number" (Optional)
-			}
-
-		}
+		/* // calling API
+		const response = await frappe.call("METHOD", { payment_entries });
+		return response?.message;
 		*/
-
-		// calling API
-		// const response = await frappe.call("METHOD", { payment_entries });
-		// return response?.message;
 
 		// TODO: remove~ : Fake response
 		return {
