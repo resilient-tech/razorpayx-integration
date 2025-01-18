@@ -10,8 +10,10 @@ const AUTH_METHODS = {
 const BASE_AUTH_PATH = "razorpayx_integration.payment_utils.auth";
 
 Object.assign(payment_utils, {
+	// ################ CONSTANTS ################ //
 	AUTH_METHODS,
 
+	// ################ UTILITIES ################ //
 	/**
 	 * Authenticate payment entries using OTP or Password
 	 *
@@ -41,7 +43,7 @@ Object.assign(payment_utils, {
 				const { verified, message } = await this.verify_otp(
 					values.authenticator,
 					generation_details.auth_id,
-					generation_details.method === this.AUTH_METHODS.PASSWORD
+					generation_details.method === AUTH_METHODS.PASSWORD
 				);
 
 				if (verified) {
@@ -69,9 +71,40 @@ Object.assign(payment_utils, {
 
 		dialog.show();
 
-		if (this.AUTH_METHODS.PASSWORD === generation_details.method) {
+		if (AUTH_METHODS.PASSWORD === generation_details.method) {
 			dialog.get_field("authenticator").disable_password_checks();
 		}
+	},
+
+	/**
+	 * Generate OTP for the given payment entries.
+	 *
+	 * Note: Only single OTP is generated for all the payment entries.
+	 *
+	 * @param {string[]} payment_entries List of Payment Entry names
+	 *
+	 * ---
+	 * Example Response:
+	 * ```js
+	 * {
+	 * 	prompt: "Enter OTP sent to your mobile number.",
+	 * 	method: "SMS",
+	 * 	setup: true,
+	 *  auth_id: "4896d98",
+	 * }
+	 * ```
+	 */
+	async generate_otp(payment_entries) {
+		const response = await frappe.call({
+			method: `${BASE_AUTH_PATH}.generate_otp`,
+			args: {
+				payment_entries,
+			},
+			freeze: true,
+			freeze_message: __("Please wait for authentication..."),
+		});
+
+		return response?.message;
 	},
 
 	/**
@@ -105,37 +138,6 @@ Object.assign(payment_utils, {
 		return response?.message;
 	},
 
-	/**
-	 * Generate OTP for the given payment entries.
-	 *
-	 * Note: Only single OTP is generated for all the payment entries.
-	 *
-	 * @param {string[]} payment_entries List of Payment Entry names
-	 *
-	 * ---
-	 * Example Response:
-	 * ```js
-	 * {
-	 * 	prompt: "Enter OTP sent to your mobile number.",
-	 * 	method: "SMS",
-	 * 	setup: true,
-	 *  auth_id: "4896d98",
-	 * }
-	 * ```
-	 */
-	async generate_otp(payment_entries) {
-		const response = await frappe.call({
-			method: `${BASE_AUTH_PATH}.generate_otp`,
-			args: {
-				payment_entries,
-			},
-			freeze: true,
-			freeze_message: __("Processing..."),
-		});
-
-		return response?.message;
-	},
-
 	// ################ HELPERS ################ //
 	/**
 	 * Get authentication dialog details based on the verification method.
@@ -164,16 +166,16 @@ Object.assign(payment_utils, {
 
 		// Update dialog details based on the verification method
 		switch (method) {
-			case this.AUTH_METHODS.OTP_APP:
+			case AUTH_METHODS.OTP_APP:
 				data.title = __("Authenticate using OTP App");
 				break;
-			case this.AUTH_METHODS.SMS:
+			case AUTH_METHODS.SMS:
 				data.title = __("Authenticate using SMS");
 				break;
-			case this.AUTH_METHODS.EMAIL:
+			case AUTH_METHODS.EMAIL:
 				data.title = __("Authenticate using Email");
 				break;
-			case this.AUTH_METHODS.PASSWORD:
+			case AUTH_METHODS.PASSWORD:
 				data.title = __("Authenticate using Password");
 				data.label = __("Password");
 				data.fieldtype = "Password";
@@ -192,9 +194,3 @@ Object.assign(payment_utils, {
 		};
 	},
 });
-
-let otp_app = function (setup) {
-	let desc = "";
-	if (setup) desc = __("Enter Code displayed in OTP App");
-	else desc = __("OTP setup using OTP App was not completed. Please contact your Administrator");
-};
