@@ -46,7 +46,7 @@ Object.assign(payment_utils, {
 				if (verified) {
 					dialog.hide();
 
-					callback && callback(generation_details.temp_id);
+					callback && callback(generation_details.auth_id);
 					return;
 				}
 
@@ -54,7 +54,7 @@ Object.assign(payment_utils, {
 				const description = `<p class="text-danger font-weight-bold">
 											${frappe.utils.icon("solid-error")} &nbsp;
 											${__(msg || "Invalid! Please try again.")}
-										</p>`;
+									</p>`;
 
 				dialog.get_field("authenticator").set_new_description(description);
 				dialog.set_value("authenticator", "");
@@ -63,6 +63,10 @@ Object.assign(payment_utils, {
 		});
 
 		dialog.show();
+
+		if (this.AUTH_METHODS.PASSWORD === generation_details.method) {
+			dialog.get_field("authenticator").disable_password_checks();
+		}
 	},
 
 	/**
@@ -164,10 +168,8 @@ Object.assign(payment_utils, {
 			fields: [
 				{
 					fieldname: "authenticator",
-					fieldtype: data.fieldtype,
-					label: data.label,
 					reqd: 1,
-					description: data.description,
+					...data,
 				},
 			],
 		};
