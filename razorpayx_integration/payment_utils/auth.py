@@ -7,6 +7,7 @@ import frappe
 import frappe.defaults
 import pyotp
 from frappe import _, get_system_settings
+from frappe.auth import get_login_attempt_tracker
 from frappe.permissions import ALL_USER_ROLE
 from frappe.twofactor import (
     ExpiredLoginException,
@@ -18,7 +19,7 @@ from frappe.twofactor import (
 )
 from frappe.utils import cint, get_datetime, get_url, time_diff_in_seconds
 from frappe.utils.background_jobs import enqueue
-from frappe.utils.password import decrypt, encrypt
+from frappe.utils.password import check_password, decrypt, encrypt
 
 
 @frappe.whitelist()
@@ -34,6 +35,11 @@ def generate_otp(payment_entries):
 @frappe.whitelist()
 def verify_otp(auth_id, otp):
     return Authenticate2FA(auth_id, otp)
+
+
+@frappe.whitelist()
+def reset_otp_secret(user):
+    pass
 
 
 class Trigger2FA:
@@ -57,7 +63,12 @@ class Trigger2FA:
 
         if auth_method == "Password":
             self.pipeline.execute()
-            return {"method": auth_method, "auth_id": self.auth_id}
+            return {
+                "method": auth_method,
+                "auth_id": self.auth_id,
+                "setup": True,
+                "prompt": "Confirm your login password",
+            }
 
         self.otp_secret = self.get_otpsecret()
         self.token = pyotp.TOTP(self.otp_secret).now()
@@ -106,13 +117,15 @@ class Trigger2FA:
             else:
                 self.pipeline.set(f"{self.auth_id}_{k}", v, expiry_time)
 
-    def get_verification_method(self):
-        if self.two_factor_is_enabled():
+    @staticmethod
+    def get_verification_method():
+        if Trigger2FA.two_factor_is_enabled():
             return get_system_settings("two_factor_method")
 
         return "Password"
 
-    def two_factor_is_enabled(self):
+    @staticmethod
+    def two_factor_is_enabled():
         # TODO: allow server override from config ???
         return cint(get_system_settings("enable_two_factor_auth"))
 
@@ -149,6 +162,7 @@ class Trigger2FA:
             ),
             "method": "SMS",
             "setup": status,
+            "auth_id": self.auth_id,
         }
 
     def process_2fa_for_email(self):
@@ -175,6 +189,7 @@ class Trigger2FA:
             and _("Verification code has been sent to your registered email address."),
             "method": "Email",
             "setup": status,
+            "auth_id": self.auth_id,
         }
 
     def process_2fa_for_otp_app(self):
@@ -184,6 +199,7 @@ class Trigger2FA:
             "method": "OTP App",
             "setup": setup_complete,
             "prompt": "Enter verification code from your OTP app",
+            "auth_id": self.auth_id,
         }
 
     def email_2fa_for_otp_app(self):
@@ -204,10 +220,11 @@ class Trigger2FA:
         return {
             "prompt": status
             and _(
-                "Please check your registered email address for instructions on how to proceed. Do not close this window as you will have to return to it."
+                "Please check your registered email address for instructions on how to register with OTP App."
             ),
             "method": "Email",
             "setup": status,
+            "auth_id": self.auth_id,
         }
 
     ##############################################################################################################
@@ -241,6 +258,54 @@ class Trigger2FA:
 
 
 class Authenticate2FA:
-    def __init__(self, auth_id, otp=None):
-        self.auth_id = auth_id
-        self.otp = otp
+    def __init__(self, auth_id, otp):
+        self.verify_otp(auth_id, otp)
+
+    def verify_otp(self, auth_id, otp):
+        user = frappe.session.user
+        self.tracker = get_login_attempt_tracker(user)
+
+        if not (_user := frappe.cache.exists(f"{auth_id}_user")):
+            raise frappe.AuthenticationError(_("Invalid authentication ID"))
+
+        if user != _user:
+            raise frappe.AuthenticationError(_("Invalid user authenting ID"))
+
+        auth_method = Trigger2FA.get_verification_method()
+        if auth_method == "Password":
+            return self.with_password(user, otp)
+
+        if auth_method in ["SMS", "Email"]:
+            pass
+
+        if auth_method == "OTP App":
+            pass
+
+        self.otp_secret = self.get_otp_secret()
+        self.token = self.get_token()
+
+        if self.otp == self.token:
+            self.clear_2fa_data()
+            return True
+
+        raise frappe.AuthenticationError(_("Invalid OTP"))
+
+    ##############################################################################################################
+
+    def with_password(self, user, pwd):
+        try:
+            check_password(user, pwd)
+            self.tracker.add_success_attempt()
+            return True
+
+        except frappe.AuthenticationError:
+            self.tracker.add_failure_attempt()
+            raise
+
+    def with_hotp(self, auth_id, otp):  # SMS and Email
+        pass
+
+    def with_totp(self, auth_id, otp):  # OTP App
+        pass
+
+    ##############################################################################################################
