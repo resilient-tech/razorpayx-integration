@@ -1,104 +1,159 @@
 frappe.provide("payment_utils");
 
 const AUTH_METHODS = {
-	AUTHENTICATOR_APP: "authenticator_app",
-	SMS: "sms",
-	EMAIL: "email",
-	PASSWORD: "password",
+	OTP_APP: "OTP App",
+	SMS: "SMS",
+	EMAIL: "Email",
+	PASSWORD: "Password",
 };
+
+const BASE_AUTH_PATH = "razorpayx_integration.payment_utils.auth";
 
 Object.assign(payment_utils, {
 	AUTH_METHODS,
 
+	/**
+	 * Authenticate payment entries using OTP or Password
+	 *
+	 * It generates OTP for the given payment entries and opens
+	 * a dialog to authenticate using OTP or Password.
+	 *
+	 * Note: Only single OTP is generated for all the payment entries.
+	 *
+	 * @param {string | string[]} payment_entries - Payment Entry name or list of names
+	 * @param {Function} callback - Callback function to be executed after successful authentication
+	 */
 	async authenticate_otp(payment_entries, callback) {
-		const authentication = await this.generate_otp(payment_entries);
-		if (!authentication) return;
+		if (typeof payment_entries === "string") {
+			payment_entries = [payment_entries];
+		}
 
-		const { title, fields } = this.get_authentication_dialog_details(authentication);
+		const generation_details = await this.generate_otp(payment_entries);
+		if (!generation_details) return;
+
+		const { title, fields } = this.get_authentication_dialog_details(generation_details);
 
 		const dialog = new frappe.ui.Dialog({
 			title: title,
 			fields: fields,
 			primary_action_label: __("Authenticate"),
 			primary_action: async (values) => {
-				const { verified, msg } = await this.verify_otp(values.authenticator, authentication.temp_id);
+				const { verified, msg } = await this.verify_otp(
+					values.authenticator,
+					generation_details.auth_id
+				);
+
+				if (verified) {
+					dialog.hide();
+
+					callback && callback(generation_details.temp_id);
+					return;
+				}
 
 				// Invalid OTP or Password
-				if (!verified) {
-					const description = `<p class="text-danger font-weight-bold">
+				const description = `<p class="text-danger font-weight-bold">
 											${frappe.utils.icon("solid-error")} &nbsp;
 											${__(msg || "Invalid! Please try again.")}
 										</p>`;
 
-					dialog.get_field("authenticator").set_new_description(description);
-					dialog.set_value("authenticator", "");
-					// TODO: also remove description when starting to type
-					return;
-				}
-
-				dialog.hide();
-
-				callback && callback(authentication.temp_id);
+				dialog.get_field("authenticator").set_new_description(description);
+				dialog.set_value("authenticator", "");
+				// TODO: also remove description when starting to type
 			},
 		});
 
 		dialog.show();
 	},
 
-	async verify_otp(otp, temp_id) {
-		/* // calling API
-		const response = await frappe.call("METHOD", { otp, temp_id });
-		return response?.message;
-		*/
+	/**
+	 * Verify the OTP for the given auth_id.
+	 *
+	 * @param {string} authenticator OTP or Password
+	 * @param {string} auth_id Authentication ID
+	 *
+	 * ---
+	 * Example Response:
+	 * ```js
+	 * {
+	 * 	verified: true,
+	 * 	msg: "OTP verified successfully.",
+	 * }
+	 * ```
+	 */
+	async verify_otp(authenticator, auth_id) {
+		const response = await frappe.call(`${BASE_AUTH_PATH}.verify_otp`, {
+			otp: authenticator,
+			auth_id: auth_id,
+		});
 
-		// TODO: remove~ : Fake response
-		return {
-			verified: false,
-			msg: "Invalid OTP",
-		};
+		return response?.message;
 	},
 
+	/**
+	 * Generate OTP for the given payment entries.
+	 *
+	 * Note: Only single OTP is generated for all the payment entries.
+	 *
+	 * @param {string[]} payment_entries List of Payment Entry names
+	 *
+	 * ---
+	 * Example Response:
+	 * ```js
+	 * {
+	 * 	prompt: "Enter OTP sent to your mobile number.",
+	 * 	method: "SMS",
+	 * 	setup: true,
+	 *  auth_id: "4896d98",
+	 * }
+	 * ```
+	 */
 	async generate_otp(payment_entries) {
-		/* // calling API
-		const response = await frappe.call("METHOD", { payment_entries });
-		return response?.message;
-		*/
+		const response = await frappe.call(`${BASE_AUTH_PATH}.generate_otp`, {
+			payment_entries,
+		});
 
-		// TODO: remove~ : Fake response
-		return {
-			temp_id: "4656486620",
-			verification: {
-				method: this.AUTH_METHODS.SMS,
-				message: "OTP sent to your mobile number",
-			},
-		};
+		return response?.message;
 	},
 
-	// ++++++++++ HELPERS ++++++++++ //
-	get_authentication_dialog_details(authentication) {
-		const get_description = (desc) => __(authentication.verification?.message || desc);
+	// ################ HELPERS ################ //
+	/**
+	 * Get authentication dialog details based on the verification method.
+	 *
+	 * @param {Object} generation_details  OTP generation details
+	 * @returns {Object} Dialog details (title, fields)
+	 */
+	get_authentication_dialog_details(generation_details) {
+		const { method, setup, prompt } = generation_details;
 
+		const get_description = () => {
+			if (setup) return __(prompt);
+
+			return `<bold class='text-danger'>
+						${__("There is some error! Please contact your Administrator.")}
+					</bold>`;
+		};
+
+		// Base data for dialog fields
 		const data = {
+			title: __("Authenticate"),
 			label: __("OTP"),
 			fieldtype: "Data",
+			description: get_description(),
 		};
 
-		switch (authentication.verification.method) {
-			case this.AUTH_METHODS.AUTHENTICATOR_APP:
+		// Update dialog details based on the verification method
+		switch (method) {
+			case this.AUTH_METHODS.OTP_APP:
 				data.title = __("Authenticate using OTP App");
-				data.description = get_description("Enter Code displayed in OTP App.");
 				break;
 			case this.AUTH_METHODS.SMS:
 				data.title = __("Authenticate using SMS");
-				data.description = get_description("Enter OTP sent to your mobile number.");
 				break;
 			case this.AUTH_METHODS.EMAIL:
 				data.title = __("Authenticate using Email");
-				data.description = get_description("Enter OTP sent to your email address.");
 				break;
 			case this.AUTH_METHODS.PASSWORD:
 				data.title = __("Authenticate using Password");
-				data.description = get_description("Enter your user password.");
 				data.label = __("Password");
 				data.fieldtype = "Password";
 				break;
