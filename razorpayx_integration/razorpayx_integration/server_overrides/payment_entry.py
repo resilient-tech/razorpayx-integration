@@ -1,3 +1,5 @@
+import pickle
+from base64 import b64decode
 from typing import Literal
 
 import frappe
@@ -549,6 +551,36 @@ def can_make_payout(doc: PaymentEntry) -> bool:
         and not doc.razorpayx_payout_link_id
         and not is_amended_pe_processed(doc)
     )
+
+
+def is_authenticated_payment(auth_id: str, doc_name: str) -> bool:
+    """
+    Check if the Payment Entry is authenticated or not.
+
+    :param auth_id: Authentication ID
+    :param doc_name: Payment Entry name
+    """
+    if frappe.flags.authenticated_by_cron_job:
+        return True
+
+    if not frappe.cache.get(f"{auth_id}_authenticated"):
+        frappe.throw(
+            title=_("Unauthorized Access"),
+            msg=_("You are not authorized to access this Payment Entry."),
+            exc=frappe.PermissionError,
+        )
+
+    payment_entries = frappe.cache.get(f"{auth_id}_payment_entries")
+    payment_entries = pickle.loads(b64decode(payment_entries))
+
+    if doc_name not in payment_entries:
+        frappe.throw(
+            title=_("Unauthorized Access"),
+            msg=_("This Payment Entry is not authenticated for payment."),
+            exc=frappe.PermissionError,
+        )
+
+    return True
 
 
 ### APIs ###

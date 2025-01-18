@@ -32,8 +32,8 @@ def generate_otp(payment_entries):
 
 
 @frappe.whitelist()
-def verify_otp(temp_id, otp):
-    return Authenticate2FA(temp_id, otp)
+def verify_otp(auth_id, otp):
+    return Authenticate2FA(auth_id, otp)
 
 
 class Trigger2FA:
@@ -46,7 +46,7 @@ class Trigger2FA:
         self.pipeline = frappe.cache.pipeline()
 
     def send_otp(self):
-        self.temp_id = frappe.generate_hash(length=8)
+        self.auth_id = frappe.generate_hash(length=8)
 
         self.cache_2fa_data(user=self.user, payment_entries=self.payment_entries)
 
@@ -57,7 +57,7 @@ class Trigger2FA:
 
         if auth_method == "Password":
             self.pipeline.execute()
-            return {"method": auth_method, "temp_id": self.temp_id}
+            return {"method": auth_method, "auth_id": self.auth_id}
 
         self.otp_secret = self.get_otpsecret()
         self.token = pyotp.TOTP(self.otp_secret).now()
@@ -101,10 +101,10 @@ class Trigger2FA:
 
             if k == "payment_entries":
                 # extra time for processing PEs
-                self.pipeline.set(f"{self.temp_id}_{k}", v, expiry_time + 100)
+                self.pipeline.set(f"{self.auth_id}_{k}", v, expiry_time + 100)
 
             else:
-                self.pipeline.set(f"{self.temp_id}_{k}", v, expiry_time)
+                self.pipeline.set(f"{self.auth_id}_{k}", v, expiry_time)
 
     def get_verification_method(self):
         if self.two_factor_is_enabled():
@@ -187,13 +187,14 @@ class Trigger2FA:
         }
 
     def email_2fa_for_otp_app(self):
+        # TODO: new qrcode page for OTP App
         totp_uri = pyotp.TOTP(self.otp_secret).provisioning_uri(
             name=self.user, issuer_name=self.otp_issuer
         )
         qrcode_link = get_link_for_qrcode(self.user, totp_uri)
 
         status = self.send_token_via_email(
-            subject=_("OTP Registration code from {0}").format(self.otp_issuer),
+            subject=_("OTP registration code from {0}").format(self.otp_issuer),
             message=_(
                 "Please click on the link below and follow the instructions on"
                 " the page.<br><br><a href='{0}'>{0}</a>"
@@ -240,6 +241,6 @@ class Trigger2FA:
 
 
 class Authenticate2FA:
-    def __init__(self, temp_id, otp=None):
-        self.temp_id = temp_id
+    def __init__(self, auth_id, otp=None):
+        self.auth_id = auth_id
         self.otp = otp
