@@ -637,7 +637,6 @@ def make_payout_with_payment_entry(
     make_payout_with_razorpayx(doc, auth_id=auth_id)
 
 
-@frappe.whitelist()
 # TODO: concern with @smit_vora
 def user_has_payout_permissions(
     payment_entry: str,
@@ -650,6 +649,7 @@ def user_has_payout_permissions(
     Check RazorPayX related permissions for the user.
 
     Permission Check:
+    - Has a role of payment manager
     - Can access the integration doctypes
     - Can access particular RazorPayX Account (if provided)
     - Can access particular Payment Entry
