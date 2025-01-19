@@ -17,6 +17,10 @@ doctype_js = {
     "Payment Entry": "razorpayx_integration/client_overrides/payment_entry.js",
 }
 
+doctype_list_js = {
+    "Payment Entry": "razorpayx_integration/client_overrides/payment_entry_list.js",
+}
+
 doc_events = {
     "Payment Entry": {
         "onload": "razorpayx_integration.razorpayx_integration.server_overrides.payment_entry.onload",
