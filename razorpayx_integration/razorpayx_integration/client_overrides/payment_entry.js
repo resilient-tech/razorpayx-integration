@@ -241,13 +241,9 @@ function get_indicator(status) {
 	return indicator[status] || "grey";
 }
 
-function get_rpx_img_container(txt, italic = true, styles = "", classes = "") {
-	function get_txt() {
-		return italic ? `<i>${__(txt)}</i>` : `<span>${__(txt)}</span>`;
-	}
-
+function get_rpx_img_container(txt, styles = "", classes = "") {
 	return `<div style="height: 25px; margin-left: auto; ${styles}" class="d-flex align-items-center ${classes}">
-			${get_txt()}
+			<span>${__(txt)}</span> &nbsp;
 			<img src="/assets/razorpayx_integration/images/razorpayx-logo.png" class="img-fluid" style="height: 100%; width: auto;" />
 		</div>`;
 }
