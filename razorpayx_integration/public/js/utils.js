@@ -1,4 +1,4 @@
-frappe.provide("razorpayx_integration");
+frappe.provide("rpx");
 
 const RPX_MANAGER = "RazorPayX Payment Manager";
 const PE = "Payment Entry";
@@ -6,7 +6,7 @@ const RPX_DOCTYPE = "RazorPayX Integration Setting";
 const IMPS_LIMIT = 5_00_000;
 const PAY_ICON = "expenses";
 
-Object.assign(razorpayx_integration, {
+Object.assign(rpx, {
 	RPX_MANAGER,
 
 	RPX_DOCTYPE,
