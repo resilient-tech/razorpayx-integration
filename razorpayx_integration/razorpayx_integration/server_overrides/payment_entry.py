@@ -11,6 +11,8 @@ from razorpayx_integration.constants import (
 )
 from razorpayx_integration.payment_utils.utils.validations import validate_ifsc_code
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
+    PAYMENT_MODE_THRESHOLD,
+    PAYOUT_CURRENCY,
     PAYOUT_STATUS,
     USER_PAYOUT_MODE,
 )
@@ -240,6 +242,12 @@ def validate_bank_payout_mode(doc: PaymentEntry):
             ).format(doc.party_bank_ifsc),
             title=_("Invalid Bank IFSC Code"),
         )
+
+    if (
+        doc.razorpayx_pay_instantaneously
+        and doc.paid_amount > PAYMENT_MODE_THRESHOLD.IMPS.value
+    ):
+        doc.db_set("razorpayx_pay_instantaneously", 0)
 
 
 def validate_upi_payout_mode(doc: PaymentEntry):
@@ -555,6 +563,8 @@ def can_make_payout(doc: PaymentEntry) -> bool:
         and doc.payment_type == "Pay"
         and doc.make_bank_online_payment
         and doc.razorpayx_account
+        and doc.mode_of_payment != "Cash"
+        and doc.paid_from_account_currency == PAYOUT_CURRENCY.INR.value
         and not doc.razorpayx_payout_id
         and not doc.razorpayx_payout_link_id
         and not is_amended_pe_processed(doc)
