@@ -11,7 +11,7 @@ from razorpayx_integration.payment_utils.constants.roles import (
 
 
 class ROLE_PROFILE(BaseEnum):
-    RAZORPAYX_MANAGER = "RazorpayX Integration Manager"
+    RAZORPAYX_MANAGER = "RazorPayX Integration Manager"
 
 
 class PERMISSION_LEVEL(BaseEnum):
