@@ -151,7 +151,8 @@ Object.assign(payment_utils, {
 		const get_description = () => {
 			if (setup) return __(prompt);
 
-			return `<bold class='text-danger'>
+			return `<bold class='text-danger font-weight-bold'>
+						${frappe.utils.icon("solid-error")} &nbsp;
 						${__("There is some error! Please contact your Administrator.")}
 					</bold>`;
 		};
