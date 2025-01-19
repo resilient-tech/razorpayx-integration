@@ -62,14 +62,21 @@ class PayoutWithDocument(ABC):
         self.razorpayx_account = self._get_razorpayx_account()
 
     ### AUTHORIZATION ###
-    def is_authenticated_payment(self, auth_id: str) -> bool:
+    def is_authenticated_payment(self, auth_id: str | None = None) -> bool:
         """
         Check if the Payment Entry is authenticated or not.
 
         :param auth_id: Authentication ID
         """
-        if frappe.flags.authenticated_by_cron_job:
+        if frappe.flags.authenticated_by_cron_job and not auth_id:
             return True
+
+        if not auth_id:
+            frappe.throw(
+                title=_("Unauthorized Access"),
+                msg=_("Authentication ID is required to make payout."),
+                exc=frappe.PermissionError,
+            )
 
         if not frappe.cache.get(f"{auth_id}_authenticated"):
             frappe.throw(
@@ -91,7 +98,7 @@ class PayoutWithDocument(ABC):
         return True
 
     ### APIs ###
-    def make_payout(self, auth_id: str) -> dict:
+    def make_payout(self, auth_id: str | None = None) -> dict:
         """
         Make payout with given document.
 
@@ -286,7 +293,7 @@ class PayoutWithPaymentEntry(PayoutWithDocument):
         super().__init__(payment_entry, *args, **kwargs)
 
     ### APIs ###
-    def make_payout(self, auth_id: str) -> dict | None:
+    def make_payout(self, auth_id: str | None = None) -> dict | None:
         """
         Make payout with given Payment Entry.
 

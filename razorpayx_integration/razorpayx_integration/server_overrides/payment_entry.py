@@ -43,7 +43,12 @@ def before_submit(doc: PaymentEntry, method=None):
 
 
 def on_submit(doc: PaymentEntry, method=None):
-    make_payout_with_razorpayx(doc, doc.__onload["auth_id"])
+    auth_id = None
+
+    if not frappe.flags.authenticated_by_cron_job:
+        auth_id = doc.__onload.get("auth_id")
+
+    make_payout_with_razorpayx(doc, auth_id=auth_id)
 
 
 def before_cancel(doc: PaymentEntry, method=None):
@@ -456,7 +461,9 @@ def reset_razorpayx_fields(doc: PaymentEntry):
 
 
 ### ACTIONS ###
-def make_payout_with_razorpayx(doc: PaymentEntry, auth_id: str, throw=False):
+def make_payout_with_razorpayx(
+    doc: PaymentEntry, *, auth_id: str | None = None, throw: bool = False
+):
     """
     Make Payout with RazorPayX Integration.
 
@@ -616,7 +623,7 @@ def make_payout_with_payment_entry(
     )
 
     validate_payout_details(doc, throw=True)
-    make_payout_with_razorpayx(doc, auth_id)
+    make_payout_with_razorpayx(doc, auth_id=auth_id)
 
 
 @frappe.whitelist()
