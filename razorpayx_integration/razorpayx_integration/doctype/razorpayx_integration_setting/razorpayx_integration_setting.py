@@ -64,8 +64,6 @@ class RazorPayXIntegrationSetting(Document):
             self.key_id,
             self.get_password(fieldname="key_secret"),
             self.account_number,
-            self.doctype,
-            self.name,
         ).validate_credentials()
 
     def validate_bank_account(self):
