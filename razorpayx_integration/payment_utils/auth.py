@@ -47,10 +47,8 @@ OTP_ISSUER = "Payment Utils"
 
 
 class Trigger2FA:
-
     def __init__(self, payment_entries):
-        # self.user = frappe.session.user
-        self.user = "smitvora203@gmail.com"
+        self.user = frappe.session.user
         self.payment_entries = payment_entries
         self.pipeline = frappe.cache.pipeline()
 
@@ -264,8 +262,7 @@ class Authenticate2FA:
     def __init__(self, auth_id, otp):
         self.auth_id = auth_id
         self.otp = otp
-        # self.user = frappe.session.user
-        self.user = "smitvora203@gmail.com"
+        self.user = frappe.session.user
         self.tracker = get_login_attempt_tracker(self.user)
 
     def verify(self):
