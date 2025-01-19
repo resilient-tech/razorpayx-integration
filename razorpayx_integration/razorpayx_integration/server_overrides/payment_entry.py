@@ -649,10 +649,9 @@ def user_has_payout_permissions(
     Check RazorPayX related permissions for the user.
 
     Permission Check:
-    - Has a role of payment manager
-    - Can access the integration doctypes
-    - Can access particular RazorPayX Account (if provided)
+    - Has a role of integration manager
     - Can access particular Payment Entry
+    - Can access particular RazorPayX Account (if provided)
 
     :param payment_entry: Payment Entry name
     :param razorpayx_account: RazorPayX Account name
@@ -675,22 +674,10 @@ def user_has_payout_permissions(
         throw=throw,
     )
 
-    has_integration_permission = frappe.has_permission(
-        INTEGRATION_DOCTYPE,
+    has_razorpayx_permission = frappe.has_permission(
+        doctype=INTEGRATION_DOCTYPE,
+        doc=razorpayx_account,
         throw=throw,
     )
 
-    has_razorpayx_account_permission = True
-    if razorpayx_account:
-        has_razorpayx_account_permission = frappe.has_permission(
-            doctype=INTEGRATION_DOCTYPE,
-            doc=razorpayx_account,
-            throw=throw,
-        )
-
-    return (
-        has_role
-        and has_pe_permission
-        and has_integration_permission
-        and has_razorpayx_account_permission
-    )
+    return has_role and has_pe_permission and has_razorpayx_permission

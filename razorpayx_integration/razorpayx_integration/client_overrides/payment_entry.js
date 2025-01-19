@@ -34,12 +34,6 @@ const PAYOUT_FIELDS = [
 	"razorpayx_payout_link_id",
 ];
 
-const INTEGRATION_DOCTYPE = "RazorPayX Integration Setting";
-
-const IMPS_LIMIT = 5_00_000;
-
-const PAY_ICON = "expenses";
-
 // ############ DOC EVENTS ############ //
 frappe.ui.form.on("Payment Entry", {
 	refresh: async function (frm) {
@@ -61,7 +55,7 @@ frappe.ui.form.on("Payment Entry", {
 		const can_show_payout_button = await can_show_payout_btn(frm);
 
 		if (can_show_payout_button) {
-			frm.add_custom_button(__("{0} Make Payout", [frappe.utils.icon(PAY_ICON)]), () =>
+			frm.add_custom_button(__("{0} Make Payout", [frappe.utils.icon(rpx.PAY_ICON)]), () =>
 				show_make_payout_dialog(frm)
 			);
 		}
@@ -192,7 +186,7 @@ function update_submit_button_label(frm) {
 		() => {
 			frm.savesubmit();
 		},
-		PAY_ICON
+		rpx.PAY_ICON
 	);
 }
 
@@ -339,17 +333,8 @@ async function can_show_payout_btn(frm) {
 		return false;
 	}
 
-	const args = {
-		payment_entry: frm.doc.name,
-	};
-
-	if (frm.doc.razorpayx_account) {
-		args.razorpayx_account = frm.doc.razorpayx_account;
-	}
-
-	const has_permission = await frappe.xcall(`${PE_BASE_PATH}.user_has_payout_permissions`, args);
-
-	return has_permission;
+	// checking permissions
+	return rpx.user_has_payout_permissions(frm.docname, frm.doc.razorpayx_account);
 }
 
 async function show_make_payout_dialog(frm) {
@@ -398,7 +383,7 @@ async function show_make_payout_dialog(frm) {
 				fieldname: "razorpayx_account",
 				label: __("RazorpayX Account"),
 				fieldtype: "Link",
-				options: INTEGRATION_DOCTYPE,
+				options: rpx.RPX_DOCTYPE,
 				default: frm.doc.razorpayx_account,
 				reqd: 1,
 				hidden: 1,
@@ -525,7 +510,7 @@ async function show_make_payout_dialog(frm) {
 				label: "Pay Instantaneously",
 				fieldtype: "Check",
 				description: "Payment will be done with <strong>IMPS</strong> mode.",
-				depends_on: `eval: ${BANK_MODE} && ${frm.doc.paid_amount <= IMPS_LIMIT}`,
+				depends_on: `eval: ${BANK_MODE} && ${frm.doc.paid_amount <= rpx.IMPS_LIMIT}`,
 			},
 			{
 				fieldname: "party_cb",
