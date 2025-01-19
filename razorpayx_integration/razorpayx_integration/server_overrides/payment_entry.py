@@ -16,6 +16,7 @@ from razorpayx_integration.razorpayx_integration.constants.payouts import (
     PAYOUT_STATUS,
     USER_PAYOUT_MODE,
 )
+from razorpayx_integration.razorpayx_integration.constants.roles import ROLE_PROFILE
 from razorpayx_integration.razorpayx_integration.utils import (
     get_razorpayx_account,
 )
@@ -658,6 +659,15 @@ def user_has_payout_permissions(
     :param pe_permission: Payment Entry Permission to check
     :param throw: Throw error if permission is not granted
     """
+    has_role = ROLE_PROFILE.RAZORPAYX_MANAGER.value in frappe.get_roles()
+
+    if not has_role and throw:
+        frappe.throw(
+            title=_("Insufficient Permissions"),
+            msg=_("You do not have permission to make payout."),
+            exc=frappe.PermissionError,
+        )
+
     has_pe_permission = frappe.has_permission(
         doctype="Payment Entry",
         doc=payment_entry,
@@ -679,7 +689,8 @@ def user_has_payout_permissions(
         )
 
     return (
-        has_pe_permission
+        has_role
+        and has_pe_permission
         and has_integration_permission
         and has_razorpayx_account_permission
     )
