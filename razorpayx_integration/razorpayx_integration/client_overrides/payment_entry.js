@@ -542,7 +542,7 @@ async function show_make_payout_dialog(frm) {
 				mandatory_depends_on: `eval: ${LINK_MODE}`,
 			},
 		],
-		primary_action_label: __("Make Payout"),
+		primary_action_label: __("Pay"),
 		primary_action: (values) => {
 			payment_utils.authenticate_payment_entries(frm.docname, (auth_id) =>
 				make_payout(auth_id, frm.docname, values, dialog)

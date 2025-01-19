@@ -38,7 +38,7 @@ Object.assign(payment_utils, {
 		const dialog = new frappe.ui.Dialog({
 			title: title,
 			fields: fields,
-			primary_action_label: __("Authenticate"),
+			primary_action_label: __("{0} Authenticate", [frappe.utils.icon("permission")]),
 			primary_action: async (values) => {
 				const { verified, message } = await this.verify_otp(
 					values.authenticator,
@@ -186,6 +186,13 @@ Object.assign(payment_utils, {
 		return {
 			title: data.title,
 			fields: [
+				{
+					fieldname: "intro",
+					fieldtype: "HTML",
+					options: `<div class="form-message yellow">
+								<div>${__("Do not close this dialog until you authenticate.")}</div>
+							</div>`,
+				},
 				{
 					fieldname: "authenticator",
 					reqd: 1,
