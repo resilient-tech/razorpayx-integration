@@ -131,7 +131,7 @@ frappe.ui.form.on("Payment Entry", {
 				resolve();
 			};
 
-			return payment_utils.authenticate_otp(frm.docname, continue_submission);
+			return payment_utils.authenticate_payment_entries(frm.docname, continue_submission);
 		});
 	},
 
@@ -544,7 +544,7 @@ async function show_make_payout_dialog(frm) {
 		],
 		primary_action_label: __("Make Payout"),
 		primary_action: (values) => {
-			payment_utils.authenticate_otp(frm.docname, (auth_id) =>
+			payment_utils.authenticate_payment_entries(frm.docname, (auth_id) =>
 				make_payout(auth_id, frm.docname, values, dialog)
 			);
 		},

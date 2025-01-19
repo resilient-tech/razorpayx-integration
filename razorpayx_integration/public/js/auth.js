@@ -25,7 +25,7 @@ Object.assign(payment_utils, {
 	 * @param {string | string[]} payment_entries - Payment Entry name or list of names
 	 * @param {Function} callback - Callback function to be executed after successful authentication
 	 */
-	async authenticate_otp(payment_entries, callback) {
+	async authenticate_payment_entries(payment_entries, callback) {
 		if (typeof payment_entries === "string") {
 			payment_entries = [payment_entries];
 		}
