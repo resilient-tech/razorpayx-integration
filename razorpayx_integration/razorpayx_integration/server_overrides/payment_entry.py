@@ -41,7 +41,7 @@ def validate(doc: PaymentEntry, method=None):
 
 
 def before_submit(doc: PaymentEntry, method=None):
-    # for bulk submission from client side
+    # for bulk submission from client side or single submission without payment
     if not frappe.flags.authenticated_by_cron_job and not get_auth_id(doc):
         doc.set("make_bank_online_payment", 0)
 
@@ -486,10 +486,6 @@ def make_payout_with_razorpayx(doc: PaymentEntry, auth_id: str | None = None):
     :param doc: Payment Entry Document
     :param auth_id: Authentication ID (after otp or password verification)
     """
-
-    # If this not checked, then user can make payout which have only right of PE's submission
-    user_has_payout_permissions(doc.name, doc.razorpayx_account, throw=True)
-
     if not can_make_payout(doc):
         frappe.throw(
             msg=_(
