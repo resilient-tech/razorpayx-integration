@@ -5,12 +5,6 @@ frappe.listview_settings["Payment Entry"] = {
 	add_fields: ["make_bank_online_payment", "razorpayx_account", "razorpayx_payout_status"],
 
 	onload: function (list_view) {
-		// Remove the Submit button from the Payment Entry list view
-		list_view.page.actions
-			.find(`[data-label="${encodeURIComponent(__("Submit"))}"]`)
-			.closest("li")
-			.remove();
-
 		// Add `Pay and Submit` button to the Payment Entry list view
 		if (!rpx.user_has_payout_permissions()) return;
 
