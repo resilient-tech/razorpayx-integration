@@ -62,13 +62,17 @@ class PayoutWithDocument(ABC):
         self.razorpayx_account = self._get_razorpayx_account()
 
     ### AUTHORIZATION ###
-    def is_authenticated_payment(self, auth_id: str | None = None) -> bool:
+    # TODO: ? what if payout created from other doctype
+    def is_authenticated_payout(self, auth_id: str | None = None) -> bool:
         """
-        Check if the Payment Entry is authenticated or not.
+        Check if the Payout (Payment Entry) is authenticated or not.
 
         :param auth_id: Authentication ID
+
+        ---
+        Note: when `frappe.flags.authenticated_by_cron_job` is set, it will bypass the authentication.
         """
-        if frappe.flags.authenticated_by_cron_job and not auth_id:
+        if frappe.flags.authenticated_by_cron_job:
             return True
 
         if not auth_id:
@@ -104,7 +108,7 @@ class PayoutWithDocument(ABC):
 
         :param auth_id: Authorization ID for making payout.
         """
-        self.is_authenticated_payment(auth_id)
+        self.is_authenticated_payout(auth_id)
 
         self._set_payout_channel()
 
