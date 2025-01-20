@@ -28,7 +28,10 @@ frappe.listview_settings["Payment Entry"] = {
 			});
 
 			if (!eligible_docs.length) {
-				frappe.msgprint(__("Please select proper Payment Entries to pay and submit."));
+				frappe.msgprint(
+					__("Please select proper Payment Entries to pay and submit."),
+					__("Invalid Selection")
+				);
 				return;
 			}
 
@@ -41,8 +44,16 @@ frappe.listview_settings["Payment Entry"] = {
 				});
 			}
 
-			payment_utils.authenticate_payment_entries(eligible_docs, (auth_id) => {
-				pay_and_submit(auth_id, eligible_docs);
+			frappe.confirm(__("Pay and Submit {0} documents?", [eligible_docs.length]), () => {
+				this.disable_list_update = true;
+
+				payment_utils.authenticate_payment_entries(eligible_docs, (auth_id) => {
+					pay_and_submit(auth_id, eligible_docs);
+
+					list_view.disable_list_update = false;
+					list_view.clear_checked_items();
+					list_view.refresh();
+				});
 			});
 		});
 	},
@@ -60,12 +71,31 @@ function is_eligible(doc) {
 	);
 }
 
-function pay_and_submit(auth_id, docs) {
-	// TODO: Implement the payment and submit logic
-	// ! How to pass auth id to the server side?
-	/**
-	 * References:
-	 * https://github.com/frappe/frappe/blob/3eda272bd61b1e73b74d30b1704d885a39c75d0c/frappe/public/js/frappe/list/list_view.js#L1983
-	 * https://github.com/frappe/frappe/blob/3eda272bd61b1e73b74d30b1704d885a39c75d0c/frappe/public/js/frappe/list/bulk_operations.js#L275
-	 */
+function pay_and_submit(auth_id, docnames, callback = null) {
+	const task_id = Math.random().toString(36).slice(-5);
+	frappe.realtime.task_subscribe(task_id);
+
+	return frappe
+		.xcall(
+			"razorpayx_integration.razorpayx_integration.server_overrides.payment_entry.bulk_pay_and_submit",
+			{
+				auth_id: auth_id,
+				docnames: docnames,
+				task_id: task_id,
+			}
+		)
+		.then((failed_docnames) => {
+			if (failed_docnames?.length) {
+				const comma_separated_records = frappe.utils.comma_and(failed_docnames);
+				frappe.throw(__("Cannot pay and submit {0}.", [comma_separated_records]));
+			}
+
+			if (failed_docnames?.length < docnames.length) {
+				frappe.utils.play_sound("submit");
+				callback && callback();
+			}
+		})
+		.finally(() => {
+			frappe.realtime.task_unsubscribe(task_id);
+		});
 }

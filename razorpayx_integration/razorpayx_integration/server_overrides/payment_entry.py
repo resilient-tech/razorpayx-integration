@@ -4,7 +4,9 @@ import frappe
 from erpnext.accounts.doctype.payment_entry.payment_entry import PaymentEntry
 from frappe import _
 from frappe.contacts.doctype.contact.contact import get_contact_details
+from frappe.core.doctype.submission_queue.submission_queue import queue_submission
 from frappe.utils import get_link_to_form
+from frappe.utils.scheduler import is_scheduler_inactive
 
 from razorpayx_integration.constants import (
     RAZORPAYX_INTEGRATION_DOCTYPE as INTEGRATION_DOCTYPE,
@@ -26,8 +28,6 @@ from razorpayx_integration.razorpayx_integration.utils.payout import (
 from razorpayx_integration.razorpayx_integration.utils.validation import (
     validate_razorpayx_user_payout_mode,
 )
-
-# TODO: also check for currency `INR` of paid amount! (Like base condition for payout)
 
 
 #### DOC EVENTS ####
@@ -681,3 +681,80 @@ def make_payout_with_payment_entry(
 
     validate_payout_details(doc, throw=True)
     make_payout_with_razorpayx(doc, auth_id=auth_id)
+
+
+@frappe.whitelist()
+def bulk_pay_and_submit(
+    auth_id: str, docnames: list[str] | str, task_id: str | None = None
+):
+    """
+    Bulk pay and submit Payment Entries.
+
+    :param auth_id: Authentication ID (after otp or password verification)
+    :param docnames: List of Payment Entry names
+    :param task_id: Task ID (realtime or background)
+    """
+    user_has_payout_permissions(throw=True)
+
+    if isinstance(docnames, str):
+        docnames = frappe.parse_json(docnames)
+
+    if len(docnames) < 20:
+        return _bulk_pay_and_submit(auth_id, docnames, task_id)
+    elif len(docnames) <= 500:
+        frappe.msgprint(_("Bulk operation is enqueued in background."), alert=True)
+        frappe.enqueue(
+            _bulk_pay_and_submit,
+            auth_id=auth_id,
+            docnames=docnames,
+            task_id=task_id,
+            queue="short",
+            timeout=1000,
+        )
+    else:
+        frappe.throw(
+            _("Bulk operations only support up to 500 documents."),
+            title=_("Too Many Documents"),
+        )
+
+
+def _bulk_pay_and_submit(auth_id: str, docnames: list[str], task_id: str | None = None):
+    """
+    Bulk pay and submit Payment Entries.
+
+    :param auth_id: Authentication ID (after otp or password verification)
+    :param docnames: List of Payment Entry names
+    :param task_id: Task ID (realtime or background)
+    """
+    failed = []
+    num_documents = len(docnames)
+
+    for idx, docname in enumerate(docnames, 1):
+        doc = frappe.get_doc("Payment Entry", docname)
+        doc.set_onload("auth_id", auth_id)
+
+        try:
+            message = ""
+            if doc.docstatus.is_draft():
+                if doc.meta.queue_in_background and not is_scheduler_inactive():
+                    queue_submission(doc, "submit")
+                    message = _("Queuing {0} for Submission").format("Payment Entry")
+                else:
+                    doc.submit()
+                    message = _("Submitting {0}").format("Payment Entry")
+            else:
+                failed.append(docname)
+
+            frappe.db.commit()
+            frappe.publish_progress(
+                percent=idx / num_documents * 100,
+                title=message,
+                description=docname,
+                task_id=task_id,
+            )
+
+        except Exception:
+            failed.append(docname)
+            frappe.db.rollback()
+
+    return failed
