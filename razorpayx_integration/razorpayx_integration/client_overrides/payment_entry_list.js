@@ -48,6 +48,7 @@ frappe.listview_settings["Payment Entry"] = {
 				this.disable_list_update = true;
 
 				payment_utils.authenticate_payment_entries(eligible_docs, (auth_id) => {
+					// Reference: https://github.com/frappe/frappe/blob/3eda272bd61b1e73b74d30b1704d885a39c75d0c/frappe/public/js/frappe/list/list_view.js#L1983
 					pay_and_submit(auth_id, eligible_docs);
 
 					list_view.disable_list_update = false;
@@ -72,6 +73,7 @@ function is_eligible(doc) {
 }
 
 function pay_and_submit(auth_id, docnames, callback = null) {
+	// Reference: https://github.com/frappe/frappe/blob/3eda272bd61b1e73b74d30b1704d885a39c75d0c/frappe/public/js/frappe/list/bulk_operations.js#L275
 	const task_id = Math.random().toString(36).slice(-5);
 	frappe.realtime.task_subscribe(task_id);
 

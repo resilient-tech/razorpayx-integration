@@ -693,6 +693,9 @@ def bulk_pay_and_submit(
     :param auth_id: Authentication ID (after otp or password verification)
     :param docnames: List of Payment Entry names
     :param task_id: Task ID (realtime or background)
+
+    ---
+    Reference: [Frappe Bulk Submit/Cancel](https://github.com/frappe/frappe/blob/3eda272bd61b1e73b74d30b1704d885a39c75d0c/frappe/desk/doctype/bulk_update/bulk_update.py#L51)
     """
     user_has_payout_permissions(throw=True)
 
@@ -725,6 +728,9 @@ def _bulk_pay_and_submit(auth_id: str, docnames: list[str], task_id: str | None 
     :param auth_id: Authentication ID (after otp or password verification)
     :param docnames: List of Payment Entry names
     :param task_id: Task ID (realtime or background)
+
+    ---
+    Reference: [Frappe Bulk Action](https://github.com/frappe/frappe/blob/3eda272bd61b1e73b74d30b1704d885a39c75d0c/frappe/desk/doctype/bulk_update/bulk_update.py#L73)
     """
     failed = []
     num_documents = len(docnames)

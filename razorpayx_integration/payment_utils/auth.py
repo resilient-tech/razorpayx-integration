@@ -1,25 +1,32 @@
+"""
+Two Factor Authentication for Payment Entries before making payout.
+
+Methods:
+
+1. OTP via Authenticator App
+2. OTP via Email
+3. OTP via SMS
+4. User Password
+
+Reference: https://github.com/frappe/frappe/blob/13fbdbb0c478099dfac6c70b7e05eef97c14c5ad/frappe/twofactor.py
+"""
 import os
 import pickle
 from base64 import b32encode, b64encode
-from io import BytesIO
 
 import frappe
 import frappe.defaults
 import pyotp
 from frappe import _, get_system_settings
 from frappe.auth import get_login_attempt_tracker
-from frappe.permissions import ALL_USER_ROLE
 from frappe.twofactor import (
-    ExpiredLoginException,
-    clear_default,
     delete_qrimage,
     get_default,
     get_link_for_qrcode,
     send_token_via_sms,
     set_default,
 )
-from frappe.utils import cint, get_datetime, get_url, time_diff_in_seconds
-from frappe.utils.background_jobs import enqueue
+from frappe.utils import cint
 from frappe.utils.password import check_password, decrypt, encrypt
 
 
