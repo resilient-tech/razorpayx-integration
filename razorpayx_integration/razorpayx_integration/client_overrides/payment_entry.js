@@ -34,6 +34,9 @@ const PAYOUT_FIELDS = [
 	"razorpayx_payout_link_id",
 ];
 
+// TODO: Role and Permissions: hide `make_bank_online_payment` field if user does not have permission to make payout (check role  and other things..)
+// TODO: how to show `Submit` button when user have submit permission but not payout permission ???  and doc is set to make payout
+
 // ############ DOC EVENTS ############ //
 frappe.ui.form.on("Payment Entry", {
 	refresh: async function (frm) {
