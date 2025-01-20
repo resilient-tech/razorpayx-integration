@@ -52,7 +52,7 @@ def before_submit(doc: PaymentEntry, method=None):
 
 
 def on_submit(doc: PaymentEntry, method=None):
-    if not doc.make_bank_online_payment or doc.razorpayx_account:
+    if not doc.make_bank_online_payment or not doc.razorpayx_account:
         return
 
     make_payout_with_razorpayx(doc, auth_id=get_auth_id(doc))
@@ -142,6 +142,8 @@ def validate_payout_details(doc: PaymentEntry, throw=False):
     """
     if not doc.make_bank_online_payment:
         return
+
+    # TODO:  ?  here check base conditions like `Pay`,`Cash`,`INR` etc.
 
     validate_razorpayx_account(doc, throw=throw)
 
