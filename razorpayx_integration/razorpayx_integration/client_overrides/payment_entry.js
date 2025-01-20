@@ -34,7 +34,6 @@ const PAYOUT_FIELDS = [
 	"razorpayx_payout_link_id",
 ];
 
-// TODO: Role and Permissions: hide `make_bank_online_payment` field if user does not have permission to make payout (check role  and other things..)
 // TODO: how to show `Submit` button when user have submit permission but not payout permission ???  and doc is set to make payout
 
 // ############ DOC EVENTS ############ //
@@ -43,6 +42,12 @@ frappe.ui.form.on("Payment Entry", {
 		// Do not allow to edit fields if Payment is processed by RazorpayX in amendment
 		disable_payout_fields_in_amendment(frm);
 		frm.get_field("payment_type").set_empty_description();
+
+		if (!rpx.user_has_payout_permissions()) {
+			frm.toggle_display("online_payment_section", 0);
+			frm.toggle_display("razorpayx_payout_section", 0);
+			frm.toggle_enable("make_bank_online_payment", 0);
+		}
 
 		if (!is_base_payout_condition_met(frm)) {
 			return;
@@ -69,7 +74,11 @@ frappe.ui.form.on("Payment Entry", {
 			frm.set_value("reference_no", "*** UTR WILL BE SET AUTOMATICALLY ***");
 		}
 
-		if (frm.doc.payment_type !== "Pay" || !frm.doc.razorpayx_account) {
+		if (
+			!is_base_payout_condition_met() ||
+			!frm.doc.razorpayx_account ||
+			!rpx.user_has_payout_permissions(frm.docname, frm.doc.razorpayx_account)
+		) {
 			frm.set_value("make_bank_online_payment", 0);
 		}
 
@@ -112,6 +121,14 @@ frappe.ui.form.on("Payment Entry", {
 	before_submit: async function (frm) {
 		if (!is_base_payout_condition_met(frm) || !is_razorpayx_condition_met(frm)) {
 			return;
+		}
+
+		// TODO: ? is it proper way to check permissions here
+		if (!rpx.user_has_payout_permissions(frm.docname, frm.doc.razorpayx_account)) {
+			frappe.throw({
+				message: __("You do not have permission to make payout for this Payment Entry."),
+				title: __("Insufficient Permissions"),
+			});
 		}
 
 		frappe.validate = false;
