@@ -584,7 +584,7 @@ def user_has_payout_permissions(
     Check RazorPayX related permissions for the user.
 
     Permission Check:
-    - Has a role of integration manager
+    - Has a role of Payout Authorizer
     - Can access particular Payment Entry
     - Can access particular RazorPayX Account (if provided)
 
@@ -593,7 +593,8 @@ def user_has_payout_permissions(
     :param pe_permission: Payment Entry Permission to check
     :param throw: Throw error if permission is not granted
     """
-    has_role = ROLE_PROFILE.RAZORPAYX_MANAGER.value in frappe.get_roles()
+    # this role have permission to read integration settings and submission/cancellation of payment entry
+    has_role = ROLE_PROFILE.PAYOUT_AUTHORIZER.value in frappe.get_roles()
 
     if not has_role and throw:
         frappe.throw(
