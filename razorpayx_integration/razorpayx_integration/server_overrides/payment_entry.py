@@ -572,6 +572,52 @@ def can_make_payout(doc: PaymentEntry) -> bool:
     )
 
 
+# TODO: concern with @smit_vora
+def user_has_payout_permissions(
+    payment_entry: str,
+    razorpayx_account: str | None = None,
+    *,
+    pe_permission: Literal["submit", "cancel"] = "submit",
+    throw: bool = False,
+):
+    """
+    Check RazorPayX related permissions for the user.
+
+    Permission Check:
+    - Has a role of integration manager
+    - Can access particular Payment Entry
+    - Can access particular RazorPayX Account (if provided)
+
+    :param payment_entry: Payment Entry name
+    :param razorpayx_account: RazorPayX Account name
+    :param pe_permission: Payment Entry Permission to check
+    :param throw: Throw error if permission is not granted
+    """
+    has_role = ROLE_PROFILE.RAZORPAYX_MANAGER.value in frappe.get_roles()
+
+    if not has_role and throw:
+        frappe.throw(
+            title=_("Insufficient Permissions"),
+            msg=_("You do not have permission to make payout."),
+            exc=frappe.PermissionError,
+        )
+
+    has_pe_permission = frappe.has_permission(
+        doctype="Payment Entry",
+        doc=payment_entry,
+        ptype=pe_permission,
+        throw=throw,
+    )
+
+    has_razorpayx_permission = frappe.has_permission(
+        doctype=INTEGRATION_DOCTYPE,
+        doc=razorpayx_account,
+        throw=throw,
+    )
+
+    return has_role and has_pe_permission and has_razorpayx_permission
+
+
 ### APIs ###
 @frappe.whitelist()
 # TODO: permissions ?!
@@ -635,49 +681,3 @@ def make_payout_with_payment_entry(
 
     validate_payout_details(doc, throw=True)
     make_payout_with_razorpayx(doc, auth_id=auth_id)
-
-
-# TODO: concern with @smit_vora
-def user_has_payout_permissions(
-    payment_entry: str,
-    razorpayx_account: str | None = None,
-    *,
-    pe_permission: Literal["submit", "cancel"] = "submit",
-    throw: bool = False,
-):
-    """
-    Check RazorPayX related permissions for the user.
-
-    Permission Check:
-    - Has a role of integration manager
-    - Can access particular Payment Entry
-    - Can access particular RazorPayX Account (if provided)
-
-    :param payment_entry: Payment Entry name
-    :param razorpayx_account: RazorPayX Account name
-    :param pe_permission: Payment Entry Permission to check
-    :param throw: Throw error if permission is not granted
-    """
-    has_role = ROLE_PROFILE.RAZORPAYX_MANAGER.value in frappe.get_roles()
-
-    if not has_role and throw:
-        frappe.throw(
-            title=_("Insufficient Permissions"),
-            msg=_("You do not have permission to make payout."),
-            exc=frappe.PermissionError,
-        )
-
-    has_pe_permission = frappe.has_permission(
-        doctype="Payment Entry",
-        doc=payment_entry,
-        ptype=pe_permission,
-        throw=throw,
-    )
-
-    has_razorpayx_permission = frappe.has_permission(
-        doctype=INTEGRATION_DOCTYPE,
-        doc=razorpayx_account,
-        throw=throw,
-    )
-
-    return has_role and has_pe_permission and has_razorpayx_permission
