@@ -6,7 +6,8 @@ from frappe import _
 from frappe.model.document import Document
 
 from razorpayx_integration.constants import RAZORPAYX
-from razorpayx_integration.payment_utils.constants.workflows import WORKFLOW_STATE
+
+# TODO: set templates for payment success and failure
 
 
 class RazorPayXIntegrationSetting(Document):
@@ -39,13 +40,31 @@ class RazorPayXIntegrationSetting(Document):
         self.validate_bank_account()
 
     def validate_api_credentials(self):
+        from razorpayx_integration.razorpayx_integration.apis.validate_razorpayx import (
+            RazorPayXTestAPI,
+        )
+
+        if self.disabled:
+            return
+
         if not self.key_id or not self.key_secret:
             frappe.throw(
                 msg=_("Please set {0} API credentials.").format(RAZORPAYX),
                 title=_("API Credentials Are Missing"),
             )
 
-        # TODO: use details to fetch account statement for one day and check if it is working.
+        if not (
+            self.has_value_changed("key_id")
+            or self.has_value_changed("key_secret")
+            or self.has_value_changed("account_number")
+        ):
+            return
+
+        RazorPayXTestAPI(
+            self.key_id,
+            self.get_password(fieldname="key_secret"),
+            self.account_number,
+        ).validate_credentials()
 
     def validate_bank_account(self):
         if not self.bank_account:
@@ -57,7 +76,7 @@ class RazorPayXIntegrationSetting(Document):
         bank_account = frappe.get_value(
             "Bank Account",
             self.bank_account,
-            ["disabled", "razorpayx_workflow_state", "is_company_account"],
+            ["disabled", "is_company_account"],
             as_dict=True,
         )
 
@@ -66,16 +85,6 @@ class RazorPayXIntegrationSetting(Document):
                 msg=_("Bank Account not found."),
                 title=_("Invalid Bank Account"),
             )
-
-        # ! ERROR: Maybe fails
-        # if (
-        #     bank_account.razorpayx_workflow_state
-        #     and bank_account.razorpayx_workflow_state != WORKFLOW_STATE.APPROVED.value
-        # ):
-        #     frappe.throw(
-        #         msg=_("Bank Account is not approved. Please approve it first."),
-        #         title=_("Invalid Bank Account"),
-        #     )
 
         if bank_account.disabled:
             frappe.throw(

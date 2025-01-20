@@ -25,23 +25,38 @@ class RazorPayXTransaction(BaseRazorPayXAPI):
         self.account_number = self.razorpayx_account.account_number
 
     ### APIs ###
-    def get_by_id(self, transaction_id: str) -> dict:
+    def get_by_id(
+        self,
+        transaction_id: str,
+        *,
+        source_doctype: str | None = None,
+        source_docname: str | None = None,
+    ) -> dict:
         """
         Fetch the details of a specific `Transaction` by Id.
 
         :param id: `Id` of fund account to fetch (Ex.`txn_jkHgLM02`).
+        :param source_doctype: The source doctype of the transaction.
+        :param source_docname: The source docname of the transaction
 
         ---
         Reference: https://razorpay.com/docs/api/x/transactions/fetch-with-id
         """
+        self._set_service_details_to_ir_log("Get Transaction By Id")
+        self.source_doctype = source_doctype
+        self.source_docname = source_docname
+
         return self.get(endpoint=transaction_id)
 
     def get_all(
         self,
+        *,
         filters: dict | None = None,
         from_date: DateTimeLikeObject | None = None,
         to_date: DateTimeLikeObject | None = None,
         count: int | None = None,
+        source_doctype: str | None = None,
+        source_docname: str | None = None,
     ) -> list[dict] | None:
         """
         Get all `Transaction` associate with given `RazorPayX` account if count is not given.
@@ -50,6 +65,8 @@ class RazorPayXTransaction(BaseRazorPayXAPI):
         :param from_date: The starting date for which transactions are to be fetched.
         :param to_date: The ending date for which transactions are to be fetched.
         :param count: The number of `Transaction` to be retrieved.
+        :param source_doctype: The source doctype of the transaction.
+        :param source_docname: The source docname of the transaction
 
         ---
         Example Usage:
@@ -88,26 +105,60 @@ class RazorPayXTransaction(BaseRazorPayXAPI):
         # account number is mandatory
         filters["account_number"] = self.account_number
 
-        return super().get_all(filters, count)
+        if not self.ir_service_set:
+            self._set_service_details_to_ir_log("Get All Transactions", False)
 
-    def get_transactions_for_today(self, count: int | None = None) -> list[dict] | None:
+        if not (self.source_doctype and self.source_docname):
+            self.source_doctype = source_doctype
+            self.source_docname = source_docname
+
+        return super().get_all(filters=filters, count=count)
+
+    def get_transactions_for_today(
+        self,
+        count: int | None = None,
+        *,
+        source_doctype: str | None = None,
+        source_docname: str | None = None,
+    ) -> list[dict] | None:
         """
         Get all transactions for today associate with given `RazorPayX` account.
 
         :param count: The number of transactions to be retrieved.
+        :param source_doctype: The source doctype of the transaction.
+        :param source_docname: The source docname of the transaction
 
         ---
         Note: If count is not given, it will return all transactions for today.
         """
         today_date = today()
-        return self.get_all(filters={"from": today_date, "to": today_date}, count=count)
+        self._set_service_details_to_ir_log("Get Transactions For Today")
+
+        return self.get_all(
+            filters={"from": today_date, "to": today_date},
+            count=count,
+            source_doctype=source_doctype,
+            source_docname=source_docname,
+        )
 
     def get_transactions_for_date(
-        self, date: DateTimeLikeObject, count: int | None = None
+        self,
+        date: DateTimeLikeObject,
+        count: int | None = None,
+        *,
+        source_doctype: str | None = None,
+        source_docname: str | None = None,
     ) -> list[dict] | None:
         """
         Get all transactions for specific date associate with given `RazorPayX` account.
 
         :param date: A date string in "YYYY-MM-DD" format or a (datetime,date) object.
         """
-        return self.get_all(filters={"from": date, "to": date}, count=count)
+        self._set_service_details_to_ir_log("Get Transactions For Date")
+
+        return self.get_all(
+            filters={"from": date, "to": date},
+            count=count,
+            source_doctype=source_doctype,
+            source_docname=source_docname,
+        )

@@ -1,23 +1,5 @@
-DEFAULT_REFERENCE_NO = "-*--*-"
-
-# TODO: ? make `branch_code` and `bank_account_no` as mandatory fields if mode of payment is `Bank` ?
 PROPERTY_SETTERS = [
     ### Payment Entry ###
-    # TODO: client side and server side on selection of field
-    # {
-    #     "doctype": "Payment Entry",
-    #     "fieldname": "reference_no",
-    #     "property": "default",
-    #     "property_type": "Data",
-    #     "value": DEFAULT_REFERENCE_NO,
-    # },
-    # {
-    #     "doctype": "Payment Entry",
-    #     "fieldname": "reference_no",
-    #     "property": "no_copy",
-    #     "property_type": "Check",
-    #     "value": 1,
-    # },
     {
         "doctype": "Payment Entry",
         "fieldname": "reference_date",
@@ -32,18 +14,11 @@ PROPERTY_SETTERS = [
         "property_type": "Check",
         "value": 1,
     },
-    # {
-    #     "doctype": "Payment Entry",
-    #     "fieldname": "contact_email",
-    #     "property": "no_copy",
-    #     "property_type": "Check",
-    #     "value": 1,
-    # },
-    # {
-    #     "doctype": "Payment Entry",
-    #     "fieldname": "contact_person",
-    #     "property": "no_copy",
-    #     "property_type": "Check",
-    #     "value": 0,
-    # },
+    {
+        "doctype": "Payment Entry",
+        "fieldname": "reference_no",
+        "property": "no_copy",
+        "property_type": "Check",
+        "value": 1,
+    },
 ]

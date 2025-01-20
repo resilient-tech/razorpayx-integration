@@ -6,8 +6,10 @@ from razorpayx_integration.razorpayx_integration.utils.validation import (
     validate_razorpayx_fund_account_type,
 )
 
-# ! IMPORTANT: currently this API is not maintained.
+# ! IMPORTANT: Currently this API is not maintained.
 # TODO: this need to be refactor and optimize
+# TODO: Add service details to IR log
+# TODO: Add source doctype and docname to IR log
 
 
 class RazorPayXFundAccount(BaseRazorPayXAPI):

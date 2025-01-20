@@ -17,13 +17,15 @@ doctype_js = {
     "Payment Entry": "razorpayx_integration/client_overrides/payment_entry.js",
 }
 
+doctype_list_js = {
+    "Payment Entry": "razorpayx_integration/client_overrides/payment_entry_list.js",
+}
+
 doc_events = {
-    "Bank Account": {
-        "validate": "razorpayx_integration.payment_utils.server_overrides.bank_account.validate"
-    },
     "Payment Entry": {
         "onload": "razorpayx_integration.razorpayx_integration.server_overrides.payment_entry.onload",
         "validate": "razorpayx_integration.razorpayx_integration.server_overrides.payment_entry.validate",
+        "before_submit": "razorpayx_integration.razorpayx_integration.server_overrides.payment_entry.before_submit",
         "on_submit": "razorpayx_integration.razorpayx_integration.server_overrides.payment_entry.on_submit",
         "before_cancel": "razorpayx_integration.razorpayx_integration.server_overrides.payment_entry.before_cancel",
     },

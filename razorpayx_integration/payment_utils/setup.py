@@ -16,8 +16,7 @@ from razorpayx_integration.payment_utils.constants.workflows import (
 from razorpayx_integration.payment_utils.utils import (
     delete_custom_fields,
     delete_property_setters,
-    delete_role_and_permissions,
-    delete_workflows,
+    delete_roles_and_permissions,
     make_roles_and_permissions,
     make_workflow_actions,
     make_workflow_states,
@@ -66,5 +65,4 @@ def delete_payment_utils_property_setters():
 
 
 def delete_payment_utils_role_and_permissions():
-    # TODO
-    delete_role_and_permissions(ROLES)
+    delete_roles_and_permissions(ROLES)

@@ -27,4 +27,13 @@ frappe.ui.form.on("RazorPayX Integration Setting", {
 			)
 		);
 	},
+
+	after_save: function (frm) {
+		if (frm.doc.webhook_secret) return;
+
+		frappe.show_alert({
+			message: __("Webhook Secret is missing! <br> You will not receive any updates!"),
+			indicator: "orange",
+		});
+	},
 });

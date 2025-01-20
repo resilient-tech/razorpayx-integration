@@ -13,6 +13,8 @@ Note:
 from razorpayx_integration.payment_utils.constants.payouts import PAYOUT_MODE
 from razorpayx_integration.payment_utils.constants.roles import PERMISSION_LEVEL
 
+BASE_CONDITION_TO_MAKE_ONLINE_PAYMENT = "doc.payment_type=='Pay' && doc.mode_of_payment!='Cash' && doc.party && doc.party_type && doc.paid_from_account_currency === 'INR'"
+
 # TODO: permission level are left to add
 BLOCK_AUTO_PAYMENT = {
     "fieldname": "block_auto_payment",
@@ -30,12 +32,12 @@ CUSTOM_FIELDS = {
             "fieldname": "online_payment_section",
             "label": "Online Payment Details",
             "fieldtype": "Section Break",
-            "insert_after": "bank_account_no",
+            "insert_after": "party",
             "depends_on": "eval: !doc.is_company_account && doc.party_type && doc.party",
         },
         {
-            "fieldname": "default_online_payment_mode",
-            "label": "Default Online Payment Mode",
+            "fieldname": "online_payment_mode",
+            "label": "Online Payment Mode",
             "fieldtype": "Select",
             "insert_after": "online_payment_section",
             "options": PAYOUT_MODE.values_as_string(),
@@ -44,17 +46,17 @@ CUSTOM_FIELDS = {
         {
             "fieldname": "online_payment_cb",
             "fieldtype": "Column Break",
-            "insert_after": "default_online_payment_mode",
+            "insert_after": "online_payment_mode",
         },
         # For `UPI` payment mode
         {
             "fieldname": "upi_id",
             "label": "UPI ID",
             "fieldtype": "Data",
-            "insert_after": "online_payment_cb",
+            "insert_after": "iban",
             "placeholder": "Eg. 9999999999@okicici",
-            "depends_on": f"eval: doc.default_online_payment_mode === '{PAYOUT_MODE.UPI.value}'",
-            "mandatory_depends_on": f"eval: doc.default_online_payment_mode === '{PAYOUT_MODE.UPI.value}'",
+            "depends_on": f"eval: doc.online_payment_mode === '{PAYOUT_MODE.UPI.value}'",
+            "mandatory_depends_on": f"eval: doc.online_payment_mode === '{PAYOUT_MODE.UPI.value}'",
             "no_copy": 1,
         },
     ],
@@ -87,7 +89,7 @@ CUSTOM_FIELDS = {
             "label": "Online Payment Details",
             "fieldtype": "Section Break",
             "insert_after": "contact_email",
-            "depends_on": "eval: doc.payment_type=='Pay' && doc.mode_of_payment!='Cash'",
+            "depends_on": f"eval: {BASE_CONDITION_TO_MAKE_ONLINE_PAYMENT}",
             "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
         },
         {
@@ -99,24 +101,24 @@ CUSTOM_FIELDS = {
             "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
         },
         {
+            "fieldname": "cb_online_payment_section",
+            "fieldtype": "Column Break",
+            "insert_after": "make_bank_online_payment",
+        },
+        {
             "fieldname": "party_upi_id",
             "label": "Party UPI ID",
             "fieldtype": "Data",
-            "insert_after": "make_bank_online_payment",
+            "insert_after": "cb_online_payment_section",
             "fetch_from": "party_bank_account.upi_id",  # Note: update at integration level if required
             "read_only": 1,
             "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
         },
         {
-            "fieldname": "cb_online_payment_section",
-            "fieldtype": "Column Break",
-            "insert_after": "party_upi_id",
-        },
-        {
             "fieldname": "party_bank_account_no",
             "label": "Party Bank Account No",
             "fieldtype": "Data",
-            "insert_after": "cb_online_payment_section",
+            "insert_after": "party_upi_id",
             "fetch_from": "party_bank_account.bank_account_no",  # Note: update at integration level if required
             "read_only": 1,
             "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,

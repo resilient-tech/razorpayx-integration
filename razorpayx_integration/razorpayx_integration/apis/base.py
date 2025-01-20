@@ -57,7 +57,9 @@ class BaseRazorPayXAPI:
         )
         self.default_headers = {}
         self.default_log_values = {}  # Show value in Integration Request Log
+        self.ir_service_set = False  # Set service details in Integration Request Log
         self.sensitive_infos = ()  # Sensitive info to mask in Integration Request Log
+        self.place_holder = "************"
 
         self.setup(*args, **kwargs)
 
@@ -84,7 +86,7 @@ class BaseRazorPayXAPI:
         if not self.razorpayx_account.webhook_secret:
             frappe.msgprint(
                 msg=_(
-                    "Webhook Secret is missing! <br>You will not receive any updates!"
+                    "RazorPayX Webhook Secret is missing! <br> You will not receive any updates!"
                 ),
                 indicator="yellow",
                 alert=True,
@@ -216,9 +218,10 @@ class BaseRazorPayXAPI:
         )
 
         # preparing log for Integration Request
+        self._set_source_to_ir_log()
+
         ir_log = frappe._dict(
             **self.default_log_values,
-            integration_request_service=self._get_ir_service(),
             url=request_args.url,
             data=request_args.params,
             request_headers=request_args.headers.copy(),
@@ -261,6 +264,9 @@ class BaseRazorPayXAPI:
                 ir_log.output = response_json.copy()
 
             self._mask_sensitive_info(ir_log)
+
+            if not ir_log.integration_request_service:
+                ir_log.integration_request_service = "RazorPayX Integration"
 
             enqueue_integration_request(**ir_log)
 
@@ -326,11 +332,34 @@ class BaseRazorPayXAPI:
         pass
 
     ### LOGGING ###
-    def _get_ir_service(self):
+    def _set_service_details_to_ir_log(
+        self, service_name: str, service_set: bool = True
+    ):
         """
-        Return the service name for the Integration Request Log.
+        Set the service details in the Integration Request Log.
+
+        :param service_name: The service name.
+        :param service_set:  Set flag that service name for Integration request has been set or not.
         """
-        return f"RazorPayX Service - {frappe.unscrub(self.BASE_PATH)}"
+        self.default_log_values.update(
+            {"integration_request_service": f"RazorPayX - {service_name}"}
+        )
+
+        self.ir_service_set = service_set
+
+    def _set_source_to_ir_log(self):
+        """
+        Set the source document details in the Integration Request Log.
+        """
+        if not (self.source_doctype and self.source_docname):
+            return
+
+        self.default_log_values.update(
+            {
+                "reference_doctype": self.source_doctype,
+                "reference_name": self.source_docname,
+            }
+        )
 
     def _mask_sensitive_info(self, ir_log: dict):
         """
@@ -363,6 +392,7 @@ class BaseRazorPayXAPI:
         Reference: https://razorpay.com/docs/errors/#sample-code
         """
         error_msg = "There is some error in <strong>RazorPayX</strong>"
+        title = _("RazorPayX API Failed")
 
         if response_json:
             error_msg = (
@@ -371,27 +401,49 @@ class BaseRazorPayXAPI:
                 or error_msg
             )
 
-        self._handle_custom_error(error_msg)
+        self._handle_custom_error(error_msg, title=title)
 
         frappe.throw(
             msg=_(error_msg),
-            title=_("RazorPayX API Failed"),
+            title=title,
         )
 
-    def _handle_custom_error(self, error_msg: str):
+    def _handle_custom_error(self, error_msg: str, title: str | None = None):
         """
         Handle custom error message.
+
+        :param error_msg: RazorPayX API error message.
+        :param title: Title of the error message.
         """
+        match error_msg:
+            case "Different request body sent for the same Idempotency Header":
+                error_msg = _(
+                    "Please cancel/delete the current document and pay with a new document."
+                )
 
-        if error_msg == "Different request body sent for the same Idempotency Header":
-            msg = _(
-                "Please cancel/delete the current document and pay with a new document."
-            )
+                error_msg += "<br><br>"
 
-            msg += "<br><br>"
+                error_msg += _(
+                    "You faced this issue because payment details were changed after the first payment attempt."
+                )
 
-            msg += _(
-                "You faced this issue because payment details were changed after the first payment attempt."
-            )
+                title = _("Payment Details Changed")
 
-            frappe.throw(title=_("RazorPayX API Failed"), msg=msg)
+            case "Authentication failed":
+                error_msg = _(
+                    "RazorPayX API credentials are invalid. Please set valid <strong>Key ID</strong> and <strong>Key Secret</strong>."
+                )
+
+                title = _("RazorPayX Authentication Failed")
+
+            case "The RazorpayX Account number is invalid.":
+                error_msg = _(
+                    "Bank Account number is not matching with the <strong>RazorPayX</strong> account. <br> Please set valid <strong>Bank Account</strong>."
+                )
+
+                title = _("Invalid Bank Account Number")
+
+        if not title:
+            title = _("RazorPayX API Failed")
+
+        frappe.throw(title=title, msg=error_msg)

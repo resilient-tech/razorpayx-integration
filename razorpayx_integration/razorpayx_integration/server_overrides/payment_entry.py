@@ -1,19 +1,24 @@
-# TODO: Validations
-# Workflow => Payment Entry => Choose Mode of Payment => Choose Party => Bank Account, Party Bank Account and Credit Account (Account Paid From) is autoset.
-# 1. Validation should start from Company Bank account. Check RazorPayX Settings.
-# 2. Does Mode of Payment Match? Does Credit Account Match? If not, Validate and Show Message.
-# 3. Don't automatically show the Paying via RazorPayX description.
-# 4. On submit => Pay => Update Refernce No => Update Remarks
+from typing import Literal
 
 import frappe
+from erpnext.accounts.doctype.payment_entry.payment_entry import PaymentEntry
 from frappe import _
+from frappe.contacts.doctype.contact.contact import get_contact_details
+from frappe.core.doctype.submission_queue.submission_queue import queue_submission
 from frappe.utils import get_link_to_form
+from frappe.utils.scheduler import is_scheduler_inactive
 
-from razorpayx_integration.constants import RAZORPAYX_INTEGRATION_DOCTYPE
+from razorpayx_integration.constants import (
+    RAZORPAYX_INTEGRATION_DOCTYPE as INTEGRATION_DOCTYPE,
+)
+from razorpayx_integration.payment_utils.utils.validations import validate_ifsc_code
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
+    PAYMENT_MODE_THRESHOLD,
+    PAYOUT_CURRENCY,
     PAYOUT_STATUS,
     USER_PAYOUT_MODE,
 )
+from razorpayx_integration.razorpayx_integration.constants.roles import ROLE_PROFILE
 from razorpayx_integration.razorpayx_integration.utils import (
     get_razorpayx_account,
 )
@@ -24,32 +29,33 @@ from razorpayx_integration.razorpayx_integration.utils.validation import (
     validate_razorpayx_user_payout_mode,
 )
 
-# TODO: cancel workflow as decided like show dialog and then show if cancelled or not
 
-# TODO: for amended form do copy the payout changes but do not allowed to change the payout details and for header pass amended_fromI
-
-
-# TODO:  also validate IFSC code? (Must be 11 chars or some API)
-# TODO: check payout details with amended from
 #### DOC EVENTS ####
-def onload(doc, method=None):
-    doc.set_onload("disable_payout_fields", is_amended_pe_processed(doc))
+def onload(doc: PaymentEntry, method=None):
+    doc.set_onload("amended_pe_processed", is_amended_pe_processed(doc))
 
 
-def validate(doc, method=None):
-    set_razorpayx_account(doc)
-
-    if not doc.razorpayx_account:
-        return
-
-    validate_online_payment_requirements(doc)
+def validate(doc: PaymentEntry, method=None):
+    validate_amended_pe(doc)
+    validate_payout_details(doc)
 
 
-def on_submit(doc, method=None):
-    make_payout_with_razorpayx(doc)
+def before_submit(doc: PaymentEntry, method=None):
+    if not doc.make_bank_online_payment:
+        reset_razorpayx_fields(doc)
 
 
-def before_cancel(doc, method=None):
+def on_submit(doc: PaymentEntry, method=None):
+    auth_id = None
+
+    if not frappe.flags.authenticated_by_cron_job:
+        auth_id = doc.__onload.get("auth_id")
+
+    make_payout_with_razorpayx(doc, auth_id=auth_id)
+
+
+def before_cancel(doc: PaymentEntry, method=None):
+    # PE is cancelled by RazorPayX webhook or PE is cancelled when payout got cancelled
     if doc.flags.__canceled_by_rpx:
         return
 
@@ -57,103 +63,15 @@ def before_cancel(doc, method=None):
 
 
 #### VALIDATIONS ####
-def validate_online_payment_requirements(doc):
-    # Validation for amended details to be same of processed payout
-    validate_amended_details(doc)
+def validate_amended_pe(doc: PaymentEntry):
+    """
+    If the amended Payment Entry is processed via RazorPayX, then do not allow to change Payout Fields.
 
-    # Validation for user to make payment
-    if not doc.make_bank_online_payment:
+    :param doc: Payment Entry Document
+    """
+    if not doc.amended_from:
         return
 
-    # TODO: set razorpayx account if not already set
-    # Ignore if razorpayx account is not set
-    validate_payout_mode(doc)
-    validate_upi_id(doc)
-
-
-def validate_payout_mode(doc):
-    if not doc.razorpayx_payout_mode:
-        doc.razorpayx_payout_mode = frappe.get_value(
-            "Bank Account",
-            doc.party_bank_account,
-            "default_online_payment_mode",
-        )
-
-    validate_razorpayx_user_payout_mode(doc.razorpayx_payout_mode)
-
-    if doc.razorpayx_payout_mode == USER_PAYOUT_MODE.BANK.value:
-        # TODO: also fetch `IFSC` and `Account Number` and check
-        if not doc.party_bank_account:
-            frappe.throw(
-                msg=_("Party's Bank Account is mandatory to make payment."),
-                title=_("Mandatory Fields Missing"),
-                exc=frappe.MandatoryError,
-            )
-
-    elif doc.razorpayx_payout_mode == USER_PAYOUT_MODE.LINK.value:
-        if not doc.contact_mobile or not doc.contact_email:
-            frappe.throw(
-                msg=_(
-                    "Any one of Contact's Mobile or  Email is mandatory to make payment with Link."
-                ),
-                title=_("Mandatory Fields Missing"),
-                exc=frappe.MandatoryError,
-            )
-
-        if not doc.razorpayx_payout_desc:
-            frappe.throw(
-                msg=_("Payout Description is mandatory to make payment with Link."),
-                title=_("Mandatory Fields Missing"),
-                exc=frappe.MandatoryError,
-            )
-
-    elif doc.razorpayx_payout_mode == USER_PAYOUT_MODE.UPI.value:
-        if not doc.party_upi_id:
-            frappe.throw(
-                msg=_("Party's UPI ID is mandatory to make payment."),
-                title=_("Mandatory Fields Missing"),
-                exc=frappe.MandatoryError,
-            )
-
-
-def set_razorpayx_account(doc):
-    if not doc.razorpayx_account:
-        doc.razorpayx_account = get_razorpayx_account(doc.bank_account)
-
-
-def validate_doc_company(doc):
-    # TODO
-    pass
-
-
-def validate_upi_id(doc):
-    if doc.razorpayx_payout_mode != USER_PAYOUT_MODE.UPI.value:
-        return
-
-    associated_upi_id = frappe.get_value(
-        "Bank Account",
-        doc.party_bank_account,
-        "upi_id",
-    )
-
-    if not associated_upi_id:
-        frappe.throw(
-            msg=_(
-                "UPI ID not found for Party Bank Account <strong>{0}</strong>"
-            ).format(doc.party_bank_account),
-            title=_("Invalid Party Bank Account"),
-            exc=frappe.ValidationError,
-        )
-
-
-def validate_amended_details(doc):
-    if not doc.amended_from or not is_amended_pe_processed(doc):
-        return
-
-    amended_from_doc = frappe.get_doc("Payment Entry", doc.amended_from)
-
-    # Payments Related Fields
-    # TODO: accurate fields ?
     payout_fields = [
         # Common
         "payment_type",
@@ -181,55 +99,428 @@ def validate_amended_details(doc):
         "razorpayx_payout_link_id",
     ]
 
+    amended_from_doc = frappe.db.get_value(
+        "Payment Entry",
+        doc.amended_from,
+        payout_fields,
+        as_dict=True,
+    )
+
+    if not amended_from_doc or not amended_from_doc.make_bank_online_payment:
+        return
+
     for field in payout_fields:
         if doc.get(field) != amended_from_doc.get(field):
-            fieldname = _(doc.meta.get_label(field))
             msg = _("Field <strong>{0}</strong> cannot be changed.<br><br>").format(
-                fieldname
+                _(doc.meta.get_label(field))
             )
             msg += _(
                 "The source Payment Entry <strong>{0}</strong> is processed via RazorPayX."
             ).format(get_link_to_form("Payment Entry", doc.amended_from))
 
             frappe.throw(
-                title=_("Invalid Amendment"),
+                title=_("Payout Details Cannot Be Changed"),
                 msg=msg,
             )
 
 
+def validate_payout_details(doc: PaymentEntry, throw=False):
+    """
+    Validate Payout details of RazorPayX.
+
+    :param doc: Payment Entry
+    :param throw: Throw error if Payout details are not valid otherwise just return
+    """
+    if not doc.make_bank_online_payment:
+        return
+
+    validate_razorpayx_account(doc, throw=throw)
+
+    # Maybe other Integration is used to make payment instead of RazorPayX
+    if not doc.razorpayx_account:
+        return
+
+    set_missing_payout_details(doc)
+    validate_party_bank_account(doc)
+    validate_payout_modes(doc)
+
+
+# TODO: make it more simple?
+def validate_razorpayx_account(doc: PaymentEntry, throw: bool = False):
+    """
+    Validate RazorpayX Account.
+
+    Also set the RazorpayX Account based on Company's Bank Account.
+
+    :param doc: Payment Entry Document
+    :param throw: Throw error if
+    - Bank Account is not set
+    - RazorPayX Account not found for Bank Account
+    - RazorPayX Account is disabled
+    """
+    set_razorpayx_account(doc, throw)
+
+    # Always throw error if account is disabled
+    if doc.razorpayx_account and doc.razorpayx_account_details.get("disabled"):
+        frappe.throw(
+            msg=_(
+                "RazorpayX Account <strong>{0}</strong> is disabled. Please enable it first to use!"
+            ).format(doc.razorpayx_account),
+            title=_("Invalid RazorpayX Account"),
+        )
+
+
+def validate_party_bank_account(doc: PaymentEntry):
+    """
+    Validate Party's Bank Account.
+
+    :param doc: Payment Entry Document
+    """
+
+    if doc.party_bank_account and doc.party_bank_account_details.disabled:
+        frappe.throw(
+            msg=_("Party's Bank Account <strong>{0}</strong> is disabled.").format(
+                doc.party_bank_account
+            ),
+            title=_("Invalid Bank Account"),
+        )
+
+
+def validate_payout_modes(doc: PaymentEntry):
+    """
+    Validate Payout Modes based on RazorPayX User Payout Mode.
+
+    - Bank Payout Mode
+    - UPI Payout Mode
+    - Link Payout Mode
+
+    :param doc: Payment Entry Document
+    """
+    validate_razorpayx_user_payout_mode(doc.razorpayx_payout_mode)
+
+    validate_bank_payout_mode(doc)
+    validate_upi_payout_mode(doc)
+    validate_link_payout_mode(doc)
+
+
+def validate_bank_payout_mode(doc: PaymentEntry):
+    """
+    Validate Bank Payout Mode.
+
+    - Validate party bank account no
+    - Validate party bank IFSC code
+
+    :param doc: Payment Entry Document
+    """
+    if doc.razorpayx_payout_mode != USER_PAYOUT_MODE.BANK.value:
+        return
+
+    if not (
+        doc.party_bank_account and doc.party_bank_account_no and doc.party_bank_ifsc
+    ):
+        frappe.throw(
+            msg=_(
+                "Party's Bank Account Details is mandatory to make payment. Please set valid <strong>Party Bank Account</strong>."
+            ),
+            title=_("Mandatory Fields Missing"),
+            exc=frappe.MandatoryError,
+        )
+
+    validate_ifsc_code(doc.party_bank_ifsc)
+
+    if doc.party_bank_account_no != doc.party_bank_account_details.account_no:
+        frappe.throw(
+            msg=_(
+                "Party's Bank Account No <strong>{0}</strong> does not match with selected Party's Bank Account."
+            ).format(doc.party_bank_account_no),
+            title=_("Invalid Bank Account No"),
+        )
+
+    if doc.party_bank_ifsc != doc.party_bank_account_details.ifsc_code:
+        frappe.throw(
+            msg=_(
+                "Party's Bank IFSC Code <strong>{0}</strong> does not match with selected Party's Bank Account."
+            ).format(doc.party_bank_ifsc),
+            title=_("Invalid Bank IFSC Code"),
+        )
+
+    if (
+        doc.razorpayx_pay_instantaneously
+        and doc.paid_amount > PAYMENT_MODE_THRESHOLD.IMPS.value
+    ):
+        doc.db_set("razorpayx_pay_instantaneously", 0)
+
+
+def validate_upi_payout_mode(doc: PaymentEntry):
+    """
+    Validate UPI Payout Mode.
+
+    - validate party UPI ID
+
+    :param doc: Payment Entry Document
+    """
+    if doc.razorpayx_payout_mode != USER_PAYOUT_MODE.UPI.value:
+        return
+
+    if not (doc.party_upi_id and doc.party_bank_account):
+        frappe.throw(
+            msg=_(
+                "Party's UPI ID is mandatory to make payment. Please set valid <strong>Party Bank Account</strong>."
+            ),
+            title=_("Mandatory Fields Missing"),
+            exc=frappe.MandatoryError,
+        )
+
+    if doc.party_upi_id != doc.party_bank_account_details.upi_id:
+        frappe.throw(
+            msg=_(
+                "Party's UPI ID <strong>{0}</strong> does not match with selected Party's Bank Account."
+            ).format(doc.party_upi_id),
+            title=_("Invalid UPI ID"),
+        )
+
+
+def validate_link_payout_mode(doc: PaymentEntry):
+    """
+    Validate Link Payout Mode.
+
+    - validate Contact's Mobile or Email
+    - validate description
+
+    :param doc: Payment Entry Document
+    """
+    if doc.razorpayx_payout_mode != USER_PAYOUT_MODE.LINK.value:
+        return
+
+    if not (doc.contact_mobile or doc.contact_email):
+        frappe.throw(
+            msg=_(
+                "Any one of Party's Mobile or Email is mandatory to make payout with link."
+            ),
+            title=_("Mandatory Fields Missing"),
+            exc=frappe.MandatoryError,
+        )
+
+    if not doc.razorpayx_payout_desc:
+        frappe.throw(
+            msg=_("Payout Description is mandatory to make payment with Link."),
+            title=_("Mandatory Fields Missing"),
+            exc=frappe.MandatoryError,
+        )
+
+    # Validate email and contact is correct or not
+    contact_details = get_contact_details(doc.contact_person)
+
+    if doc.contact_mobile and doc.contact_mobile != contact_details.get(
+        "contact_mobile"
+    ):
+        frappe.throw(
+            msg=_(
+                "Contact's Mobile <strong>{0}</strong> does not match with selected Contact."
+            ).format(doc.contact_mobile),
+            title=_("Invalid Mobile"),
+        )
+
+    if doc.contact_email and doc.contact_email != contact_details.get("contact_email"):
+        frappe.throw(
+            msg=_(
+                "Contact's Email <strong>{0}</strong> does not match with selected Contact."
+            ).format(doc.contact_email),
+            title=_("Invalid Email"),
+        )
+
+
+#### EVENT'S HELPERS ####
+# TODO: make it more simple?
+def set_razorpayx_account(doc: PaymentEntry, throw: bool = False):
+    """
+    Set RazorPayX Account based on Company's Bank Account.
+
+    :param doc: Payment Entry Document
+    :param throw: Throw error if
+    - Bank Account is not set
+    - RazorPayX Account not found for Bank Account
+    """
+    doc.razorpayx_account = ""
+
+    if not doc.bank_account:
+        if throw:
+            frappe.throw(
+                msg=_("Bank Account is mandatory to make payment."),
+                title=_("Mandatory Fields Missing"),
+                exc=frappe.MandatoryError,
+            )
+
+        return
+
+    # Fetch RazorpayX Account based on Bank Account
+    doc.razorpayx_account_details = (
+        get_razorpayx_account(
+            identifier=doc.bank_account,
+            search_by="bank_account",
+            fields=["name", "disabled"],
+        )
+        or {}
+    )
+
+    if not doc.razorpayx_account_details and throw:
+        frappe.throw(
+            msg=_(
+                "RazorPayX Account not found for Bank Account <strong>{0}</strong>."
+            ).format(doc.bank_account),
+            title=_("RazorPayX Account Not Found"),
+            exc=frappe.ValidationError,
+        )
+    elif account := doc.razorpayx_account_details.get("name"):
+        doc.db_set("razorpayx_account", account)
+
+
+def set_missing_payout_details(doc: PaymentEntry):
+    """
+    Set missing Payout details of RazorPayX.
+
+    - Party Bank Details
+    - Payout Mode
+    - Reference No
+
+    :param doc: Payment Entry Document
+    """
+    set_party_bank_details(doc)
+    set_payout_mode(doc)
+    set_reference_no(doc)
+
+
+def set_party_bank_details(doc: PaymentEntry):
+    """
+    Setting party's bank details to `party_bank_details`.
+
+    Note: It is a not an actual field, it is temporary stored for validation.
+    """
+    doc.party_bank_account_details = frappe._dict()
+
+    if (
+        doc.party_bank_account
+        and doc.razorpayx_payout_mode != USER_PAYOUT_MODE.LINK.value
+    ):
+        doc.party_bank_account_details = frappe.db.get_value(
+            "Bank Account",
+            doc.party_bank_account,
+            [
+                "branch_code as ifsc_code",
+                "bank_account_no as account_no",
+                "upi_id",
+                "online_payment_mode as payment_mode",
+                "disabled",
+            ],
+            as_dict=True,
+        )
+
+
+def set_payout_mode(doc: PaymentEntry):
+    """
+    Setting RazorPayX payout mode if not set.
+
+    - If not set, then set based on Party Bank Details.
+    - If Party Bank Details not set, then set to LINK mode.
+
+    :param doc: Payment Entry Document
+    """
+    if doc.razorpayx_payout_mode:
+        return
+
+    def get_mode():
+        if doc.party_bank_account:
+            return doc.party_bank_details.payment_mode
+
+        return USER_PAYOUT_MODE.LINK
+
+    doc.db_set("razorpayx_payout_mode", get_mode())
+
+
+def set_reference_no(doc: PaymentEntry):
+    """
+    Set Reference No for the Payment Entry if not set.
+
+    :param doc: Payment Entry Document
+    """
+    if doc.reference_no:
+        return
+
+    doc.db_set("reference_no", "*** UTR WILL BE SET AUTOMATICALLY ***")
+
+
+def reset_razorpayx_fields(doc: PaymentEntry):
+    """
+    Reset RazorPayX payout fields.
+
+    :param doc: Payment Entry Document
+
+    ---
+    Note: Account does not reset because it is based on Bank Account.
+    """
+    fields = [
+        # "razorpayx_account",
+        "razorpayx_payout_desc",
+        "razorpayx_payout_id",
+        "razorpayx_payout_link_id",
+    ]
+
+    for field in fields:
+        doc.set(field, "")
+
+
 ### ACTIONS ###
-def make_payout_with_razorpayx(doc) -> dict | None:
-    if doc.docstatus != 1:
+def make_payout_with_razorpayx(
+    doc: PaymentEntry, *, auth_id: str | None = None, throw: bool = False
+):
+    """
+    Make Payout with RazorPayX Integration.
+
+    :param doc: Payment Entry Document
+    :param auth_id: Authentication ID (after otp or password verification)
+    :param throw: Throw error if Payout cannot be made, otherwise just return
+    """
+    if not can_make_payout(doc):
+        if throw:
+            frappe.throw(
+                msg=_(
+                    "Payout cannot be made for this Payment Entry. Please check the details."
+                ),
+                title=_("Invalid Payment Entry"),
+            )
+
         return
 
-    if not doc.razorpayx_account:
+    PayoutWithPaymentEntry(doc).make_payout(auth_id)
+
+
+def handle_payout_cancellation(
+    doc: PaymentEntry, *, auto_cancel: bool = False, throw: bool = False
+):
+    """
+    Cancel payout and payout link if possible for the Payment Entry.
+
+    Check the settings of RazorPayX Account to auto cancel the payout or not.
+
+    :param doc: Payment Entry Document
+    :param auto_cancel: Flag to auto cancel the payout is true or false
+    :param throw: Throw error if Payout cannot be cancelled, otherwise just return
+    """
+    if not can_cancel_payout(doc):
+        if throw:
+            frappe.throw(
+                title=_("Invalid Action"),
+                msg=_("Payout cannot be cancelled."),
+            )
+
         return
 
-    if doc.payment_type != "Pay":
-        return
-
-    if doc.razorpayx_payout_id or doc.razorpayx_payout_link_id:
-        return
-
-    if not doc.make_bank_online_payment or is_amended_pe_processed(doc):
-        return
-
-    PayoutWithPaymentEntry(doc).make_payout()
-
-
-def handle_payout_cancellation(doc):
-    if not doc.razorpayx_account:
-        return
-
-    if not doc.make_bank_online_payment or is_payout_already_cancelled(doc):
-        return
-
-    if can_cancel_payout(doc) and should_auto_cancel_payout(doc.razorpayx_account):
+    if auto_cancel or should_auto_cancel_payout(doc.razorpayx_account):
         PayoutWithPaymentEntry(doc).cancel()
 
 
 ### UTILITY ###
-def is_amended_pe_processed(doc) -> bool | int:
+def is_amended_pe_processed(doc: PaymentEntry) -> bool | int:
     """
     Check if the amended Payment Entry is processed via RazorPayX or not.
 
@@ -238,39 +529,98 @@ def is_amended_pe_processed(doc) -> bool | int:
     if not doc.amended_from:
         return False
 
-    return frappe.get_value(
-        "Payment Entry", doc.amended_from, "make_bank_online_payment"
+    return frappe.db.get_value(
+        doctype="Payment Entry",
+        filters=doc.amended_from,
+        fieldname="make_bank_online_payment",
     )
 
 
-def can_cancel_payout(doc) -> bool | int:
+def can_cancel_payout(doc: PaymentEntry) -> bool | int:
     """
     Check if the Payout can be cancelled or not.
 
     :param doc: Payment Entry Document
     """
-    return doc.make_bank_online_payment and doc.razorpayx_payout_status.lower() in [
-        PAYOUT_STATUS.NOT_INITIATED.value,
-        PAYOUT_STATUS.QUEUED.value,
-    ]
+    return (
+        doc.razorpayx_payout_status.lower()
+        in [
+            PAYOUT_STATUS.NOT_INITIATED.value,
+            PAYOUT_STATUS.QUEUED.value,
+        ]
+        and doc.razorpayx_account
+        and doc.make_bank_online_payment
+    )
 
 
-def is_payout_already_cancelled(doc) -> bool:
+def can_make_payout(doc: PaymentEntry) -> bool:
     """
-    Check if the Payout is already cancelled or not.
+    Check if the Payout can be made or not.
 
     :param doc: Payment Entry Document
     """
-    # TODO: Duplication in webhooks
-    return doc.razorpayx_payout_status.lower() in [
-        PAYOUT_STATUS.CANCELLED.value,
-        PAYOUT_STATUS.REJECTED.value,
-        PAYOUT_STATUS.FAILED.value,
-    ]
+    return (
+        doc.docstatus == 1
+        and doc.payment_type == "Pay"
+        and doc.make_bank_online_payment
+        and doc.razorpayx_account
+        and doc.mode_of_payment != "Cash"
+        and doc.paid_from_account_currency == PAYOUT_CURRENCY.INR.value
+        and not doc.razorpayx_payout_id
+        and not doc.razorpayx_payout_link_id
+        and not is_amended_pe_processed(doc)
+    )
+
+
+# TODO: concern with @smit_vora
+def user_has_payout_permissions(
+    payment_entry: str | None = None,
+    razorpayx_account: str | None = None,
+    *,
+    pe_permission: Literal["submit", "cancel"] = "submit",
+    throw: bool = False,
+):
+    """
+    Check RazorPayX related permissions for the user.
+
+    Permission Check:
+    - Has a role of integration manager
+    - Can access particular Payment Entry
+    - Can access particular RazorPayX Account (if provided)
+
+    :param payment_entry: Payment Entry name
+    :param razorpayx_account: RazorPayX Account name
+    :param pe_permission: Payment Entry Permission to check
+    :param throw: Throw error if permission is not granted
+    """
+    has_role = ROLE_PROFILE.RAZORPAYX_MANAGER.value in frappe.get_roles()
+
+    if not has_role and throw:
+        frappe.throw(
+            title=_("Insufficient Permissions"),
+            msg=_("You do not have permission to make payout."),
+            exc=frappe.PermissionError,
+        )
+
+    has_pe_permission = frappe.has_permission(
+        doctype="Payment Entry",
+        doc=payment_entry,
+        ptype=pe_permission,
+        throw=throw,
+    )
+
+    has_razorpayx_permission = frappe.has_permission(
+        doctype=INTEGRATION_DOCTYPE,
+        doc=razorpayx_account,
+        throw=throw,
+    )
+
+    return has_role and has_pe_permission and has_razorpayx_permission
 
 
 ### APIs ###
 @frappe.whitelist()
+# TODO: permissions ?!
 def should_auto_cancel_payout(razorpayx_account: str) -> bool | int:
     """
     Check if the Payout should be auto cancelled or not.
@@ -280,63 +630,131 @@ def should_auto_cancel_payout(razorpayx_account: str) -> bool | int:
     frappe.has_permission("Payment Entry", throw=True)
 
     return frappe.db.get_value(
-        RAZORPAYX_INTEGRATION_DOCTYPE, razorpayx_account, "auto_cancel_payout"
+        INTEGRATION_DOCTYPE, razorpayx_account, "auto_cancel_payout"
     )
 
 
 @frappe.whitelist()
-def cancel_payout_and_payout_link(doctype: str, docname: str):
-    frappe.has_permission("Payment Entry", throw=True)
+def cancel_payout(docname: str, razorpayx_account: str):
+    """
+    Cancel Payout or Payout Link for the Payment Entry.
 
-    doc = frappe.get_cached_doc(doctype, docname)
-    PayoutWithPaymentEntry(doc).cancel()
+    :param docname: Payment Entry name
+    :param razorpayx_account: RazorPayX Account name associated to company bank account
+    """
+    user_has_payout_permissions(
+        docname,
+        razorpayx_account,
+        pe_permission="cancel",
+        throw=True,
+    )
+
+    doc = frappe.get_cached_doc("Payment Entry", docname)
+    handle_payout_cancellation(doc, auto_cancel=True, throw=True)
 
 
 @frappe.whitelist()
-def make_payout_with_payment_entry(docname: str, **kwargs):
+# TODO: ? kwargs is good or not?
+def make_payout_with_payment_entry(
+    auth_id: str, docname: str, razorpayx_account: str, **kwargs
+):
     """
     Make Payout or Payout Link with Payment Entry.
 
+    :param auth_id: Authentication ID (after otp or password verification)
     :param docname: Payment Entry name
-    :param kwargs: Payout details
-
+    :param razorpayx_account: RazorPayX Account name associated to company bank account
     """
-    # Has role payment manager
-    frappe.has_permission(RAZORPAYX_INTEGRATION_DOCTYPE, throw=True)
+    user_has_payout_permissions(docname, razorpayx_account, throw=True)
 
     doc = frappe.get_doc("Payment Entry", docname)
-    # check razorpayx account doc permission ("read")
-    doc.has_permission("submit")
 
-    kwargs.pop("cmd")
+    kwargs.pop("cmd")  # unwanted key
+
+    # Set the fields to make payout
     doc.db_set(
         {
-            "razorpayx_account": get_razorpayx_account(kwargs["bank_account"]),
             "make_bank_online_payment": 1,
             **kwargs,
         }
     )
 
-    validate_online_payment_requirements(doc)
-    make_payout_with_razorpayx(doc)
+    validate_payout_details(doc, throw=True)
+    make_payout_with_razorpayx(doc, auth_id=auth_id)
 
 
-# ! Important
-# TODO: Change design ?
-"""
-Bank Account:
+@frappe.whitelist()
+def bulk_pay_and_submit(
+    auth_id: str, docnames: list[str] | str, task_id: str | None = None
+):
+    """
+    Bulk pay and submit Payment Entries.
 
-- In bank account there should be field for `Default Payment Mode` for that user.
-- Other fields should be visible but not mandatory.
+    :param auth_id: Authentication ID (after otp or password verification)
+    :param docnames: List of Payment Entry names
+    :param task_id: Task ID (realtime or background)
+    """
+    user_has_payout_permissions(throw=True)
 
-Payment Entry:
+    if isinstance(docnames, str):
+        docnames = frappe.parse_json(docnames)
 
-- When user selects `Party's Bank Account` default mode and other setting should be fetched.
-- And PE's data must be matched with that. (Like user can't change UPI or contact details or bank account)
-- At PE level user can select `Mode of Payment`.
+    if len(docnames) < 20:
+        return _bulk_pay_and_submit(auth_id, docnames, task_id)
+    elif len(docnames) <= 500:
+        frappe.msgprint(_("Bulk operation is enqueued in background."), alert=True)
+        frappe.enqueue(
+            _bulk_pay_and_submit,
+            auth_id=auth_id,
+            docnames=docnames,
+            task_id=task_id,
+            queue="short",
+            timeout=1000,
+        )
+    else:
+        frappe.throw(
+            _("Bulk operations only support up to 500 documents."),
+            title=_("Too Many Documents"),
+        )
 
-- Why this?
 
-- No need of multiple bank accounts
-- More freedom to user at payment time, how to pay?
-"""
+def _bulk_pay_and_submit(auth_id: str, docnames: list[str], task_id: str | None = None):
+    """
+    Bulk pay and submit Payment Entries.
+
+    :param auth_id: Authentication ID (after otp or password verification)
+    :param docnames: List of Payment Entry names
+    :param task_id: Task ID (realtime or background)
+    """
+    failed = []
+    num_documents = len(docnames)
+
+    for idx, docname in enumerate(docnames, 1):
+        doc = frappe.get_doc("Payment Entry", docname)
+        doc.set_onload("auth_id", auth_id)
+
+        try:
+            message = ""
+            if doc.docstatus.is_draft():
+                if doc.meta.queue_in_background and not is_scheduler_inactive():
+                    queue_submission(doc, "submit")
+                    message = _("Queuing {0} for Submission").format("Payment Entry")
+                else:
+                    doc.submit()
+                    message = _("Submitting {0}").format("Payment Entry")
+            else:
+                failed.append(docname)
+
+            frappe.db.commit()
+            frappe.publish_progress(
+                percent=idx / num_documents * 100,
+                title=message,
+                description=docname,
+                task_id=task_id,
+            )
+
+        except Exception:
+            failed.append(docname)
+            frappe.db.rollback()
+
+    return failed

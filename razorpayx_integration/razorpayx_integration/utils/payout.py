@@ -1,5 +1,6 @@
+import pickle
 from abc import ABC, abstractmethod
-from typing import ClassVar, Literal
+from base64 import b64decode
 
 import frappe
 from erpnext.accounts.doctype.payment_entry.payment_entry import PaymentEntry
@@ -18,48 +19,36 @@ from razorpayx_integration.razorpayx_integration.constants.payouts import (
 )
 
 
-class PAYOUT_METHOD(BaseEnum):
-    FUND_ACCOUNT_BANK_ACCOUNT = "fund_account.bank_account"
-    FUND_ACCOUNT_UPI = "fund_account.upi"
+class PAYOUT_CHANNEL(BaseEnum):
+    """
+    Payout Channel for making payout.
+
+    ---
+    - fund_account.bank_account: Make payout with `Fund Account ID` which is linked with party's bank account.
+    - fund_account.upi: Make payout with `Fund Account ID` which is linked with party's UPI ID.
+    - composite.bank_account: Make payout with  party's bank account details.
+    - composite.upi: Make payout with party's UPI ID.
+    - link.contact_details: Send payout link to party's contact details.
+    - link.contact_id: Send payout link to party's RazorPayX Contact ID.
+    """
+
+    # FUND_ACCOUNT_BANK_ACCOUNT = "fund_account.bank_account" # ! Not Supported
+    # FUND_ACCOUNT_UPI = "fund_account.upi" # ! Not Supported
     COMPOSITE_BANK_ACCOUNT = "composite.bank_account"
     COMPOSITE_UPI = "composite.upi"
     LINK_CONTACT_DETAILS = "link.contact_details"
-    LINK_CONTACT_ID = "link.contact_id"  # RazorPayX Contact ID
+    # LINK_CONTACT_ID = "link.contact_id"  # RazorPayX Contact ID # ! Not Supported
 
 
-class PAYOUT_TYPE(BaseEnum):
-    PAYOUT = "payout"  # paid with `Fund Account ID`
-    COMPOSITE = "composite"  # paid with party details
-    PAYOUT_LINK = "payout_link"  # send link to party contact
-
-
-class PayoutWithDocType(ABC):
+class PayoutWithDocument(ABC):
     """
-    Make RazorPayx Payout with given DocType.
+    Make RazorPayx Payout with given Document.
 
     - Base class for making payout with doctypes.
     - It is recommended to use `Submittable` doctype for making payout.
 
-    :param doc: DocType instance.
-
-    ---
-    Note: ⚠️ Inherit this class to make payout with different doctypes.
+    :param doc: Document instance.
     """
-
-    PAYOUT_METHOD_MAPPING: ClassVar[dict] = {
-        # PAYOUT_METHOD.FUND_ACCOUNT_BANK_ACCOUNT.value: "_bank_payout_with_fund_account",
-        # PAYOUT_METHOD.FUND_ACCOUNT_UPI.value: "_upi_payout_with_fund_account",
-        PAYOUT_METHOD.COMPOSITE_BANK_ACCOUNT.value: "_bank_payout_with_composite",
-        PAYOUT_METHOD.COMPOSITE_UPI.value: "_upi_payout_with_composite",
-        PAYOUT_METHOD.LINK_CONTACT_DETAILS.value: "_link_payout_with_contact_details",
-        # PAYOUT_METHOD.LINK_CONTACT_ID.value: "_link_payout_with_contact_id",
-    }
-
-    PAYOUT_DETAILS_MAPPING: ClassVar[dict] = {
-        PAYOUT_TYPE.PAYOUT.value: "_get_payout_details_for_fund_account",
-        PAYOUT_TYPE.COMPOSITE.value: "_get_payout_details_for_composite",
-        PAYOUT_TYPE.PAYOUT_LINK.value: "_get_payout_details_for_link",
-    }
 
     ### SETUPS ###
     def __init__(self, doc, *args, **kwargs):
@@ -70,26 +59,74 @@ class PayoutWithDocType(ABC):
         Caution: ⚠️  Don't forget to call `super().__init__()` in sub class.
         """
         self.doc = doc
-        self.form_link = self._get_form_link()
         self.razorpayx_account = self._get_razorpayx_account()
 
-    ### APIs ###
-    def make_payout(self) -> dict:
+    ### AUTHORIZATION ###
+    def is_authenticated_payment(self, auth_id: str | None = None) -> bool:
         """
-        Make payout with given document.
-        """
-        payout_method = self._get_method_for_payout()
+        Check if the Payment Entry is authenticated or not.
 
-        if payout_method not in self.PAYOUT_METHOD_MAPPING:
+        :param auth_id: Authentication ID
+        """
+        if frappe.flags.authenticated_by_cron_job and not auth_id:
+            return True
+
+        if not auth_id:
             frappe.throw(
-                msg=_("Payout method {0} is not supported.").format(
-                    frappe.bold(payout_method)
-                ),
-                title=_("Unsupported Payout Method"),
-                exc=frappe.ValidationError,
+                title=_("Unauthorized Access"),
+                msg=_("Authentication ID is required to make payout."),
+                exc=frappe.PermissionError,
             )
 
-        return getattr(self, self.PAYOUT_METHOD_MAPPING[payout_method])()
+        if not frappe.cache.get(f"{auth_id}_authenticated"):
+            frappe.throw(
+                title=_("Unauthorized Access"),
+                msg=_("You are not authorized to access this Payment Entry."),
+                exc=frappe.PermissionError,
+            )
+
+        payment_entries = frappe.cache.get(f"{auth_id}_payment_entries")
+        payment_entries = pickle.loads(b64decode(payment_entries))
+
+        if self.doc.name not in payment_entries:
+            frappe.throw(
+                title=_("Unauthorized Access"),
+                msg=_("This Payment Entry is not authenticated for payment."),
+                exc=frappe.PermissionError,
+            )
+
+        return True
+
+    ### APIs ###
+    def make_payout(self, auth_id: str | None = None) -> dict:
+        """
+        Make payout with given document.
+
+        :param auth_id: Authorization ID for making payout.
+        """
+        self.is_authenticated_payment(auth_id)
+
+        self._set_payout_channel()
+
+        if self.payout_channel not in PAYOUT_CHANNEL.values():
+            frappe.throw(
+                msg=_("Payout channel <strong>{0}</strong> is not supported.").format(
+                    self.payout_channel
+                ),
+                title=_("Unsupported Payout Channel"),
+            )
+
+        payout_processor = self._get_payout_processor()
+        payout_details = self._get_payout_details()
+
+        # Note: Unsupported Payout Channel is not managed.
+        match self.payout_channel:
+            case PAYOUT_CHANNEL.COMPOSITE_BANK_ACCOUNT.value:
+                return payout_processor.pay_to_bank_account(payout_details)
+            case PAYOUT_CHANNEL.COMPOSITE_UPI.value:
+                return payout_processor.pay_to_upi_id(payout_details)
+            case PAYOUT_CHANNEL.LINK_CONTACT_DETAILS.value:
+                return payout_processor.create_with_contact_details(payout_details)
 
     def cancel(self, update_status: bool = True, cancel_doc: bool = False):
         """
@@ -130,7 +167,7 @@ class PayoutWithDocType(ABC):
             source_docname=self.doc.name,
         )
 
-        self._update_doc_after_payout_cancel(
+        self._update_doc_after_payout_cancelled(
             response, update_status=update_status, cancel_doc=cancel_doc
         )
 
@@ -158,18 +195,18 @@ class PayoutWithDocType(ABC):
             source_docname=self.doc.name,
         )
 
-        self._update_doc_after_payout_cancel(
+        self._update_doc_after_payout_cancelled(
             response, update_status=update_status, cancel_doc=cancel_doc
         )
 
         return response
 
-    ### HELPERS ###
-    def _update_doc_after_payout_cancel(
+    ### UTILITY ###
+    def _update_doc_after_payout_cancelled(
         self, response: dict, *, update_status: bool = False, cancel_doc: bool = False
     ):
-        """ "
-        Update document after cancelling payout and payout link.
+        """
+        Update document after cancelling payout or payout link.
 
         :param response: Response after cancelling payout or payout link.
         :param update_status: Update status in document after cancelling payout or payout link.
@@ -179,146 +216,62 @@ class PayoutWithDocType(ABC):
         if update_status:
             self.doc.db_set(
                 "razorpayx_payout_status",
-                self._get_cancelled_status(response),
+                (response.get("status") or PAYOUT_STATUS.CANCELLED.value).title(),
             )
 
         if cancel_doc and self.doc.docstatus == 1:
-            self.doc.flags.__canceled_by_rpx = True
-            self.doc.cancel()
+            self._cancel_doc()
 
-    def _get_cancelled_status(self, response: dict) -> str:
+    def _cancel_doc(self):
         """
-        Return status after cancelling payout.
+        Cancel document.
+
+        It will set `__canceled_by_rpx` flag in document.
         """
-        return (response.get("status") or PAYOUT_STATUS.CANCELLED.value).title()
+        self.doc.flags.__canceled_by_rpx = True
+        self.doc.cancel()
 
-    def _get_form_link(self, bold: bool = True) -> str:
-        """
-        Return link to form of given document.
-
-        :param bold: Make link bold.
-        """
-        link = get_link_to_form(self.doc.doctype, self.doc.name)
-
-        return frappe.bold(link) if bold else link
-
+    ### ABSTRACT METHODS ###
     @abstractmethod
     def _get_razorpayx_account(self) -> str:
         """
-        Return RazorPayX Integration Account name for making payout.
+        Return RazorPayX Integration Account name.
         """
         pass
 
     @abstractmethod
-    def _get_method_for_payout(self) -> str:
+    def _set_payout_channel(self):
         """
-        Return payout method for making payout.
-
-        Decide which method to use for making payout.
+        Set Payout Channel for making payout.
 
         ---
         Example:
 
-        If you want to make payout with `Fund Account ID` with `Bank Account`
-        then return `PAYOUT_METHOD.FUND_ACCOUNT_BANK_ACCOUNT.value`.
-        """
-        pass
-
-    def _get_base_payout_details(self) -> dict:
-        """
-        Return base mapped request for making payout.
-        """
-        return {
-            "source_doctype": self.doc.doctype,
-            "source_docname": self.doc.name,
-        }
-
-    @abstractmethod
-    def _get_payout_details_for_fund_account(self) -> dict:
-        """
-        Return request body for making payout with `Fund Account ID` API.
+        If you want to make payout with party's bank account details,
+        ```
+        >>> self.payout_channel = PAYOUT_CHANNEL.COMPOSITE_BANK_ACCOUNT.value
+        ```
         """
         pass
 
     @abstractmethod
-    def _get_payout_details_for_composite(self) -> dict:
-        """
-        Return request body for making payout with `Composite` API.
-        """
-        pass
-
-    @abstractmethod
-    def _get_payout_details_for_link(self) -> dict:
-        """
-        Return request body for making payout with `Link` API.
-        """
-        pass
-
-    ### PAYOUT METHODS ###
-    def _get_payout_instance_and_details(
+    def _get_payout_processor(
         self,
-        payout_type: Literal[
-            "payout",
-            "composite",
-            "payout_link",
-        ],
-    ) -> tuple[RazorPayXPayout | RazorPayXCompositePayout | RazorPayXLinkPayout, dict]:
+    ) -> RazorPayXPayout | RazorPayXCompositePayout | RazorPayXLinkPayout:
         """
-        Prepare instance and payout details for making payout.
+        Return Payout Processor for making payout.
         """
+        pass
 
-        def get_api_instance():
-            match payout_type:
-                case PAYOUT_TYPE.PAYOUT.value:
-                    return RazorPayXPayout(self.razorpayx_account)
-                case PAYOUT_TYPE.COMPOSITE.value:
-                    return RazorPayXCompositePayout(self.razorpayx_account)
-                case PAYOUT_TYPE.PAYOUT_LINK.value:
-                    return RazorPayXLinkPayout(self.razorpayx_account)
-
-        instance = get_api_instance()
-        payout_details = getattr(self, self.PAYOUT_DETAILS_MAPPING[payout_type])()
-
-        return instance, payout_details
-
-    def _bank_payout_with_fund_account(self):
-        payout, payout_details = self._get_payout_instance_and_details(
-            PAYOUT_TYPE.PAYOUT.value
-        )
-        return payout.pay_to_bank_account(payout_details)
-
-    def _upi_payout_with_fund_account(self):
-        payout, payout_details = self._get_payout_instance_and_details(
-            PAYOUT_TYPE.PAYOUT.value
-        )
-        return payout.pay_to_upi_id(payout_details)
-
-    def _bank_payout_with_composite(self):
-        payout, payout_details = self._get_payout_instance_and_details(
-            PAYOUT_TYPE.COMPOSITE.value
-        )
-        return payout.pay_to_bank_account(payout_details)
-
-    def _upi_payout_with_composite(self):
-        payout, payout_details = self._get_payout_instance_and_details(
-            PAYOUT_TYPE.COMPOSITE.value
-        )
-        return payout.pay_to_upi_id(payout_details)
-
-    def _link_payout_with_contact_details(self):
-        payout, payout_details = self._get_payout_instance_and_details(
-            PAYOUT_TYPE.PAYOUT_LINK.value
-        )
-        return payout.create_with_contact_details(payout_details)
-
-    def _link_payout_with_contact_id(self):
-        payout, payout_details = self._get_payout_instance_and_details(
-            PAYOUT_TYPE.PAYOUT_LINK.value
-        )
-        return payout.create_with_razorpayx_contact_id(payout_details)
+    @abstractmethod
+    def _get_payout_details(self) -> dict:
+        """
+        Return payout details for making payout.
+        """
+        pass
 
 
-class PayoutWithPaymentEntry(PayoutWithDocType):
+class PayoutWithPaymentEntry(PayoutWithDocument):
     """
     Make RazorPayx Payout with Payment Entry.
 
@@ -328,70 +281,90 @@ class PayoutWithPaymentEntry(PayoutWithDocType):
     Caution: 🔴 Payout with `Fund Account ID` and `Contact ID` are not supported.
     """
 
-    def __init__(self, payment_entry: PaymentEntry):
-        super().__init__(payment_entry)
+    def __init__(self, payment_entry: PaymentEntry, *args, **kwargs):
+        """
+        Make RazorPayx Payout with Payment Entry.
+
+        :param payment_entry: Payment Entry instance.
+
+        ---
+        Caution: 🔴 Payout with `Fund Account ID` and `Contact ID` are not supported.
+        """
+        super().__init__(payment_entry, *args, **kwargs)
 
     ### APIs ###
-    def make_payout(self) -> dict | None:
-        response = super().make_payout()
-        self._update_payment_entry(response)
-
-    def cancel_payout_and_payout_link(self) -> dict:
+    def make_payout(self, auth_id: str | None = None) -> dict | None:
         """
-        Cancel payout and payout link.
+        Make payout with given Payment Entry.
 
-         ---
-         Note:
-         - ⚠️ Only `queued` payout can be cancelled, otherwise it will raise error.
-         - ⚠️ Only `issued` payout link can be cancelled, otherwise it will raise error.
+        :param auth_id: Authorization ID for making payout.
         """
+        response = super().make_payout(auth_id)
+        self._update_pe_after_payout(response)
 
-        self.cancel_payout(cancel_doc=False)
-        self.cancel_payout_link(cancel_doc=False)
+        return response
+
+    ### UTILITY ###
+    def _update_pe_after_payout(self, response: dict | None = None):
+        """
+        Update Payment Entry after making payout.
+
+        :param response: Payout Response.
+        """
+        if not response:
+            return
+
+        values = {}
+
+        entity = response.get("entity")
+        id = response.get("id")
+
+        if not entity or not id:
+            return
+
+        if entity == "payout":
+            values["razorpayx_payout_id"] = id
+
+            if status := response.get("status"):
+                values["razorpayx_payout_status"] = status.title()
+        elif entity == "payout_link":
+            values["razorpayx_payout_link_id"] = id
+
+        if values:
+            self.doc.db_set(values, notify=True)  # TODO: check reload doc in dialog JS
 
     ### HELPERS ###
     def _get_razorpayx_account(self) -> str:
         return self.doc.razorpayx_account
 
-    def _get_method_for_payout(self) -> str:
+    def _set_payout_channel(self) -> str:
         match self.doc.razorpayx_payout_mode:
             case USER_PAYOUT_MODE.BANK.value:
-                return PAYOUT_METHOD.COMPOSITE_BANK_ACCOUNT.value
+                self.payout_channel = PAYOUT_CHANNEL.COMPOSITE_BANK_ACCOUNT.value
             case USER_PAYOUT_MODE.UPI.value:
-                return PAYOUT_METHOD.COMPOSITE_UPI.value
+                self.payout_channel = PAYOUT_CHANNEL.COMPOSITE_UPI.value
             case USER_PAYOUT_MODE.LINK.value:
-                return PAYOUT_METHOD.LINK_CONTACT_DETAILS.value
+                self.payout_channel = PAYOUT_CHANNEL.LINK_CONTACT_DETAILS.value
 
-    def _get_base_payout_details(self) -> dict:
-        """
-        Return base mapped request for making payout.
-        """
+    def _get_payout_processor(
+        self,
+    ) -> RazorPayXPayout | RazorPayXCompositePayout | RazorPayXLinkPayout:
+        match self.payout_channel.split(".")[0]:
+            case "fund_account":
+                return RazorPayXPayout(self.razorpayx_account)
+            case "composite":
+                return RazorPayXCompositePayout(self.razorpayx_account)
+            case "link":
+                return RazorPayXLinkPayout(self.razorpayx_account)
+
+    def _get_payout_details(self) -> dict:
         return {
-            ## Mandatory Fields ##
-            "amount": self.doc.paid_amount,
+            # Mandatory
             "source_doctype": self.doc.doctype,
             "source_docname": self.doc.name,
+            "amount": self.doc.paid_amount,
             "party_type": self.doc.party_type,
-            ## Payment Details ##
-            "description": self.doc.razorpayx_payout_desc,
-        }
-
-    def _get_payout_details_for_fund_account(self) -> dict:
-        """
-        Return request body for making payout with `Fund Account ID` API.
-        """
-        return {
-            **self._get_base_payout_details(),
-            "pay_instantaneously": self.doc.razorpayx_pay_instantaneously,
-            # "party_fund_account_id": self.doc.party_fund_account_id,  # ! Not Supported
-        }
-
-    def _get_payout_details_for_composite(self) -> dict:
-        """
-        Return request body for making payout with `Composite` API.
-        """
-        return {
-            **self._get_base_payout_details(),
+            # Party Details
             "party_id": self.doc.party,
             "party_name": self.doc.party_name,
             "party_bank_account_no": self.doc.party_bank_account_no,
@@ -399,37 +372,7 @@ class PayoutWithPaymentEntry(PayoutWithDocType):
             "party_upi_id": self.doc.party_upi_id,
             "party_email": self.doc.contact_email,
             "party_mobile": self.doc.contact_mobile,
+            # Payment Details
             "pay_instantaneously": self.doc.razorpayx_pay_instantaneously,
+            "description": self.doc.razorpayx_payout_desc,
         }
-
-    def _get_payout_details_for_link(self) -> dict:
-        """
-        Return request body for making payout with `Link` API.
-        """
-        return {
-            **self._get_base_payout_details(),
-            "party_name": self.doc.party_name,
-            "party_email": self.doc.contact_email,
-            "party_mobile": self.doc.contact_mobile,
-            # "razorpayx_party_contact_id": self.doc.razorpayx_party_contact_id, # ! Not Supported
-        }
-
-    def _update_payment_entry(self, response: dict):
-        """
-        Update Payment Entry with response.
-        """
-        values = {}
-
-        entity = response.get("entity")
-        id = response.get("id")
-
-        if entity == PAYOUT_TYPE.PAYOUT.value:
-            values["razorpayx_payout_id"] = id
-
-            if status := response.get("status"):
-                values["razorpayx_payout_status"] = status.title()
-        elif entity == PAYOUT_TYPE.PAYOUT_LINK.value:
-            values["razorpayx_payout_link_id"] = id
-
-        if values:
-            self.doc.db_set(values, update_modified=True)
