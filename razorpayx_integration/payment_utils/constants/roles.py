@@ -20,7 +20,17 @@ class PERMISSION_LEVEL(BaseEnum):
 
 
 PERMISSIONS = {
-    "Manager": ["select", "read", "create", "write", "delete", "email"],
+    "Manager": [
+        "select",
+        "read",
+        "create",
+        "write",
+        "delete",
+        "email",
+        "submit",
+        "cancel",
+        "amend",
+    ],
     "User": ["select", "read", "create", "write"],
     "Basic": ["select", "read"],
 }
@@ -76,15 +86,8 @@ ROLES = [
     {
         "doctype": "Payment Entry",
         "role_name": ROLE_PROFILE.AUTO_PAYMENTS_MANAGER.value,
-        "permlevel": ROLE_PROFILE.AUTO_PAYMENTS_MANAGER.value,
+        "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
         "permissions": PERMISSIONS["Manager"],
-    },
-    ## Email Template ##
-    {
-        "doctype": "Email Template",
-        "role_name": ROLE_PROFILE.AUTO_PAYMENTS_MANAGER.value,
-        "permlevel": 0,
-        "permissions": PERMISSIONS["User"],
     },
     # Customer
     {

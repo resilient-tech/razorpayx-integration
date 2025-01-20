@@ -196,7 +196,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-01-10 18:37:30.308912",
+ "modified": "2025-01-20 17:12:15.543492",
  "modified_by": "Administrator",
  "module": "Razorpayx Integration",
  "name": "RazorPayX Integration Setting",
@@ -207,23 +207,19 @@
    "create": 1,
    "delete": 1,
    "email": 1,
-   "print": 1,
-   "read": 1,
-   "role": "Administrator",
-   "share": 1,
-   "write": 1
-  },
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
    "export": 1,
    "print": 1,
    "read": 1,
    "report": 1,
    "role": "RazorPayX Integration Manager",
+   "select": 1,
    "share": 1,
    "write": 1
+  },
+  {
+   "read": 1,
+   "role": "RazorPayX Payout Authorizer",
+   "select": 1
   }
  ],
  "sort_field": "modified",
