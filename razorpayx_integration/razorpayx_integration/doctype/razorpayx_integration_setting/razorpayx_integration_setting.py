@@ -5,8 +5,6 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 
-from razorpayx_integration.constants import RAZORPAYX
-
 # TODO: set templates for payment success and failure
 
 
@@ -49,7 +47,7 @@ class RazorPayXIntegrationSetting(Document):
 
         if not self.key_id or not self.key_secret:
             frappe.throw(
-                msg=_("Please set {0} API credentials.").format(RAZORPAYX),
+                msg=_("Please set <strong>RazorPayX</strong> API credentials."),
                 title=_("API Credentials Are Missing"),
             )
 

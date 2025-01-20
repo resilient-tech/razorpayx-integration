@@ -7,7 +7,6 @@ from frappe import _
 from frappe.app import UNSAFE_HTTP_METHODS
 
 from razorpayx_integration.constants import (
-    RAZORPAYX,
     RAZORPAYX_INTEGRATION_DOCTYPE,
 )
 from razorpayx_integration.payment_utils.constants.enums import BaseEnum
@@ -79,7 +78,7 @@ class BaseRazorPayXAPI:
 
         if not self.razorpayx_account.key_id or not self.razorpayx_account.key_secret:
             frappe.throw(
-                msg=_("Please set {0} API credentials.").format(RAZORPAYX),
+                msg=_("Please set <strong>RazorPayX</strong> API credentials."),
                 title=_("API Credentials Are Missing"),
             )
 
