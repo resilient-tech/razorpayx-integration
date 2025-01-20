@@ -71,7 +71,7 @@ Object.assign(payment_utils, {
 
 		dialog.show();
 
-		if (AUTH_METHODS.PASSWORD === generation_details.method) {
+		if (generation_details.method === AUTH_METHODS.PASSWORD) {
 			dialog.get_field("authenticator").disable_password_checks();
 		}
 	},
@@ -118,7 +118,7 @@ Object.assign(payment_utils, {
 	 * ```js
 	 * {
 	 * 	verified: true,
-	 * 	msg: "OTP verified successfully.",
+	 * 	message: "OTP verified successfully.",
 	 * }
 	 * ```
 	 */
