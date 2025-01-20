@@ -41,17 +41,21 @@ def validate(doc: PaymentEntry, method=None):
 
 
 def before_submit(doc: PaymentEntry, method=None):
+    # for bulk submission from client side
+    if not frappe.flags.authenticated_by_cron_job and not get_auth_id(doc):
+        doc.set("make_bank_online_payment", 0)
+
+        # TODO: print message here (Do not repeat message here!)
+
     if not doc.make_bank_online_payment:
         reset_razorpayx_fields(doc)
 
 
 def on_submit(doc: PaymentEntry, method=None):
-    auth_id = None
+    if not doc.make_bank_online_payment or doc.razorpayx_account:
+        return
 
-    if not frappe.flags.authenticated_by_cron_job:
-        auth_id = doc.__onload.get("auth_id")
-
-    make_payout_with_razorpayx(doc, auth_id=auth_id)
+    make_payout_with_razorpayx(doc, auth_id=get_auth_id(doc))
 
 
 def before_cancel(doc: PaymentEntry, method=None):
@@ -60,6 +64,11 @@ def before_cancel(doc: PaymentEntry, method=None):
         return
 
     handle_payout_cancellation(doc)
+
+
+### AUTHORIZATION ###
+def get_auth_id(doc: PaymentEntry):
+    return doc.get_onload().get("auth_id")
 
 
 #### VALIDATIONS ####
@@ -470,26 +479,24 @@ def reset_razorpayx_fields(doc: PaymentEntry):
 
 
 ### ACTIONS ###
-def make_payout_with_razorpayx(
-    doc: PaymentEntry, *, auth_id: str | None = None, throw: bool = False
-):
+def make_payout_with_razorpayx(doc: PaymentEntry, auth_id: str | None = None):
     """
     Make Payout with RazorPayX Integration.
 
     :param doc: Payment Entry Document
     :param auth_id: Authentication ID (after otp or password verification)
-    :param throw: Throw error if Payout cannot be made, otherwise just return
     """
-    if not can_make_payout(doc):
-        if throw:
-            frappe.throw(
-                msg=_(
-                    "Payout cannot be made for this Payment Entry. Please check the details."
-                ),
-                title=_("Invalid Payment Entry"),
-            )
 
-        return
+    # If this not checked, then user can make payout which have only right of PE's submission
+    user_has_payout_permissions(doc.name, doc.razorpayx_account, throw=True)
+
+    if not can_make_payout(doc):
+        frappe.throw(
+            msg=_(
+                "Payout cannot be made for this Payment Entry. Please check the details."
+            ),
+            title=_("Invalid Payment Entry"),
+        )
 
     PayoutWithPaymentEntry(doc).make_payout(auth_id)
 
