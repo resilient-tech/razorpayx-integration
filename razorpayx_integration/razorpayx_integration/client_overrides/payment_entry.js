@@ -119,16 +119,12 @@ frappe.ui.form.on("Payment Entry", {
 	},
 
 	before_submit: async function (frm) {
-		if (!is_base_payout_condition_met(frm) || !is_razorpayx_condition_met(frm)) {
+		if (
+			!is_base_payout_condition_met(frm) ||
+			!is_razorpayx_condition_met(frm) ||
+			!rpx.user_has_payout_permissions(frm.docname, frm.doc.razorpayx_account)
+		) {
 			return;
-		}
-
-		// TODO: ? is it proper way to check permissions here
-		if (!rpx.user_has_payout_permissions(frm.docname, frm.doc.razorpayx_account)) {
-			frappe.throw({
-				message: __("You do not have permission to make payout for this Payment Entry."),
-				title: __("Insufficient Permissions"),
-			});
 		}
 
 		frappe.validate = false;
@@ -199,7 +195,13 @@ function reset_contact_details(frm) {
 }
 
 function update_submit_button_label(frm) {
-	if (frm.doc.docstatus !== 0 || frm.doc.__islocal || frm.doc?.__onload?.amended_pe_processed) return;
+	if (
+		frm.doc.docstatus !== 0 ||
+		frm.doc.__islocal ||
+		frm.doc?.__onload?.amended_pe_processed ||
+		!rpx.user_has_payout_permissions(frm.docname, frm.doc.razorpayx_account)
+	)
+		return;
 
 	frm.page.set_primary_action(
 		__("Pay and Submit"),
