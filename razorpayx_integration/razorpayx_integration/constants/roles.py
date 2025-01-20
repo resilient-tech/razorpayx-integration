@@ -49,4 +49,10 @@ ROLES = [
         "permlevel": PERMISSION_LEVEL.PAYOUT_AUTHORIZER.value,
         "permissions": PERMISSIONS["Manager"],
     },
+    {
+        "doctype": "Payment Entry",
+        "role_name": ROLE_PROFILE.PAYOUT_AUTHORIZER.value,
+        "permlevel": 0,
+        "permissions": PERMISSIONS["Manager"],
+    },
 ]

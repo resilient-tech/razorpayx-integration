@@ -89,6 +89,12 @@ ROLES = [
         "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
         "permissions": PERMISSIONS["Manager"],
     },
+    {
+        "doctype": "Payment Entry",
+        "role_name": ROLE_PROFILE.AUTO_PAYMENTS_MANAGER.value,
+        "permlevel": 0,
+        "permissions": PERMISSIONS["Manager"],
+    },
     # Customer
     {
         "doctype": "Customer",
