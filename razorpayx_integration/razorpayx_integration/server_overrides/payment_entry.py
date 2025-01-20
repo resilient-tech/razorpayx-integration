@@ -574,7 +574,7 @@ def can_make_payout(doc: PaymentEntry) -> bool:
 
 # TODO: concern with @smit_vora
 def user_has_payout_permissions(
-    payment_entry: str,
+    payment_entry: str | None = None,
     razorpayx_account: str | None = None,
     *,
     pe_permission: Literal["submit", "cancel"] = "submit",
