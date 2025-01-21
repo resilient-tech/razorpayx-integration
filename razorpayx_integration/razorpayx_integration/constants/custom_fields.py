@@ -91,6 +91,7 @@ CUSTOM_FIELDS = {
             "default": PAYOUT_STATUS.NOT_INITIATED.value.title(),
             "depends_on": "eval: doc.make_bank_online_payment && doc.creation",
             "read_only": 1,
+            "allow_on_submit": 1,
             "in_list_view": 1,
             "in_standard_filter": 1,
             "permlevel": PERMISSION_LEVEL.PAYOUT_AUTHORIZER.value,
