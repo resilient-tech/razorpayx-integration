@@ -117,6 +117,7 @@ frappe.ui.form.on("Payment Entry", {
 		if (
 			!is_base_payout_condition_met(frm) ||
 			!is_razorpayx_condition_met(frm) ||
+			is_amended_pe_processed(frm) ||
 			!rpx.user_has_payout_permissions(frm.docname, frm.doc.razorpayx_account)
 		) {
 			return;
@@ -193,18 +194,14 @@ function update_submit_button_label(frm) {
 	if (
 		frm.doc.docstatus !== 0 ||
 		frm.doc.__islocal ||
-		frm.doc?.__onload?.amended_pe_processed ||
+		is_amended_pe_processed(frm) ||
 		!rpx.user_has_payout_permissions(frm.docname, frm.doc.razorpayx_account)
 	)
 		return;
 
-	frm.page.set_primary_action(
-		__("Pay and Submit"),
-		() => {
-			frm.savesubmit();
-		},
-		rpx.PAY_ICON
-	);
+	frm.page.set_primary_action(__("Pay and Submit"), () => {
+		frm.savesubmit();
+	});
 }
 
 function set_razorpayx_state_description(frm) {
@@ -671,7 +668,7 @@ function set_bank_account_description(dialog) {
 async function disable_payout_fields_in_amendment(frm) {
 	if (!frm.doc.amended_from) return;
 
-	let disable_payout_fields = frm.doc.__onload?.amended_pe_processed;
+	let disable_payout_fields = is_amended_pe_processed(frm);
 
 	if (disable_payout_fields === undefined) {
 		const response = await frappe.db.get_value(
@@ -684,6 +681,10 @@ async function disable_payout_fields_in_amendment(frm) {
 	}
 
 	frm.toggle_enable(PAYOUT_FIELDS, disable_payout_fields ? 0 : 1);
+}
+
+function is_amended_pe_processed(frm) {
+	return frm.doc?.__onload?.amended_pe_processed;
 }
 
 // ############ UTILITY ############ //

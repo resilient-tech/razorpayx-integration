@@ -44,6 +44,7 @@ def before_submit(doc: PaymentEntry, method=None):
     # for bulk submission from client side or single submission without payment
     if (
         doc.make_bank_online_payment
+        and not is_amended_pe_processed(doc)
         and not frappe.flags.authenticated_by_cron_job
         and not get_auth_id(doc)
     ):
@@ -66,6 +67,7 @@ def before_submit(doc: PaymentEntry, method=None):
 
 
 def on_submit(doc: PaymentEntry, method=None):
+    # early return
     if not doc.make_bank_online_payment or not doc.razorpayx_account:
         return
 
@@ -503,6 +505,9 @@ def make_payout_with_razorpayx(doc: PaymentEntry, auth_id: str | None = None):
     :param doc: Payment Entry Document
     :param auth_id: Authentication ID (after otp or password verification)
     """
+    if is_amended_pe_processed(doc):
+        return
+
     if not can_make_payout(doc):
         frappe.throw(
             msg=_(
@@ -588,7 +593,6 @@ def can_make_payout(doc: PaymentEntry) -> bool:
         and doc.paid_from_account_currency == PAYOUT_CURRENCY.INR.value
         and not doc.razorpayx_payout_id
         and not doc.razorpayx_payout_link_id
-        and not is_amended_pe_processed(doc)
     )
 
 
