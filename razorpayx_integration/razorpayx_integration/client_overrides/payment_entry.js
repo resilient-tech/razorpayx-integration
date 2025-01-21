@@ -61,9 +61,7 @@ frappe.ui.form.on("Payment Entry", {
 		const can_show_payout_button = await can_show_payout_btn(frm);
 
 		if (can_show_payout_button) {
-			frm.add_custom_button(__("{0} Make Payout", [frappe.utils.icon(rpx.PAY_ICON)]), () =>
-				show_make_payout_dialog(frm)
-			);
+			frm.add_custom_button(__("Make Payout"), () => show_make_payout_dialog(frm));
 		}
 	},
 
@@ -542,7 +540,7 @@ async function show_make_payout_dialog(frm) {
 				mandatory_depends_on: `eval: ${LINK_MODE}`,
 			},
 		],
-		primary_action_label: __("Pay"),
+		primary_action_label: __("{0} Pay", [frappe.utils.icon(rpx.PAY_ICON)]),
 		primary_action: (values) => {
 			payment_utils.authenticate_payment_entries(frm.docname, (auth_id) =>
 				make_payout(auth_id, frm.docname, values, dialog)

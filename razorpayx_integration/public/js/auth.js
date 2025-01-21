@@ -74,6 +74,8 @@ Object.assign(payment_utils, {
 		if (generation_details.method === AUTH_METHODS.PASSWORD) {
 			dialog.get_field("authenticator").disable_password_checks();
 		}
+
+		dialog.get_field("authenticator").set_focus();
 	},
 
 	/**
