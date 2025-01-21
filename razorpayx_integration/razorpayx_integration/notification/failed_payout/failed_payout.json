@@ -1,0 +1,33 @@
+{
+ "attach_print": 0,
+ "channel": "Email",
+ "condition": "doc.razorpayx_payout_status == \"Cancelled\" or doc.razorpayx_payout_status == \"Rejected\" or doc.razorpayx_payout_status == \"Failed\" or doc.razorpayx_payout_status == \"Reversed\" ",
+ "creation": "2025-01-21 13:45:11.433147",
+ "days_in_advance": 0,
+ "docstatus": 0,
+ "doctype": "Notification",
+ "document_type": "Payment Entry",
+ "enabled": 1,
+ "event": "Value Change",
+ "idx": 0,
+ "is_standard": 1,
+ "message": "<h3>Payout has been {{ doc.razorpayx_payout_status }}</h3>\n\n<strong>Payment Entry:</strong> {{ doc.name }}<br>\n\n<strong>Rematks:</strong>\n\n<p>{{ doc.remarks }}</p>\n",
+ "message_type": "Markdown",
+ "modified": "2025-01-21 18:43:41.314509",
+ "modified_by": "Administrator",
+ "module": "Razorpayx Integration",
+ "name": "Failed Payout",
+ "owner": "Administrator",
+ "recipients": [
+  {
+   "receiver_by_document_field": "owner",
+   "receiver_by_role": ""
+  }
+ ],
+ "send_system_notification": 0,
+ "send_to_all_assignees": 0,
+ "sender": "",
+ "sender_email": "",
+ "subject": "Payout has been {{ doc.razorpayx_payout_status }} for Payment Entry {{ doc.name }}",
+ "value_changed": "razorpayx_payout_status"
+}

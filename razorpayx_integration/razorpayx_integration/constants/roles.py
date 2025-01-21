@@ -26,7 +26,19 @@ ROLES = [
         "doctype": RAZORPAYX_INTEGRATION_DOCTYPE,
         "role_name": PAYMENT_PROFILES.AUTO_PAYMENTS_MANAGER.value,
         "permlevel": PERMISSION_LEVEL.RAZORPAYX_MANAGER.value,
+        "permissions": PERMISSIONS["Basic"],
+    },
+    {
+        "doctype": RAZORPAYX_INTEGRATION_DOCTYPE,
+        "role_name": ROLE_PROFILE.RAZORPAYX_MANAGER.value,
+        "permlevel": PERMISSION_LEVEL.RAZORPAYX_MANAGER.value,
         "permissions": PERMISSIONS["Manager"],
+    },
+    {
+        "doctype": RAZORPAYX_INTEGRATION_DOCTYPE,
+        "role_name": ROLE_PROFILE.PAYOUT_AUTHORIZER.value,
+        "permlevel": PERMISSION_LEVEL.RAZORPAYX_MANAGER.value,
+        "permissions": PERMISSIONS["Basic"],
     },
     ## Bank Account ##
     {

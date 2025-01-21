@@ -220,15 +220,13 @@ class PayoutWebhook(RazorPayXWebhook):
         if not self.should_update_payment_entry():
             return
 
-        values = {
-            "razorpayx_payout_status": self.status.title(),
-            **self.get_updated_reference(),
-        }
+        values = self.get_updated_reference()
 
         if self.id:
             values["razorpayx_payout_id"] = self.id
 
         self.source_doc.db_set(values, notify=True)
+        self.update_payout_status(self.status)
 
         if self.should_cancel_payment_entry() and self.cancel_payout_link():
             self.cancel_payment_entry()
@@ -309,6 +307,19 @@ class PayoutWebhook(RazorPayXWebhook):
             "reference_no": self.utr,
             "remarks": get_new_remarks(),
         }
+
+    def update_payout_status(self, status: str | None = None):
+        """
+        Update RazorpayX Payout Status in Payment Entry.
+
+        To trigger notification on change of status.
+
+        :param status: Payout Webhook Status.
+        """
+        if not status:
+            return
+
+        self.source_doc.update({"razorpayx_payout_status": status.title()}).save()
 
     def cancel_payout_link(self) -> bool:
         """
@@ -424,12 +435,7 @@ class PayoutLinkWebhook(PayoutWebhook):
         if not self.should_update_payment_entry():
             return
 
-        values = {}
-
-        cancel_pe = self.should_cancel_payment_entry()
-
-        if cancel_pe:
-            values["razorpayx_payout_status"] = PAYOUT_STATUS.CANCELLED.value
+        values = self.get_updated_reference()
 
         if self.id:
             values["razorpayx_payout_link_id"] = self.id
@@ -437,7 +443,8 @@ class PayoutLinkWebhook(PayoutWebhook):
         if values:
             self.source_doc.db_set(values, notify=True)
 
-        if cancel_pe:
+        if self.should_cancel_payment_entry():
+            self.update_payout_status(PAYOUT_STATUS.CANCELLED.value)
             self.cancel_payment_entry()
 
     def should_cancel_payment_entry(self) -> bool:
@@ -481,10 +488,6 @@ class TransactionWebhook(PayoutWebhook):
         - https://razorpay.com/docs/webhooks/payloads/x/transactions/#transaction-created
         """
 
-        def get_status() -> str:
-            if status := self.transaction_source.get("status"):
-                return status
-
         def get_payout_id() -> str:
             match self.transaction_type:
                 case TRANSACTION_TYPE.PAYOUT.value:
@@ -498,7 +501,7 @@ class TransactionWebhook(PayoutWebhook):
         if self.transaction_source:
             self.transaction_type = self.transaction_source.get("entity")
             self.utr = self.transaction_source.get("utr")
-            self.status = get_status()
+            self.status = self.transaction_source.get("status")
             self.id = get_payout_id()
             self.notes = self.transaction_source.get("notes") or {}
 
@@ -524,13 +527,11 @@ class TransactionWebhook(PayoutWebhook):
 
         values = self.get_updated_reference()
 
-        if self.status:
-            values["razorpayx_payout_status"] = self.status.title()
-
         if self.id:
             values["razorpayx_payout_id"] = self.id
 
         self.source_doc.db_set(values)
+        self.update_payout_status(self.status)
 
 
 class AccountWebhook(RazorPayXWebhook):

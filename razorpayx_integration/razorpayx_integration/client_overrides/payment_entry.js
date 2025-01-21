@@ -41,10 +41,11 @@ frappe.ui.form.on("Payment Entry", {
 		disable_payout_fields_in_amendment(frm);
 		frm.get_field("payment_type").set_empty_description();
 
-		if (!rpx.user_has_payout_permissions()) {
+		if (!rpx.user_has_payout_permissions(frm.doc)) {
 			frm.toggle_display("online_payment_section", 0);
 			frm.toggle_display("razorpayx_payout_section", 0);
 			frm.toggle_enable("make_bank_online_payment", 0);
+			return;
 		}
 
 		if (!is_base_payout_condition_met(frm)) {
@@ -118,7 +119,7 @@ frappe.ui.form.on("Payment Entry", {
 			!is_base_payout_condition_met(frm) ||
 			!is_razorpayx_condition_met(frm) ||
 			is_amended_pe_processed(frm) ||
-			!rpx.user_has_payout_permissions(frm.docname, frm.doc.razorpayx_account)
+			!rpx.user_has_payout_permissions(frm.doc)
 		) {
 			return;
 		}
@@ -195,7 +196,7 @@ function update_submit_button_label(frm) {
 		frm.doc.docstatus !== 0 ||
 		frm.doc.__islocal ||
 		is_amended_pe_processed(frm) ||
-		!rpx.user_has_payout_permissions(frm.docname, frm.doc.razorpayx_account)
+		!rpx.user_has_payout_permissions(frm.doc)
 	)
 		return;
 
@@ -339,16 +340,12 @@ function show_cancel_payout_dialog(frm, callback) {
 
 // ############ MAKING PAYOUT HELPERS ############ //
 async function can_show_payout_btn(frm) {
-	if (
-		frm.doc.docstatus !== 1 ||
-		frm.doc.make_bank_online_payment ||
-		frm.doc.razorpayx_payout_status !== "Not Initiated"
-	) {
-		return false;
-	}
-
-	// checking permissions
-	return rpx.user_has_payout_permissions(frm.docname, frm.doc.razorpayx_account);
+	return (
+		frm.doc.docstatus === 1 &&
+		!frm.doc.make_bank_online_payment &&
+		frm.doc.razorpayx_payout_status === "Not Initiated" &&
+		rpx.user_has_payout_permissions(frm.doc)
+	);
 }
 
 async function show_make_payout_dialog(frm) {
