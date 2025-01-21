@@ -42,10 +42,24 @@ def validate(doc: PaymentEntry, method=None):
 
 def before_submit(doc: PaymentEntry, method=None):
     # for bulk submission from client side or single submission without payment
-    if not frappe.flags.authenticated_by_cron_job and not get_auth_id(doc):
+    if (
+        doc.make_bank_online_payment
+        and not frappe.flags.authenticated_by_cron_job
+        and not get_auth_id(doc)
+    ):
         doc.set("make_bank_online_payment", 0)
 
-        # TODO: print message here (Do not repeat message here!)
+        # Show single alert message only
+        alert_msg = _("Please make payout manually after Payment Entry submission.")
+        alert_sent = False
+
+        for message in frappe.message_log:
+            if alert_msg in message.get("message"):
+                alert_sent = True
+                break
+
+        if not alert_sent:
+            frappe.msgprint(msg=alert_msg, alert=True)
 
     if not doc.make_bank_online_payment:
         reset_razorpayx_fields(doc)
@@ -68,7 +82,8 @@ def before_cancel(doc: PaymentEntry, method=None):
 
 ### AUTHORIZATION ###
 def get_auth_id(doc: PaymentEntry):
-    return doc.get_onload().get("auth_id")
+    onload = doc.get_onload() or frappe._dict()
+    return onload.get("auth_id")
 
 
 #### VALIDATIONS ####
