@@ -328,14 +328,14 @@ class PayoutWithPaymentEntry(PayoutWithDocument):
 
         if entity == "payout":
             values["razorpayx_payout_id"] = id
-
-            if status := response.get("status"):
-                values["razorpayx_payout_status"] = status.title()
         elif entity == "payout_link":
             values["razorpayx_payout_link_id"] = id
 
+        if status := response.get("status"):
+            self.doc.update({"razorpayx_payout_status": status.title()}).save()
+
         if values:
-            self.doc.db_set(values, notify=True)  # TODO: check reload doc in dialog JS
+            self.doc.db_set(values, notify=True)
 
     ### HELPERS ###
     def _get_razorpayx_account(self) -> str:
