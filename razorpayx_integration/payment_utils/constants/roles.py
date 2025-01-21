@@ -33,7 +33,7 @@ PERMISSIONS = {
         "amend",
     ],
     "User": ["select", "read", "create", "write"],
-    "Basic": ["select", "read"],
+    "Basic": ["select", "read", "write"],
 }
 
 
