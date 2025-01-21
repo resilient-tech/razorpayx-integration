@@ -71,9 +71,11 @@ Object.assign(payment_utils, {
 
 		dialog.show();
 
-		if (AUTH_METHODS.PASSWORD === generation_details.method) {
+		if (generation_details.method === AUTH_METHODS.PASSWORD) {
 			dialog.get_field("authenticator").disable_password_checks();
 		}
+
+		dialog.get_field("authenticator").set_focus();
 	},
 
 	/**
@@ -118,7 +120,7 @@ Object.assign(payment_utils, {
 	 * ```js
 	 * {
 	 * 	verified: true,
-	 * 	msg: "OTP verified successfully.",
+	 * 	message: "OTP verified successfully.",
 	 * }
 	 * ```
 	 */
@@ -157,47 +159,45 @@ Object.assign(payment_utils, {
 					</bold>`;
 		};
 
-		// Base data for dialog fields
-		const data = {
-			title: __("Authenticate"),
+		let dialog_title = __("Authenticate");
+
+		const auth_field = {
+			fieldname: "authenticator",
 			label: __("OTP"),
 			fieldtype: "Data",
 			description: get_description(),
+			reqd: 1,
 		};
 
 		// Update dialog details based on the verification method
 		switch (method) {
 			case AUTH_METHODS.OTP_APP:
-				data.title = __("Authenticate using OTP App");
+				dialog_title = __("Authenticate using OTP App");
 				break;
 			case AUTH_METHODS.SMS:
-				data.title = __("Authenticate using SMS");
+				dialog_title = __("Authenticate using SMS");
 				break;
 			case AUTH_METHODS.EMAIL:
-				data.title = __("Authenticate using Email");
+				dialog_title = __("Authenticate using Email");
 				break;
 			case AUTH_METHODS.PASSWORD:
-				data.title = __("Authenticate using Password");
-				data.label = __("Password");
-				data.fieldtype = "Password";
+				dialog_title = __("Authenticate using Password");
+				auth_field.label = __("Password");
+				auth_field.fieldtype = "Password";
 				break;
 		}
 
 		return {
-			title: data.title,
+			title: dialog_title,
 			fields: [
 				{
-					fieldname: "intro",
+					fieldname: "info",
 					fieldtype: "HTML",
 					options: `<div class="form-message yellow">
 								<div>${__("Do not close this dialog until you authenticate.")}</div>
 							</div>`,
 				},
-				{
-					fieldname: "authenticator",
-					reqd: 1,
-					...data,
-				},
+				auth_field,
 			],
 		};
 	},

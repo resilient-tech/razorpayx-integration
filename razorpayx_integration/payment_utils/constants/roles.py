@@ -5,6 +5,7 @@ from razorpayx_integration.payment_utils.constants.enums import BaseEnum
 class ROLE_PROFILE(BaseEnum):
     BANK_ACC_MANAGER = "Bank Account Manager"
     BANK_ACC_USER = "Bank Account User"
+    # cannot pay, only can change settings of automation
     AUTO_PAYMENTS_MANAGER = "Auto Payments Manager"
 
 
@@ -20,7 +21,17 @@ class PERMISSION_LEVEL(BaseEnum):
 
 
 PERMISSIONS = {
-    "Manager": ["select", "read", "create", "write", "delete", "email"],
+    "Manager": [
+        "select",
+        "read",
+        "create",
+        "write",
+        "delete",
+        "email",
+        "submit",
+        "cancel",
+        "amend",
+    ],
     "User": ["select", "read", "create", "write"],
     "Basic": ["select", "read"],
 }
@@ -76,15 +87,8 @@ ROLES = [
     {
         "doctype": "Payment Entry",
         "role_name": ROLE_PROFILE.AUTO_PAYMENTS_MANAGER.value,
-        "permlevel": ROLE_PROFILE.AUTO_PAYMENTS_MANAGER.value,
-        "permissions": PERMISSIONS["Manager"],
-    },
-    ## Email Template ##
-    {
-        "doctype": "Email Template",
-        "role_name": ROLE_PROFILE.AUTO_PAYMENTS_MANAGER.value,
         "permlevel": 0,
-        "permissions": PERMISSIONS["User"],
+        "permissions": PERMISSIONS["Manager"],
     },
     # Customer
     {

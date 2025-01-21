@@ -12,10 +12,12 @@ from razorpayx_integration.payment_utils.constants.roles import (
 
 class ROLE_PROFILE(BaseEnum):
     RAZORPAYX_MANAGER = "RazorPayX Integration Manager"
+    PAYOUT_AUTHORIZER = "RazorPayX Payout Authorizer"
 
 
 class PERMISSION_LEVEL(BaseEnum):
     RAZORPAYX_MANAGER = 0
+    PAYOUT_AUTHORIZER = 7  # same as AUTO_PAYMENTS_MANAGER
 
 
 ROLES = [
@@ -40,11 +42,17 @@ ROLES = [
         "permlevel": PERMISSION_LEVEL.RAZORPAYX_MANAGER.value,
         "permissions": PERMISSIONS["Basic"],
     },
-    ## Email Template ##
+    ## Payment Entry ##
     {
-        "doctype": "Email Template",
-        "role_name": ROLE_PROFILE.RAZORPAYX_MANAGER.value,
-        "permlevel": PERMISSION_LEVEL.RAZORPAYX_MANAGER.value,
-        "permissions": PERMISSIONS["User"],
+        "doctype": "Payment Entry",
+        "role_name": ROLE_PROFILE.PAYOUT_AUTHORIZER.value,
+        "permlevel": PERMISSION_LEVEL.PAYOUT_AUTHORIZER.value,
+        "permissions": PERMISSIONS["Manager"],
+    },
+    {
+        "doctype": "Payment Entry",
+        "role_name": ROLE_PROFILE.PAYOUT_AUTHORIZER.value,
+        "permlevel": 0,
+        "permissions": PERMISSIONS["Manager"],
     },
 ]

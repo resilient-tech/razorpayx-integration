@@ -41,17 +41,37 @@ def validate(doc: PaymentEntry, method=None):
 
 
 def before_submit(doc: PaymentEntry, method=None):
+    # for bulk submission from client side or single submission without payment
+    if (
+        doc.make_bank_online_payment
+        and not is_amended_pe_processed(doc)
+        and not frappe.flags.authenticated_by_cron_job
+        and not get_auth_id(doc)
+    ):
+        doc.set("make_bank_online_payment", 0)
+
+        # Show single alert message only
+        alert_msg = _("Please make payout manually after Payment Entry submission.")
+        alert_sent = False
+
+        for message in frappe.message_log:
+            if alert_msg in message.get("message"):
+                alert_sent = True
+                break
+
+        if not alert_sent:
+            frappe.msgprint(msg=alert_msg, alert=True)
+
     if not doc.make_bank_online_payment:
         reset_razorpayx_fields(doc)
 
 
 def on_submit(doc: PaymentEntry, method=None):
-    auth_id = None
+    # early return
+    if not doc.make_bank_online_payment or not doc.razorpayx_account:
+        return
 
-    if not frappe.flags.authenticated_by_cron_job:
-        auth_id = doc.__onload.get("auth_id")
-
-    make_payout_with_razorpayx(doc, auth_id=auth_id)
+    make_payout_with_razorpayx(doc, auth_id=get_auth_id(doc))
 
 
 def before_cancel(doc: PaymentEntry, method=None):
@@ -60,6 +80,12 @@ def before_cancel(doc: PaymentEntry, method=None):
         return
 
     handle_payout_cancellation(doc)
+
+
+### AUTHORIZATION ###
+def get_auth_id(doc: PaymentEntry):
+    onload = doc.get_onload() or frappe._dict()
+    return onload.get("auth_id")
 
 
 #### VALIDATIONS ####
@@ -133,6 +159,8 @@ def validate_payout_details(doc: PaymentEntry, throw=False):
     """
     if not doc.make_bank_online_payment:
         return
+
+    # TODO:  ?  here check base conditions like `Pay`,`Cash`,`INR` etc.
 
     validate_razorpayx_account(doc, throw=throw)
 
@@ -470,26 +498,23 @@ def reset_razorpayx_fields(doc: PaymentEntry):
 
 
 ### ACTIONS ###
-def make_payout_with_razorpayx(
-    doc: PaymentEntry, *, auth_id: str | None = None, throw: bool = False
-):
+def make_payout_with_razorpayx(doc: PaymentEntry, auth_id: str | None = None):
     """
     Make Payout with RazorPayX Integration.
 
     :param doc: Payment Entry Document
     :param auth_id: Authentication ID (after otp or password verification)
-    :param throw: Throw error if Payout cannot be made, otherwise just return
     """
-    if not can_make_payout(doc):
-        if throw:
-            frappe.throw(
-                msg=_(
-                    "Payout cannot be made for this Payment Entry. Please check the details."
-                ),
-                title=_("Invalid Payment Entry"),
-            )
-
+    if is_amended_pe_processed(doc):
         return
+
+    if not can_make_payout(doc):
+        frappe.throw(
+            msg=_(
+                "Payout cannot be made for this Payment Entry. Please check the details."
+            ),
+            title=_("Invalid Payment Entry"),
+        )
 
     PayoutWithPaymentEntry(doc).make_payout(auth_id)
 
@@ -568,7 +593,6 @@ def can_make_payout(doc: PaymentEntry) -> bool:
         and doc.paid_from_account_currency == PAYOUT_CURRENCY.INR.value
         and not doc.razorpayx_payout_id
         and not doc.razorpayx_payout_link_id
-        and not is_amended_pe_processed(doc)
     )
 
 
@@ -584,7 +608,7 @@ def user_has_payout_permissions(
     Check RazorPayX related permissions for the user.
 
     Permission Check:
-    - Has a role of integration manager
+    - Has a role of Payout Authorizer
     - Can access particular Payment Entry
     - Can access particular RazorPayX Account (if provided)
 
@@ -593,7 +617,8 @@ def user_has_payout_permissions(
     :param pe_permission: Payment Entry Permission to check
     :param throw: Throw error if permission is not granted
     """
-    has_role = ROLE_PROFILE.RAZORPAYX_MANAGER.value in frappe.get_roles()
+    # this role have permission to read integration settings and submission/cancellation of payment entry
+    has_role = ROLE_PROFILE.PAYOUT_AUTHORIZER.value in frappe.get_roles()
 
     if not has_role and throw:
         frappe.throw(
@@ -693,6 +718,9 @@ def bulk_pay_and_submit(
     :param auth_id: Authentication ID (after otp or password verification)
     :param docnames: List of Payment Entry names
     :param task_id: Task ID (realtime or background)
+
+    ---
+    Reference: [Frappe Bulk Submit/Cancel](https://github.com/frappe/frappe/blob/3eda272bd61b1e73b74d30b1704d885a39c75d0c/frappe/desk/doctype/bulk_update/bulk_update.py#L51)
     """
     user_has_payout_permissions(throw=True)
 
@@ -725,6 +753,9 @@ def _bulk_pay_and_submit(auth_id: str, docnames: list[str], task_id: str | None 
     :param auth_id: Authentication ID (after otp or password verification)
     :param docnames: List of Payment Entry names
     :param task_id: Task ID (realtime or background)
+
+    ---
+    Reference: [Frappe Bulk Action](https://github.com/frappe/frappe/blob/3eda272bd61b1e73b74d30b1704d885a39c75d0c/frappe/desk/doctype/bulk_update/bulk_update.py#L73)
     """
     failed = []
     num_documents = len(docnames)

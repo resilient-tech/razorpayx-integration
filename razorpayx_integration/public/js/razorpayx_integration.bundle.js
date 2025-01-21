@@ -1,2 +1,2 @@
 import "./utils";
-import "./auth";
+import "../../payment_utils/assets/js/auth";
