@@ -73,7 +73,7 @@ frappe.ui.form.on("Payment Entry", {
 		}
 
 		if (
-			(!is_base_payout_condition_met() || !frm.doc.razorpayx_account) &&
+			(!is_base_payout_condition_met(frm) || !frm.doc.razorpayx_account) &&
 			frm.doc.make_bank_online_payment
 		) {
 			frm.set_value("make_bank_online_payment", 0);
