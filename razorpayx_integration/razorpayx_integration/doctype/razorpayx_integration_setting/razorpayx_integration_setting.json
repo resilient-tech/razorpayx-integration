@@ -15,8 +15,6 @@
   "column_break_8tcki",
   "account_id",
   "webhook_secret",
-  "config_section",
-  "auto_cancel_payout",
   "account_tab",
   "account_details_section",
   "bank_account",
@@ -27,9 +25,9 @@
   "bank",
   "ifsc_code",
   "account_number",
-  "templates_tab",
-  "party_email_templates_section",
-  "payment_success_template"
+  "configs_tab",
+  "pe_config_section",
+  "auto_cancel_payout"
  ],
  "fields": [
   {
@@ -156,22 +154,6 @@
    "label": "Account"
   },
   {
-   "fieldname": "templates_tab",
-   "fieldtype": "Tab Break",
-   "label": "Templates"
-  },
-  {
-   "fieldname": "party_email_templates_section",
-   "fieldtype": "Section Break",
-   "label": "Party Email Templates"
-  },
-  {
-   "fieldname": "payment_success_template",
-   "fieldtype": "Link",
-   "label": "On Payment Success",
-   "options": "Email Template"
-  },
-  {
    "description": " This is a <strong> Business ID </strong>found in RazorPayX settings.\n\nGet it from <strong><a target=\"_blank\" href=\"https://x.razorpay.com/settings/business\">here.</a></strong>",
    "fieldname": "account_id",
    "fieldtype": "Data",
@@ -189,14 +171,19 @@
    "label": "Automatically Cancel Payout on Payment Entry Cancellation"
   },
   {
-   "fieldname": "config_section",
+   "fieldname": "pe_config_section",
    "fieldtype": "Section Break",
+   "label": "Payment Entry"
+  },
+  {
+   "fieldname": "configs_tab",
+   "fieldtype": "Tab Break",
    "label": "Configurations"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-01-20 17:12:15.543492",
+ "modified": "2025-01-21 13:03:17.355576",
  "modified_by": "Administrator",
  "module": "Razorpayx Integration",
  "name": "RazorPayX Integration Setting",

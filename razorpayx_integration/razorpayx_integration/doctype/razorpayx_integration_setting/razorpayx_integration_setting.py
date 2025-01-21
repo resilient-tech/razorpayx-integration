@@ -29,7 +29,6 @@ class RazorPayXIntegrationSetting(Document):
         ifsc_code: DF.Data | None
         key_id: DF.Data
         key_secret: DF.Password
-        payment_success_template: DF.Link | None
         webhook_secret: DF.Password | None
 
     # end: auto-generated types
