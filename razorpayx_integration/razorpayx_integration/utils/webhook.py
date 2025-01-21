@@ -225,8 +225,8 @@ class PayoutWebhook(RazorPayXWebhook):
         if self.id:
             values["razorpayx_payout_id"] = self.id
 
-        self.update_payout_status(self.status)
         self.source_doc.db_set(values, notify=True)
+        self.update_payout_status(self.status)
 
         if self.should_cancel_payment_entry() and self.cancel_payout_link():
             self.cancel_payment_entry()
@@ -530,8 +530,8 @@ class TransactionWebhook(PayoutWebhook):
         if self.id:
             values["razorpayx_payout_id"] = self.id
 
-        self.update_payout_status(self.status)
         self.source_doc.db_set(values)
+        self.update_payout_status(self.status)
 
 
 class AccountWebhook(RazorPayXWebhook):

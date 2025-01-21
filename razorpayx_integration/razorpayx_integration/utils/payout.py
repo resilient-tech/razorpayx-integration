@@ -331,11 +331,11 @@ class PayoutWithPaymentEntry(PayoutWithDocument):
         elif entity == "payout_link":
             values["razorpayx_payout_link_id"] = id
 
-        if status := response.get("status"):
-            self.doc.update({"razorpayx_payout_status": status.title()}).save()
-
         if values:
             self.doc.db_set(values, notify=True)
+
+        if status := response.get("status"):
+            self.doc.update({"razorpayx_payout_status": status.title()}).save()
 
     ### HELPERS ###
     def _get_razorpayx_account(self) -> str:
