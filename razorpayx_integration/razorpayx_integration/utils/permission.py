@@ -84,3 +84,14 @@ def has_pe_access(
         )
 
     return True
+
+
+def user_has_payout_permissions(
+    payment_entries: str | list[str] | None = None,
+    razorpayx_account: str | None = None,
+    *,
+    pe_permission: Literal["submit", "cancel"] = "submit",
+    throw: bool = False,
+):
+    """"""
+    pass
