@@ -23,20 +23,20 @@ ROLES = [
     {
         "doctype": RAZORPAYX_INTEGRATION_DOCTYPE,
         "role_name": ROLE_PROFILE.RAZORPAYX_MANAGER.value,
-        "permlevels": PERMISSION_LEVEL.BASE.value,
+        "permlevels": PERMISSION_LEVEL.ZERO.value,
         "permissions": PERMISSIONS["Manager"],
     },
     {
         "doctype": RAZORPAYX_INTEGRATION_DOCTYPE,
         "role_name": PAYMENT_PROFILES.PAYMENT_AUTHORIZER.value,
-        "permlevels": PERMISSION_LEVEL.BASE.value,
+        "permlevels": PERMISSION_LEVEL.ZERO.value,
         "permissions": PERMISSIONS["Basic"],
     },
     ## Bank Account ##
     {
         "doctype": "Bank Account",
         "role_name": ROLE_PROFILE.RAZORPAYX_MANAGER.value,
-        "permlevels": PERMISSION_LEVEL.BASE.value,
+        "permlevels": PERMISSION_LEVEL.ZERO.value,
         "permissions": PERMISSIONS["Basic"],
     },
 ]

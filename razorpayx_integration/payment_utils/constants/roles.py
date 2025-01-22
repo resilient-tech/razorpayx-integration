@@ -22,8 +22,8 @@ class PERMISSION_LEVEL(BaseEnum):
     Common permission levels for online payments related doctypes.
     """
 
-    BASE = 0
-    HIGHER = 7
+    ZERO = 0  #   base and default
+    SEVEN = 7  # specific to payment and security
 
 
 class DEFAULT_ROLE_PROFILE(BaseEnum):
@@ -58,73 +58,73 @@ ROLES = [
     {
         "doctype": SETTING_DOCTYPE,
         "role_name": ROLE_PROFILE.AUTO_PAYMENTS_MANAGER.value,
-        "permlevels": PERMISSION_LEVEL.BASE.value,
+        "permlevels": PERMISSION_LEVEL.ZERO.value,
         "permissions": PERMISSIONS["Manager"],
     },
     ## Bank ##
     {
         "doctype": "Bank",
         "role_name": ROLE_PROFILE.BANK_ACC_MANAGER.value,
-        "permlevels": PERMISSION_LEVEL.BASE.value,
+        "permlevels": PERMISSION_LEVEL.ZERO.value,
         "permissions": PERMISSIONS["User"],
     },
     {
         "doctype": "Bank",
         "role_name": ROLE_PROFILE.BANK_ACC_USER.value,
-        "permlevels": PERMISSION_LEVEL.BASE.value,
+        "permlevels": PERMISSION_LEVEL.ZERO.value,
         "permissions": PERMISSIONS["Basic"],
     },
     ## Bank Account ##
     {
         "doctype": "Bank Account",
         "role_name": ROLE_PROFILE.BANK_ACC_MANAGER.value,
-        "permlevels": [PERMISSION_LEVEL.BASE.value, PERMISSION_LEVEL.HIGHER.value],
+        "permlevels": [PERMISSION_LEVEL.ZERO.value, PERMISSION_LEVEL.SEVEN.value],
         "permissions": PERMISSIONS["Manager"],
     },
     {
         "doctype": "Bank Account",
         "role_name": ROLE_PROFILE.BANK_ACC_USER.value,
-        "permlevels": PERMISSION_LEVEL.BASE.value,
+        "permlevels": PERMISSION_LEVEL.ZERO.value,
         "permissions": PERMISSIONS["User"],
     },
     {
         "doctype": "Bank Account",
         "role_name": ROLE_PROFILE.AUTO_PAYMENTS_MANAGER.value,
-        "permlevels": PERMISSION_LEVEL.BASE.value,
+        "permlevels": PERMISSION_LEVEL.ZERO.value,
         "permissions": PERMISSIONS["Basic"],
     },
     ## Payment Entry ##
     {
         "doctype": "Payment Entry",
         "role_name": ROLE_PROFILE.AUTO_PAYMENTS_MANAGER.value,
-        "permlevels": PERMISSION_LEVEL.BASE.value,
+        "permlevels": PERMISSION_LEVEL.ZERO.value,
         "permissions": PERMISSIONS["User"],
     },
     {
         "doctype": "Payment Entry",
         "role_name": ROLE_PROFILE.PAYMENT_AUTHORIZER.value,
-        "permlevels": [PERMISSION_LEVEL.BASE.value, PERMISSION_LEVEL.HIGHER.value],
+        "permlevels": [PERMISSION_LEVEL.ZERO.value, PERMISSION_LEVEL.SEVEN.value],
         "permissions": PERMISSIONS["Manager"],
     },
     # Customer
     {
         "doctype": "Customer",
         "role_name": ROLE_PROFILE.AUTO_PAYMENTS_MANAGER.value,
-        "permlevels": PERMISSION_LEVEL.HIGHER.value,
+        "permlevels": PERMISSION_LEVEL.SEVEN.value,
         "permissions": PERMISSIONS["User"],
     },
     # Supplier
     {
         "doctype": "Supplier",
         "role_name": ROLE_PROFILE.AUTO_PAYMENTS_MANAGER.value,
-        "permlevels": PERMISSION_LEVEL.HIGHER.value,
+        "permlevels": PERMISSION_LEVEL.SEVEN.value,
         "permissions": PERMISSIONS["User"],
     },
     # Employee
     {
         "doctype": "Employee",
         "role_name": ROLE_PROFILE.AUTO_PAYMENTS_MANAGER.value,
-        "permlevels": PERMISSION_LEVEL.HIGHER.value,
+        "permlevels": PERMISSION_LEVEL.SEVEN.value,
         "permissions": PERMISSIONS["User"],
     },
 ]
