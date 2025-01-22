@@ -31,4 +31,4 @@ doc_events = {
     },
 }
 
-before_payment_authentication = "razorpayx_integration.razorpayx_integration.utils.permission.has_payout_permissions_for_entries"
+before_payment_authentication = "razorpayx_integration.razorpayx_integration.utils.permission.before_payment_authentication"

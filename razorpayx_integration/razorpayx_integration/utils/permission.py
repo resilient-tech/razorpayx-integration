@@ -10,7 +10,7 @@ from razorpayx_integration.payment_utils.constants.roles import ROLE_PROFILE
 
 
 # TODO: need to handle properly, what if there are other integrations and this hook is called?
-def has_payout_permissions_for_entries(payment_entries: list[str]) -> bool:
+def before_payment_authentication(payment_entries: list[str]) -> bool:
     """
     Hook to check if the user has permissions to make payouts for the given payment entries.
 
