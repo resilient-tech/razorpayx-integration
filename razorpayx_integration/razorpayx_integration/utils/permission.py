@@ -1,3 +1,5 @@
+from typing import Literal
+
 import frappe
 from frappe import _
 
@@ -25,22 +27,60 @@ def has_payout_permissions_for_entries(payment_entries: list[str]) -> bool:
 
     :param payment_entries: List of payment entries.
     """
-    # Check if user has authorizer role
+    has_payment_authorizer_role(throw=True)
+
+    has_integration_access(docname=None, throw=True)
+
+    # TODO: how to check for `Company Bank Account`?
+    has_pe_access(payment_entries, permission="submit", throw=True)
+
+
+def has_payment_authorizer_role(*, throw=False) -> bool | None:
+    """
+    Check user have payment authorizer role or not!
+
+    :param throw: If `True`, throws `PermissionError` if user doesn't have authorizer role.
+    """
     has_authorizer_role = ROLE_PROFILE.PAYMENT_AUTHORIZER.value in frappe.get_roles()
 
-    if not has_authorizer_role:
+    if not has_authorizer_role and throw:
         frappe.throw(
             title=_("Insufficient Permissions"),
             msg=_("You do not have permission to make payout."),
             exc=frappe.PermissionError,
         )
 
-    # Check if user has permissions to read integration documents
-    frappe.has_permission(INTEGRATION_DOCTYPE, throw=True)
+    return has_authorizer_role
 
-    # Check each payment entries submission
-    # TODO: how to check for `Company Bank Account`?
+
+def has_integration_access(*, docname: str | None = None, throw=False) -> bool | None:
+    """
+    Check if user can read the integration.
+
+    :param docname: RazorPayX account (docname).
+    :param throw: If `True`, throws `PermissionError` if user doesn't have access.
+    """
+    return frappe.has_permission(doctype=INTEGRATION_DOCTYPE, doc=docname, throw=throw)
+
+
+def has_pe_access(
+    payment_entries: str | list[str],
+    permission: Literal["submit", "cancel"] = "submit",
+    throw=False,
+) -> bool | None:
+    """
+    Check if user can submit/cancel the payment entries.
+
+    :param payment_entries: Payment Entry name or list of names.
+    :param permission: Permission type to check.
+    :param throw: If `True`, throws `PermissionError` if user doesn't have access.
+    """
+    if isinstance(payment_entries, str):
+        payment_entries = [payment_entries]
+
     for pe in payment_entries:
         frappe.has_permission(
-            doctype="Payment Entry", doc=pe, ptype="submit", throw=True
+            doctype="Payment Entry", doc=pe, ptype=permission, throw=throw
         )
+
+    return True
