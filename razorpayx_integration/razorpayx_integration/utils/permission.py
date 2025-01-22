@@ -4,7 +4,7 @@ from frappe import _
 from razorpayx_integration.constants import (
     RAZORPAYX_INTEGRATION_DOCTYPE as INTEGRATION_DOCTYPE,
 )
-from razorpayx_integration.razorpayx_integration.constants.roles import ROLE_PROFILE
+from razorpayx_integration.payment_utils.constants.roles import ROLE_PROFILE
 
 
 # TODO: need to handle properly, what if there are other integrations and this hook is called?
@@ -26,7 +26,7 @@ def has_payout_permissions_for_entries(payment_entries: list[str]) -> bool:
     :param payment_entries: List of payment entries.
     """
     # Check if user has authorizer role
-    has_authorizer_role = ROLE_PROFILE.PAYOUT_AUTHORIZER.value in frappe.get_roles()
+    has_authorizer_role = ROLE_PROFILE.PAYMENT_AUTHORIZER.value in frappe.get_roles()
 
     if not has_authorizer_role:
         frappe.throw(
@@ -37,3 +37,10 @@ def has_payout_permissions_for_entries(payment_entries: list[str]) -> bool:
 
     # Check if user has permissions to read integration documents
     frappe.has_permission(INTEGRATION_DOCTYPE, throw=True)
+
+    # Check each payment entries submission
+    # TODO: how to check for `Company Bank Account`?
+    for pe in payment_entries:
+        frappe.has_permission(
+            doctype="Payment Entry", doc=pe, ptype="submit", throw=True
+        )
