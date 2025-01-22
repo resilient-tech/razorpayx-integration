@@ -10,12 +10,17 @@ Methods:
 
 Reference: https://github.com/frappe/frappe/blob/13fbdbb0c478099dfac6c70b7e05eef97c14c5ad/frappe/twofactor.py
 """
+
+# TODO: generalize this, not just for payment entries but also for other doctypes
+# TODO : add type hints
+# TODO: add docstrings
 import os
 import pickle
 from base64 import b32encode, b64encode
 
 import frappe
 import frappe.defaults
+import frappe.permissions
 import pyotp
 from frappe import _, get_system_settings
 from frappe.auth import get_login_attempt_tracker
@@ -29,28 +34,34 @@ from frappe.twofactor import (
 from frappe.utils import cint
 from frappe.utils.password import check_password, decrypt, encrypt
 
+OTP_ISSUER = "Payment Utils"
+
 
 @frappe.whitelist()
 def generate_otp(payment_entries):
-    # TODO: check for role permissions. Throw if not allowed.
-
     if isinstance(payment_entries, str):
         payment_entries = frappe.parse_json(payment_entries)
+
+    execute_pre_authentication_tasks(payment_entries)
 
     return Trigger2FA(payment_entries).send_otp()
 
 
+# TODO: which permission to check for this?
 @frappe.whitelist()
 def verify_otp(auth_id, otp):
     return Authenticate2FA(auth_id, otp).verify()
 
 
+# TODO: which permission to check for this?
 @frappe.whitelist()
 def reset_otp_secret(user):
     pass
 
 
-OTP_ISSUER = "Payment Utils"
+def execute_pre_authentication_tasks(payment_entries: list[str]):
+    for fn in frappe.get_hooks("before_payment_authentication"):
+        frappe.get_attr(fn)(payment_entries)
 
 
 class Trigger2FA:

@@ -30,3 +30,5 @@ doc_events = {
         "before_cancel": "razorpayx_integration.razorpayx_integration.server_overrides.payment_entry.before_cancel",
     },
 }
+
+before_payment_authentication = "razorpayx_integration.razorpayx_integration.utils.permission.has_payout_permissions_for_entries"
