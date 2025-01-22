@@ -32,7 +32,7 @@ CUSTOM_FIELDS = {
             "depends_on": f"eval: {BASE_CONDITION_TO_MAKE_ONLINE_PAYMENT} && doc.razorpayx_account && doc.make_bank_online_payment",
             "collapsible": 1,
             "collapsible_depends_on": "eval: doc.docstatus === 0",
-            "permlevel": PERMISSION_LEVEL.PAYOUT_AUTHORIZER.value,
+            "permlevel": PERMISSION_LEVEL.SEVEN.value,
         },
         {
             "fieldname": "razorpayx_account",
@@ -43,7 +43,7 @@ CUSTOM_FIELDS = {
             "print_hide": 1,
             "read_only": 1,
             "hidden": 1,
-            "permlevel": PERMISSION_LEVEL.PAYOUT_AUTHORIZER.value,
+            "permlevel": PERMISSION_LEVEL.SEVEN.value,
         },
         {
             "fieldname": "razorpayx_payout_mode",
@@ -56,7 +56,7 @@ CUSTOM_FIELDS = {
             "read_only": 1,
             "depends_on": "eval: doc.make_bank_online_payment",
             "mandatory_depends_on": "eval: doc.make_bank_online_payment",
-            "permlevel": PERMISSION_LEVEL.PAYOUT_AUTHORIZER.value,
+            "permlevel": PERMISSION_LEVEL.SEVEN.value,
         },
         {
             "fieldname": "razorpayx_pay_instantaneously",
@@ -65,13 +65,13 @@ CUSTOM_FIELDS = {
             "insert_after": "razorpayx_payout_mode",
             "depends_on": f"eval: doc.razorpayx_payout_mode === '{USER_PAYOUT_MODE.BANK.value}' && doc.paid_amount <= {PAYMENT_MODE_THRESHOLD.IMPS.value}",
             "description": "Payment will be done with <strong>IMPS</strong> mode.",
-            "permlevel": PERMISSION_LEVEL.PAYOUT_AUTHORIZER.value,
+            "permlevel": PERMISSION_LEVEL.SEVEN.value,
         },
         {
             "fieldname": "razorpayx_payout_cb",
             "fieldtype": "Column Break",
             "insert_after": "razorpayx_pay_instantaneously",
-            "permlevel": PERMISSION_LEVEL.PAYOUT_AUTHORIZER.value,
+            "permlevel": PERMISSION_LEVEL.SEVEN.value,
         },
         {
             "fieldname": "razorpayx_payout_desc",
@@ -80,7 +80,7 @@ CUSTOM_FIELDS = {
             "insert_after": "razorpayx_payout_cb",
             "depends_on": "eval: doc.make_bank_online_payment",
             "mandatory_depends_on": f"eval:doc.make_bank_online_payment && doc.razorpayx_payout_mode === '{USER_PAYOUT_MODE.LINK.value}'",
-            "permlevel": PERMISSION_LEVEL.PAYOUT_AUTHORIZER.value,
+            "permlevel": PERMISSION_LEVEL.SEVEN.value,
         },
         {
             "fieldname": "razorpayx_payout_status",
@@ -94,7 +94,7 @@ CUSTOM_FIELDS = {
             "allow_on_submit": 1,
             "in_list_view": 1,
             "in_standard_filter": 1,
-            "permlevel": PERMISSION_LEVEL.PAYOUT_AUTHORIZER.value,
+            "permlevel": PERMISSION_LEVEL.SEVEN.value,
             "no_copy": 1,
         },
         {
@@ -112,7 +112,7 @@ CUSTOM_FIELDS = {
             "read_only": 1,
             "hidden": 1,
             "print_hide": 1,
-            "permlevel": PERMISSION_LEVEL.PAYOUT_AUTHORIZER.value,
+            "permlevel": PERMISSION_LEVEL.SEVEN.value,
             "no_copy": 1,
         },
         {
@@ -128,7 +128,7 @@ CUSTOM_FIELDS = {
             "read_only": 1,
             "hidden": 1,
             "print_hide": 1,
-            "permlevel": PERMISSION_LEVEL.PAYOUT_AUTHORIZER.value,
+            "permlevel": PERMISSION_LEVEL.SEVEN.value,
             "no_copy": 1,
         },
         #### PAYMENT SECTION END ####

@@ -21,7 +21,7 @@ BLOCK_AUTO_PAYMENT = {
     "label": "Block Auto Payment",
     "fieldtype": "Check",
     "description": "Automatic payment entries will not be created for this party",
-    "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
+    "permlevel": PERMISSION_LEVEL.SEVEN.value,
 }
 
 
@@ -81,7 +81,7 @@ CUSTOM_FIELDS = {
             "options": "Phone",
             "depends_on": "eval: doc.contact_person",
             "read_only": 1,
-            "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
+            "permlevel": PERMISSION_LEVEL.SEVEN.value,
             "no_copy": 1,
         },
         {
@@ -90,7 +90,7 @@ CUSTOM_FIELDS = {
             "fieldtype": "Section Break",
             "insert_after": "contact_email",
             "depends_on": f"eval: {BASE_CONDITION_TO_MAKE_ONLINE_PAYMENT}",
-            "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
+            "permlevel": PERMISSION_LEVEL.SEVEN.value,
         },
         {
             "fieldname": "make_bank_online_payment",
@@ -98,7 +98,7 @@ CUSTOM_FIELDS = {
             "fieldtype": "Check",
             "insert_after": "online_payment_section",
             "description": "Make online payment using <strong>Payments Integration</strong>",
-            "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
+            "permlevel": PERMISSION_LEVEL.SEVEN.value,
         },
         {
             "fieldname": "cb_online_payment_section",
@@ -112,7 +112,7 @@ CUSTOM_FIELDS = {
             "insert_after": "cb_online_payment_section",
             "fetch_from": "party_bank_account.upi_id",  # Note: update at integration level if required
             "read_only": 1,
-            "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
+            "permlevel": PERMISSION_LEVEL.SEVEN.value,
         },
         {
             "fieldname": "party_bank_account_no",
@@ -121,7 +121,7 @@ CUSTOM_FIELDS = {
             "insert_after": "party_upi_id",
             "fetch_from": "party_bank_account.bank_account_no",  # Note: update at integration level if required
             "read_only": 1,
-            "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
+            "permlevel": PERMISSION_LEVEL.SEVEN.value,
         },
         {
             "fieldname": "party_bank_ifsc",
@@ -130,7 +130,7 @@ CUSTOM_FIELDS = {
             "insert_after": "party_bank_account_no",
             "fetch_from": "party_bank_account.branch_code",  # Note: update at integration level if required
             "read_only": 1,
-            "permlevel": PERMISSION_LEVEL.AUTO_PAYMENTS_MANAGER.value,
+            "permlevel": PERMISSION_LEVEL.SEVEN.value,
         },
     ],
     "Customer": [
