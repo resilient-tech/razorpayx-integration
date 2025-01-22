@@ -8,7 +8,7 @@ Note: ⚠️ If `Actions` and `States` define elsewhere, then make sure to creat
 
 from razorpayx_integration.payment_utils.constants.enums import BaseEnum
 from razorpayx_integration.payment_utils.constants.roles import (
-    FRAPPE_ROLE_PROFILE,
+    DEFAULT_ROLE_PROFILE,
     ROLE_PROFILE,
 )
 
@@ -57,7 +57,7 @@ WORKFLOWS = [
             {
                 "state": WORKFLOW_STATE.DRAFT.value,
                 "doc_status": 0,
-                "allow_edit": FRAPPE_ROLE_PROFILE.ALL.value,
+                "allow_edit": DEFAULT_ROLE_PROFILE.ALL.value,
             },
             {
                 "state": WORKFLOW_STATE.DRAFT.value,
@@ -79,21 +79,21 @@ WORKFLOWS = [
                 "doc_status": 0,
                 "update_field": "disabled",
                 "update_value": 1,
-                "allow_edit": FRAPPE_ROLE_PROFILE.SYSTEM_MANAGER.value,
+                "allow_edit": DEFAULT_ROLE_PROFILE.SYSTEM_MANAGER.value,
             },
             {
                 "state": WORKFLOW_STATE.CANCELLED.value,
                 "doc_status": 0,
                 "update_field": "disabled",
                 "update_value": 1,
-                "allow_edit": FRAPPE_ROLE_PROFILE.SYSTEM_MANAGER.value,
+                "allow_edit": DEFAULT_ROLE_PROFILE.SYSTEM_MANAGER.value,
             },
             {
                 "state": WORKFLOW_STATE.APPROVED.value,
                 "doc_status": 0,
                 "update_field": "disabled",
                 "update_value": 0,
-                "allow_edit": FRAPPE_ROLE_PROFILE.SYSTEM_MANAGER.value,
+                "allow_edit": DEFAULT_ROLE_PROFILE.SYSTEM_MANAGER.value,
             },
         ],
         "transitions": [
@@ -136,7 +136,7 @@ WORKFLOWS = [
                 "state": WORKFLOW_STATE.APPROVED.value,
                 "action": WORKFLOW_ACTION.CANCEL.value,
                 "next_state": WORKFLOW_STATE.CANCELLED.value,
-                "allowed": FRAPPE_ROLE_PROFILE.SYSTEM_MANAGER.value,
+                "allowed": DEFAULT_ROLE_PROFILE.SYSTEM_MANAGER.value,
                 "allow_self_approval": True,
             },
         ],
@@ -152,7 +152,7 @@ WORKFLOWS = [
             {
                 "state": WORKFLOW_STATE.DRAFT.value,
                 "doc_status": 0,
-                "allow_edit": FRAPPE_ROLE_PROFILE.ALL.value,
+                "allow_edit": DEFAULT_ROLE_PROFILE.ALL.value,
             },
             {
                 "state": WORKFLOW_STATE.DRAFT.value,
@@ -167,17 +167,17 @@ WORKFLOWS = [
             {
                 "state": WORKFLOW_STATE.REJECTED.value,
                 "doc_status": 0,
-                "allow_edit": FRAPPE_ROLE_PROFILE.SYSTEM_MANAGER.value,
+                "allow_edit": DEFAULT_ROLE_PROFILE.SYSTEM_MANAGER.value,
             },
             {
                 "state": WORKFLOW_STATE.APPROVED.value,
                 "doc_status": 1,
-                "allow_edit": FRAPPE_ROLE_PROFILE.SYSTEM_MANAGER.value,
+                "allow_edit": DEFAULT_ROLE_PROFILE.SYSTEM_MANAGER.value,
             },
             {
                 "state": WORKFLOW_STATE.CANCELLED.value,
                 "doc_status": 2,
-                "allow_edit": FRAPPE_ROLE_PROFILE.SYSTEM_MANAGER.value,
+                "allow_edit": DEFAULT_ROLE_PROFILE.SYSTEM_MANAGER.value,
             },
         ],
         "transitions": [
@@ -213,7 +213,7 @@ WORKFLOWS = [
                 "state": WORKFLOW_STATE.APPROVED.value,
                 "action": WORKFLOW_ACTION.CANCEL.value,
                 "next_state": WORKFLOW_STATE.CANCELLED.value,
-                "allowed": FRAPPE_ROLE_PROFILE.SYSTEM_MANAGER.value,
+                "allowed": DEFAULT_ROLE_PROFILE.SYSTEM_MANAGER.value,
                 "allow_self_approval": True,
             },
         ],
