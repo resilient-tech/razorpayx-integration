@@ -25,6 +25,9 @@ from razorpayx_integration.razorpayx_integration.utils import (
 from razorpayx_integration.razorpayx_integration.utils.payout import (
     PayoutWithPaymentEntry,
 )
+from razorpayx_integration.razorpayx_integration.utils.permission import (
+    check_user_payout_permissions,
+)
 from razorpayx_integration.razorpayx_integration.utils.validation import (
     validate_razorpayx_user_payout_mode,
 )
@@ -620,7 +623,7 @@ def cancel_payout(docname: str, razorpayx_account: str):
     :param docname: Payment Entry name
     :param razorpayx_account: RazorPayX Account name associated to company bank account
     """
-    user_has_payout_permissions(
+    check_user_payout_permissions(
         docname,
         razorpayx_account,
         pe_permission="cancel",
@@ -643,7 +646,7 @@ def make_payout_with_payment_entry(
     :param docname: Payment Entry name
     :param razorpayx_account: RazorPayX Account name associated to company bank account
     """
-    user_has_payout_permissions(docname, razorpayx_account, throw=True)
+    check_user_payout_permissions(docname, razorpayx_account, throw=True)
 
     doc = frappe.get_doc("Payment Entry", docname)
 
@@ -675,7 +678,7 @@ def bulk_pay_and_submit(
     ---
     Reference: [Frappe Bulk Submit/Cancel](https://github.com/frappe/frappe/blob/3eda272bd61b1e73b74d30b1704d885a39c75d0c/frappe/desk/doctype/bulk_update/bulk_update.py#L51)
     """
-    user_has_payout_permissions(throw=True)
+    check_user_payout_permissions(payment_entries=docnames, throw=True)
 
     if isinstance(docnames, str):
         docnames = frappe.parse_json(docnames)
