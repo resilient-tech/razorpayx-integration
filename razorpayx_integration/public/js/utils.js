@@ -1,10 +1,13 @@
 frappe.provide("razorpayx");
 
+const PAYOUT_AUTHORIZER = "Online Payments Authorizer";
 const RPX_DOCTYPE = "RazorPayX Integration Setting";
 const IMPS_LIMIT = 5_00_000;
 const PAY_ICON = "expenses";
 
 Object.assign(razorpayx, {
+	PAYOUT_AUTHORIZER,
+
 	RPX_DOCTYPE,
 
 	IMPS_LIMIT,
