@@ -334,7 +334,7 @@ class PayoutWithPaymentEntry(PayoutWithDocument):
         if values:
             self.doc.db_set(values, notify=True)
 
-        if status := response.get("status"):
+        if (status := response.get("status")) and entity == "payout":
             self.doc.update({"razorpayx_payout_status": status.title()}).save()
 
     ### HELPERS ###

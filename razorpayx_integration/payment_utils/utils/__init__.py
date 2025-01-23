@@ -180,7 +180,7 @@ def make_roles_and_permissions(roles: list[dict]):
         {
             "doctype": "DocType",
             "role_name": "Role Name",
-            "permlevel": PERMLEVEL,
+            "permlevels": PERMLEVEL,
             "permissions": ["read", "write", "create", "delete", "submit" ...],
         },
         ...,
@@ -227,7 +227,7 @@ def apply_roles_to_doctype(roles: list[dict]):
         {
             "doctype": "DocType",
             "role_name": "Role Name",
-            "permlevel": PERMLEVEL,
+            "permlevels": PERMLEVEL | [PERMLEVEL, ...],
             "permissions": ["read", "write", "create", "delete", "submit" ...],
         },
         ...,
@@ -235,14 +235,19 @@ def apply_roles_to_doctype(roles: list[dict]):
     ```
     """
     for role in roles:
-        doctype, role_name, permlevel, permissions = role.values()
+        doctype, role_name, permlevels, permissions = role.values()
+
+        if isinstance(permlevels, int):
+            permlevels = [permlevels]
 
         # Adding role to the doctype
-        add_permission(doctype, role_name, permlevel)
+        for permlevel in permlevels:
+            add_permission(doctype, role_name, permlevel)
 
         # Updating permissions (types) for the roles in the doctype
         for permission in permissions:
-            update_permission_property(doctype, role_name, permlevel, permission, 1)
+            for permlevel in permlevels:
+                update_permission_property(doctype, role_name, permlevel, permission, 1)
 
 
 def make_workflows(workflows: list[dict]):
@@ -373,7 +378,7 @@ def delete_roles_and_permissions(roles: list[dict]):
         {
             "doctype": "DocType",
             "role_name": "Role Name",
-            "permlevel": PERMLEVEL,
+            "permlevels": PERMLEVEL | [PERMLEVEL, ...],
             "permissions": ["read", "write", "create", "delete", "submit" ...],
         },
         ...,
@@ -396,7 +401,7 @@ def remove_permissions(roles: list[dict]):
         {
             "doctype": "DocType",
             "role_name": "Role Name",
-            "permlevel": PERMLEVEL,
+            "permlevels": PERMLEVEL | [PERMLEVEL, ...],
             "permissions": ["read", "write", "create", "delete", "submit" ...],
         },
         ...,
@@ -405,8 +410,12 @@ def remove_permissions(roles: list[dict]):
     """
     for role in roles:
         try:
-            doctype, role_name, permlevel, permissions = role.values()
-            remove_role_permissions(doctype, role_name, permlevel)
+            doctype, role_name, permlevels, permissions = role.values()
+            if isinstance(permlevels, int):
+                permlevels = [permlevels]
+
+            for permlevel in permlevels:
+                remove_role_permissions(doctype, role_name, permlevel)
         except Exception:
             pass
 

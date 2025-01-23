@@ -22,3 +22,5 @@ PROPERTY_SETTERS = [
         "value": 1,
     },
 ]
+
+# TODO:? add bank account fields: is_default,disable permission level?? (Helpful in workflow)

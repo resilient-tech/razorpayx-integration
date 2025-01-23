@@ -6,7 +6,7 @@ frappe.listview_settings["Payment Entry"] = {
 
 	onload: function (list_view) {
 		// Add `Pay and Submit` button to the Payment Entry list view
-		if (!rpx.user_has_payout_permissions()) return;
+		if (!razorpayx.can_user_authorize_payout()) return;
 
 		list_view.page.add_actions_menu_item(__("Pay and Submit"), () => {
 			const selected_docs = list_view.get_checked_items();
@@ -14,7 +14,7 @@ frappe.listview_settings["Payment Entry"] = {
 			const ineligible_docs = [];
 
 			selected_docs.forEach((doc) => {
-				if (is_eligible(doc)) {
+				if (is_eligible_to_pay(doc)) {
 					eligible_docs.push(doc.name);
 				} else {
 					ineligible_docs.push(doc.name);
@@ -54,7 +54,7 @@ frappe.listview_settings["Payment Entry"] = {
 	},
 };
 
-function is_eligible(doc) {
+function is_eligible_to_pay(doc) {
 	return (
 		doc.docstatus === 0 &&
 		doc.payment_type === "Pay" &&

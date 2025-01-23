@@ -26,7 +26,7 @@
     "root": true,
     "globals": {
       "frappe": true,
-      "rpx":true,
+      "razorpayx":true,
       "payment_utils": true,
       "Vue": true,
       "SetVueGlobals": true,

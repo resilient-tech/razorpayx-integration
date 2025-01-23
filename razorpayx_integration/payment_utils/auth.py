@@ -10,16 +10,22 @@ Methods:
 
 Reference: https://github.com/frappe/frappe/blob/13fbdbb0c478099dfac6c70b7e05eef97c14c5ad/frappe/twofactor.py
 """
+
+# TODO: generalize this, not just for payment entries but also for other doctypes
+# TODO : add type hints
+# TODO: add docstrings
 import os
 import pickle
 from base64 import b32encode, b64encode
 
 import frappe
 import frappe.defaults
+import frappe.permissions
 import pyotp
-from frappe import _, get_system_settings
+from frappe import _, enqueue, get_system_settings
 from frappe.auth import get_login_attempt_tracker
 from frappe.twofactor import (
+    clear_default,
     delete_qrimage,
     get_default,
     get_link_for_qrcode,
@@ -29,13 +35,17 @@ from frappe.twofactor import (
 from frappe.utils import cint
 from frappe.utils.password import check_password, decrypt, encrypt
 
+from razorpayx_integration.payment_utils.constants.roles import ROLE_PROFILE
+
+OTP_ISSUER = "Payments"
+
 
 @frappe.whitelist()
 def generate_otp(payment_entries):
-    # TODO: check for role permissions. Throw if not allowed.
-
     if isinstance(payment_entries, str):
         payment_entries = frappe.parse_json(payment_entries)
+
+    execute_pre_authentication_tasks(payment_entries)
 
     return Trigger2FA(payment_entries).send_otp()
 
@@ -47,10 +57,62 @@ def verify_otp(auth_id, otp):
 
 @frappe.whitelist()
 def reset_otp_secret(user):
-    pass
+    if frappe.session.user != user:
+        frappe.throw(_("You are not allowed to reset OTP Secret for another user."))
+
+    if ROLE_PROFILE.PAYMENT_AUTHORIZER.value not in frappe.get_roles():
+        frappe.throw(_("You do not have permission to reset OTP Secret."))
+
+    settings = frappe.get_cached_doc("System Settings")
+
+    if not settings.enable_two_factor_auth:
+        frappe.throw(
+            _("You have to enable Two Factor Auth from System Settings."),
+            title=_("Enable Two Factor Auth"),
+        )
+
+    otp_issuer = settings.otp_issuer_name or "Frappe Framework"
+    otp_issuer = f"{otp_issuer} - {OTP_ISSUER}"
+
+    user_email = frappe.get_cached_value("User", user, "email")
+
+    clear_default(user + f"_{OTP_ISSUER}_otplogin")
+    clear_default(user + f"_{OTP_ISSUER}_otpsecret")
+
+    # TODO: Frontend
+    # TODO: consistent to below message and subject
+    email_args = {
+        "recipients": user_email,
+        "sender": None,
+        "subject": _("OTP Secret Reset - {0}").format(otp_issuer),
+        "message": _(
+            "<p>Your OTP secret on {0} used for authorizing bank payments has been reset. If you did not perform this reset and did not request it, please contact your System Administrator immediately.</p>"
+        ).format(otp_issuer),
+        "delayed": False,
+        "retry": 3,
+    }
+
+    enqueue(
+        method=frappe.sendmail,
+        queue="short",
+        timeout=300,
+        event=None,
+        is_async=True,
+        job_name=None,
+        now=False,
+        **email_args,
+    )
+
+    frappe.msgprint(
+        _(
+            "OTP Secret has been reset. Re-registration will be required on next payment."
+        )
+    )
 
 
-OTP_ISSUER = "Payment Utils"
+def execute_pre_authentication_tasks(payment_entries: list[str]):
+    for fn in frappe.get_hooks("before_payment_authentication"):
+        frappe.get_attr(fn)(payment_entries)
 
 
 class Trigger2FA:

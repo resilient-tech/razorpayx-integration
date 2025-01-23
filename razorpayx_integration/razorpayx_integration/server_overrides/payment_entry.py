@@ -1,5 +1,3 @@
-from typing import Literal
-
 import frappe
 from erpnext.accounts.doctype.payment_entry.payment_entry import PaymentEntry
 from frappe import _
@@ -18,12 +16,14 @@ from razorpayx_integration.razorpayx_integration.constants.payouts import (
     PAYOUT_STATUS,
     USER_PAYOUT_MODE,
 )
-from razorpayx_integration.razorpayx_integration.constants.roles import ROLE_PROFILE
 from razorpayx_integration.razorpayx_integration.utils import (
     get_razorpayx_account,
 )
 from razorpayx_integration.razorpayx_integration.utils.payout import (
     PayoutWithPaymentEntry,
+)
+from razorpayx_integration.razorpayx_integration.utils.permission import (
+    user_has_payout_permissions,
 )
 from razorpayx_integration.razorpayx_integration.utils.validation import (
     validate_razorpayx_user_payout_mode,
@@ -33,6 +33,7 @@ from razorpayx_integration.razorpayx_integration.utils.validation import (
 #### DOC EVENTS ####
 def onload(doc: PaymentEntry, method=None):
     doc.set_onload("amended_pe_processed", is_amended_pe_processed(doc))
+    set_permission_details_onload(doc)
 
 
 def validate(doc: PaymentEntry, method=None):
@@ -86,6 +87,22 @@ def before_cancel(doc: PaymentEntry, method=None):
 def get_auth_id(doc: PaymentEntry):
     onload = doc.get_onload() or frappe._dict()
     return onload.get("auth_id")
+
+
+def set_permission_details_onload(doc: PaymentEntry):
+    """
+    Set permission details on Payment Entry onload.
+
+    :param doc: Payment Entry Document
+    """
+    doc.set_onload(
+        "has_payout_permission",
+        user_has_payout_permissions(
+            payment_entries=doc.name,
+            razorpayx_account=doc.razorpayx_account,
+            throw=False,
+        ),
+    )
 
 
 #### VALIDATIONS ####
@@ -160,7 +177,7 @@ def validate_payout_details(doc: PaymentEntry, throw=False):
     if not doc.make_bank_online_payment:
         return
 
-    # TODO:  ?  here check base conditions like `Pay`,`Cash`,`INR` etc.
+    # TODO:?  here check base conditions like `Pay`,`Cash`,`INR` etc.
 
     validate_razorpayx_account(doc, throw=throw)
 
@@ -596,53 +613,6 @@ def can_make_payout(doc: PaymentEntry) -> bool:
     )
 
 
-# TODO: concern with @smit_vora
-def user_has_payout_permissions(
-    payment_entry: str | None = None,
-    razorpayx_account: str | None = None,
-    *,
-    pe_permission: Literal["submit", "cancel"] = "submit",
-    throw: bool = False,
-):
-    """
-    Check RazorPayX related permissions for the user.
-
-    Permission Check:
-    - Has a role of Payout Authorizer
-    - Can access particular Payment Entry
-    - Can access particular RazorPayX Account (if provided)
-
-    :param payment_entry: Payment Entry name
-    :param razorpayx_account: RazorPayX Account name
-    :param pe_permission: Payment Entry Permission to check
-    :param throw: Throw error if permission is not granted
-    """
-    # this role have permission to read integration settings and submission/cancellation of payment entry
-    has_role = ROLE_PROFILE.PAYOUT_AUTHORIZER.value in frappe.get_roles()
-
-    if not has_role and throw:
-        frappe.throw(
-            title=_("Insufficient Permissions"),
-            msg=_("You do not have permission to make payout."),
-            exc=frappe.PermissionError,
-        )
-
-    has_pe_permission = frappe.has_permission(
-        doctype="Payment Entry",
-        doc=payment_entry,
-        ptype=pe_permission,
-        throw=throw,
-    )
-
-    has_razorpayx_permission = frappe.has_permission(
-        doctype=INTEGRATION_DOCTYPE,
-        doc=razorpayx_account,
-        throw=throw,
-    )
-
-    return has_role and has_pe_permission and has_razorpayx_permission
-
-
 ### APIs ###
 @frappe.whitelist()
 # TODO: permissions ?!
@@ -722,7 +692,7 @@ def bulk_pay_and_submit(
     ---
     Reference: [Frappe Bulk Submit/Cancel](https://github.com/frappe/frappe/blob/3eda272bd61b1e73b74d30b1704d885a39c75d0c/frappe/desk/doctype/bulk_update/bulk_update.py#L51)
     """
-    user_has_payout_permissions(throw=True)
+    user_has_payout_permissions(payment_entries=docnames, throw=True)
 
     if isinstance(docnames, str):
         docnames = frappe.parse_json(docnames)
