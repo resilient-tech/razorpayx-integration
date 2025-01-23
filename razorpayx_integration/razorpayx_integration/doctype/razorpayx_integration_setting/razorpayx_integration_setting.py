@@ -5,8 +5,6 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 
-# TODO: set templates for payment success and failure
-
 
 class RazorPayXIntegrationSetting(Document):
     # begin: auto-generated types

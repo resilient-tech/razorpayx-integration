@@ -75,11 +75,3 @@ SUPPORTED_EVENTS = (
     ## TRANSACTION ##
     TRANSACTION_EVENT.CREATED.value,
 )
-
-# TODO: How to create Payment Entry without its data?
-# TODO: How to handle transaction Events?
-# TODO: When payout done in RazorPayX, how to create Payment Entry in ERPNext?
-# TODO: Transaction even require ???
-# TODO: in settings, there should checkbox for enable/disable accepting webhook which is done from RazorPayX Dashboard
-# TODO: if Payout/Payout link is created from RazorPayX Dashboard, how to create Payment Entry in ERPNext?
-# TODO: How to get Balance of `RazorPayX` account?

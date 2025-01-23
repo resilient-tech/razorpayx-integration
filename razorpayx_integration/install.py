@@ -7,8 +7,6 @@ from razorpayx_integration.setup import setup_customizations
 
 POST_INSTALL_PATCHES = ("set_default_razorpayx_payout_mode",)
 
-# TODO: post install patches to set  default value `NEFT/RTGS` for PAYOUT_MODE
-
 
 def after_install():
     try:

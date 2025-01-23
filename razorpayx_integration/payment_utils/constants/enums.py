@@ -3,7 +3,6 @@ from enum import Enum
 import frappe
 
 
-# TODO: make enum name singular
 class BaseEnum(Enum):
     """
     ⚠️ Only use when all keys have unique values
@@ -72,7 +71,6 @@ class BaseEnum(Enum):
             + f"</{get_tag()}>"
         )
 
-    # TODO: can make one common method for all the below methods
     @classmethod
     def scrubbed_values(cls, as_string: bool = False, sep: str = "\n") -> list | str:
         """

@@ -30,7 +30,6 @@ def before_payment_authentication(payment_entries: list[str]) -> bool:
 
     has_integration_access(docname=None, throw=True)
 
-    # TODO: how to check for `Company Bank Account`?
     has_payment_entry_access(payment_entries, permission="submit", throw=True)
 
 
@@ -59,7 +58,7 @@ def has_integration_access(*, docname: str | None = None, throw=False) -> bool |
     :param docname: RazorPayX account (docname).
     :param throw: If `True`, throws `PermissionError` if user doesn't have access.
     """
-    # TODO: Refactor
+    # TODO: Refactor (check enabled or not)
     if docname:
         is_disabled = (
             frappe.get_value(INTEGRATION_DOCTYPE, docname, "disabled") or False

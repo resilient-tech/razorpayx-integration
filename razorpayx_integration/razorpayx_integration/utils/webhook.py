@@ -595,8 +595,6 @@ def razorpayx_webhook_listener():
     frappe.set_user("Administrator")
     row_payload = frappe.request.data
     payload = json.loads(row_payload)
-
-    # TODO: test without `str`
     request_headers = str(frappe.request.headers)
 
     if not is_valid_webhook_signature(
@@ -620,7 +618,7 @@ def razorpayx_webhook_listener():
 
     if unsupported_event := is_unsupported_event(event):
         ir_log["error"] = "Unsupported Webhook Event"
-        ir_log["status"] = "Cancelled"  # TODO: ? more accurate status
+        ir_log["status"] = "Cancelled"
 
     ir = log_integration_request(**ir_log)
 

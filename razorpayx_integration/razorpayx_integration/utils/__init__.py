@@ -6,7 +6,6 @@ from frappe import _
 from razorpayx_integration.constants import RAZORPAYX_INTEGRATION_DOCTYPE
 
 
-# TODO: use this function to get the RazorpayX Account Integration name
 @frappe.request_cache
 def get_razorpayx_account(
     identifier: str,
@@ -39,7 +38,6 @@ def get_razorpayx_account(
     )
 
 
-# TODO: permission check ?
 @frappe.whitelist()
 def get_razorpayx_account_by_bank_account(bank_account: str) -> str | None:
     """

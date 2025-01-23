@@ -367,7 +367,6 @@ class BaseRazorPayXAPI:
         pass
 
     ### ERROR HANDLING ###
-    # TODO:  handle special(error) http code (specially payout process!!)
     def _handle_failed_api_response(self, response_json: dict | None = None):
         """
         Handle failed API response from RazorPayX.
