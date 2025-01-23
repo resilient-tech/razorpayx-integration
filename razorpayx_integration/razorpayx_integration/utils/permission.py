@@ -96,7 +96,7 @@ def has_payment_entry_access(
                 return False
 
 
-def check_user_payout_permissions(
+def user_has_payout_permissions(
     payment_entries: str | list[str] | None = None,
     razorpayx_account: str | None = None,
     *,

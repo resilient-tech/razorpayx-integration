@@ -41,7 +41,7 @@ frappe.ui.form.on("Payment Entry", {
 		disable_payout_fields_in_amendment(frm);
 		frm.get_field("payment_type").set_empty_description();
 
-		if (!rpx.user_has_payout_permissions(frm.doc)) {
+		if (!user_has_payout_permissions(frm)) {
 			frm.toggle_display("online_payment_section", 0);
 			frm.toggle_display("razorpayx_payout_section", 0);
 			frm.toggle_enable("make_bank_online_payment", 0);
@@ -119,7 +119,7 @@ frappe.ui.form.on("Payment Entry", {
 			!is_base_payout_condition_met(frm) ||
 			!is_razorpayx_condition_met(frm) ||
 			is_amended_pe_processed(frm) ||
-			!rpx.user_has_payout_permissions(frm.doc)
+			!user_has_payout_permissions(frm)
 		) {
 			return;
 		}
@@ -196,7 +196,7 @@ function update_submit_button_label(frm) {
 		frm.doc.docstatus !== 0 ||
 		frm.doc.__islocal ||
 		is_amended_pe_processed(frm) ||
-		!rpx.user_has_payout_permissions(frm.doc)
+		!user_has_payout_permissions(frm)
 	)
 		return;
 
@@ -344,7 +344,7 @@ async function can_show_payout_btn(frm) {
 		frm.doc.docstatus === 1 &&
 		!frm.doc.make_bank_online_payment &&
 		frm.doc.razorpayx_payout_status === "Not Initiated" &&
-		rpx.user_has_payout_permissions(frm.doc)
+		user_has_payout_permissions(frm)
 	);
 }
 
@@ -394,7 +394,7 @@ async function show_make_payout_dialog(frm) {
 				fieldname: "razorpayx_account",
 				label: __("RazorpayX Account"),
 				fieldtype: "Link",
-				options: rpx.RPX_DOCTYPE,
+				options: razorpayx.RPX_DOCTYPE,
 				default: frm.doc.razorpayx_account,
 				reqd: 1,
 				hidden: 1,
@@ -521,7 +521,7 @@ async function show_make_payout_dialog(frm) {
 				label: "Pay Instantaneously",
 				fieldtype: "Check",
 				description: "Payment will be done with <strong>IMPS</strong> mode.",
-				depends_on: `eval: ${BANK_MODE} && ${frm.doc.paid_amount <= rpx.IMPS_LIMIT}`,
+				depends_on: `eval: ${BANK_MODE} && ${frm.doc.paid_amount <= razorpayx.IMPS_LIMIT}`,
 			},
 			{
 				fieldname: "party_cb",
@@ -534,7 +534,7 @@ async function show_make_payout_dialog(frm) {
 				mandatory_depends_on: `eval: ${LINK_MODE}`,
 			},
 		],
-		primary_action_label: __("{0} Pay", [frappe.utils.icon(rpx.PAY_ICON)]),
+		primary_action_label: __("{0} Pay", [frappe.utils.icon(razorpayx.PAY_ICON)]),
 		primary_action: (values) => {
 			payment_utils.authenticate_payment_entries(frm.docname, (auth_id) =>
 				make_payout(auth_id, frm.docname, values, dialog)
@@ -696,4 +696,8 @@ async function get_razorpayx_account(bank_account) {
 	);
 
 	return account;
+}
+
+function user_has_payout_permissions(frm) {
+	return frm.doc?.__onload?.has_payout_permission;
 }
