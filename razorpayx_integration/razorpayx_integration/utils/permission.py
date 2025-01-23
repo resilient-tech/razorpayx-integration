@@ -95,6 +95,8 @@ def has_payment_entry_access(
             if not access:
                 return False
 
+        return True
+
 
 def user_has_payout_permissions(
     payment_entries: str | list[str] | None = None,
@@ -129,4 +131,4 @@ def user_has_payout_permissions(
         payment_entries, permission=pe_permission, throw=throw
     )
 
-    return has_role and has_rpx_access and has_pe_access
+    return bool(has_role and has_rpx_access and has_pe_access)

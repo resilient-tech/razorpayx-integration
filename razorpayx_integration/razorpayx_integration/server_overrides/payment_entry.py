@@ -95,12 +95,12 @@ def set_permission_details_onload(doc: PaymentEntry):
 
     :param doc: Payment Entry Document
     """
-    pe = doc.name if not doc.__islocal else None
-
     doc.set_onload(
         "has_payout_permission",
         user_has_payout_permissions(
-            payment_entries=pe, razorpayx_account=doc.razorpayx_account, throw=False
+            payment_entries=doc.name,
+            razorpayx_account=doc.razorpayx_account,
+            throw=False,
         ),
     )
 
