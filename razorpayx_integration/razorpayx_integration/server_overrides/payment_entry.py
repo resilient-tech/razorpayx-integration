@@ -33,7 +33,8 @@ from razorpayx_integration.razorpayx_integration.utils.validation import (
 #### DOC EVENTS ####
 def onload(doc: PaymentEntry, method=None):
     doc.set_onload("amended_pe_processed", is_amended_pe_processed(doc))
-    set_permission_details_onload(doc)
+    set_permission_details_to_onload(doc)
+    set_auto_cancel_settings_to_onload(doc)
 
 
 def validate(doc: PaymentEntry, method=None):
@@ -89,7 +90,7 @@ def get_auth_id(doc: PaymentEntry):
     return onload.get("auth_id")
 
 
-def set_permission_details_onload(doc: PaymentEntry):
+def set_permission_details_to_onload(doc: PaymentEntry):
     """
     Set permission details on Payment Entry onload.
 
@@ -103,6 +104,19 @@ def set_permission_details_onload(doc: PaymentEntry):
             throw=False,
         ),
     )
+
+
+def set_auto_cancel_settings_to_onload(doc: PaymentEntry):
+    """
+    Set auto cancel settings on Payment Entry onload.
+
+    :param doc: Payment Entry Document
+    """
+    if doc.razorpayx_account and doc.make_bank_online_payment:
+        doc.set_onload(
+            "auto_cancel_payout",
+            should_auto_cancel_payout(doc.razorpayx_account),
+        )
 
 
 #### VALIDATIONS ####
@@ -613,22 +627,18 @@ def can_make_payout(doc: PaymentEntry) -> bool:
     )
 
 
-### APIs ###
-@frappe.whitelist()
-# TODO: permissions ?!
 def should_auto_cancel_payout(razorpayx_account: str) -> bool | int:
     """
     Check if the Payout should be auto cancelled or not.
 
     :param razorpayx_account: RazorPayX Account name
     """
-    frappe.has_permission("Payment Entry", throw=True)
-
     return frappe.db.get_value(
         INTEGRATION_DOCTYPE, razorpayx_account, "auto_cancel_payout"
     )
 
 
+### APIs ###
 @frappe.whitelist()
 def cancel_payout(docname: str, razorpayx_account: str):
     """

@@ -140,14 +140,11 @@ frappe.ui.form.on("Payment Entry", {
 			!frm.doc.make_bank_online_payment ||
 			!frm.doc.razorpayx_account ||
 			!can_cancel_payout(frm) ||
-			!user_has_payout_permissions(frm)
+			!user_has_payout_permissions(frm) ||
+			frm.doc.__onload.auto_cancel_payout
 		) {
 			return;
 		}
-
-		// TODO: set in onload
-		const auto_cancel_payout = await should_auto_cancel_payout(frm);
-		if (auto_cancel_payout) return;
 
 		frappe.validate = false;
 
@@ -251,20 +248,6 @@ function get_rpx_img_container(txt, styles = "", classes = "") {
  */
 function can_cancel_payout(frm) {
 	return ["Not Initiated", "Queued"].includes(frm.doc.razorpayx_payout_status);
-}
-
-/**
- * Get the value of `auto_cancel_payout` field from RazorPayX Integration Setting
- * based on the selected RazorpayX Account.
- * @param {object} frm The doctype's form object
- * @returns {Promise<boolean>} The value of `auto_cancel_payout
- */
-async function should_auto_cancel_payout(frm) {
-	const auto_cancel = await frappe.xcall(`${PE_BASE_PATH}.should_auto_cancel_payout`, {
-		razorpayx_account: frm.doc.razorpayx_account,
-	});
-
-	return auto_cancel;
 }
 
 /**
