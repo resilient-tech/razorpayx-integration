@@ -47,7 +47,7 @@ frappe.ui.form.on("Payment Entry", {
 		const permission = user_has_payout_permissions(frm);
 		toggle_integration_details(frm, permission);
 
-		if (!permission || !is_payout_in_inr(frm) || is_amended_pe_processed(frm)) {
+		if (!permission || !is_payout_in_inr(frm) || frm.__amended_pe_processed) {
 			return;
 		}
 
@@ -102,7 +102,7 @@ frappe.ui.form.on("Payment Entry", {
 		if (
 			!is_payout_in_inr(frm) ||
 			!is_razorpayx_condition_met(frm) ||
-			is_amended_pe_processed(frm) ||
+			frm.__amended_pe_processed ||
 			!user_has_payout_permissions(frm)
 		) {
 			return;
@@ -168,7 +168,6 @@ function toggle_integration_details(frm, permission) {
 
 	frm.toggle_display("online_payment_section", toggle);
 	frm.toggle_display("razorpayx_payout_section", toggle);
-	frm.toggle_enable("make_bank_online_payment", toggle);
 }
 
 function is_payout_in_inr(frm) {
@@ -572,23 +571,23 @@ async function set_contact_details(dialog) {
 async function disable_payout_fields_in_amendment(frm) {
 	if (!frm.doc.amended_from) return;
 
-	let disable_payout_fields = is_amended_pe_processed(frm);
+	let amended_processed = frm.doc?.__onload?.amended_pe_processed;
 
-	if (disable_payout_fields === undefined) {
+	console.log("disable_payout_fields", amended_processed);
+
+	if (amended_processed === undefined) {
 		const response = await frappe.db.get_value(
 			"Payment Entry",
 			frm.doc.amended_from,
 			"make_bank_online_payment"
 		);
 
-		disable_payout_fields = response.message?.make_bank_online_payment || 0;
+		amended_processed = response.message?.make_bank_online_payment || 0;
 	}
 
-	frm.toggle_enable(PAYOUT_FIELDS, disable_payout_fields ? 0 : 1);
-}
+	frm.__amended_pe_processed = amended_processed;
 
-function is_amended_pe_processed(frm) {
-	return frm.doc?.__onload?.amended_pe_processed;
+	frm.toggle_enable(PAYOUT_FIELDS, amended_processed ? 0 : 1);
 }
 
 // ############ UTILITY ############ //
