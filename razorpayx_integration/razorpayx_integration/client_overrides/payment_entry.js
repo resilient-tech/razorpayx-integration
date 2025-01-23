@@ -39,7 +39,10 @@ frappe.ui.form.on("Payment Entry", {
 	refresh: async function (frm) {
 		// Do not allow to edit fields if Payment is processed by RazorpayX in amendment
 		disable_payout_fields_in_amendment(frm);
+
+		// Set empty description for fields
 		frm.get_field("payment_type").set_empty_description();
+		frm.get_field("reference_no").set_empty_description();
 
 		const permission = user_has_payout_permissions(frm);
 		toggle_integration_details(frm, permission);
