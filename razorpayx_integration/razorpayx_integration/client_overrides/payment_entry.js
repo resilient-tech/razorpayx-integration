@@ -625,6 +625,5 @@ function user_has_payout_permissions(frm) {
 		return frm.doc.__onload.has_payout_permission;
 	}
 
-	// TODO: utils
-	// return user_has_payout_permissions();
+	return razorpayx.can_user_authorize_payout();
 }

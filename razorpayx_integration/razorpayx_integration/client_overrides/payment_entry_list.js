@@ -6,7 +6,7 @@ frappe.listview_settings["Payment Entry"] = {
 
 	onload: function (list_view) {
 		// Add `Pay and Submit` button to the Payment Entry list view
-		if (!user_has_payout_permissions()) return;
+		if (!razorpayx.can_user_authorize_payout()) return;
 
 		list_view.page.add_actions_menu_item(__("Pay and Submit"), () => {
 			const selected_docs = list_view.get_checked_items();
@@ -53,13 +53,6 @@ frappe.listview_settings["Payment Entry"] = {
 		});
 	},
 };
-
-function user_has_payout_permissions() {
-	return (
-		frappe.user.has_role(razorpayx.PAYOUT_AUTHORIZER) &&
-		frappe.perm.has_perm("Payment Entry", 0, "submit")
-	);
-}
 
 function is_eligible_to_pay(doc) {
 	return (
