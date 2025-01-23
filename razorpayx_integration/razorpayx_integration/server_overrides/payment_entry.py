@@ -1,5 +1,3 @@
-from typing import Literal
-
 import frappe
 from erpnext.accounts.doctype.payment_entry.payment_entry import PaymentEntry
 from frappe import _
@@ -18,7 +16,6 @@ from razorpayx_integration.razorpayx_integration.constants.payouts import (
     PAYOUT_STATUS,
     USER_PAYOUT_MODE,
 )
-from razorpayx_integration.razorpayx_integration.constants.roles import ROLE_PROFILE
 from razorpayx_integration.razorpayx_integration.utils import (
     get_razorpayx_account,
 )
@@ -36,6 +33,7 @@ from razorpayx_integration.razorpayx_integration.utils.validation import (
 #### DOC EVENTS ####
 def onload(doc: PaymentEntry, method=None):
     doc.set_onload("amended_pe_processed", is_amended_pe_processed(doc))
+    set_permission_details_onload(doc)
 
 
 def validate(doc: PaymentEntry, method=None):
@@ -89,6 +87,22 @@ def before_cancel(doc: PaymentEntry, method=None):
 def get_auth_id(doc: PaymentEntry):
     onload = doc.get_onload() or frappe._dict()
     return onload.get("auth_id")
+
+
+def set_permission_details_onload(doc: PaymentEntry):
+    """
+    Set permission details on Payment Entry onload.
+
+    :param doc: Payment Entry Document
+    """
+    pe = doc.name if not doc.__islocal else None
+
+    doc.set_onload(
+        "has_payout_permission",
+        check_user_payout_permissions(
+            payment_entries=pe, razorpayx_account=doc.razorpayx_account, throw=False
+        ),
+    )
 
 
 #### VALIDATIONS ####
@@ -163,7 +177,7 @@ def validate_payout_details(doc: PaymentEntry, throw=False):
     if not doc.make_bank_online_payment:
         return
 
-    # TODO:  ?  here check base conditions like `Pay`,`Cash`,`INR` etc.
+    # TODO:?  here check base conditions like `Pay`,`Cash`,`INR` etc.
 
     validate_razorpayx_account(doc, throw=throw)
 
