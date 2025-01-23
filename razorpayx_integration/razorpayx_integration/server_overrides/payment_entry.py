@@ -32,7 +32,9 @@ from razorpayx_integration.razorpayx_integration.utils.validation import (
 
 #### DOC EVENTS ####
 def onload(doc: PaymentEntry, method=None):
-    doc.set_onload("amended_pe_processed", is_amended_pe_processed(doc))
+    if doc.docstatus == 0:
+        doc.set_onload("amended_pe_processed", is_amended_pe_processed(doc))
+
     set_permission_details_to_onload(doc)
     set_auto_cancel_settings_to_onload(doc)
 
@@ -96,6 +98,9 @@ def set_permission_details_to_onload(doc: PaymentEntry):
 
     :param doc: Payment Entry Document
     """
+    if doc.docstatus == 2:
+        return
+
     doc.set_onload(
         "has_payout_permission",
         user_has_payout_permissions(
@@ -112,11 +117,17 @@ def set_auto_cancel_settings_to_onload(doc: PaymentEntry):
 
     :param doc: Payment Entry Document
     """
-    if doc.razorpayx_account and doc.make_bank_online_payment and doc.docstatus == 1:
-        doc.set_onload(
-            "auto_cancel_payout",
-            should_auto_cancel_payout(doc.razorpayx_account),
-        )
+    if (
+        doc.docstatus != 1
+        or not doc.razorpayx_account
+        or not doc.make_bank_online_payment
+    ):
+        return
+
+    doc.set_onload(
+        "auto_cancel_payout",
+        should_auto_cancel_payout(doc.razorpayx_account),
+    )
 
 
 #### VALIDATIONS ####
