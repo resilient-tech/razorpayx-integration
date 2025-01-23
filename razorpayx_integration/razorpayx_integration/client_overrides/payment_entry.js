@@ -22,7 +22,7 @@ const PAYOUT_FIELDS = [
 	"contact_person",
 	"contact_mobile",
 	"contact_email",
-	// RazorpayX Related
+	// Payout Related
 	"paid_amount",
 	"razorpayx_account",
 	"make_bank_online_payment",
@@ -32,6 +32,7 @@ const PAYOUT_FIELDS = [
 	"razorpayx_pay_instantaneously",
 	"razorpayx_payout_id",
 	"razorpayx_payout_link_id",
+	"reference_no",
 ];
 
 // ############ DOC EVENTS ############ //

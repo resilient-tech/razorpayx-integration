@@ -155,7 +155,7 @@ def validate_amended_pe(doc: PaymentEntry):
         "contact_person",
         "contact_mobile",
         "contact_email",
-        # RazorpayX Related
+        # Payout Related
         "paid_amount",
         "razorpayx_account",
         "make_bank_online_payment",
@@ -165,6 +165,7 @@ def validate_amended_pe(doc: PaymentEntry):
         "razorpayx_pay_instantaneously",
         "razorpayx_payout_id",
         "razorpayx_payout_link_id",
+        "reference_no",
     ]
 
     amended_from_doc = frappe.db.get_value(
