@@ -112,7 +112,7 @@ def set_auto_cancel_settings_to_onload(doc: PaymentEntry):
 
     :param doc: Payment Entry Document
     """
-    if doc.razorpayx_account and doc.make_bank_online_payment:
+    if doc.razorpayx_account and doc.make_bank_online_payment and doc.docstatus == 1:
         doc.set_onload(
             "auto_cancel_payout",
             should_auto_cancel_payout(doc.razorpayx_account),

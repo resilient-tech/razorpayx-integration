@@ -276,6 +276,8 @@ function show_cancel_payout_dialog(frm, callback) {
 		],
 		primary_action_label: __("Continue"),
 		primary_action: async (values) => {
+			dialog.hide();
+
 			if (values.cancel_payout) {
 				await frappe.call({
 					method: `${PE_BASE_PATH}.cancel_payout`,
@@ -289,7 +291,6 @@ function show_cancel_payout_dialog(frm, callback) {
 			}
 
 			callback && callback();
-			dialog.hide();
 		},
 	});
 
