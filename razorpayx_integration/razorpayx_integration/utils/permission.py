@@ -18,21 +18,20 @@ def before_payment_authentication(payment_entries: list[str]) -> bool:
 
     Throws `PermissionError` if the user doesn't have permissions.
 
+    :param payment_entries: List of payment entries.
+
     ---
     Checks:
     - User has role of payout authorizer.
     - User can read integration documents.
-    - For each PE, checks bank account it must be connected with razorpayx account.
     - User have permissions to submit the PE.
-
-    :param payment_entries: List of payment entries.
     """
     has_payment_authorizer_role(throw=True)
 
     has_integration_access(docname=None, throw=True)
 
     # TODO: how to check for `Company Bank Account`?
-    has_pe_access(payment_entries, permission="submit", throw=True)
+    has_payment_entry_access(payment_entries, permission="submit", throw=True)
 
 
 def has_payment_authorizer_role(*, throw=False) -> bool | None:
@@ -63,8 +62,9 @@ def has_integration_access(*, docname: str | None = None, throw=False) -> bool |
     return frappe.has_permission(doctype=INTEGRATION_DOCTYPE, doc=docname, throw=throw)
 
 
-def has_pe_access(
-    payment_entries: str | list[str],
+def has_payment_entry_access(
+    payment_entries: str | list[str] | None = None,
+    *,
     permission: Literal["submit", "cancel"] = "submit",
     throw=False,
 ) -> bool | None:
@@ -74,24 +74,59 @@ def has_pe_access(
     :param payment_entries: Payment Entry name or list of names.
     :param permission: Permission type to check.
     :param throw: If `True`, throws `PermissionError` if user doesn't have access.
+
+    ---
+    If any single PE doesn't have permission, returns `False`.
     """
-    if isinstance(payment_entries, str):
-        payment_entries = [payment_entries]
-
-    for pe in payment_entries:
-        frappe.has_permission(
-            doctype="Payment Entry", doc=pe, ptype=permission, throw=throw
+    if not payment_entries:
+        return frappe.has_permission(
+            doctype="Payment Entry", ptype=permission, throw=throw
         )
+    else:
+        if isinstance(payment_entries, str):
+            payment_entries = [payment_entries]
 
-    return True
+        for pe in payment_entries:
+            access = frappe.has_permission(
+                doctype="Payment Entry", doc=pe, ptype=permission, throw=throw
+            )
+
+            # If any single PE doesn't have permission, return False.
+            if not access:
+                return False
 
 
-def user_has_payout_permissions(
+def check_user_payout_permissions(
     payment_entries: str | list[str] | None = None,
     razorpayx_account: str | None = None,
     *,
     pe_permission: Literal["submit", "cancel"] = "submit",
     throw: bool = False,
 ):
-    """"""
-    pass
+    """
+    Check user has payout permissions or not!
+
+    :param payment_entries: Payment Entry name or list of names.
+    :param razorpayx_account: RazorPayX account (Integration docname).
+    :param pe_permission: Payment entry permission to check.
+    :param throw: If `True`, throws `PermissionError` if user doesn't have access.
+
+
+    ---
+    Checks:
+    - User has role of payout authorizer.
+    - User can read integration documents.
+    - User have permissions to submit/cancel the PE.
+    """
+    # 1. Check if user has payment authorizer role.
+    has_role = has_payment_authorizer_role(throw=throw)
+
+    # 2. Check if user can read the integration.
+    has_rpx_access = has_integration_access(docname=razorpayx_account, throw=throw)
+
+    # 3. Check if user has access to submit/cancel the payment entries.
+    has_pe_access = has_payment_entry_access(
+        payment_entries, permission=pe_permission, throw=throw
+    )
+
+    return has_role and has_rpx_access and has_pe_access
