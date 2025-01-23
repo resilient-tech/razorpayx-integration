@@ -57,8 +57,7 @@ frappe.listview_settings["Payment Entry"] = {
 function user_has_payout_permissions() {
 	return (
 		frappe.user.has_role(razorpayx.PAYOUT_AUTHORIZER) &&
-		frappe.perm.has_perm("Payment Entry", 0, "submit") &&
-		frappe.perm.has_perm(razorpayx.RPX_DOCTYPE)
+		frappe.perm.has_perm("Payment Entry", 0, "submit")
 	);
 }
 
