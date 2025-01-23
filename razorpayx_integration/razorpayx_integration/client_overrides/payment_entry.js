@@ -110,6 +110,7 @@ frappe.ui.form.on("Payment Entry", {
 		return new Promise((resolve) => {
 			const continue_submission = (auth_id) => {
 				frappe.validate = true;
+				frm.__making_payout = true;
 
 				if (!frm.doc.__onload) {
 					frm.doc.__onload = {};
@@ -123,16 +124,28 @@ frappe.ui.form.on("Payment Entry", {
 		});
 	},
 
+	after_submit: async function (frm) {
+		if (!frm.__making_payout) return;
+
+		frappe.show_alert({
+			message: __("Payout has been made successfully."),
+			indicator: "green",
+		});
+
+		delete frm.__making_payout;
+	},
+
 	before_cancel: async function (frm) {
 		if (
 			!frm.doc.make_bank_online_payment ||
 			!frm.doc.razorpayx_account ||
 			!can_cancel_payout(frm) ||
-			is_payout_already_cancelled(frm)
+			!user_has_payout_permissions(frm)
 		) {
 			return;
 		}
 
+		// TODO: set in onload
 		const auto_cancel_payout = await should_auto_cancel_payout(frm);
 		if (auto_cancel_payout) return;
 
@@ -252,15 +265,6 @@ async function should_auto_cancel_payout(frm) {
 	});
 
 	return auto_cancel;
-}
-
-/**
- * Check if the payout is already cancelled or not.
- *
- * @returns {boolean} `true` if the payout is already cancelled, otherwise `false`
- */
-function is_payout_already_cancelled(frm) {
-	return ["Cancelled", "Failed", "Rejected", "Reversed"].includes(frm.doc.razorpayx_payout_status);
 }
 
 /**
