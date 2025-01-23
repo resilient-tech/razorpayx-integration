@@ -44,7 +44,7 @@ frappe.ui.form.on("Payment Entry", {
 		const permission = user_has_payout_permissions(frm);
 		toggle_integration_details(frm, permission);
 
-		if (!permission || !is_base_payout_condition_met(frm)) {
+		if (!permission || !is_payout_in_inr(frm) || is_amended_pe_processed(frm)) {
 			return;
 		}
 
@@ -55,9 +55,7 @@ frappe.ui.form.on("Payment Entry", {
 			set_reference_no_description(frm);
 		}
 
-		const can_show_payout_button = await can_show_payout_btn(frm);
-
-		if (can_show_payout_button) {
+		if (can_show_payout_btn(frm)) {
 			frm.add_custom_button(__("Make Payout"), () => show_make_payout_dialog(frm));
 		}
 	},
@@ -67,14 +65,10 @@ frappe.ui.form.on("Payment Entry", {
 			frm.set_value("reference_no", "*** UTR WILL BE SET AUTOMATICALLY ***");
 		}
 
-		if (
-			(!is_base_payout_condition_met(frm) || !frm.doc.razorpayx_account) &&
-			frm.doc.make_bank_online_payment
-		) {
+		// TODO: Is it needed?
+		if ((!is_payout_in_inr(frm) || !frm.doc.razorpayx_account) && frm.doc.make_bank_online_payment) {
 			frm.set_value("make_bank_online_payment", 0);
 		}
-
-		reset_contact_details(frm);
 	},
 
 	bank_account: async function (frm) {
@@ -84,6 +78,8 @@ frappe.ui.form.on("Payment Entry", {
 		} else {
 			const account = await get_razorpayx_account(frm.doc.bank_account);
 			frm.set_value("razorpayx_account", account);
+
+			if (!account && frm.doc.make_bank_online_payment) frm.set_value("make_bank_online_payment", 0);
 		}
 	},
 
@@ -94,25 +90,14 @@ frappe.ui.form.on("Payment Entry", {
 	},
 
 	contact_person: function (frm) {
-		reset_contact_details(frm);
-	},
-
-	make_bank_online_payment: function (frm) {
-		if (!frm.doc.make_bank_online_payment) return;
-
-		if (!frm.doc.razorpayx_account) {
-			frappe.show_alert({
-				message: __("RazorpayX account not found. <br> Please set associate company's bank account."),
-				indicator: "orange",
-			});
-
-			frm.set_value("make_bank_online_payment", 0);
+		if (!frm.doc.contact_person) {
+			reset_values(frm, "contact_email", "contact_mobile");
 		}
 	},
 
 	before_submit: async function (frm) {
 		if (
-			!is_base_payout_condition_met(frm) ||
+			!is_payout_in_inr(frm) ||
 			!is_razorpayx_condition_met(frm) ||
 			is_amended_pe_processed(frm) ||
 			!user_has_payout_permissions(frm)
@@ -173,12 +158,8 @@ function toggle_integration_details(frm, permission) {
 	frm.toggle_enable("make_bank_online_payment", toggle);
 }
 
-function is_base_payout_condition_met(frm) {
-	return (
-		frm.doc.payment_type === "Pay" &&
-		frm.doc.paid_from_account_currency === "INR" &&
-		frm.doc.mode_of_payment !== "Cash"
-	);
+function is_payout_in_inr(frm) {
+	return frm.doc.payment_type === "Pay" && frm.doc.paid_from_account_currency === "INR";
 }
 
 function is_razorpayx_condition_met(frm) {
@@ -189,20 +170,8 @@ function reset_values(frm, ...fields) {
 	fields.forEach((field) => frm.set_value(field, ""));
 }
 
-function reset_contact_details(frm) {
-	if (!frm.doc.contact_person) {
-		reset_values(frm, "contact_email", "contact_mobile");
-	}
-}
-
 function update_submit_button_label(frm) {
-	if (
-		frm.doc.docstatus !== 0 ||
-		frm.doc.__islocal ||
-		is_amended_pe_processed(frm) ||
-		!user_has_payout_permissions(frm)
-	)
-		return;
+	if (frm.doc.docstatus !== 0 || frm.doc.__islocal) return;
 
 	frm.page.set_primary_action(__("Pay and Submit"), () => {
 		frm.savesubmit();
@@ -343,13 +312,8 @@ function show_cancel_payout_dialog(frm, callback) {
 }
 
 // ############ MAKING PAYOUT HELPERS ############ //
-async function can_show_payout_btn(frm) {
-	return (
-		frm.doc.docstatus === 1 &&
-		!frm.doc.make_bank_online_payment &&
-		frm.doc.razorpayx_payout_status === "Not Initiated" &&
-		user_has_payout_permissions(frm)
-	);
+function can_show_payout_btn(frm) {
+	return frm.doc.docstatus === 1 && !frm.doc.make_bank_online_payment && frm.doc.razorpayx_account;
 }
 
 async function show_make_payout_dialog(frm) {
@@ -373,22 +337,10 @@ async function show_make_payout_dialog(frm) {
 				options: "Bank Account",
 				default: frm.doc.bank_account,
 				reqd: 1,
-				get_query: function () {
-					const filters = {
-						is_company_account: 1,
-						company: frm.doc.company,
-					};
-
-					// at the time of creation, razorpayx_account is not available so refetching it
-					if (frm.doc.bank_account) {
-						filters.name = frm.doc.bank_account;
-					}
-
-					return { filters };
-				},
-				onchange: async function () {
-					set_razorpayx_account(dialog);
-				},
+				read_only: 1,
+				description: `<div class="d-flex align-items-center justify-content-end">
+								${get_rpx_img_container("pay via")}
+						</div>`,
 			},
 			{
 				fieldname: "account_cb",
@@ -403,9 +355,6 @@ async function show_make_payout_dialog(frm) {
 				reqd: 1,
 				hidden: 1,
 				read_only: 1,
-				onchange: async function () {
-					set_bank_account_description(dialog);
-				},
 			},
 			{
 				fieldname: "party_section_break",
@@ -540,20 +489,27 @@ async function show_make_payout_dialog(frm) {
 		],
 		primary_action_label: __("{0} Pay", [frappe.utils.icon(razorpayx.PAY_ICON)]),
 		primary_action: (values) => {
-			payment_utils.authenticate_payment_entries(frm.docname, (auth_id) =>
-				make_payout(auth_id, frm.docname, values, dialog)
-			);
+			payment_utils.authenticate_payment_entries(frm.docname, async (auth_id) => {
+				// TODO: Test this
+				await make_payout(auth_id, frm.docname, values);
+
+				frappe.show_alert({
+					message: __("Payout has been made successfully."),
+					indicator: "green",
+				});
+
+				dialog.hide();
+			});
 		},
 	});
 
 	dialog.show();
 
 	set_default_payout_mode(frm.doc.party_bank_account, dialog);
-	set_bank_account_description(dialog);
 }
 
-function make_payout(auth_id, docname, values, dialog) {
-	frappe.call({
+function make_payout(auth_id, docname, values) {
+	return frappe.call({
 		method: `${PE_BASE_PATH}.make_payout_with_payment_entry`,
 		args: {
 			docname: docname,
@@ -563,16 +519,6 @@ function make_payout(auth_id, docname, values, dialog) {
 		},
 		freeze: true,
 		freeze_message: __("Making Payout ..."),
-		callback: (r) => {
-			if (r.exc) return;
-
-			frappe.show_alert({
-				message: __("Payout has been made successfully."),
-				indicator: "green",
-			});
-
-			dialog.hide();
-		},
 	});
 }
 
@@ -624,40 +570,6 @@ async function set_contact_details(dialog) {
 	});
 }
 
-async function set_razorpayx_account(dialog) {
-	const bank_account = dialog.get_value("bank_account");
-
-	if (!bank_account) {
-		dialog.set_value("razorpayx_account", "");
-	} else {
-		const account = await get_razorpayx_account(bank_account);
-		dialog.set_value("razorpayx_account", account ? account : "");
-	}
-}
-
-function set_bank_account_description(dialog) {
-	const bank_field = dialog.get_field("bank_account");
-
-	if (!dialog.get_value("bank_account")) {
-		bank_field.set_empty_description();
-		return;
-	}
-
-	let description = "";
-
-	if (dialog.get_value("razorpayx_account")) {
-		description = `<div class="d-flex align-items-center justify-content-end">
-								${get_rpx_img_container("pay via")}
-						</div>`;
-	} else {
-		description = `<div class="text-danger font-weight-bold">
-								${frappe.utils.icon("solid-error")}
-								${__("RazorPayX Account not Found !")}
-						</div>`;
-	}
-
-	bank_field.set_new_description(description);
-}
 // ############ VALIDATIONS ############ //
 /**
  * If current Payment Entry is amended from another Payment Entry,
@@ -690,8 +602,10 @@ function is_amended_pe_processed(frm) {
 
 // ############ UTILITY ############ //
 async function get_razorpayx_account(bank_account) {
+	// refactor: set_razorpayx_account
 	if (!bank_account) return;
 
+	// frappe.db.get_value
 	const account = await frappe.xcall(
 		"razorpayx_integration.razorpayx_integration.utils.get_razorpayx_account_by_bank_account",
 		{
@@ -703,5 +617,10 @@ async function get_razorpayx_account(bank_account) {
 }
 
 function user_has_payout_permissions(frm) {
-	return frm.doc?.__onload?.has_payout_permission;
+	if (frm.doc.__onload) {
+		return frm.doc.__onload.has_payout_permission;
+	}
+
+	// TODO: utils
+	// return user_has_payout_permissions();
 }
