@@ -1,6 +1,6 @@
 {
  "actions": [],
- "allow_rename": 1,
+ "autoname": "field:bank_account",
  "creation": "2024-12-04 14:42:27.902987",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -9,15 +9,13 @@
   "disabled",
   "section_break_drmq",
   "bank_account",
-  "balance",
   "column_break_pzyt",
   "company",
-  "payments_tab",
   "actions_perm_section",
   "auto_generate_entries",
-  "payment_threshold",
   "column_break_cmbf",
   "enable_automatic_payments",
+  "payment_threshold",
   "days_sections",
   "automate_on_monday",
   "automate_on_friday",
@@ -29,18 +27,10 @@
   "automate_on_sunday",
   "column_break_fjvk",
   "automate_on_thursday",
-  "payouts_tab",
-  "payout_priority_section",
-  "payouts_by",
-  "column_break_ntgc",
-  "order_to_pay",
-  "templates_tab",
   "company_email_templates_section",
-  "report_before_auto_payments",
+  "auto_generate_report",
   "column_break_bhwn",
-  "report_after_auto_payments",
-  "party_email_templates_section",
-  "payment_success_template"
+  "auto_submit_report"
  ],
  "fields": [
   {
@@ -51,9 +41,10 @@
   },
   {
    "default": "0",
+   "description": "Payments may be auto processed on submit if you have an active integration",
    "fieldname": "enable_automatic_payments",
    "fieldtype": "Check",
-   "label": "Enable Automatic Payments"
+   "label": "Auto Submit Payment Entries"
   },
   {
    "fieldname": "actions_perm_section",
@@ -126,7 +117,7 @@
   },
   {
    "depends_on": "eval: doc.enable_automatic_payments",
-   "description": "Payments beyond this threshold will not be paid automatically.",
+   "description": "Payment entries upto this threshold will be submitted automatically.",
    "fieldname": "payment_threshold",
    "fieldtype": "Currency",
    "label": "Payment Threshold",
@@ -139,7 +130,6 @@
    "no_copy": 1
   },
   {
-   "description": "<strong>API</strong> details will be fetched from Integration Settings.",
    "fieldname": "bank_account",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -148,11 +138,6 @@
    "options": "Bank Account",
    "reqd": 1,
    "unique": 1
-  },
-  {
-   "fieldname": "payments_tab",
-   "fieldtype": "Tab Break",
-   "label": "Payments"
   },
   {
    "fieldname": "column_break_pzyt",
@@ -166,49 +151,7 @@
    "label": "Company",
    "no_copy": 1,
    "options": "Company",
-   "read_only": 1,
-   "unique": 1
-  },
-  {
-   "fieldname": "balance",
-   "fieldtype": "Currency",
-   "is_virtual": 1,
-   "label": "Balance",
-   "non_negative": 1,
    "read_only": 1
-  },
-  {
-   "fieldname": "payouts_tab",
-   "fieldtype": "Tab Break",
-   "label": "Payouts"
-  },
-  {
-   "default": "Invoices",
-   "fieldname": "payouts_by",
-   "fieldtype": "Select",
-   "label": "Payouts by",
-   "options": "Invoices\nParty"
-  },
-  {
-   "fieldname": "column_break_ntgc",
-   "fieldtype": "Column Break"
-  },
-  {
-   "default": "Due Date",
-   "fieldname": "order_to_pay",
-   "fieldtype": "Select",
-   "label": "Order to Pay",
-   "options": "Due Date\nPosting Date"
-  },
-  {
-   "fieldname": "templates_tab",
-   "fieldtype": "Tab Break",
-   "label": "Templates"
-  },
-  {
-   "fieldname": "payout_priority_section",
-   "fieldtype": "Section Break",
-   "label": "Payout Priority"
   },
   {
    "fieldname": "company_email_templates_section",
@@ -216,34 +159,8 @@
    "label": "Company Email Templates"
   },
   {
-   "depends_on": "eval: doc.enable_automatic_payments",
-   "fieldname": "report_before_auto_payments",
-   "fieldtype": "Link",
-   "label": "Report Before Auto Payments",
-   "options": "Email Template"
-  },
-  {
    "fieldname": "column_break_bhwn",
    "fieldtype": "Column Break"
-  },
-  {
-   "depends_on": "eval: doc.enable_automatic_payments",
-   "fieldname": "report_after_auto_payments",
-   "fieldtype": "Link",
-   "label": "Report After Auto Payments",
-   "options": "Email Template"
-  },
-  {
-   "fieldname": "party_email_templates_section",
-   "fieldtype": "Section Break",
-   "label": "Party Email Templates"
-  },
-  {
-   "depends_on": "eval: doc.enable_automatic_payments",
-   "fieldname": "payment_success_template",
-   "fieldtype": "Link",
-   "label": "On Payment Success",
-   "options": "Email Template"
   },
   {
    "default": "0",
@@ -256,14 +173,29 @@
   {
    "fieldname": "section_break_drmq",
    "fieldtype": "Section Break"
+  },
+  {
+   "depends_on": "eval: doc.enable_automatic_payments",
+   "fieldname": "auto_generate_report",
+   "fieldtype": "Link",
+   "label": "Auto Generate Report",
+   "options": "Email Template"
+  },
+  {
+   "depends_on": "eval: doc.enable_automatic_payments",
+   "fieldname": "auto_submit_report",
+   "fieldtype": "Link",
+   "label": "Auto Submit Report",
+   "options": "Email Template"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-12-12 16:43:29.212193",
+ "modified": "2025-01-23 12:12:09.778931",
  "modified_by": "Administrator",
  "module": "Payment Utils",
- "name": "Payment Setting",
+ "name": "Auto Payment Setting",
+ "naming_rule": "By fieldname",
  "owner": "Administrator",
  "permissions": [
   {

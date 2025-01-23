@@ -4,8 +4,13 @@
 # import frappe
 from frappe.model.document import Document
 
+# Auto Payment Setting
+# Payouts not required
+# validate one setting per company is enabled
+# Single
 
-class PaymentSetting(Document):
+
+class AutoPaymentSetting(Document):
     # begin: auto-generated types
     # This code is auto-generated. Do not modify anything in this block.
 
@@ -15,6 +20,8 @@ class PaymentSetting(Document):
         from frappe.types import DF
 
         auto_generate_entries: DF.Check
+        auto_generate_report: DF.Link | None
+        auto_submit_report: DF.Link | None
         automate_on_friday: DF.Check
         automate_on_monday: DF.Check
         automate_on_saturday: DF.Check
@@ -22,16 +29,11 @@ class PaymentSetting(Document):
         automate_on_thursday: DF.Check
         automate_on_tuesday: DF.Check
         automate_on_wednesday: DF.Check
-        balance: DF.Currency
         bank_account: DF.Link
         company: DF.Link | None
         disabled: DF.Check
         enable_automatic_payments: DF.Check
-        order_to_pay: DF.Literal["Due Date", "Posting Date"]
-        payment_success_template: DF.Link | None
         payment_threshold: DF.Currency
-        payouts_by: DF.Literal["Invoices", "Party"]
-        report_after_auto_payments: DF.Link | None
-        report_before_auto_payments: DF.Link | None
     # end: auto-generated types
+
     pass
