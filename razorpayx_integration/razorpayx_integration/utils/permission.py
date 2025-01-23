@@ -55,23 +55,20 @@ def has_integration_access(*, docname: str | None = None, throw=False) -> bool |
     """
     Check if user can read the integration.
 
+    If `docname` is provided, checks if the integration is enabled or not.
+
     :param docname: RazorPayX account (docname).
     :param throw: If `True`, throws `PermissionError` if user doesn't have access.
     """
-    # TODO: Refactor (check enabled or not)
-    if docname:
-        is_disabled = (
-            frappe.get_value(INTEGRATION_DOCTYPE, docname, "disabled") or False
-        )
+    if docname and frappe.get_value(INTEGRATION_DOCTYPE, docname, "disabled"):
+        if throw:
+            frappe.throw(
+                title=_("Integration Disabled"),
+                msg=_("The RazorPayX Integration is disabled."),
+                exc=frappe.PermissionError,
+            )
 
-        if is_disabled:
-            if throw:
-                frappe.throw(
-                    title=_("Integration Disabled"),
-                    msg=_("The integration is disabled."),
-                    exc=frappe.PermissionError,
-                )
-            return False
+        return False
 
     return frappe.has_permission(doctype=INTEGRATION_DOCTYPE, doc=docname, throw=throw)
 
