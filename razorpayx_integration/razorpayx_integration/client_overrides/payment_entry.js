@@ -41,18 +41,14 @@ frappe.ui.form.on("Payment Entry", {
 		disable_payout_fields_in_amendment(frm);
 		frm.get_field("payment_type").set_empty_description();
 
-		if (!user_has_payout_permissions(frm)) {
-			frm.toggle_display("online_payment_section", 0);
-			frm.toggle_display("razorpayx_payout_section", 0);
-			frm.toggle_enable("make_bank_online_payment", 0);
+		const permission = user_has_payout_permissions(frm);
+		toggle_integration_details(frm, permission);
+
+		if (!permission || !is_base_payout_condition_met(frm)) {
 			return;
 		}
 
-		if (!is_base_payout_condition_met(frm)) {
-			return;
-		}
-
-		// change UI only when these conditions are met
+		// change UI only when razorpayx conditions are met
 		if (is_razorpayx_condition_met(frm)) {
 			update_submit_button_label(frm);
 			set_razorpayx_state_description(frm);
@@ -169,6 +165,14 @@ frappe.ui.form.on("Payment Entry", {
 });
 
 // ############ HELPERS ############ //
+function toggle_integration_details(frm, permission) {
+	const toggle = permission ? 1 : 0;
+
+	frm.toggle_display("online_payment_section", toggle);
+	frm.toggle_display("razorpayx_payout_section", toggle);
+	frm.toggle_enable("make_bank_online_payment", toggle);
+}
+
 function is_base_payout_condition_met(frm) {
 	return (
 		frm.doc.payment_type === "Pay" &&
