@@ -320,6 +320,7 @@ def validate_bank_payout_mode(doc: PaymentEntry):
         doc.razorpayx_pay_instantaneously
         and doc.paid_amount > PAYMENT_MODE_THRESHOLD.IMPS.value
     ):
+        # why db_set? : if calls from API, then it will not update the value
         doc.db_set("razorpayx_pay_instantaneously", 0)
 
 
@@ -444,7 +445,9 @@ def set_razorpayx_account(doc: PaymentEntry, throw: bool = False):
             exc=frappe.ValidationError,
         )
     elif account := doc.razorpayx_account_details.get("name"):
-        doc.db_set("razorpayx_account", account)
+        doc.db_set(
+            "razorpayx_account", account
+        )  # Removed this db_set as it is not required
 
 
 def set_missing_payout_details(doc: PaymentEntry):
@@ -506,6 +509,7 @@ def set_payout_mode(doc: PaymentEntry):
 
         return USER_PAYOUT_MODE.LINK
 
+    # why db_set? : if calls from API, then it will not update the value
     doc.db_set("razorpayx_payout_mode", get_mode())
 
 
@@ -518,6 +522,7 @@ def set_reference_no(doc: PaymentEntry):
     if doc.reference_no:
         return
 
+    # why db_set? : if calls from API, then it will not update the value
     doc.db_set("reference_no", "*** UTR WILL BE SET AUTOMATICALLY ***")
 
 
