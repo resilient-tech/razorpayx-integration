@@ -200,10 +200,11 @@ def validate_payout_details(doc: PaymentEntry, throw=False):
     :param doc: Payment Entry
     :param throw: Throw error if Payout details are not valid otherwise just return
     """
+    if not is_base_payout_conditions_met(doc):
+        doc.set("make_bank_online_payment", 0)
+
     if not doc.make_bank_online_payment:
         return
-
-    # TODO:?  here check base conditions like `Pay`,`Cash`,`INR` etc.
 
     validate_razorpayx_account(doc, throw=throw)
 
@@ -628,12 +629,24 @@ def can_make_payout(doc: PaymentEntry) -> bool:
     :param doc: Payment Entry Document
     """
     return (
-        doc.docstatus == 1
-        and doc.payment_type == "Pay"
+        is_base_payout_conditions_met(doc)
+        and doc.docstatus == 1
         and doc.make_bank_online_payment
         and doc.razorpayx_account
         and not doc.razorpayx_payout_id
         and not doc.razorpayx_payout_link_id
+    )
+
+
+def is_base_payout_conditions_met(doc: PaymentEntry) -> bool:
+    """
+    Check if the base conditions are met to make payout or not.
+
+    :param doc: Payment Entry Document
+    """
+    return (
+        doc.payment_type == "Pay"
+        and doc.paid_from_account_currency == PAYOUT_CURRENCY.INR.value
     )
 
 
