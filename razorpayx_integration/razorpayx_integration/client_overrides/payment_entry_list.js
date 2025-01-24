@@ -59,7 +59,6 @@ function is_eligible_to_pay(doc) {
 		doc.docstatus === 0 &&
 		doc.payment_type === "Pay" &&
 		doc.paid_from_account_currency === "INR" &&
-		doc.mode_of_payment !== "Cash" &&
 		doc.make_bank_online_payment &&
 		doc.razorpayx_account &&
 		doc.razorpayx_payout_status === "Not Initiated"

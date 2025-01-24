@@ -632,8 +632,6 @@ def can_make_payout(doc: PaymentEntry) -> bool:
         and doc.payment_type == "Pay"
         and doc.make_bank_online_payment
         and doc.razorpayx_account
-        and doc.mode_of_payment != "Cash"
-        and doc.paid_from_account_currency == PAYOUT_CURRENCY.INR.value
         and not doc.razorpayx_payout_id
         and not doc.razorpayx_payout_link_id
     )

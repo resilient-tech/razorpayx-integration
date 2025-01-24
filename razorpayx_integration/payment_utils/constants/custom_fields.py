@@ -13,7 +13,7 @@ Note:
 from razorpayx_integration.payment_utils.constants.payouts import PAYOUT_MODE
 from razorpayx_integration.payment_utils.constants.roles import PERMISSION_LEVEL
 
-BASE_CONDITION_TO_MAKE_ONLINE_PAYMENT = "doc.payment_type=='Pay' && doc.mode_of_payment!='Cash' && doc.party && doc.party_type && doc.paid_from_account_currency === 'INR'"
+BASE_CONDITION_TO_MAKE_ONLINE_PAYMENT = "doc.payment_type=='Pay' && doc.party && doc.party_type && doc.paid_from_account_currency === 'INR'"
 
 BLOCK_AUTO_PAYMENT = {
     "fieldname": "block_auto_payment",
