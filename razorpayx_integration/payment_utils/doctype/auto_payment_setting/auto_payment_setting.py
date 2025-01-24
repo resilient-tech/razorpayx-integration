@@ -32,7 +32,7 @@ class AutoPaymentSetting(Document):
         bank_account: DF.Link
         company: DF.Link | None
         disabled: DF.Check
-        enable_automatic_payments: DF.Check
+        auto_submit_entries: DF.Check
         payment_threshold: DF.Currency
     # end: auto-generated types
 

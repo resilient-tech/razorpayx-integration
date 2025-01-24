@@ -101,9 +101,17 @@ CUSTOM_FIELDS = {
             "permlevel": PERMISSION_LEVEL.SEVEN.value,
         },
         {
+            "fieldname": "is_auto_generated",
+            "label": "Is Auto Generated",
+            "fieldtype": "Check",
+            "insert_after": "make_bank_online_payment",
+            "hidden": 1,
+            "permlevel": PERMISSION_LEVEL.SEVEN.value,
+        },
+        {
             "fieldname": "cb_online_payment_section",
             "fieldtype": "Column Break",
-            "insert_after": "make_bank_online_payment",
+            "insert_after": "is_auto_generated",
         },
         {
             "fieldname": "party_upi_id",
