@@ -20,7 +20,6 @@ class RazorPayXIntegrationSetting(Document):
         account_id: DF.Data
         account_number: DF.Data | None
         auto_cancel_payout: DF.Check
-        balance: DF.Currency
         bank: DF.Link | None
         bank_account: DF.Link
         company: DF.Link | None
@@ -29,9 +28,10 @@ class RazorPayXIntegrationSetting(Document):
         ifsc_code: DF.Data | None
         key_id: DF.Data
         key_secret: DF.Password
+        last_sync_on: DF.Date | None
         webhook_secret: DF.Password | None
-
     # end: auto-generated types
+
     def validate(self):
         self.validate_api_credentials()
         self.validate_bank_account()

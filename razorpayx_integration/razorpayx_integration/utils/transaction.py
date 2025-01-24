@@ -1,5 +1,6 @@
 import frappe
-from frappe.utils import DateTimeLikeObject, now_datetime
+from frappe import _
+from frappe.utils import DateTimeLikeObject, getdate
 
 from razorpayx_integration.constants import (
     RAZORPAYX_INTEGRATION_DOCTYPE,
@@ -12,132 +13,164 @@ from razorpayx_integration.razorpayx_integration.apis.transaction import (
     RazorPayXTransaction,
 )
 
-# TODO: Logic and implementation of this function need to change according to the new design.
 
-
-# todo: this file need to be refactor and optimize
+# TODO: Permissions check
 @frappe.whitelist()
-def sync_bank_transactions(bank_account: str, from_date: DateTimeLikeObject):
-    frappe.has_permission(RAZORPAYX_INTEGRATION_DOCTYPE, bank_account, throw=True)
-    frappe.has_permission("Bank Transaction", throw=True)
-
-    return sync_razorpayx_bank_transactions(
-        bank_account, from_date
-    )  # ? how to handle error properly
-
-
-def sync_razorpayx_bank_transactions(
-    account: str,
-    from_date: DateTimeLikeObject,
-    to_date: DateTimeLikeObject | None = None,
-):
-    try:
-        # getting all transactions from razorpayx according to date range
-        razorpayx_transactions = get_razorpayx_transactions(account, from_date, to_date)
-
-        # get existing transaction ids
-        existing_transactions = get_existing_transactions(account)
-        # saving transactions in Bank Transaction
-        for transaction in razorpayx_transactions:
-            try:
-                if transaction.get("id") in existing_transactions:
-                    continue
-
-                doc = get_mapped_razorpayx_transaction(
-                    transaction, bank_account=account
-                )
-
-                frappe.get_doc(doc).insert()
-
-            except KeyError:
-                frappe.log_error(
-                    message=(
-                        f"Transaction Data: \n {frappe.as_json(transaction, indent=4)} \n\n {frappe.get_traceback()}"
-                    ),
-                    title="Key Missing in Transaction Data",
-                )
-                return
-
-            except Exception:
-                frappe.log_error(
-                    message=(
-                        f"Transaction Data: \n {frappe.as_json(transaction, indent=4)} \n\n {frappe.get_traceback()}"
-                    ),
-                    title=(f"Failed to Save Transaction: { transaction.get('id')}"),
-                )
-                continue
-
-        # set last sync field in `RazorPayX Integration Settings`
-        frappe.db.set_value(
-            RAZORPAYX_INTEGRATION_DOCTYPE, account, "last_synced", now_datetime()
-        )
-
-        return True
-    except Exception:
-        frappe.log_error(
-            message=frappe.get_traceback(),
-            title=(f"Failed to Sync RazorPayX Transactions for Account: {account}"),
-        )
-
-
-def get_razorpayx_transactions(
-    account: str,
-    from_date: DateTimeLikeObject,
-    to_date: DateTimeLikeObject | None = None,
-):
-    filters = {"from": from_date}
-
-    if to_date:
-        filters["to"] = to_date
-
-    return RazorPayXTransaction(account).get_all(filters=filters)
-
-
-# ? need more filters
-# ? make more efficient by using ignore duplicates
-def get_existing_transactions(bank_account: str):
-    return frappe.get_all(
-        "Bank Transaction",
-        fields="transaction_id",
-        filters={"bank_account": bank_account},
-        pluck="transaction_id",
+def sync_transactions_now(bank_account: str):
+    """
+    From Bank Reconciliation Tool
+    """
+    razorpayx_setting = frappe.db.get_value(
+        RAZORPAYX_INTEGRATION_DOCTYPE, {"bank_account": bank_account}
     )
 
+    if not razorpayx_setting:
+        frappe.throw(
+            _("RazorPayX Integration Setting not found for Bank Account {0}").format(
+                bank_account
+            )
+        )
 
-def get_mapped_razorpayx_transaction(transaction: dict, **kwargs) -> dict:
+    RazorpayBankTransaction(razorpayx_setting).sync()
+
+
+@frappe.whitelist()
+def sync_transactions_for(
+    razorpayx_setting: str, from_date: DateTimeLikeObject, to_date: DateTimeLikeObject
+):
     """
-    Map `RazorPayX` transaction response with `Bank Transaction` DocFiled.
-
-    :param transaction: transaction dict of `RazorPayX`.
-    :return: map dict of `Bank Transaction` DocFields.
+    From RazorPayX Integration Setting
     """
+    RazorpayBankTransaction(razorpayx_setting, from_date, to_date).sync()
 
-    def format_notes(notes):
-        if isinstance(notes, dict):
-            return "\n".join(notes.values())
-        elif isinstance(notes, list | tuple):
-            return "\n".join(notes)
-        return notes
 
-    mapped_transaction = {
-        "doctype": "Bank Transaction",
-        "transaction_id": transaction["id"],
-        "date": get_str_datetime_from_epoch(transaction["created_at"]),
-        "deposit": paisa_to_rupees(transaction["credit"]),
-        "withdrawal": paisa_to_rupees(transaction["debit"]),
-        "closing_balance": paisa_to_rupees(transaction["balance"]),
-        "currency": transaction["currency"],
-        "transaction_type": transaction["source"].get("mode", ""),
-        "description": format_notes(transaction["source"].get("notes", "")),
-    }
+def sync_transactions_periodically():
+    """
+    Cron Job
+    """
+    today = getdate()
 
-    if bank_account := kwargs.get("bank_account"):
-        mapped_transaction["bank_account"] = bank_account
+    for setting in frappe.get_all(
+        RAZORPAYX_INTEGRATION_DOCTYPE, filters={"disabled": 0}, fields=["name"]
+    ):
+        RazorpayBankTransaction(setting["name"]).sync()
 
-    if reference_number := transaction["source"].get("bank_reference"):
-        mapped_transaction["reference_number"] = reference_number
-    else:
-        if utr := transaction["source"].get("utr"):
-            mapped_transaction["reference_number"] = utr
+        frappe.db.set_value(
+            RAZORPAYX_INTEGRATION_DOCTYPE, setting["name"], "last_sync_on", today
+        )
 
-    return mapped_transaction
+
+class RazorpayBankTransaction:
+
+    def __init__(
+        self,
+        razorypayx_setting: str,
+        from_date: DateTimeLikeObject | None = None,
+        to_date: DateTimeLikeObject | None = None,
+    ):
+        self.razorypayx_setting = razorypayx_setting
+        self.from_date = from_date
+        self.to_date = to_date
+
+        self.bank_account = frappe.db.get_value(
+            RAZORPAYX_INTEGRATION_DOCTYPE, razorypayx_setting, "bank_account"
+        )
+
+    def sync(self):
+        transactions = self.fetch_transactions()
+        existing_transactions = self.get_existing_transactions(transactions)
+
+        for transaction in transactions:
+            if transaction["id"] in existing_transactions:
+                continue
+
+            self.create(self.map(transaction))
+
+    def fetch_transactions(self):
+        try:
+            return RazorPayXTransaction(self.razorypayx_setting).get_all(
+                from_date=self.from_date, to_date=self.to_date
+            )
+
+        except Exception:
+            frappe.log_error(
+                message=frappe.get_traceback(),
+                title=(
+                    f"Failed to Fetch RazorPayX Transactions for Account: {self.razorypayx_setting}"
+                ),
+            )
+
+    def get_existing_transactions(self, transactions: list):
+        transaction_ids = [transaction["id"] for transaction in transactions]
+
+        return set(
+            frappe.get_all(
+                "Bank Transaction",
+                filters={
+                    "bank_account": self.bank_account,
+                    "transaction_id": ("in", transaction_ids),
+                },
+                pluck="transaction_id",
+            )
+        )
+
+    def map(self, transaction: dict):
+        def format_notes(notes):
+            # TODO: notes for external transactions
+            if isinstance(notes, dict):
+                return "\n".join(notes.values())
+            elif isinstance(notes, list | tuple):
+                return "\n".join(notes)
+            return notes
+
+        source = transaction.get("source", {})
+        mapped = {
+            "doctype": "Bank Transaction",
+            "bank_account": self.bank_account,
+            "transaction_id": transaction["id"],
+            "date": get_str_datetime_from_epoch(transaction["created_at"]),
+            "deposit": paisa_to_rupees(transaction["credit"]),
+            "withdrawal": paisa_to_rupees(transaction["debit"]),
+            "closing_balance": paisa_to_rupees(transaction["balance"]),
+            "currency": transaction["currency"],
+            "transaction_type": source.get("mode", ""),
+            "description": format_notes(source.get("notes", "")),
+            "reference_number": source.get("utr") or source.get("bank_reference"),
+        }
+
+        # auto reconciliation
+        self.set_matching_payment_entry(source, mapped)
+
+        return mapped
+
+    def set_matching_payment_entry(self, source: dict, mapped: dict):
+        def get_payment_entry(**filters):
+            # TODO: confirm company or bank account
+            return frappe.db.get_value(
+                "Payment Entry",
+                {"docstatus": 1, "clearance_date": ["is", "not set"], **filters},
+                fieldname=["name", "paid_amount"],
+                as_dict=True,
+            )
+
+        # reconciliation with payout_id
+        if source.get("entity") == "payout":
+            payment_entry = get_payment_entry(razorpayx_payout_id=source["id"])
+
+        # reconciliation with reference number
+        if not payment_entry and source.get("utr"):
+            payment_entry = get_payment_entry(reference_no=mapped["reference_number"])
+
+        if not payment_entry:
+            return
+
+        mapped["payment_entries"] = [
+            {
+                "payment_document": "Payment Entry",
+                "payment_entry": payment_entry["name"],
+                "allocated_amount": payment_entry["paid_amount"],
+            }
+        ]
+
+    def create(self, mapped_transaction: dict):
+        return frappe.get_doc(mapped_transaction).insert()
