@@ -687,28 +687,51 @@ def cancel_payout(docname: str, razorpayx_account: str):
 
 
 @frappe.whitelist()
-# TODO: ? kwargs is good or not?
 def make_payout_with_payment_entry(
     auth_id: str, docname: str, razorpayx_account: str, **kwargs
 ):
     """
-    Make Payout or Payout Link with Payment Entry.
+    Make RazorPayX Payout or Payout Link with Payment Entry.
 
     :param auth_id: Authentication ID (after otp or password verification)
     :param docname: Payment Entry name
     :param razorpayx_account: RazorPayX Account name associated to company bank account
     """
+
+    def filter_non_empty_details(details: dict):
+        return {key: value for key, value in details.items() if value}
+
     user_has_payout_permissions(docname, razorpayx_account, throw=True)
 
     doc = frappe.get_doc("Payment Entry", docname)
 
-    kwargs.pop("cmd")  # unwanted key
+    if doc.razorpayx_account != razorpayx_account:
+        frappe.throw(
+            msg=_("RazorPayX Account mismatched with Payment Entry."),
+            title=_("Invalid RazorPayX Account"),
+        )
+
+    # Only update payout related details
+    details = {
+        # Party Details
+        "party_bank_account": kwargs.get("party_bank_account"),
+        "party_bank_account_no": kwargs.get("party_bank_account_no"),
+        "party_bank_ifsc": kwargs.get("party_bank_ifsc"),
+        "party_upi_id": kwargs.get("party_upi_id"),
+        "contact_person": kwargs.get("contact_person"),
+        "contact_mobile": kwargs.get("contact_mobile"),
+        "contact_email": kwargs.get("contact_email"),
+        # RazorPayX Details
+        "razorpayx_payout_mode": kwargs.get("razorpayx_payout_mode"),
+        "razorpayx_payout_desc": kwargs.get("razorpayx_payout_desc"),
+        "razorpayx_pay_instantaneously": kwargs.get("razorpayx_pay_instantaneously"),
+    }
 
     # Set the fields to make payout
     doc.db_set(
         {
             "make_bank_online_payment": 1,
-            **kwargs,
+            **filter_non_empty_details(details),  # avoid overwriting with empty values
         }
     )
 
