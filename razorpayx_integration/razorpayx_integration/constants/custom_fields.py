@@ -15,7 +15,7 @@ from razorpayx_integration.payment_utils.constants.custom_fields import (
     BASE_CONDITION_TO_MAKE_ONLINE_PAYMENT,
 )
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
-    PAYMENT_MODE_THRESHOLD,
+    PAYMENT_MODE_LIMIT,
     PAYOUT_STATUS,
     USER_PAYOUT_MODE,
 )
@@ -63,7 +63,7 @@ CUSTOM_FIELDS = {
             "label": "Pay Instantaneously",
             "fieldtype": "Check",
             "insert_after": "razorpayx_payout_mode",
-            "depends_on": f"eval: doc.razorpayx_payout_mode === '{USER_PAYOUT_MODE.BANK.value}' && doc.paid_amount <= {PAYMENT_MODE_THRESHOLD.IMPS.value}",
+            "depends_on": f"eval: doc.razorpayx_payout_mode === '{USER_PAYOUT_MODE.BANK.value}' && doc.paid_amount <= {PAYMENT_MODE_LIMIT.IMPS.value}",
             "description": "Payment will be done with <strong>IMPS</strong> mode.",
             "permlevel": PERMISSION_LEVEL.SEVEN.value,
         },
