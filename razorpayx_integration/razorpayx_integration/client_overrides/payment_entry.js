@@ -128,7 +128,7 @@ frappe.ui.form.on("Payment Entry", {
 		});
 	},
 
-	after_submit: async function (frm) {
+	on_submit: function (frm) {
 		if (!frm.__making_payout) return;
 
 		frappe.show_alert({
@@ -573,8 +573,6 @@ async function disable_payout_fields_in_amendment(frm) {
 	if (!frm.doc.amended_from) return;
 
 	let amended_processed = frm.doc?.__onload?.amended_pe_processed;
-
-	console.log("disable_payout_fields", amended_processed);
 
 	if (amended_processed === undefined) {
 		const response = await frappe.db.get_value(
