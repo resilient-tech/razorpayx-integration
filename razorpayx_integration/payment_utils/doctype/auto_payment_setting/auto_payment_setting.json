@@ -14,7 +14,7 @@
   "actions_perm_section",
   "auto_generate_entries",
   "column_break_cmbf",
-  "enable_automatic_payments",
+  "auto_submit_entries",
   "payment_threshold",
   "days_sections",
   "automate_on_monday",
@@ -42,7 +42,7 @@
   {
    "default": "0",
    "description": "Payments may be auto processed on submit if you have an active integration",
-   "fieldname": "enable_automatic_payments",
+   "fieldname": "auto_submit_entries",
    "fieldtype": "Check",
    "label": "Auto Submit Payment Entries"
   },
@@ -56,7 +56,7 @@
    "fieldtype": "Column Break"
   },
   {
-   "depends_on": "eval: doc.auto_generate_entries || doc.enable_automatic_payments ",
+   "depends_on": "eval: doc.auto_generate_entries || doc.auto_submit_entries ",
    "fieldname": "days_sections",
    "fieldtype": "Section Break",
    "label": "Days for Automation"
@@ -116,12 +116,12 @@
    "label": "Thursday"
   },
   {
-   "depends_on": "eval: doc.enable_automatic_payments",
+   "depends_on": "eval: doc.auto_submit_entries",
    "description": "Payment entries upto this threshold will be submitted automatically.",
    "fieldname": "payment_threshold",
    "fieldtype": "Currency",
    "label": "Payment Threshold",
-   "mandatory_depends_on": "eval: doc.enable_automatic_payments"
+   "mandatory_depends_on": "eval: doc.auto_submit_entries"
   },
   {
    "fieldname": "account_tab",
@@ -175,14 +175,14 @@
    "fieldtype": "Section Break"
   },
   {
-   "depends_on": "eval: doc.enable_automatic_payments",
+   "depends_on": "eval: doc.auto_submit_entries",
    "fieldname": "auto_generate_report",
    "fieldtype": "Link",
    "label": "Auto Generate Report",
    "options": "Email Template"
   },
   {
-   "depends_on": "eval: doc.enable_automatic_payments",
+   "depends_on": "eval: doc.auto_submit_entries",
    "fieldname": "auto_submit_report",
    "fieldtype": "Link",
    "label": "Auto Submit Report",

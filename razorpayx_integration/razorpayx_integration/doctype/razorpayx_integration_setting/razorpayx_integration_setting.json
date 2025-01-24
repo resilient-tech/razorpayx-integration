@@ -20,11 +20,13 @@
   "bank_account",
   "company_account",
   "company",
-  "balance",
   "column_break_3gfbs",
   "bank",
   "ifsc_code",
   "account_number",
+  "section_break_bsie",
+  "last_sync_on",
+  "column_break_mken",
   "configs_tab",
   "pe_config_section",
   "auto_cancel_payout"
@@ -134,16 +136,6 @@
    "read_only": 1
   },
   {
-   "depends_on": "eval: doc.bank_account",
-   "fieldname": "balance",
-   "fieldtype": "Currency",
-   "is_virtual": 1,
-   "label": "Balance",
-   "no_copy": 1,
-   "non_negative": 1,
-   "read_only": 1
-  },
-  {
    "fieldname": "api_tab",
    "fieldtype": "Tab Break",
    "label": "API"
@@ -179,11 +171,26 @@
    "fieldname": "configs_tab",
    "fieldtype": "Tab Break",
    "label": "Configurations"
+  },
+  {
+   "fieldname": "section_break_bsie",
+   "fieldtype": "Section Break"
+  },
+  {
+   "description": "Bank Transactions Synchronised upto this date",
+   "fieldname": "last_sync_on",
+   "fieldtype": "Date",
+   "label": "Last Sync On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_mken",
+   "fieldtype": "Column Break"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-01-22 15:55:37.035111",
+ "modified": "2025-01-24 11:31:22.076310",
  "modified_by": "Administrator",
  "module": "Razorpayx Integration",
  "name": "RazorPayX Integration Setting",
@@ -198,7 +205,7 @@
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "RazorPayX Integration Manager",
+   "role": "RazorpayX Integration Manager",
    "select": 1,
    "share": 1,
    "write": 1

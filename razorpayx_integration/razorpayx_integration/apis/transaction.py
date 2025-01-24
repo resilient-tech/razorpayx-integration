@@ -102,6 +102,9 @@ class RazorPayXTransaction(BaseRazorPayXAPI):
             if to_date:
                 filters["to"] = to_date
 
+        if not filters["from"]:
+            filters["from"] = self.razorpayx_account.last_sync_on
+
         # account number is mandatory
         filters["account_number"] = self.account_number
 
