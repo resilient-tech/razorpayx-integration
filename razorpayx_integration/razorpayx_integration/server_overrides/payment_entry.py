@@ -33,14 +33,11 @@ from razorpayx_integration.razorpayx_integration.utils.validation import (
 
 #### CONSTANTS ####
 PAYOUT_MODES = Literal["NEFT/RTGS", "UPI", "Link"]
-DEFAULT_UTR_PLACEHOLDER = "*** UTR WILL BE SET AUTOMATICALLY ***"
 
 
 #### DOC EVENTS ####
 def onload(doc: PaymentEntry, method=None):
-    if doc.docstatus == 0:
-        doc.set_onload("amended_pe_processed", is_amended_pe_processed(doc))
-
+    doc.set_onload("amended_pe_processed", is_amended_pe_processed(doc))
     set_permission_details_to_onload(doc)
     set_auto_cancel_settings_to_onload(doc)
 
@@ -113,9 +110,6 @@ def set_permission_details_to_onload(doc: PaymentEntry):
 
     :param doc: Payment Entry Document
     """
-    if doc.docstatus == 2:
-        return
-
     doc.set_onload(
         "has_payout_permission",
         user_has_payout_permissions(
@@ -519,7 +513,7 @@ def set_reference_no(doc: PaymentEntry):
     :param doc: Payment Entry Document
     """
     if not doc.reference_no:
-        doc.reference_no = DEFAULT_UTR_PLACEHOLDER
+        doc.reference_no = "*** UTR WILL BE SET AUTOMATICALLY ***"
 
 
 ### ACTIONS ###
