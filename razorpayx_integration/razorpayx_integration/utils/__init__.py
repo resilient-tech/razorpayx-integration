@@ -12,7 +12,7 @@ def get_razorpayx_account(
     search_by: Literal["bank_account", "account_id"],
     fields: list[str] | None = None,
     as_dict: bool = True,
-) -> dict[str, str] | None:
+) -> dict:
     """
     Fetch the RazorpayX Account Integration name based on the identifier.
 
@@ -28,28 +28,17 @@ def get_razorpayx_account(
     if search_by == "account_id" and identifier.startswith("acc_"):
         identifier = identifier.removeprefix("acc_")
 
-    return frappe.db.get_value(
-        doctype=RAZORPAYX_INTEGRATION_DOCTYPE,
-        filters={
-            search_by: identifier,
-        },
-        fieldname=fields or "name",
-        as_dict=as_dict,
+    return (
+        frappe.db.get_value(
+            doctype=RAZORPAYX_INTEGRATION_DOCTYPE,
+            filters={
+                search_by: identifier,
+            },
+            fieldname=fields or "name",
+            as_dict=as_dict,
+        )
+        or frappe._dict()
     )
-
-
-@frappe.whitelist()
-def get_razorpayx_account_by_bank_account(bank_account: str) -> str | None:
-    """
-    Get the RazorpayX Account Integration name based on the bank account.
-
-    :param bank_account: Company's bank account.
-    """
-    frappe.has_permission("Payment Entry", throw=True)
-
-    account = get_razorpayx_account(bank_account, "bank_account")
-
-    return account.get("name") if account else None
 
 
 def get_enabled_razorpayx_accounts() -> list[str]:
