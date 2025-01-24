@@ -35,6 +35,8 @@ const PAYOUT_FIELDS = [
 	"reference_no",
 ];
 
+const DESCRIPTION_REGEX = /^[a-zA-Z0-9 ]{1,30}$/;
+
 // ############ DOC EVENTS ############ //
 frappe.ui.form.on("Payment Entry", {
 	refresh: async function (frm) {
@@ -69,10 +71,15 @@ frappe.ui.form.on("Payment Entry", {
 			frm.set_value("reference_no", "*** UTR WILL BE SET AUTOMATICALLY ***");
 		}
 
-		// TODO: Is it needed?
 		if ((!is_payout_in_inr(frm) || !frm.doc.razorpayx_account) && frm.doc.make_bank_online_payment) {
 			frm.set_value("make_bank_online_payment", 0);
 		}
+
+		if (frm.doc.razorpayx_pay_instantaneously && razorpayx.IMPS_LIMIT > frm.doc.paid_amount) {
+			frm.set_value("razorpayx_pay_instantaneously", 0);
+		}
+
+		validate_payout_description(frm);
 	},
 
 	bank_account: async function (frm) {
@@ -587,6 +594,19 @@ async function disable_payout_fields_in_amendment(frm) {
 	frm.__amended_pe_processed = amended_processed;
 
 	frm.toggle_enable(PAYOUT_FIELDS, amended_processed ? 0 : 1);
+}
+
+function validate_payout_description(frm) {
+	const description = frm.doc.razorpayx_payout_desc;
+	if (!is_razorpayx_condition_met() || !description || DESCRIPTION_REGEX.test(description)) return;
+
+	frappe.throw({
+		message: __(
+			"Invalid Description: {0}.<br> Must be alphanumeric and space only with max 30 characters",
+			[description]
+		),
+		title: __("Invalid RazorPayX Payout Description"),
+	});
 }
 
 // ############ UTILITY ############ //
