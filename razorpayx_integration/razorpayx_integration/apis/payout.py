@@ -6,7 +6,7 @@ from razorpayx_integration.razorpayx_integration.constants.payouts import (
     CONTACT_TYPE,
     CONTACT_TYPE_MAP,
     FUND_ACCOUNT_TYPE,
-    PAYMENT_MODE_THRESHOLD,
+    PAYMENT_MODE_LIMIT,
     PAYOUT_CURRENCY,
     PAYOUT_PURPOSE,
     PAYOUT_PURPOSE_MAP,
@@ -228,10 +228,13 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         Returns: NEFT | RTGS | IMPS
         """
 
-        if payout_details.get("pay_instantaneously") is True:
+        if (
+            payout_details.get("pay_instantaneously") is True
+            and payout_details["amount"] <= PAYMENT_MODE_LIMIT.IMPS.value
+        ):
             return RAZORPAYX_PAYOUT_MODE.IMPS.value
         else:
-            if payout_details["amount"] > PAYMENT_MODE_THRESHOLD.NEFT.value:
+            if payout_details["amount"] > PAYMENT_MODE_LIMIT.NEFT.value:
                 return RAZORPAYX_PAYOUT_MODE.RTGS.value
             else:
                 return RAZORPAYX_PAYOUT_MODE.NEFT.value
