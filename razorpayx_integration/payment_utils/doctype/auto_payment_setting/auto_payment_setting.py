@@ -21,6 +21,7 @@ class AutoPaymentSetting(Document):
 
         auto_generate_entries: DF.Check
         auto_generate_report: DF.Link | None
+        auto_submit_entries: DF.Check
         auto_submit_report: DF.Link | None
         automate_on_friday: DF.Check
         automate_on_monday: DF.Check
@@ -32,7 +33,8 @@ class AutoPaymentSetting(Document):
         bank_account: DF.Link
         company: DF.Link | None
         disabled: DF.Check
-        auto_submit_entries: DF.Check
+        ignore_blocked_invoice: DF.Check
+        ignore_blocked_suppliers: DF.Check
         payment_threshold: DF.Currency
     # end: auto-generated types
 
