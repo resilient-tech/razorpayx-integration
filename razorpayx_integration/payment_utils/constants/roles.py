@@ -54,7 +54,7 @@ PERMISSIONS = {
 
 
 ROLES = [
-    ## Payment Setting ##
+    ## Auto Payment Setting ##
     {
         "doctype": SETTING_DOCTYPE,
         "role_name": ROLE_PROFILE.AUTO_PAYMENTS_MANAGER.value,

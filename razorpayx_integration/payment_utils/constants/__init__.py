@@ -1,1 +1,1 @@
-SETTING_DOCTYPE = "Payment Setting"
+SETTING_DOCTYPE = "Auto Payment Setting"
