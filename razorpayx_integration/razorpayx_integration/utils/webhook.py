@@ -22,7 +22,7 @@ from razorpayx_integration.razorpayx_integration.constants.webhooks import (
     SUPPORTED_EVENTS,
 )
 from razorpayx_integration.razorpayx_integration.utils import (
-    get_razorpayx_account,
+    get_razorpayx_setting,
 )
 
 # API: TUNNEL_URL/api/method/razorpayx_integration.razorpayx_integration.utils.webhooks.razorpayx_webhook_listener
@@ -53,7 +53,7 @@ class RazorPayXWebhook:
         self.payload = payload
         self.integration_request = integration_request
         self.account_id = ""
-        self.razorpayx_account = ""
+        self.razorpayx_setting_name = ""
 
         self.event = ""
         self.event_type = ""
@@ -68,19 +68,20 @@ class RazorPayXWebhook:
         self.source_doc = None  # Set manually in the sub class if needed.
         self.notes = {}
 
-        self.set_razorpayx_account()  # Mandatory
+        self.set_razorpayx_setting_name()  # Mandatory
         self.set_common_payload_attributes()  # Mandatory
         self.setup_respective_webhook_payload()
         self.set_source_doctype_and_docname()
 
-    def set_razorpayx_account(self):
+    def set_razorpayx_setting_name(self):
         """
-        Set the RazorPayX Account Name using the `account_id`.
+        Set the RazorPayX Setting Name using the `account_id`.
         """
         if not self.account_id:
             self.account_id = self.payload.get("account_id")
 
-        self.razorpayx_account = get_razorpayx_account(self.account_id, "account_id")
+        settings = get_razorpayx_setting(self.account_id, "account_id")
+        self.razorpayx_setting_name = settings.name
 
     def set_common_payload_attributes(self):
         """
@@ -333,7 +334,7 @@ class PayoutWebhook(RazorPayXWebhook):
             return True
 
         try:
-            payout_link = RazorPayXLinkPayout(self.razorpayx_account)
+            payout_link = RazorPayXLinkPayout(self.razorpayx_setting_name)
             status = payout_link.get_by_id(link_id, "status")
 
             if self.is_payout_link_cancelled(status):
@@ -595,8 +596,6 @@ def razorpayx_webhook_listener():
     frappe.set_user("Administrator")
     row_payload = frappe.request.data
     payload = json.loads(row_payload)
-
-    # TODO: test without `str`
     request_headers = str(frappe.request.headers)
 
     if not is_valid_webhook_signature(
@@ -620,7 +619,7 @@ def razorpayx_webhook_listener():
 
     if unsupported_event := is_unsupported_event(event):
         ir_log["error"] = "Unsupported Webhook Event"
-        ir_log["status"] = "Cancelled"  # TODO: ? more accurate status
+        ir_log["status"] = "Cancelled"
 
     ir = log_integration_request(**ir_log)
 
@@ -717,7 +716,7 @@ def get_webhook_secret(account_id: str | None = None) -> str | None:
     if not account_id:
         return
 
-    account = get_razorpayx_account(identifier=account_id, search_by="account_id")
+    account = get_razorpayx_setting(identifier=account_id, search_by="account_id")
 
     if not account or not account.name:
         return

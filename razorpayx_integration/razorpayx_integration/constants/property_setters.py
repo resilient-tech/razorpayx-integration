@@ -74,14 +74,14 @@ PROPERTY_SETTERS = [
         "fieldname": "online_payment_section",
         "property": "depends_on",
         "property_type": "Data",
-        "value": f"eval: {BASE_CONDITION_TO_MAKE_ONLINE_PAYMENT} && doc.razorpayx_account",
+        "value": f"eval: {BASE_CONDITION_TO_MAKE_ONLINE_PAYMENT} && doc.razorpayx_setting",
     },
     {
         "doctype": "Payment Entry",
         "fieldname": "make_bank_online_payment",
         "property": "depends_on",
         "property_type": "Data",
-        "value": f"eval: {BASE_CONDITION_TO_MAKE_ONLINE_PAYMENT} && doc.razorpayx_account",
+        "value": f"eval: {BASE_CONDITION_TO_MAKE_ONLINE_PAYMENT} && doc.razorpayx_setting",
     },
     {
         "doctype": "Payment Entry",

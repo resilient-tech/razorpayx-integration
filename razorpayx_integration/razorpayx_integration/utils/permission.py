@@ -28,9 +28,8 @@ def before_payment_authentication(payment_entries: list[str]) -> bool:
     """
     has_payment_authorizer_role(throw=True)
 
-    has_integration_access(docname=None, throw=True)
+    has_integration_access(integration=None, throw=True)
 
-    # TODO: how to check for `Company Bank Account`?
     has_payment_entry_access(payment_entries, permission="submit", throw=True)
 
 
@@ -52,29 +51,30 @@ def has_payment_authorizer_role(*, throw=False) -> bool | None:
     return has_authorizer_role
 
 
-def has_integration_access(*, docname: str | None = None, throw=False) -> bool | None:
+def has_integration_access(
+    *, integration: str | None = None, throw=False
+) -> bool | None:
     """
     Check if user can read the integration.
 
-    :param docname: RazorPayX account (docname).
+    If `integration` is provided, checks if the integration is enabled or not.
+
+    :param integration: RazorPayX Integration Setting name.
     :param throw: If `True`, throws `PermissionError` if user doesn't have access.
     """
-    # TODO: Refactor
-    if docname:
-        is_disabled = (
-            frappe.get_value(INTEGRATION_DOCTYPE, docname, "disabled") or False
-        )
+    if integration and frappe.get_value(INTEGRATION_DOCTYPE, integration, "disabled"):
+        if throw:
+            frappe.throw(
+                title=_("Integration Disabled"),
+                msg=_("The RazorPayX Integration is disabled."),
+                exc=frappe.PermissionError,
+            )
 
-        if is_disabled:
-            if throw:
-                frappe.throw(
-                    title=_("Integration Disabled"),
-                    msg=_("The integration is disabled."),
-                    exc=frappe.PermissionError,
-                )
-            return False
+        return False
 
-    return frappe.has_permission(doctype=INTEGRATION_DOCTYPE, doc=docname, throw=throw)
+    return frappe.has_permission(
+        doctype=INTEGRATION_DOCTYPE, doc=integration, throw=throw
+    )
 
 
 def has_payment_entry_access(
@@ -115,7 +115,7 @@ def has_payment_entry_access(
 
 def user_has_payout_permissions(
     payment_entries: str | list[str] | None = None,
-    razorpayx_account: str | None = None,
+    razorpayx_setting: str | None = None,
     *,
     pe_permission: Literal["submit", "cancel"] = "submit",
     throw: bool = False,
@@ -124,7 +124,7 @@ def user_has_payout_permissions(
     Check user has payout permissions or not!
 
     :param payment_entries: Payment Entry name or list of names.
-    :param razorpayx_account: RazorPayX account (Integration docname).
+    :param razorpayx_setting: RazorPayX Integration Setting name.
     :param pe_permission: Payment entry permission to check.
     :param throw: If `True`, throws `PermissionError` if user doesn't have access.
 
@@ -139,7 +139,7 @@ def user_has_payout_permissions(
     has_role = has_payment_authorizer_role(throw=throw)
 
     # 2. Check if user can read the integration.
-    has_rpx_access = has_integration_access(docname=razorpayx_account, throw=throw)
+    has_rpx_access = has_integration_access(integration=razorpayx_setting, throw=throw)
 
     # 3. Check if user has access to submit/cancel the payment entries.
     has_pe_access = has_payment_entry_access(

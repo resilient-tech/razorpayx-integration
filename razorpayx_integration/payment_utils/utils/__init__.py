@@ -1,3 +1,4 @@
+import re
 from datetime import datetime
 
 import frappe
@@ -427,3 +428,20 @@ def delete_roles(roles: list[str]):
     :param roles: List of role names to be deleted.
     """
     frappe.db.delete("Role", {"role_name": ("in", roles)})
+
+
+### String Manipulation ###
+def to_hyphenated(text):
+    """
+    Replace any character that is not alphanumeric with a hyphen, including spaces.
+
+    :param text: The text to be converted.
+
+    ---
+    Example:
+
+    ```py
+    convert_special_chars_to_hyphen("Hello World!") ==> "Hello-World-"
+    ```
+    """
+    return re.sub(r"[^a-zA-Z0-9]", "-", text)

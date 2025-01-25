@@ -1,12 +1,15 @@
 from frappe import _
 
-from razorpayx_integration.payment_utils.utils import rupees_to_paisa
+from razorpayx_integration.payment_utils.utils import (
+    rupees_to_paisa,
+    to_hyphenated,
+)
 from razorpayx_integration.razorpayx_integration.apis.base import BaseRazorPayXAPI
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
     CONTACT_TYPE,
     CONTACT_TYPE_MAP,
     FUND_ACCOUNT_TYPE,
-    PAYMENT_MODE_THRESHOLD,
+    PAYMENT_MODE_LIMIT,
     PAYOUT_CURRENCY,
     PAYOUT_PURPOSE,
     PAYOUT_PURPOSE_MAP,
@@ -21,7 +24,7 @@ class RazorPayXPayout(BaseRazorPayXAPI):
     """
     Handle APIs for `Payout`.
 
-    :param account_name: RazorPayX Integration account from which `Payout` will be created.
+    :param razorpayx_setting_name: RazorPayX Integration Setting from which `Payout` will be created.
 
     ---
     Note:
@@ -34,7 +37,6 @@ class RazorPayXPayout(BaseRazorPayXAPI):
 
     ### CLASS VARIABLES ###
     BASE_PATH = "payouts"
-    DEFAULT_SOURCE_AMOUNT_FIELD = "paid_amount"
 
     ### SETUPS ###
     def setup(self, *args, **kwargs):
@@ -45,16 +47,13 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         """
         super().setup(*args, **kwargs)
 
-        self.razorpayx_account_number = self.razorpayx_account.account_number
+        self.razorpayx_account_number = self.razorpayx_setting.account_number
         self.default_payout_request = {
             "account_number": self.razorpayx_account_number,
             "queue_if_low_balance": True,
             "currency": PAYOUT_CURRENCY.INR.value,
         }
         self.payout_headers = {}
-        self.source_amount_field_map = {
-            "Payment Entry": "paid_amount",
-        }
 
     ### APIs ###
     def pay_to_bank_account(self, payout_details: dict) -> dict:
@@ -228,10 +227,13 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         Returns: NEFT | RTGS | IMPS
         """
 
-        if payout_details.get("pay_instantaneously") is True:
+        if (
+            payout_details.get("pay_instantaneously") is True
+            and payout_details["amount"] <= PAYMENT_MODE_LIMIT.IMPS.value
+        ):
             return RAZORPAYX_PAYOUT_MODE.IMPS.value
         else:
-            if payout_details["amount"] > PAYMENT_MODE_THRESHOLD.NEFT.value:
+            if payout_details["amount"] > PAYMENT_MODE_LIMIT.NEFT.value:
                 return RAZORPAYX_PAYOUT_MODE.RTGS.value
             else:
                 return RAZORPAYX_PAYOUT_MODE.NEFT.value
@@ -250,8 +252,7 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         ---
         Reference: https://razorpay.com/docs/api/x/payout-idempotency/make-request/
         """
-        # TODO: convert other special characters to hyphen
-        self.payout_headers["X-Payout-Idempotency"] = self.source_docname
+        self.payout_headers["X-Payout-Idempotency"] = to_hyphenated(self.source_docname)
 
     def _get_mapped_payout_request_body(self, payout_details: dict) -> dict:
         """
@@ -600,8 +601,8 @@ class RazorPayXCompositePayout(RazorPayXPayout):
         ```
         """
 
-        def get_account_details(account_type: str) -> dict:
-            match account_type:
+        def get_account_details() -> dict:
+            match payout_details["party_account_type"]:
                 case FUND_ACCOUNT_TYPE.BANK_ACCOUNT.value:
                     return {
                         "bank_account": {
@@ -619,8 +620,8 @@ class RazorPayXCompositePayout(RazorPayXPayout):
 
         return {
             "account_type": payout_details["party_account_type"],
-            **get_account_details(payout_details["party_account_type"]),
             "contact": self._get_party_contact_details(payout_details),
+            **get_account_details(),
         }
 
 

@@ -36,53 +36,58 @@ class BaseRazorPayXAPI:
 
     Must need `RazorPayX Integration Account` name to initiate API.
 
-    :param razorpayx_account: RazorPayX Integration Account name.
+    :param razorpayx_setting_name: RazorPayX Integration Setting name.
     """
 
     ### CLASS ATTRIBUTES ###
     BASE_PATH = ""
 
     ### SETUP ###
-    def __init__(self, razorpayx_account: str, *args, **kwargs):
-        self.razorpayx_account: RazorPayXIntegrationSetting = frappe.get_doc(
-            RAZORPAYX_INTEGRATION_DOCTYPE, razorpayx_account
+    def __init__(self, razorpayx_setting_name: str, *args, **kwargs):
+        """
+        Initialize the RazorPayX API.
+
+        :param razorpayx_setting_name: RazorPayX Integration Setting name.
+        """
+        self.razorpayx_setting: RazorPayXIntegrationSetting = frappe.get_doc(
+            RAZORPAYX_INTEGRATION_DOCTYPE, razorpayx_setting_name
         )
 
-        self.authenticate_razorpayx_account()
+        self.authenticate_razorpayx_setting()
 
         self.auth = (
-            self.razorpayx_account.key_id,
-            self.razorpayx_account.get_password("key_secret"),
+            self.razorpayx_setting.key_id,
+            self.razorpayx_setting.get_password("key_secret"),
         )
-        self.default_headers = {}
+        self.default_headers = {}  # Default headers for API request
         self.default_log_values = {}  # Show value in Integration Request Log
-        self.ir_service_set = False  # Set service details in Integration Request Log
+        self.ir_service_set = False  # Service details in IR log has been set or not
         self.sensitive_infos = ()  # Sensitive info to mask in Integration Request Log
         self.place_holder = "************"
 
         self.setup(*args, **kwargs)
 
-    def authenticate_razorpayx_account(self):
+    def authenticate_razorpayx_setting(self):
         """
-        Check account is enabled or not?
+        Check setting is enabled or not?
 
-        Validate RazorPayX API credential `Id` and `Secret` for respective account.
+        Check RazorPayX API credentials `Id` and `Secret` are set or not?
         """
-        if self.razorpayx_account.disabled:
+        if self.razorpayx_setting.disabled:
             frappe.throw(
-                msg=_("To use {0} account, please enable it first!").format(
-                    frappe.bold(self.razorpayx_account.name)
+                msg=_("To use {0} setting, please enable it first!").format(
+                    frappe.bold(self.razorpayx_setting.name)
                 ),
-                title=_("RazorPayX Integration Account Is Disable"),
+                title=_("RazorPayX Integration Setting Is Disable"),
             )
 
-        if not self.razorpayx_account.key_id or not self.razorpayx_account.key_secret:
+        if not self.razorpayx_setting.key_id or not self.razorpayx_setting.key_secret:
             frappe.throw(
                 msg=_("Please set <strong>RazorPayX</strong> API credentials."),
                 title=_("API Credentials Are Missing"),
             )
 
-        if not self.razorpayx_account.webhook_secret:
+        if not self.razorpayx_setting.webhook_secret:
             frappe.msgprint(
                 msg=_(
                     "RazorPayX Webhook Secret is missing! <br> You will not receive any updates!"
@@ -367,7 +372,6 @@ class BaseRazorPayXAPI:
         pass
 
     ### ERROR HANDLING ###
-    # TODO:  handle special(error) http code (specially payout process!!)
     def _handle_failed_api_response(self, response_json: dict | None = None):
         """
         Handle failed API response from RazorPayX.

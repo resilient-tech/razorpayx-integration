@@ -96,7 +96,7 @@ class PAYOUT_LINK_STATUS(BaseEnum):
 
 
 # TODO: concern with @smit_vora
-class PAYMENT_MODE_THRESHOLD(BaseEnum):
+class PAYMENT_MODE_LIMIT(BaseEnum):
     """
     Reference:
     - https://www.bankbazaar.com/ifsc/difference-neft-rtgs-imps.html

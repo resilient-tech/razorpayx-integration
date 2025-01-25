@@ -2,7 +2,7 @@
 // For license information, please see license.txt
 
 frappe.listview_settings["Payment Entry"] = {
-	add_fields: ["make_bank_online_payment", "razorpayx_account", "razorpayx_payout_status"],
+	add_fields: ["make_bank_online_payment", "razorpayx_setting", "razorpayx_payout_status"],
 
 	onload: function (list_view) {
 		// Add `Pay and Submit` button to the Payment Entry list view
@@ -59,9 +59,8 @@ function is_eligible_to_pay(doc) {
 		doc.docstatus === 0 &&
 		doc.payment_type === "Pay" &&
 		doc.paid_from_account_currency === "INR" &&
-		doc.mode_of_payment !== "Cash" &&
 		doc.make_bank_online_payment &&
-		doc.razorpayx_account &&
+		doc.razorpayx_setting &&
 		doc.razorpayx_payout_status === "Not Initiated"
 	);
 }

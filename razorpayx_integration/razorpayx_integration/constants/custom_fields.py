@@ -15,7 +15,7 @@ from razorpayx_integration.payment_utils.constants.custom_fields import (
     BASE_CONDITION_TO_MAKE_ONLINE_PAYMENT,
 )
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
-    PAYMENT_MODE_THRESHOLD,
+    PAYMENT_MODE_LIMIT,
     PAYOUT_STATUS,
     USER_PAYOUT_MODE,
 )
@@ -29,14 +29,14 @@ CUSTOM_FIELDS = {
             "label": "RazorPayX Payout Details",
             "fieldtype": "Section Break",
             "insert_after": "party_bank_ifsc",  ## Insert After `PARTY BANK IFSC` field (Payment Utils Custom Field)
-            "depends_on": f"eval: {BASE_CONDITION_TO_MAKE_ONLINE_PAYMENT} && doc.razorpayx_account && doc.make_bank_online_payment",
+            "depends_on": f"eval: {BASE_CONDITION_TO_MAKE_ONLINE_PAYMENT} && doc.razorpayx_setting && doc.make_bank_online_payment",
             "collapsible": 1,
             "collapsible_depends_on": "eval: doc.docstatus === 0",
             "permlevel": PERMISSION_LEVEL.SEVEN.value,
         },
         {
-            "fieldname": "razorpayx_account",
-            "label": "RazorPayX Integration Account",
+            "fieldname": "razorpayx_setting",
+            "label": "RazorPayX Integration Setting",
             "fieldtype": "Link",
             "insert_after": "razorpayx_payout_section",
             "options": RAZORPAYX_INTEGRATION_DOCTYPE,
@@ -49,7 +49,7 @@ CUSTOM_FIELDS = {
             "fieldname": "razorpayx_payout_mode",
             "label": "RazorPayX Payout Mode",
             "fieldtype": "Select",
-            "insert_after": "razorpayx_account",
+            "insert_after": "razorpayx_setting",
             "fetch_from": "party_bank_account.online_payment_mode",
             "options": USER_PAYOUT_MODE.values_as_string(),
             "default": USER_PAYOUT_MODE.LINK.value,
@@ -63,7 +63,7 @@ CUSTOM_FIELDS = {
             "label": "Pay Instantaneously",
             "fieldtype": "Check",
             "insert_after": "razorpayx_payout_mode",
-            "depends_on": f"eval: doc.razorpayx_payout_mode === '{USER_PAYOUT_MODE.BANK.value}' && doc.paid_amount <= {PAYMENT_MODE_THRESHOLD.IMPS.value}",
+            "depends_on": f"eval: doc.razorpayx_payout_mode === '{USER_PAYOUT_MODE.BANK.value}' && doc.paid_amount <= {PAYMENT_MODE_LIMIT.IMPS.value}",
             "description": "Payment will be done with <strong>IMPS</strong> mode.",
             "permlevel": PERMISSION_LEVEL.SEVEN.value,
         },
@@ -80,6 +80,7 @@ CUSTOM_FIELDS = {
             "insert_after": "razorpayx_payout_cb",
             "depends_on": "eval: doc.make_bank_online_payment",
             "mandatory_depends_on": f"eval:doc.make_bank_online_payment && doc.razorpayx_payout_mode === '{USER_PAYOUT_MODE.LINK.value}'",
+            "length": 30,
             "permlevel": PERMISSION_LEVEL.SEVEN.value,
         },
         {
