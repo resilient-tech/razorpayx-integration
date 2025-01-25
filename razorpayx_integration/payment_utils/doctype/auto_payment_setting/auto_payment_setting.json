@@ -16,6 +16,10 @@
   "column_break_cmbf",
   "auto_submit_entries",
   "payment_threshold",
+  "company_email_templates_section",
+  "auto_generate_report",
+  "column_break_bhwn",
+  "auto_submit_report",
   "days_sections",
   "automate_on_monday",
   "automate_on_friday",
@@ -27,20 +31,22 @@
   "automate_on_sunday",
   "column_break_fjvk",
   "automate_on_thursday",
-  "company_email_templates_section",
-  "auto_generate_report",
-  "column_break_bhwn",
-  "auto_submit_report"
+  "configurations_section",
+  "ignore_blocked_suppliers",
+  "column_break_eldq",
+  "ignore_blocked_invoice"
  ],
  "fields": [
   {
-   "default": "0",
+   "default": "1",
+   "description": "Auto generate payment entries based on outstanding purchase invoices based on set configurations",
    "fieldname": "auto_generate_entries",
    "fieldtype": "Check",
    "label": "Auto Generate Payment Entries"
   },
   {
    "default": "0",
+   "depends_on": "eval: doc.auto_generate_entries",
    "description": "Payments may be auto processed on submit if you have an active integration",
    "fieldname": "auto_submit_entries",
    "fieldtype": "Check",
@@ -56,7 +62,7 @@
    "fieldtype": "Column Break"
   },
   {
-   "depends_on": "eval: doc.auto_generate_entries || doc.auto_submit_entries ",
+   "depends_on": "eval: doc.auto_generate_entries",
    "fieldname": "days_sections",
    "fieldtype": "Section Break",
    "label": "Days for Automation"
@@ -175,7 +181,7 @@
    "fieldtype": "Section Break"
   },
   {
-   "depends_on": "eval: doc.auto_submit_entries",
+   "depends_on": "eval: doc.auto_generate_entries",
    "fieldname": "auto_generate_report",
    "fieldtype": "Link",
    "label": "Auto Generate Report",
@@ -187,11 +193,33 @@
    "fieldtype": "Link",
    "label": "Auto Submit Report",
    "options": "Email Template"
+  },
+  {
+   "depends_on": "eval: doc.auto_generate_entries",
+   "fieldname": "configurations_section",
+   "fieldtype": "Section Break",
+   "label": "Configurations"
+  },
+  {
+   "default": "1",
+   "fieldname": "ignore_blocked_suppliers",
+   "fieldtype": "Check",
+   "label": "Ignore Blocked Suppliers"
+  },
+  {
+   "fieldname": "column_break_eldq",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "1",
+   "fieldname": "ignore_blocked_invoice",
+   "fieldtype": "Check",
+   "label": "Ignore Blocked Invoice"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-01-23 12:12:09.778931",
+ "modified": "2025-01-25 15:52:13.470125",
  "modified_by": "Administrator",
  "module": "Payment Utils",
  "name": "Auto Payment Setting",

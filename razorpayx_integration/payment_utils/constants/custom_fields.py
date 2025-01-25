@@ -15,15 +15,6 @@ from razorpayx_integration.payment_utils.constants.roles import PERMISSION_LEVEL
 
 BASE_CONDITION_TO_MAKE_ONLINE_PAYMENT = "doc.payment_type=='Pay' && doc.mode_of_payment!='Cash' && doc.party && doc.party_type && doc.paid_from_account_currency === 'INR'"
 
-# TODO: permission level are left to add
-BLOCK_AUTO_PAYMENT = {
-    "fieldname": "block_auto_payment",
-    "label": "Block Auto Payment",
-    "fieldtype": "Check",
-    "description": "Automatic payment entries will not be created for this party",
-    "permlevel": PERMISSION_LEVEL.SEVEN.value,
-}
-
 
 CUSTOM_FIELDS = {
     # NOTE: update bank account custom fields in particular integration if required
@@ -140,15 +131,6 @@ CUSTOM_FIELDS = {
             "read_only": 1,
             "permlevel": PERMISSION_LEVEL.SEVEN.value,
         },
-    ],
-    "Customer": [
-        {**BLOCK_AUTO_PAYMENT, "insert_after": "payment_terms"},
-    ],
-    "Supplier": [
-        {**BLOCK_AUTO_PAYMENT, "insert_after": "payment_terms"},
-    ],
-    "Employee": [
-        {**BLOCK_AUTO_PAYMENT, "insert_after": "bank_name"},
     ],
 }
 
