@@ -1,6 +1,9 @@
 from frappe import _
 
-from razorpayx_integration.payment_utils.utils import rupees_to_paisa
+from razorpayx_integration.payment_utils.utils import (
+    rupees_to_paisa,
+    to_hyphenated,
+)
 from razorpayx_integration.razorpayx_integration.apis.base import BaseRazorPayXAPI
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
     CONTACT_TYPE,
@@ -34,7 +37,6 @@ class RazorPayXPayout(BaseRazorPayXAPI):
 
     ### CLASS VARIABLES ###
     BASE_PATH = "payouts"
-    DEFAULT_SOURCE_AMOUNT_FIELD = "paid_amount"
 
     ### SETUPS ###
     def setup(self, *args, **kwargs):
@@ -250,8 +252,7 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         ---
         Reference: https://razorpay.com/docs/api/x/payout-idempotency/make-request/
         """
-        # TODO: convert other special characters to hyphen
-        self.payout_headers["X-Payout-Idempotency"] = self.source_docname
+        self.payout_headers["X-Payout-Idempotency"] = to_hyphenated(self.source_docname)
 
     def _get_mapped_payout_request_body(self, payout_details: dict) -> dict:
         """
