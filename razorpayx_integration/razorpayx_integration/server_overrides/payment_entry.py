@@ -34,6 +34,8 @@ from razorpayx_integration.razorpayx_integration.utils.validation import (
 # TODO: Refactor Workflow make it more readable and remove duplicate code
 # TODO: Remove extra docstring!
 # TODO: Keep the function name more meaningful and consistent
+# TODO: with the help of @smit_vora
+
 
 #### CONSTANTS ####
 PAYOUT_MODES = Literal["NEFT/RTGS", "UPI", "Link"]
@@ -521,6 +523,10 @@ def set_reference_no(doc: PaymentEntry):
 
 
 ### ACTIONS ###
+# TODO: need to be refactor
+# TODO: need to be more readable
+# TODO: remove duplicate code
+# TODO: with the help of @smit_vora
 def make_payout_with_razorpayx(doc: PaymentEntry, auth_id: str | None = None):
     """
     Make Payout with RazorPayX Integration.
