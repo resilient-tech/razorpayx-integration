@@ -80,6 +80,8 @@ def validate_razorpayx_payout_description(description: str):
     """
     Description/Narration should be of max 30 characters and A-Z, a-z, 0-9, and space only.
 
+    Standard RazorPayX Payout Description/Narration validation.
+
     :raises frappe.ValidationError: If the description is not valid.
     """
     pattern = re.compile(DESCRIPTION_REGEX)
@@ -89,8 +91,8 @@ def validate_razorpayx_payout_description(description: str):
 
     frappe.throw(
         msg=_(
-            "Invalid Description: {0}.<br> Must be alphanumeric and space only with max 30 characters"
-        ).format(description),
+            "Must be <strong>alphanumeric</strong> and contain <strong>spaces</strong> only, with a maximum of <strong>30</strong> characters."
+        ),
         title=_("Invalid RazorPayX Payout Description"),
         exc=frappe.ValidationError,
     )
