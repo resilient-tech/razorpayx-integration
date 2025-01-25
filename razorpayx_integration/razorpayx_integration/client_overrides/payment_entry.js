@@ -329,37 +329,6 @@ async function show_make_payout_dialog(frm) {
 		title: __("Enter Payout Details"),
 		fields: [
 			{
-				fieldname: "account_section_break",
-				label: __("Company Account Details"),
-				fieldtype: "Section Break",
-			},
-			{
-				fieldname: "bank_account",
-				label: __("Company Bank Account"),
-				fieldtype: "Link",
-				options: "Bank Account",
-				default: frm.doc.bank_account,
-				reqd: 1,
-				read_only: 1,
-				description: `<div class="d-flex align-items-center justify-content-end">
-								${get_rpx_img_container("pay via")}
-							</div>`,
-			},
-			{
-				fieldname: "account_cb",
-				fieldtype: "Column Break",
-			},
-			{
-				fieldname: "razorpayx_setting",
-				label: __("RazorPayX Integration Setting"),
-				fieldtype: "Link",
-				options: razorpayx.RPX_DOCTYPE,
-				default: frm.doc.razorpayx_setting,
-				reqd: 1,
-				hidden: 1,
-				read_only: 1,
-			},
-			{
 				fieldname: "party_section_break",
 				label: __("Party Details"),
 				fieldtype: "Section Break",
@@ -371,7 +340,6 @@ async function show_make_payout_dialog(frm) {
 				fieldtype: "Link",
 				options: "Bank Account",
 				default: frm.doc.party_bank_account,
-				read_only: frm.doc.party_bank_account ? 1 : 0,
 				get_query: function () {
 					return {
 						filters: {
@@ -423,7 +391,6 @@ async function show_make_payout_dialog(frm) {
 				fieldtype: "Link",
 				options: "Contact",
 				default: frm.doc.contact_person,
-				read_only: frm.doc.contact_person ? 1 : 0,
 				depends_on: `eval: ${LINK_MODE}`,
 				mandatory_depends_on: `eval: ${LINK_MODE}`,
 				get_query: function () {
@@ -471,6 +438,9 @@ async function show_make_payout_dialog(frm) {
 				default: frm.doc.razorpayx_payout_mode || PAYOUT_MODES.LINK,
 				read_only: 1,
 				reqd: 1,
+				description: `<div class="d-flex align-items-center justify-content-end">
+								${get_rpx_img_container("via")}
+							</div>`,
 			},
 			{
 				fieldname: "razorpayx_pay_instantaneously",
@@ -517,7 +487,6 @@ function make_payout(auth_id, docname, values) {
 		args: {
 			auth_id: auth_id,
 			docname: docname,
-			razorpayx_setting: values.razorpayx_setting,
 			payout_mode: values.razorpayx_payout_mode,
 			...values,
 		},

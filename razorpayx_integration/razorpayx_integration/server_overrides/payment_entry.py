@@ -665,7 +665,6 @@ def cancel_payout(docname: str, razorpayx_setting: str):
 def make_payout_with_payment_entry(
     auth_id: str,
     docname: str,
-    razorpayx_setting: str,
     payout_mode: PAYOUT_MODES = USER_PAYOUT_MODE.LINK.value,
     **kwargs,
 ):
@@ -674,55 +673,30 @@ def make_payout_with_payment_entry(
 
     :param auth_id: Authentication ID (after otp or password verification)
     :param docname: Payment Entry name
-    :param razorpayx_setting: RazorPayX Integration Setting name associated to company bank account
     :param payout_mode: Payout Mode (Bank, UPI, Link)
     """
-
-    def filter_non_empty_details(details: dict):
-        return {key: value for key, value in details.items() if value}
-
-    user_has_payout_permissions(docname, razorpayx_setting, throw=True)
-
     doc = frappe.get_doc("Payment Entry", docname)
 
-    # Early validations
-    if doc.razorpayx_setting != razorpayx_setting:
-        frappe.throw(
-            msg=_("RazorPayX Account mismatched with Payment Entry."),
-            title=_("Invalid RazorPayX Account"),
-        )
-
-    if not is_base_payout_conditions_met(doc):
-        frappe.throw(
-            msg=_(
-                "Payout cannot be made for the Payment Entry <strong>{0}</strong>"
-            ).format(docname),
-            title=_("Invalid Payment Entry"),
-        )
-
-    # Only update payout related details
-    details = {
-        # Party Details
-        "party_bank_account": kwargs.get("party_bank_account"),
-        "party_bank_account_no": kwargs.get("party_bank_account_no"),
-        "party_bank_ifsc": kwargs.get("party_bank_ifsc"),
-        "party_upi_id": kwargs.get("party_upi_id"),
-        "contact_person": kwargs.get("contact_person"),
-        "contact_mobile": kwargs.get("contact_mobile"),
-        "contact_email": kwargs.get("contact_email"),
-        # RazorPayX Details
-        "razorpayx_payout_mode": payout_mode,
-        "razorpayx_payout_desc": kwargs.get("razorpayx_payout_desc"),
-        "razorpayx_pay_instantaneously": int(
-            kwargs.get("razorpayx_pay_instantaneously", 0)
-        ),
-    }
+    user_has_payout_permissions(docname, doc.razorpayx_setting, throw=True)
 
     # Set the fields to make payout
     doc.db_set(
         {
             "make_bank_online_payment": 1,
-            **filter_non_empty_details(details),  # avoid overwriting with empty values
+            # Party Details
+            "party_bank_account": kwargs.get("party_bank_account"),
+            "party_bank_account_no": kwargs.get("party_bank_account_no"),
+            "party_bank_ifsc": kwargs.get("party_bank_ifsc"),
+            "party_upi_id": kwargs.get("party_upi_id"),
+            "contact_person": kwargs.get("contact_person"),
+            "contact_mobile": kwargs.get("contact_mobile"),
+            "contact_email": kwargs.get("contact_email"),
+            # RazorPayX Details
+            "razorpayx_payout_mode": payout_mode,
+            "razorpayx_payout_desc": kwargs.get("razorpayx_payout_desc"),
+            "razorpayx_pay_instantaneously": int(
+                kwargs.get("razorpayx_pay_instantaneously", 0)
+            ),
         }
     )
 
