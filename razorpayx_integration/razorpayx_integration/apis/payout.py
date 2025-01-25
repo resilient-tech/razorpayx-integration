@@ -600,8 +600,8 @@ class RazorPayXCompositePayout(RazorPayXPayout):
         ```
         """
 
-        def get_account_details(account_type: str) -> dict:
-            match account_type:
+        def get_account_details() -> dict:
+            match payout_details["party_account_type"]:
                 case FUND_ACCOUNT_TYPE.BANK_ACCOUNT.value:
                     return {
                         "bank_account": {
@@ -619,8 +619,8 @@ class RazorPayXCompositePayout(RazorPayXPayout):
 
         return {
             "account_type": payout_details["party_account_type"],
-            **get_account_details(payout_details["party_account_type"]),
             "contact": self._get_party_contact_details(payout_details),
+            **get_account_details(),
         }
 
 
