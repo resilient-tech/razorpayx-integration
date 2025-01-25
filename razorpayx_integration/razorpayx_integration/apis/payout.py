@@ -21,7 +21,7 @@ class RazorPayXPayout(BaseRazorPayXAPI):
     """
     Handle APIs for `Payout`.
 
-    :param account_name: RazorPayX Integration account from which `Payout` will be created.
+    :param razorpayx_setting_name: RazorPayX Integration Setting from which `Payout` will be created.
 
     ---
     Note:
@@ -45,16 +45,13 @@ class RazorPayXPayout(BaseRazorPayXAPI):
         """
         super().setup(*args, **kwargs)
 
-        self.razorpayx_account_number = self.razorpayx_account.account_number
+        self.razorpayx_account_number = self.razorpayx_setting.account_number
         self.default_payout_request = {
             "account_number": self.razorpayx_account_number,
             "queue_if_low_balance": True,
             "currency": PAYOUT_CURRENCY.INR.value,
         }
         self.payout_headers = {}
-        self.source_amount_field_map = {
-            "Payment Entry": "paid_amount",
-        }
 
     ### APIs ###
     def pay_to_bank_account(self, payout_details: dict) -> dict:

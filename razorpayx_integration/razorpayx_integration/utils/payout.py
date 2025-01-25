@@ -59,7 +59,7 @@ class PayoutWithDocument(ABC):
         Caution: ⚠️  Don't forget to call `super().__init__()` in sub class.
         """
         self.doc = doc
-        self.razorpayx_account = self._get_razorpayx_account()
+        self.razorpayx_setting_name = self._get_razorpayx_setting()
 
     ### AUTHORIZATION ###
     # TODO: ? what if payout created from other doctype
@@ -164,7 +164,7 @@ class PayoutWithDocument(ABC):
         if not self.doc.razorpayx_payout_id:
             return
 
-        payout = RazorPayXPayout(self.razorpayx_account)
+        payout = RazorPayXPayout(self.razorpayx_setting_name)
         response = payout.cancel(
             self.doc.razorpayx_payout_id,
             source_doctype=self.doc.doctype,
@@ -192,7 +192,7 @@ class PayoutWithDocument(ABC):
         if not self.doc.razorpayx_payout_link_id:
             return
 
-        payout = RazorPayXLinkPayout(self.razorpayx_account)
+        payout = RazorPayXLinkPayout(self.razorpayx_setting_name)
         response = payout.cancel(
             self.doc.razorpayx_payout_link_id,
             source_doctype=self.doc.doctype,
@@ -237,9 +237,9 @@ class PayoutWithDocument(ABC):
 
     ### ABSTRACT METHODS ###
     @abstractmethod
-    def _get_razorpayx_account(self) -> str:
+    def _get_razorpayx_setting(self) -> str:
         """
-        Return RazorPayX Integration Account name.
+        Return RazorPayX Integration Setting name.
         """
         pass
 
@@ -338,8 +338,8 @@ class PayoutWithPaymentEntry(PayoutWithDocument):
             self.doc.update({"razorpayx_payout_status": status.title()}).save()
 
     ### HELPERS ###
-    def _get_razorpayx_account(self) -> str:
-        return self.doc.razorpayx_account
+    def _get_razorpayx_setting(self) -> str:
+        return self.doc.razorpayx_setting
 
     def _set_payout_channel(self) -> str:
         match self.doc.razorpayx_payout_mode:
@@ -355,11 +355,11 @@ class PayoutWithPaymentEntry(PayoutWithDocument):
     ) -> RazorPayXPayout | RazorPayXCompositePayout | RazorPayXLinkPayout:
         match self.payout_channel.split(".")[0]:
             case "fund_account":
-                return RazorPayXPayout(self.razorpayx_account)
+                return RazorPayXPayout(self.razorpayx_setting_name)
             case "composite":
-                return RazorPayXCompositePayout(self.razorpayx_account)
+                return RazorPayXCompositePayout(self.razorpayx_setting_name)
             case "link":
-                return RazorPayXLinkPayout(self.razorpayx_account)
+                return RazorPayXLinkPayout(self.razorpayx_setting_name)
 
     def _get_payout_details(self) -> dict:
         return {

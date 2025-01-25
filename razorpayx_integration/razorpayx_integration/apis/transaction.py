@@ -22,7 +22,7 @@ class RazorPayXTransaction(BaseRazorPayXAPI):
 
     # * override base setup
     def setup(self, *args, **kwargs):
-        self.account_number = self.razorpayx_account.account_number
+        self.account_number = self.razorpayx_setting.account_number
 
     ### APIs ###
     def get_by_id(
@@ -103,7 +103,7 @@ class RazorPayXTransaction(BaseRazorPayXAPI):
                 filters["to"] = to_date
 
         if not filters["from"]:
-            filters["from"] = self.razorpayx_account.last_sync_on
+            filters["from"] = self.razorpayx_setting.last_sync_on
 
         # account number is mandatory
         filters["account_number"] = self.account_number

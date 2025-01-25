@@ -7,14 +7,14 @@ from razorpayx_integration.constants import RAZORPAYX_INTEGRATION_DOCTYPE
 
 
 @frappe.request_cache
-def get_razorpayx_account(
+def get_razorpayx_setting(
     identifier: str,
     search_by: Literal["bank_account", "account_id"],
     fields: list[str] | None = None,
     as_dict: bool = True,
 ) -> dict:
     """
-    Fetch the RazorpayX Account Integration name based on the identifier.
+    Fetch the RazorpayX Integration Setting name based on the identifier.
 
     :param identifier: The identifier to search by.
     :param search_by: Field to search by.
@@ -41,7 +41,7 @@ def get_razorpayx_account(
     )
 
 
-def get_enabled_razorpayx_accounts() -> list[str]:
+def get_enabled_razorpayx_settings() -> list[str]:
     return frappe.get_all(
         RAZORPAYX_INTEGRATION_DOCTYPE,
         filters={"disabled": 0},

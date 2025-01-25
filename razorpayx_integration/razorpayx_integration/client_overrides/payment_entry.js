@@ -24,7 +24,7 @@ const PAYOUT_FIELDS = [
 	"contact_email",
 	// Payout Related
 	"paid_amount",
-	"razorpayx_account",
+	"razorpayx_setting",
 	"make_bank_online_payment",
 	"razorpayx_payout_mode",
 	"razorpayx_payout_desc",
@@ -86,16 +86,16 @@ frappe.ui.form.on("Payment Entry", {
 
 	bank_account: async function (frm) {
 		if (!frm.doc.bank_account) {
-			frm.set_value("razorpayx_account", "");
+			frm.set_value("razorpayx_setting", "");
 			frm.set_value("make_bank_online_payment", 0);
 		} else {
-			await set_razorpayx_account(frm);
+			await set_razorpayx_setting(frm);
 		}
 	},
 
 	// TODO: is it good? Ask Question
-	razorpayx_account: function (frm) {
-		if (!frm.doc.razorpayx_account) {
+	razorpayx_setting: function (frm) {
+		if (!frm.doc.razorpayx_setting) {
 			frm.set_value("make_bank_online_payment", 0);
 		}
 	},
@@ -188,7 +188,7 @@ function is_payout_in_inr(frm) {
 }
 
 function is_payout_via_razorpayx(frm) {
-	return frm.doc.make_bank_online_payment && frm.doc.razorpayx_account;
+	return frm.doc.make_bank_online_payment && frm.doc.razorpayx_setting;
 }
 
 function reset_values(frm, ...fields) {
@@ -298,7 +298,7 @@ function show_cancel_payout_dialog(frm, callback) {
 					method: `${PE_BASE_PATH}.cancel_payout`,
 					args: {
 						docname: frm.docname,
-						razorpayx_account: frm.doc.razorpayx_account,
+						razorpayx_setting: frm.doc.razorpayx_setting,
 					},
 				});
 
@@ -316,7 +316,7 @@ function show_cancel_payout_dialog(frm, callback) {
 
 // ############ MAKING PAYOUT HELPERS ############ //
 function can_show_payout_btn(frm) {
-	return frm.doc.docstatus === 1 && !frm.doc.make_bank_online_payment && frm.doc.razorpayx_account;
+	return frm.doc.docstatus === 1 && !frm.doc.make_bank_online_payment && frm.doc.razorpayx_setting;
 }
 
 async function show_make_payout_dialog(frm) {
@@ -350,11 +350,11 @@ async function show_make_payout_dialog(frm) {
 				fieldtype: "Column Break",
 			},
 			{
-				fieldname: "razorpayx_account",
-				label: __("RazorpayX Account"),
+				fieldname: "razorpayx_setting",
+				label: __("RazorPayX Integration Setting"),
 				fieldtype: "Link",
 				options: razorpayx.RPX_DOCTYPE,
-				default: frm.doc.razorpayx_account,
+				default: frm.doc.razorpayx_setting,
 				reqd: 1,
 				hidden: 1,
 				read_only: 1,
@@ -363,7 +363,7 @@ async function show_make_payout_dialog(frm) {
 				fieldname: "party_section_break",
 				label: __("Party Details"),
 				fieldtype: "Section Break",
-				depends_on: "eval: doc.razorpayx_account",
+				depends_on: "eval: doc.razorpayx_setting",
 			},
 			{
 				fieldname: "party_bank_account",
@@ -461,7 +461,7 @@ async function show_make_payout_dialog(frm) {
 				fieldname: "payout_section_break",
 				label: __("Payout Details"),
 				fieldtype: "Section Break",
-				depends_on: "eval: doc.razorpayx_account",
+				depends_on: "eval: doc.razorpayx_setting",
 			},
 			{
 				fieldname: "razorpayx_payout_mode",
@@ -517,7 +517,7 @@ function make_payout(auth_id, docname, values) {
 		args: {
 			auth_id: auth_id,
 			docname: docname,
-			razorpayx_account: values.razorpayx_account,
+			razorpayx_setting: values.razorpayx_setting,
 			payout_mode: values.razorpayx_payout_mode,
 			...values,
 		},
@@ -608,7 +608,7 @@ function is_amended_pe_processed(frm) {
 	return frm.doc?.__onload?.amended_pe_processed;
 }
 
-async function set_razorpayx_account(frm) {
+async function set_razorpayx_setting(frm) {
 	if (!frm.doc.bank_account) return;
 
 	const { message } = await frappe.db.get_value(
@@ -617,7 +617,7 @@ async function set_razorpayx_account(frm) {
 		"name"
 	);
 
-	frm.set_value("razorpayx_account", message?.name || "");
+	frm.set_value("razorpayx_setting", message?.name || "");
 }
 
 function user_has_payout_permissions(frm) {

@@ -19,7 +19,7 @@ from razorpayx_integration.razorpayx_integration.constants.payouts import (
     USER_PAYOUT_MODE,
 )
 from razorpayx_integration.razorpayx_integration.utils import (
-    get_razorpayx_account,
+    get_razorpayx_setting,
 )
 from razorpayx_integration.razorpayx_integration.utils.payout import (
     PayoutWithPaymentEntry,
@@ -77,7 +77,7 @@ def before_submit(doc: PaymentEntry, method=None):
 
 def on_submit(doc: PaymentEntry, method=None):
     # early return
-    if not doc.make_bank_online_payment or not doc.razorpayx_account:
+    if not doc.make_bank_online_payment or not doc.razorpayx_setting:
         return
 
     make_payout_with_razorpayx(doc, auth_id=get_auth_id(doc))
@@ -114,7 +114,7 @@ def set_permission_details_to_onload(doc: PaymentEntry):
         "has_payout_permission",
         user_has_payout_permissions(
             payment_entries=doc.name,
-            razorpayx_account=doc.razorpayx_account,
+            razorpayx_setting=doc.razorpayx_setting,
             throw=False,
         ),
     )
@@ -128,14 +128,14 @@ def set_auto_cancel_settings_to_onload(doc: PaymentEntry):
     """
     if (
         doc.docstatus != 1
-        or not doc.razorpayx_account
+        or not doc.razorpayx_setting
         or not doc.make_bank_online_payment
     ):
         return
 
     doc.set_onload(
         "auto_cancel_payout",
-        should_auto_cancel_payout(doc.razorpayx_account),
+        should_auto_cancel_payout(doc.razorpayx_setting),
     )
 
 
@@ -166,7 +166,7 @@ def validate_amended_pe(doc: PaymentEntry):
         "contact_email",
         # Payout Related
         "paid_amount",
-        "razorpayx_account",
+        "razorpayx_setting",
         "make_bank_online_payment",
         "razorpayx_payout_mode",
         "razorpayx_payout_desc",
@@ -224,39 +224,39 @@ def validate_payout_details(doc: PaymentEntry):
             exc=frappe.MandatoryError,
         )
 
-    set_razorpayx_account(doc)
+    set_razorpayx_setting(doc)
 
     # Maybe other Integration is used to make payment instead of RazorPayX
-    if not doc.razorpayx_account:
+    if not doc.razorpayx_setting:
         return
 
-    validate_razorpayx_account(doc)
+    validate_razorpayx_setting(doc)
 
     set_missing_payout_details(doc)
     validate_party_bank_account(doc)
     validate_payout_modes(doc)
 
 
-def validate_razorpayx_account(doc: PaymentEntry):
+def validate_razorpayx_setting(doc: PaymentEntry):
     """
-    Validate RazorPayX Account.
+    Validate RazorPayX Integration Setting.
 
     :param doc: Payment Entry Document
     """
-    if doc.razorpayx_account_details.name != doc.razorpayx_account:
+    if doc.razorpayx_setting_details.name != doc.razorpayx_setting:
         frappe.throw(
             msg=_(
-                "Company Bank Account is not associated with RazorPayX Account <strong>{0}</strong>."
-            ).format(doc.razorpayx_account),
-            title=_("Invalid RazorPayX Account"),
+                "Company Bank Account is not associated with RazorPayX Setting <strong>{0}</strong>."
+            ).format(doc.razorpayx_setting),
+            title=_("Invalid RazorPayX Setting"),
         )
 
-    if doc.razorpayx_account_details.disabled:
+    if doc.razorpayx_setting_details.disabled:
         frappe.throw(
             msg=_(
-                "RazorPayX Account <strong>{0}</strong> is disabled. Please enable it first to use!"
-            ).format(doc.razorpayx_account),
-            title=_("Invalid RazorPayX Account"),
+                "RazorPayX Setting <strong>{0}</strong> is disabled. Please enable it first to use!"
+            ).format(doc.razorpayx_setting),
+            title=_("Invalid RazorPayX Setting"),
         )
 
 
@@ -424,15 +424,15 @@ def validate_link_payout_mode(doc: PaymentEntry):
 
 
 #### DOC EVENT'S HELPERS ####
-def set_razorpayx_account(doc: PaymentEntry):
+def set_razorpayx_setting(doc: PaymentEntry):
     """
-    Set RazorPayX Account based on Company's Bank Account.
+    Set RazorPayX Integration Setting on Company's Bank Account.
 
     :param doc: Payment Entry Document
     """
     # Fetch RazorpayX Account based on Bank Account (for validation)
-    doc.razorpayx_account_details = (
-        get_razorpayx_account(
+    doc.razorpayx_setting_details = (
+        get_razorpayx_setting(
             identifier=doc.bank_account,
             search_by="bank_account",
             fields=["name", "disabled"],
@@ -440,8 +440,8 @@ def set_razorpayx_account(doc: PaymentEntry):
         or {}
     )
 
-    if not doc.razorpayx_account:
-        doc.razorpayx_account = doc.razorpayx_account_details.name
+    if not doc.razorpayx_setting:
+        doc.razorpayx_setting = doc.razorpayx_setting_details.name
 
 
 def set_missing_payout_details(doc: PaymentEntry):
@@ -559,7 +559,7 @@ def handle_payout_cancellation(
 
         return
 
-    if auto_cancel or should_auto_cancel_payout(doc.razorpayx_account):
+    if auto_cancel or should_auto_cancel_payout(doc.razorpayx_setting):
         PayoutWithPaymentEntry(doc).cancel()
 
 
@@ -593,7 +593,7 @@ def can_cancel_payout(doc: PaymentEntry) -> bool | int:
             PAYOUT_STATUS.NOT_INITIATED.value,
             PAYOUT_STATUS.QUEUED.value,
         ]
-        and doc.razorpayx_account
+        and doc.razorpayx_setting
         and doc.make_bank_online_payment
     )
 
@@ -608,7 +608,7 @@ def can_make_payout(doc: PaymentEntry) -> bool:
         is_base_payout_conditions_met(doc)
         and doc.docstatus == 1
         and doc.make_bank_online_payment
-        and doc.razorpayx_account
+        and doc.razorpayx_setting
         and not doc.razorpayx_payout_id
         and not doc.razorpayx_payout_link_id
     )
@@ -626,29 +626,29 @@ def is_base_payout_conditions_met(doc: PaymentEntry) -> bool:
     )
 
 
-def should_auto_cancel_payout(razorpayx_account: str) -> bool | int:
+def should_auto_cancel_payout(razorpayx_setting: str) -> bool | int:
     """
     Check if the Payout should be auto cancelled or not.
 
-    :param razorpayx_account: RazorPayX Account name
+    :param razorpayx_setting: RazorPayX Integration Setting name
     """
     return frappe.db.get_value(
-        INTEGRATION_DOCTYPE, razorpayx_account, "auto_cancel_payout"
+        INTEGRATION_DOCTYPE, razorpayx_setting, "auto_cancel_payout"
     )
 
 
 ### APIs ###
 @frappe.whitelist()
-def cancel_payout(docname: str, razorpayx_account: str):
+def cancel_payout(docname: str, razorpayx_setting: str):
     """
     Cancel Payout or Payout Link for the Payment Entry.
 
     :param docname: Payment Entry name
-    :param razorpayx_account: RazorPayX Account name associated to company bank account
+    :param razorpayx_setting: RazorPayX Integration Setting name associated to company bank account
     """
     user_has_payout_permissions(
         docname,
-        razorpayx_account,
+        razorpayx_setting,
         pe_permission="cancel",
         throw=True,
     )
@@ -661,7 +661,7 @@ def cancel_payout(docname: str, razorpayx_account: str):
 def make_payout_with_payment_entry(
     auth_id: str,
     docname: str,
-    razorpayx_account: str,
+    razorpayx_setting: str,
     payout_mode: PAYOUT_MODES = USER_PAYOUT_MODE.LINK.value,
     **kwargs,
 ):
@@ -670,19 +670,19 @@ def make_payout_with_payment_entry(
 
     :param auth_id: Authentication ID (after otp or password verification)
     :param docname: Payment Entry name
-    :param razorpayx_account: RazorPayX Account name associated to company bank account
+    :param razorpayx_setting: RazorPayX Integration Setting name associated to company bank account
     :param payout_mode: Payout Mode (Bank, UPI, Link)
     """
 
     def filter_non_empty_details(details: dict):
         return {key: value for key, value in details.items() if value}
 
-    user_has_payout_permissions(docname, razorpayx_account, throw=True)
+    user_has_payout_permissions(docname, razorpayx_setting, throw=True)
 
     doc = frappe.get_doc("Payment Entry", docname)
 
     # Early validations
-    if doc.razorpayx_account != razorpayx_account:
+    if doc.razorpayx_setting != razorpayx_setting:
         frappe.throw(
             msg=_("RazorPayX Account mismatched with Payment Entry."),
             title=_("Invalid RazorPayX Account"),
