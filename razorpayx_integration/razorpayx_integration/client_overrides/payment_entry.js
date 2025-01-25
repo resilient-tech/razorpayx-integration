@@ -79,7 +79,9 @@ frappe.ui.form.on("Payment Entry", {
 			frm.set_value("razorpayx_pay_instantaneously", 0);
 		}
 
-		validate_payout_description(frm);
+		if (is_payout_via_razorpayx(frm)) {
+			validate_payout_description(frm.doc.razorpayx_payout_desc);
+		}
 	},
 
 	bank_account: async function (frm) {
@@ -485,13 +487,15 @@ async function show_make_payout_dialog(frm) {
 				fieldname: "razorpayx_payout_desc",
 				label: __("Payout Description"),
 				fieldtype: "Data",
+				length: 30,
 				mandatory_depends_on: `eval: ${LINK_MODE}`,
 			},
 		],
 		primary_action_label: __("{0} Pay", [frappe.utils.icon(razorpayx.PAY_ICON)]),
 		primary_action: (values) => {
+			validate_payout_description(values.razorpayx_payout_desc);
+
 			payment_utils.authenticate_payment_entries(frm.docname, async (auth_id) => {
-				// TODO: Test this
 				await make_payout(auth_id, frm.docname, values);
 
 				frappe.show_alert({
@@ -588,24 +592,22 @@ async function disable_payout_fields_in_amendment(frm) {
 	frm.toggle_enable(PAYOUT_FIELDS, amended_processed ? 0 : 1);
 }
 
-function is_amended_pe_processed(frm) {
-	return frm.doc?.__onload?.amended_pe_processed;
-}
-
-function validate_payout_description(frm) {
-	const description = frm.doc.razorpayx_payout_desc;
-	if (!is_payout_via_razorpayx() || !description || DESCRIPTION_REGEX.test(description)) return;
+function validate_payout_description(description) {
+	if (!description || DESCRIPTION_REGEX.test(description)) return;
 
 	frappe.throw({
 		message: __(
-			"Invalid Description: {0}.<br> Must be alphanumeric and space only with max 30 characters",
-			[description]
+			"Must be <strong>alphanumeric</strong> and contain <strong>spaces</strong> only, with a maximum of <strong>30</strong> characters."
 		),
 		title: __("Invalid RazorPayX Payout Description"),
 	});
 }
 
 // ############ UTILITY ############ //
+function is_amended_pe_processed(frm) {
+	return frm.doc?.__onload?.amended_pe_processed;
+}
+
 async function set_razorpayx_account(frm) {
 	if (!frm.doc.bank_account) return;
 
