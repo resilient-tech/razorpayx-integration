@@ -80,6 +80,7 @@ CUSTOM_FIELDS = {
             "insert_after": "razorpayx_payout_cb",
             "depends_on": "eval: doc.make_bank_online_payment",
             "mandatory_depends_on": f"eval:doc.make_bank_online_payment && doc.razorpayx_payout_mode === '{USER_PAYOUT_MODE.LINK.value}'",
+            "length": 30,
             "permlevel": PERMISSION_LEVEL.SEVEN.value,
         },
         {
