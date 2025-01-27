@@ -32,4 +32,10 @@ doc_events = {
     },
 }
 
+scheduler_events = {
+    "daily": [
+        "razorpayx_integration.razorpayx_integration.utils.transaction.sync_transactions_periodically"
+    ]
+}
+
 before_payment_authentication = "razorpayx_integration.razorpayx_integration.utils.permission.before_payment_authentication"

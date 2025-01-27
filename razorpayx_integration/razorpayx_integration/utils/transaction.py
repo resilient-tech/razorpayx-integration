@@ -235,9 +235,22 @@ def sync_transactions_periodically():
     """
     today = getdate()
 
-    for setting in frappe.get_all(
-        INTEGRATION_DOCTYPE, filters={"disabled": 0}, fields=["name"]
-    ):
-        RazorpayBankTransaction(setting["name"]).sync()
+    settings = frappe.get_all(
+        doctype=INTEGRATION_DOCTYPE,
+        filters={"disabled": 0},
+        fields=["name", "bank_account"],
+    )
 
-        frappe.db.set_value(INTEGRATION_DOCTYPE, setting["name"], "last_sync_on", today)
+    if not settings:
+        return
+
+    for setting in settings:
+        RazorpayBankTransaction(setting.name, bank_account=setting.bank_account).sync()
+
+    # update last sync date
+    frappe.db.set_value(
+        INTEGRATION_DOCTYPE,
+        {"name": ["in", {setting.name for setting in settings}]},
+        "last_sync_on",
+        today,
+    )
