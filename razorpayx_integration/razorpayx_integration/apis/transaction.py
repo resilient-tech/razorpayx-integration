@@ -51,7 +51,6 @@ class RazorPayXTransaction(BaseRazorPayXAPI):
     def get_all(
         self,
         *,
-        filters: dict | None = None,
         from_date: DateTimeLikeObject | None = None,
         to_date: DateTimeLikeObject | None = None,
         count: int | None = None,
@@ -93,16 +92,15 @@ class RazorPayXTransaction(BaseRazorPayXAPI):
         ---
         Reference: https://razorpay.com/docs/api/x/transactions/fetch-all
         """
-        if not filters:
-            filters = {}
+        filters = {}
 
-            if from_date:
-                filters["from"] = from_date
+        if from_date:
+            filters["from"] = from_date
 
-            if to_date:
-                filters["to"] = to_date
+        if to_date:
+            filters["to"] = to_date
 
-        if not filters["from"]:
+        if "from" not in filters:
             filters["from"] = self.razorpayx_setting.last_sync_on
 
         # account number is mandatory
@@ -138,7 +136,8 @@ class RazorPayXTransaction(BaseRazorPayXAPI):
         self._set_service_details_to_ir_log("Get Transactions For Today")
 
         return self.get_all(
-            filters={"from": today_date, "to": today_date},
+            from_date=today_date,
+            to_date=today_date,
             count=count,
             source_doctype=source_doctype,
             source_docname=source_docname,
@@ -160,7 +159,8 @@ class RazorPayXTransaction(BaseRazorPayXAPI):
         self._set_service_details_to_ir_log("Get Transactions For Date")
 
         return self.get_all(
-            filters={"from": date, "to": date},
+            from_date=date,
+            to_date=date,
             count=count,
             source_doctype=source_doctype,
             source_docname=source_docname,
