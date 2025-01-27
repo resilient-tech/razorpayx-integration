@@ -14,75 +14,6 @@ from razorpayx_integration.razorpayx_integration.apis.transaction import (
 )
 
 
-@frappe.whitelist()
-def sync_transactions_for_reconcile(bank_account: str):
-    """
-    Sync RazorPayX bank account transactions.
-
-    Syncs from the last sync date to the current date.
-
-    If last sync date is not set, it will sync all transactions.
-
-    :param bank_account: Company Bank Account
-    """
-    BRT = "Bank Reconciliation Tool"
-    frappe.has_permission(BRT, throw=True)
-
-    razorpayx_setting = frappe.db.get_value(
-        INTEGRATION_DOCTYPE, {"bank_account": bank_account}
-    )
-
-    if not razorpayx_setting:
-        frappe.throw(
-            _("RazorPayX Integration Setting not found for Bank Account {0}").format(
-                bank_account
-            )
-        )
-
-    RazorpayBankTransaction(
-        razorpayx_setting, source_docname=BRT, source_doctype=BRT
-    ).sync()
-
-
-# TODO: we need to enqueue this or not!!
-@frappe.whitelist()
-def sync_razorpayx_transactions(
-    razorpayx_setting: str, from_date: DateTimeLikeObject, to_date: DateTimeLikeObject
-):
-    """
-    Sync RazorPayX bank account transactions.
-
-    :param razorpayx_setting: RazorPayX Integration Setting which has the bank account.
-    :param from_date: Start Date
-    :param to_date: End Date
-    """
-    frappe.has_permission(INTEGRATION_DOCTYPE, throw=True)
-
-    RazorpayBankTransaction(
-        razorpayx_setting,
-        from_date,
-        to_date,
-        source_doctype=INTEGRATION_DOCTYPE,
-        source_docname=razorpayx_setting,
-    ).sync()
-
-
-def sync_transactions_periodically():
-    """
-    Sync all enabled RazorPayX bank account transactions.
-
-    Called by scheduler.
-    """
-    today = getdate()
-
-    for setting in frappe.get_all(
-        INTEGRATION_DOCTYPE, filters={"disabled": 0}, fields=["name"]
-    ):
-        RazorpayBankTransaction(setting["name"]).sync()
-
-        frappe.db.set_value(INTEGRATION_DOCTYPE, setting["name"], "last_sync_on", today)
-
-
 class RazorpayBankTransaction:
     def __init__(
         self,
@@ -90,6 +21,7 @@ class RazorpayBankTransaction:
         from_date: DateTimeLikeObject | None = None,
         to_date: DateTimeLikeObject | None = None,
         *,
+        bank_account: str | None = None,
         source_doctype: str | None = None,
         source_docname: str | None = None,
     ):
@@ -99,9 +31,20 @@ class RazorpayBankTransaction:
         self.source_doctype = source_doctype
         self.source_docname = source_docname
 
-        self.bank_account = frappe.db.get_value(
-            INTEGRATION_DOCTYPE, razorpayx_setting, "bank_account"
-        )
+        if not bank_account:
+            bank_account = frappe.db.get_value(
+                INTEGRATION_DOCTYPE, razorpayx_setting, "bank_account"
+            )
+
+        if not bank_account:
+            frappe.throw(
+                msg=_(
+                    "Company Bank Account not found for RazorPayX Integration Setting <strong>{0}</strong>"
+                ).format(razorpayx_setting),
+                title=_("Company Bank Account Not Found"),
+            )
+
+        self.bank_account = bank_account
 
     def sync(self):
         transactions = self.fetch_transactions()
@@ -215,3 +158,84 @@ class RazorpayBankTransaction:
 
     def create(self, mapped_transaction: dict):
         return frappe.get_doc(mapped_transaction).insert()
+
+
+@frappe.whitelist()
+def sync_transactions_for_reconcile(
+    bank_account: str, razorpayx_setting: str | None = None
+):
+    """
+    Sync RazorPayX bank account transactions.
+
+    Syncs from the last sync date to the current date.
+
+    If last sync date is not set, it will sync all transactions.
+
+    :param bank_account: Company Bank Account
+    :param razorpayx_setting: RazorPayX Integration Setting
+    """
+    BRT = "Bank Reconciliation Tool"
+    frappe.has_permission(BRT, throw=True)
+
+    if not razorpayx_setting:
+        razorpayx_setting = frappe.db.get_value(
+            INTEGRATION_DOCTYPE, {"bank_account": bank_account}
+        )
+
+    if not razorpayx_setting:
+        frappe.throw(
+            _("RazorPayX Integration Setting not found for Bank Account {0}").format(
+                bank_account
+            )
+        )
+
+    RazorpayBankTransaction(
+        razorpayx_setting,
+        bank_account=bank_account,
+        source_docname=BRT,
+        source_doctype=BRT,
+    ).sync()
+
+
+# TODO: we need to enqueue this or not!!
+@frappe.whitelist()
+def sync_razorpayx_transactions(
+    razorpayx_setting: str,
+    from_date: DateTimeLikeObject,
+    to_date: DateTimeLikeObject,
+    bank_account: str | None = None,
+):
+    """
+    Sync RazorPayX bank account transactions.
+
+    :param razorpayx_setting: RazorPayX Integration Setting which has the bank account.
+    :param from_date: Start Date
+    :param to_date: End Date
+    :param bank_account: Company Bank Account
+    """
+    frappe.has_permission(INTEGRATION_DOCTYPE, throw=True)
+
+    RazorpayBankTransaction(
+        razorpayx_setting,
+        from_date,
+        to_date,
+        bank_account=bank_account,
+        source_doctype=INTEGRATION_DOCTYPE,
+        source_docname=razorpayx_setting,
+    ).sync()
+
+
+def sync_transactions_periodically():
+    """
+    Sync all enabled RazorPayX bank account transactions.
+
+    Called by scheduler.
+    """
+    today = getdate()
+
+    for setting in frappe.get_all(
+        INTEGRATION_DOCTYPE, filters={"disabled": 0}, fields=["name"]
+    ):
+        RazorpayBankTransaction(setting["name"]).sync()
+
+        frappe.db.set_value(INTEGRATION_DOCTYPE, setting["name"], "last_sync_on", today)

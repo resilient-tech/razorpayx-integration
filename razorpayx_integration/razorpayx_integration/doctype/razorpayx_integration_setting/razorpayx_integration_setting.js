@@ -61,8 +61,7 @@ function prompt_transactions_sync_date(frm) {
 		],
 		primary_action_label: __("{0} Sync", [frappe.utils.icon("refresh")]),
 		primary_action: function (values) {
-			const [from_date, to_date] = values.date_range;
-			sync_transactions(frm.docname, from_date, to_date);
+			sync_transactions(frm.docname, frm.doc.bank_account, ...values.date_range);
 			dialog.hide();
 		},
 		size: "small",
@@ -78,7 +77,7 @@ function prompt_transactions_sync_date(frm) {
 	dialog.show();
 }
 
-function sync_transactions(razorpayx_setting, from_date, to_date) {
+function sync_transactions(razorpayx_setting, bank_account, from_date, to_date) {
 	frappe.show_alert({
 		message: __("Syncing Transactions from <strong>{0}</strong> to <strong>{1}</strong>", [
 			razorpayx.get_date_in_user_fmt(from_date),
@@ -89,7 +88,7 @@ function sync_transactions(razorpayx_setting, from_date, to_date) {
 
 	frappe.call({
 		method: "razorpayx_integration.razorpayx_integration.utils.transaction.sync_razorpayx_transactions",
-		args: { razorpayx_setting, from_date, to_date },
+		args: { razorpayx_setting, bank_account, from_date, to_date },
 		callback: function (r) {
 			//TODO: If it is enqueued, need changes!!
 			if (!r.exc) {
