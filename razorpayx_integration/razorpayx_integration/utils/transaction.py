@@ -142,7 +142,9 @@ class RazorpayBankTransaction:
                 return "\n".join(notes)
             return notes
 
-        source = transaction.get("source", {})
+        # Some transactions do not have source
+        source = transaction.get("source") or {}
+
         mapped = {
             "doctype": "Bank Transaction",
             "bank_account": self.bank_account,
@@ -158,11 +160,14 @@ class RazorpayBankTransaction:
         }
 
         # auto reconciliation
-        self.set_matching_payment_entry(source, mapped)
+        self.set_matching_payment_entry(mapped, source)
 
         return mapped
 
-    def set_matching_payment_entry(self, source: dict, mapped: dict):
+    def set_matching_payment_entry(self, mapped: dict, source: dict | None = None):
+        if not source:
+            return
+
         def get_payment_entry(**filters):
             # TODO: confirm company or bank account
             return frappe.db.get_value(
