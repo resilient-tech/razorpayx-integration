@@ -88,7 +88,7 @@ function sync_transactions(razorpayx_setting, from_date, to_date) {
 	});
 
 	frappe.call({
-		method: "razorpayx_integration.razorpayx_integration.utils.transaction.sync_transactions_for",
+		method: "razorpayx_integration.razorpayx_integration.utils.transaction.sync_razorpayx_transactions",
 		args: { razorpayx_setting, from_date, to_date },
 		callback: function (r) {
 			//TODO: If it is enqueued, need changes!!

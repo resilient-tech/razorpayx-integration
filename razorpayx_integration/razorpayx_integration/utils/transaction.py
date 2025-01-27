@@ -50,7 +50,7 @@ def sync_razorpayx_transactions(
     razorpayx_setting: str, from_date: DateTimeLikeObject, to_date: DateTimeLikeObject
 ):
     """
-    Sync bank transactions for the given RazorPayX account.
+    Sync RazorPayX bank account transactions.
 
     :param razorpayx_setting: RazorPayX Integration Setting which has the bank account.
     :param from_date: Start Date

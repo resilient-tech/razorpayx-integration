@@ -23,7 +23,7 @@ frappe.ui.form.on("Bank Reconciliation Tool", {
 
 function sync_transactions(bank_account) {
 	return frappe.call({
-		method: "razorpayx_integration.razorpayx_integration.utils.transaction.sync_transactions_now",
+		method: "razorpayx_integration.razorpayx_integration.utils.transaction.sync_transactions_for_reconcile",
 		args: { bank_account },
 		freeze: true,
 		freeze_message: __("Syncing Transactions ..."),
