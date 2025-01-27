@@ -14,6 +14,7 @@ from razorpayx_integration.razorpayx_integration.apis.transaction import (
 )
 
 
+######### PROCESSOR #########
 class RazorpayBankTransaction:
     def __init__(
         self,
@@ -160,6 +161,7 @@ class RazorpayBankTransaction:
         return frappe.get_doc(mapped_transaction).insert()
 
 
+######### APIs #########
 @frappe.whitelist()
 def sync_transactions_for_reconcile(
     bank_account: str, razorpayx_setting: str | None = None
@@ -184,9 +186,9 @@ def sync_transactions_for_reconcile(
 
     if not razorpayx_setting:
         frappe.throw(
-            _("RazorPayX Integration Setting not found for Bank Account {0}").format(
-                bank_account
-            )
+            _(
+                "RazorPayX Integration Setting not found for Bank Account <strong>{0}</strong>"
+            ).format(bank_account)
         )
 
     RazorpayBankTransaction(
