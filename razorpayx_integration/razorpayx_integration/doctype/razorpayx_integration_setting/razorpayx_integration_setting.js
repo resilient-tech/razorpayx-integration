@@ -91,7 +91,7 @@ function sync_transactions(razorpayx_setting, from_date, to_date) {
 		method: "razorpayx_integration.razorpayx_integration.utils.transaction.sync_transactions_for",
 		args: { razorpayx_setting, from_date, to_date },
 		callback: function (r) {
-			// If it is enqueued, need changes!!
+			//TODO: If it is enqueued, need changes!!
 			if (!r.exc) {
 				frappe.show_alert({
 					message: __("<strong>{0}</strong> transactions synced successfully!", [
