@@ -14,11 +14,11 @@ app_include_js = "razorpayx_integration.bundle.js"
 export_python_type_annotations = True
 
 doctype_js = {
-    "Payment Entry": "razorpayx_integration/client_overrides/payment_entry.js",
+    "Payment Entry": "razorpayx_integration/client_overrides/form/payment_entry.js",
 }
 
 doctype_list_js = {
-    "Payment Entry": "razorpayx_integration/client_overrides/payment_entry_list.js",
+    "Payment Entry": "razorpayx_integration/client_overrides/list/payment_entry_list.js",
 }
 
 doc_events = {
