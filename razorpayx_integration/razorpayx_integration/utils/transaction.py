@@ -13,15 +13,21 @@ from razorpayx_integration.razorpayx_integration.apis.transaction import (
     RazorPayXTransaction,
 )
 
-# TODO: we need to enqueue this or not!!
 
-
-# TODO: Permissions check
 @frappe.whitelist()
-def sync_transactions_now(bank_account: str):
+def sync_transactions_for_reconcile(bank_account: str):
     """
-    From Bank Reconciliation Tool
+    Sync RazorPayX bank account transactions.
+
+    Syncs from the last sync date to the current date.
+
+    If last sync date is not set, it will sync all transactions.
+
+    :param bank_account: Company Bank Account
     """
+    BRT = "Bank Reconciliation Tool"
+    frappe.has_permission(BRT, throw=True)
+
     razorpayx_setting = frappe.db.get_value(
         INTEGRATION_DOCTYPE, {"bank_account": bank_account}
     )
@@ -33,15 +39,22 @@ def sync_transactions_now(bank_account: str):
             )
         )
 
-    RazorpayBankTransaction(razorpayx_setting).sync()
+    RazorpayBankTransaction(
+        razorpayx_setting, source_docname=BRT, source_doctype=BRT
+    ).sync()
 
 
+# TODO: we need to enqueue this or not!!
 @frappe.whitelist()
-def sync_transactions_for(
+def sync_razorpayx_transactions(
     razorpayx_setting: str, from_date: DateTimeLikeObject, to_date: DateTimeLikeObject
 ):
     """
-    From RazorPayX Integration Setting
+    Sync bank transactions for the given RazorPayX account.
+
+    :param razorpayx_setting: RazorPayX Integration Setting which has the bank account.
+    :param from_date: Start Date
+    :param to_date: End Date
     """
     frappe.has_permission(INTEGRATION_DOCTYPE, throw=True)
 
@@ -56,7 +69,9 @@ def sync_transactions_for(
 
 def sync_transactions_periodically():
     """
-    Cron Job
+    Sync all enabled RazorPayX bank account transactions.
+
+    Called by scheduler.
     """
     today = getdate()
 
