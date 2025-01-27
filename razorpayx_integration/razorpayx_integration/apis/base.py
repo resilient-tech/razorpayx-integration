@@ -59,6 +59,8 @@ class BaseRazorPayXAPI:
             self.razorpayx_setting.key_id,
             self.razorpayx_setting.get_password("key_secret"),
         )
+        self.source_doctype = None  # Source doctype for Integration Request Log
+        self.source_docname = None  # Source docname for Integration Request Log
         self.default_headers = {}  # Default headers for API request
         self.default_log_values = {}  # Show value in Integration Request Log
         self.ir_service_set = False  # Service details in IR log has been set or not
