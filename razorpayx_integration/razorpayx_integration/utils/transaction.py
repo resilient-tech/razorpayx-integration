@@ -32,16 +32,21 @@ class RazorpayBankTransaction:
         self.source_doctype = source_doctype
         self.source_docname = source_docname
 
+        self.set_bank_account(bank_account)
+
+    def set_bank_account(self, bank_account: str | None = None):
         if not bank_account:
             bank_account = frappe.db.get_value(
-                INTEGRATION_DOCTYPE, razorpayx_setting, "bank_account"
+                doctype=INTEGRATION_DOCTYPE,
+                filters=self.razorpayx_setting,
+                fieldname="bank_account",
             )
 
         if not bank_account:
             frappe.throw(
                 msg=_(
                     "Company Bank Account not found for RazorPayX Integration Setting <strong>{0}</strong>"
-                ).format(razorpayx_setting),
+                ).format(self.razorpayx_setting),
                 title=_("Company Bank Account Not Found"),
             )
 
@@ -61,7 +66,10 @@ class RazorpayBankTransaction:
 
             self.create(self.map(transaction))
 
-    def fetch_transactions(self):
+    def fetch_transactions(self) -> list[dict] | None:
+        """
+        Fetching Bank Transactions from RazorPayX API.
+        """
         try:
             return RazorPayXTransaction(self.razorpayx_setting).get_all(
                 from_date=self.from_date,
@@ -72,29 +80,45 @@ class RazorpayBankTransaction:
 
         except Exception:
             frappe.log_error(
-                message=frappe.get_traceback(),
                 title=(
-                    f"Failed to Fetch RazorPayX Transactions for Account: {self.razorpayx_setting}"
+                    f"Failed to Fetch RazorPayX Transactions for Setting: {self.razorpayx_setting}"
                 ),
+                message=frappe.get_traceback(),
+                reference_doctype=INTEGRATION_DOCTYPE,
+                reference_name=self.razorpayx_setting,
             )
 
-    def get_existing_transactions(self, transactions: list):
-        transaction_ids = [transaction["id"] for transaction in transactions]
+    def get_existing_transactions(self, transactions: list[str]) -> set[str]:
+        """
+        Get existing bank account transactions from the ERPNext database.
 
+        :param transactions: List of transactions from RazorPayX API.
+        """
         return set(
             frappe.get_all(
                 "Bank Transaction",
                 filters={
                     "bank_account": self.bank_account,
-                    "transaction_id": ("in", transaction_ids),
+                    "transaction_id": (
+                        "in",
+                        {transaction["id"] for transaction in transactions},
+                    ),
                 },
                 pluck="transaction_id",
             )
         )
 
     def map(self, transaction: dict):
-        def format_notes(notes):
-            # TODO: notes for external transactions
+        """
+        Map RazorPayX transaction to ERPNext's Bank Transaction.
+
+        :param transaction: RazorPayX Transaction
+        """
+
+        def format_notes(source):
+            # TODO: Needs description of payout/bank transfer or other transactions
+            notes = source.get("notes")
+
             if isinstance(notes, dict):
                 return "\n".join(notes.values())
             elif isinstance(notes, list | tuple):
@@ -113,8 +137,8 @@ class RazorpayBankTransaction:
             "withdrawal": paisa_to_rupees(transaction["debit"]),
             "closing_balance": paisa_to_rupees(transaction["balance"]),
             "currency": transaction["currency"],
-            "transaction_type": source.get("mode", ""),
-            "description": format_notes(source.get("notes", "")),
+            "transaction_type": source.get("mode"),
+            "description": format_notes(source),
             "reference_number": source.get("utr") or source.get("bank_reference"),
         }
 
@@ -157,6 +181,7 @@ class RazorpayBankTransaction:
             }
         ]
 
+    # TODO: can use bulk insert?
     def create(self, mapped_transaction: dict):
         return frappe.get_doc(mapped_transaction).insert()
 
@@ -250,7 +275,7 @@ def sync_transactions_periodically():
     # update last sync date
     frappe.db.set_value(
         INTEGRATION_DOCTYPE,
-        {"name": ["in", {setting.name for setting in settings}]},
+        {"name": ("in", {setting.name for setting in settings})},
         "last_sync_on",
         today,
     )
