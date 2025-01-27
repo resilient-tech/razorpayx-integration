@@ -3,7 +3,7 @@ from frappe import _
 from frappe.utils import DateTimeLikeObject, getdate
 
 from razorpayx_integration.constants import (
-    RAZORPAYX_INTEGRATION_DOCTYPE,
+    RAZORPAYX_INTEGRATION_DOCTYPE as INTEGRATION_DOCTYPE,
 )
 from razorpayx_integration.payment_utils.utils import (
     get_str_datetime_from_epoch,
@@ -13,6 +13,8 @@ from razorpayx_integration.razorpayx_integration.apis.transaction import (
     RazorPayXTransaction,
 )
 
+# TODO: we need to enqueue this or not!!
+
 
 # TODO: Permissions check
 @frappe.whitelist()
@@ -21,7 +23,7 @@ def sync_transactions_now(bank_account: str):
     From Bank Reconciliation Tool
     """
     razorpayx_setting = frappe.db.get_value(
-        RAZORPAYX_INTEGRATION_DOCTYPE, {"bank_account": bank_account}
+        INTEGRATION_DOCTYPE, {"bank_account": bank_account}
     )
 
     if not razorpayx_setting:
@@ -41,7 +43,15 @@ def sync_transactions_for(
     """
     From RazorPayX Integration Setting
     """
-    RazorpayBankTransaction(razorpayx_setting, from_date, to_date).sync()
+    frappe.has_permission(INTEGRATION_DOCTYPE, throw=True)
+
+    RazorpayBankTransaction(
+        razorpayx_setting,
+        from_date,
+        to_date,
+        source_doctype=INTEGRATION_DOCTYPE,
+        source_docname=razorpayx_setting,
+    ).sync()
 
 
 def sync_transactions_periodically():
@@ -51,33 +61,39 @@ def sync_transactions_periodically():
     today = getdate()
 
     for setting in frappe.get_all(
-        RAZORPAYX_INTEGRATION_DOCTYPE, filters={"disabled": 0}, fields=["name"]
+        INTEGRATION_DOCTYPE, filters={"disabled": 0}, fields=["name"]
     ):
         RazorpayBankTransaction(setting["name"]).sync()
 
-        frappe.db.set_value(
-            RAZORPAYX_INTEGRATION_DOCTYPE, setting["name"], "last_sync_on", today
-        )
+        frappe.db.set_value(INTEGRATION_DOCTYPE, setting["name"], "last_sync_on", today)
 
 
 class RazorpayBankTransaction:
-
     def __init__(
         self,
-        razorypayx_setting: str,
+        razorpayx_setting: str,
         from_date: DateTimeLikeObject | None = None,
         to_date: DateTimeLikeObject | None = None,
+        *,
+        source_doctype: str | None = None,
+        source_docname: str | None = None,
     ):
-        self.razorypayx_setting = razorypayx_setting
+        self.razorpayx_setting = razorpayx_setting
         self.from_date = from_date
         self.to_date = to_date
+        self.source_doctype = source_doctype
+        self.source_docname = source_docname
 
         self.bank_account = frappe.db.get_value(
-            RAZORPAYX_INTEGRATION_DOCTYPE, razorypayx_setting, "bank_account"
+            INTEGRATION_DOCTYPE, razorpayx_setting, "bank_account"
         )
 
     def sync(self):
         transactions = self.fetch_transactions()
+
+        if not transactions:
+            return
+
         existing_transactions = self.get_existing_transactions(transactions)
 
         for transaction in transactions:
@@ -88,15 +104,18 @@ class RazorpayBankTransaction:
 
     def fetch_transactions(self):
         try:
-            return RazorPayXTransaction(self.razorypayx_setting).get_all(
-                from_date=self.from_date, to_date=self.to_date
+            return RazorPayXTransaction(self.razorpayx_setting).get_all(
+                from_date=self.from_date,
+                to_date=self.to_date,
+                source_doctype=self.source_doctype,
+                source_docname=self.source_docname,
             )
 
         except Exception:
             frappe.log_error(
                 message=frappe.get_traceback(),
                 title=(
-                    f"Failed to Fetch RazorPayX Transactions for Account: {self.razorypayx_setting}"
+                    f"Failed to Fetch RazorPayX Transactions for Account: {self.razorpayx_setting}"
                 ),
             )
 
@@ -152,6 +171,8 @@ class RazorpayBankTransaction:
                 fieldname=["name", "paid_amount"],
                 as_dict=True,
             )
+
+        payment_entry = None
 
         # reconciliation with payout_id
         if source.get("entity") == "payout":
