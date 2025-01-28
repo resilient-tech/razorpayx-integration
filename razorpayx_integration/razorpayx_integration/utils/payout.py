@@ -106,7 +106,7 @@ class PayoutWithDocument(ABC):
         """
         Make payout with given document.
 
-        :param auth_id: Authorization ID for making payout.
+        :param auth_id: Authentication ID for making payout.
         """
         self.is_authenticated_payout(auth_id)
 
@@ -301,7 +301,7 @@ class PayoutWithPaymentEntry(PayoutWithDocument):
         """
         Make payout with given Payment Entry.
 
-        :param auth_id: Authorization ID for making payout.
+        :param auth_id: Authentication ID for making payout.
         """
         response = super().make_payout(auth_id)
         self._update_pe_after_payout(response)
