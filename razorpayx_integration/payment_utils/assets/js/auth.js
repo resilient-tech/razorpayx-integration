@@ -38,7 +38,7 @@ Object.assign(payment_utils, {
 			fields: fields,
 			primary_action_label: __("{0} Authenticate", [frappe.utils.icon("permission")]),
 			primary_action: async (values) => {
-				const { verified, message } = await this.verify_otp(
+				const { verified, message } = await this.verify_authenticator(
 					values.authenticator,
 					generation_details.auth_id,
 					generation_details.method === AUTH_METHODS.PASSWORD
@@ -108,11 +108,11 @@ Object.assign(payment_utils, {
 	},
 
 	/**
-	 * Verify the OTP for the given auth_id.
+	 * Verify the authenticator for the given auth_id.
 	 *
 	 * @param {string} authenticator OTP or Password
 	 * @param {string} auth_id Authentication ID
-	 *
+	 * @param {boolean} is_password Flag to verify password
 	 * ---
 	 * Example Response:
 	 * ```js
@@ -122,14 +122,14 @@ Object.assign(payment_utils, {
 	 * }
 	 * ```
 	 */
-	async verify_otp(authenticator, auth_id, is_password = false) {
+	async verify_authenticator(authenticator, auth_id, is_password = false) {
 		const get_freeze_message = () => (is_password ? __("Verifying Password...") : __("Verifying OTP..."));
 
 		const response = await frappe.call({
-			method: `${BASE_AUTH_PATH}.verify_otp`,
+			method: `${BASE_AUTH_PATH}.verify_authenticator`,
 			args: {
-				otp: authenticator,
-				auth_id: auth_id,
+				authenticator,
+				auth_id,
 			},
 			freeze: true,
 			freeze_message: get_freeze_message(),
@@ -170,16 +170,16 @@ Object.assign(payment_utils, {
 		// Update dialog details based on the verification method
 		switch (method) {
 			case AUTH_METHODS.OTP_APP:
-				dialog_title = __("Authenticate using OTP App");
+				dialog_title = __("Authenticate Using OTP App");
 				break;
 			case AUTH_METHODS.SMS:
-				dialog_title = __("Authenticate using SMS");
+				dialog_title = __("Authenticate Using SMS");
 				break;
 			case AUTH_METHODS.EMAIL:
-				dialog_title = __("Authenticate using Email");
+				dialog_title = __("Authenticate Using Email");
 				break;
 			case AUTH_METHODS.PASSWORD:
-				dialog_title = __("Authenticate using Password");
+				dialog_title = __("Authenticate Using Password");
 				auth_field.label = __("Password");
 				auth_field.fieldtype = "Password";
 				break;
