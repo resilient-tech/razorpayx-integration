@@ -16,6 +16,7 @@ export_python_type_annotations = True
 doctype_js = {
     "Payment Entry": "razorpayx_integration/client_overrides/form/payment_entry.js",
     "Bank Reconciliation Tool": "razorpayx_integration/client_overrides/form/bank_reconciliation_tool.js",
+    "User": "payment_utils/client_overrides/user.js",
 }
 
 doctype_list_js = {
