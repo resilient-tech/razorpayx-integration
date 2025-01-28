@@ -479,6 +479,14 @@ class TransactionWebhook(PayoutWebhook):
     Reference: https://razorpay.com/docs/webhooks/payloads/x/transactions/
     """
 
+    ### APIs ###
+    def process_webhook(self, *args, **kwargs):
+        """
+        Process RazorpayX Payout Related Webhooks.
+        """
+        self.update_payment_entry()
+        self.update_bank_transaction()
+
     ### SETUP ###
     def setup_respective_webhook_payload(self):
         """
@@ -495,6 +503,8 @@ class TransactionWebhook(PayoutWebhook):
                     return self.transaction_source.get("id")
                 case TRANSACTION_TYPE.REVERSAL.value:
                     return self.transaction_source.get("payout_id")
+
+        self.transaction_id = self.payload_entity.get("id")
 
         if self.payload_entity:
             self.transaction_source = self.payload_entity.get("source") or {}
@@ -533,6 +543,31 @@ class TransactionWebhook(PayoutWebhook):
 
         self.source_doc.db_set(values)
         self.update_payout_status(self.status)
+
+    def update_bank_transaction(self):
+        """
+        Update Bank Transaction based on the webhook entity.
+
+        When Bank Transaction already created without `UTR` in `Processing` State.
+
+        So, when `Processed` or `Reversed`, update the Bank Transaction with `UTR`.
+        """
+        if not self.utr or not self.transaction_id:
+            return
+
+        bank_transaction = frappe.db.exists(
+            "Bank Transaction", {"transaction_id": self.transaction_id}
+        )
+
+        if not bank_transaction:
+            return
+
+        frappe.db.set_value(
+            "Bank Transaction",
+            bank_transaction,
+            "reference_number",
+            self.utr,
+        )
 
 
 class AccountWebhook(RazorPayXWebhook):
