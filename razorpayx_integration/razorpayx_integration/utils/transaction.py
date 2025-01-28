@@ -148,6 +148,12 @@ class RazorpayBankTransaction:
         return mapped
 
     def set_matching_payment_entry(self, mapped: dict, source: dict | None = None):
+        """
+        Setting matching Payment Entry for the Bank Reconciliation.
+
+        :param mapped: Mapped Bank Transaction
+        :param source: Source of the transaction (In transaction response)
+        """
         if not source:
             return
 
@@ -176,13 +182,18 @@ class RazorpayBankTransaction:
         mapped["payment_entries"] = [
             {
                 "payment_document": "Payment Entry",
-                "payment_entry": payment_entry["name"],
-                "allocated_amount": payment_entry["paid_amount"],
+                "payment_entry": payment_entry.name,
+                "allocated_amount": payment_entry.paid_amount,
             }
         ]
 
     # TODO: can use bulk insert?
     def create(self, mapped_transaction: dict):
+        """
+        Create Bank Transaction in the ERPNext.
+
+        :param mapped_transaction: Mapped Bank Transaction
+        """
         return frappe.get_doc(mapped_transaction).insert()
 
 
