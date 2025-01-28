@@ -1,5 +1,3 @@
-frappe.provide("payment_utils");
-
 const AUTH_METHODS = {
 	OTP_APP: "OTP App",
 	SMS: "SMS",

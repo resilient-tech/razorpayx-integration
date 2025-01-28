@@ -75,7 +75,7 @@ frappe.ui.form.on("Payment Entry", {
 			frm.set_value("make_bank_online_payment", 0);
 		}
 
-		if (frm.doc.razorpayx_pay_instantaneously && razorpayx.IMPS_LIMIT > frm.doc.paid_amount) {
+		if (frm.doc.razorpayx_pay_instantaneously && payment_utils.IMPS_LIMIT > frm.doc.paid_amount) {
 			frm.set_value("razorpayx_pay_instantaneously", 0);
 		}
 
@@ -445,7 +445,7 @@ async function show_make_payout_dialog(frm) {
 				label: "Pay Instantaneously",
 				fieldtype: "Check",
 				description: "Payment will be done with <strong>IMPS</strong> mode.",
-				depends_on: `eval: ${BANK_MODE} && ${frm.doc.paid_amount <= razorpayx.IMPS_LIMIT}`,
+				depends_on: `eval: ${BANK_MODE} && ${frm.doc.paid_amount <= payment_utils.IMPS_LIMIT}`,
 			},
 			{
 				fieldname: "party_cb",
@@ -459,7 +459,7 @@ async function show_make_payout_dialog(frm) {
 				mandatory_depends_on: `eval: ${LINK_MODE}`,
 			},
 		],
-		primary_action_label: __("{0} Pay", [frappe.utils.icon(razorpayx.PAY_ICON)]),
+		primary_action_label: __("{0} Pay", [frappe.utils.icon(payment_utils.PAY_ICON)]),
 		primary_action: (values) => {
 			validate_payout_description(values.razorpayx_payout_desc);
 
@@ -588,5 +588,5 @@ function user_has_payout_permissions(frm) {
 		return frm.doc.__onload.has_payout_permission;
 	}
 
-	return razorpayx.can_user_authorize_payout();
+	return payment_utils.can_user_authorize_payout();
 }
