@@ -329,8 +329,8 @@ async function show_make_payout_dialog(frm) {
 		title: __("Enter Payout Details"),
 		fields: [
 			{
-				fieldname: "party_section_break",
-				label: __("Party Details"),
+				fieldname: "party_account_sec_break",
+				label: __("Party Account Details"),
 				fieldtype: "Section Break",
 			},
 			{
@@ -353,7 +353,7 @@ async function show_make_payout_dialog(frm) {
 				},
 			},
 			{
-				fieldname: "party_cb",
+				fieldname: "party_acc_cb",
 				fieldtype: "Column Break",
 			},
 			{
@@ -383,14 +383,17 @@ async function show_make_payout_dialog(frm) {
 				mandatory_depends_on: `eval: ${UPI_MODE}`,
 				default: frm.doc.party_upi_id,
 			},
-
+			{
+				fieldname: "party_contact_sec_break",
+				label: __("Party Contact Details"),
+				fieldtype: "Section Break",
+			},
 			{
 				fieldname: "contact_person",
 				label: __("Contact"),
 				fieldtype: "Link",
 				options: "Contact",
 				default: frm.doc.contact_person,
-				depends_on: `eval: ${LINK_MODE}`,
 				mandatory_depends_on: `eval: ${LINK_MODE}`,
 				get_query: function () {
 					return {
@@ -405,23 +408,27 @@ async function show_make_payout_dialog(frm) {
 				},
 			},
 			{
-				fieldname: "contact_email",
-				label: "Email",
-				fieldtype: "Data",
-				options: "Email",
-				depends_on: `eval: ${LINK_MODE} && doc.contact_person && doc.contact_email`,
-				mandatory_depends_on: `eval: ${LINK_MODE}`,
-				read_only: 1,
-				default: frm.doc.contact_email,
-			},
-			{
 				fieldname: "contact_mobile",
 				label: "Mobile",
 				fieldtype: "Data",
 				options: "Phone",
-				depends_on: `eval: ${LINK_MODE} && doc.contact_person && doc.contact_mobile`,
+				depends_on: `eval: doc.contact_person && doc.contact_mobile`,
 				read_only: 1,
 				default: frm.doc.contact_mobile,
+			},
+			{
+				fieldname: "party_contact_cb",
+				fieldtype: "Column Break",
+			},
+			{
+				fieldname: "contact_email",
+				label: "Email",
+				fieldtype: "Data",
+				options: "Email",
+				depends_on: `eval:doc.contact_person && doc.contact_email`,
+				mandatory_depends_on: `eval: ${LINK_MODE}`,
+				read_only: 1,
+				default: frm.doc.contact_email,
 			},
 			{
 				fieldname: "payout_section_break",
@@ -448,7 +455,7 @@ async function show_make_payout_dialog(frm) {
 				depends_on: `eval: ${BANK_MODE} && ${frm.doc.paid_amount <= payment_utils.IMPS_LIMIT}`,
 			},
 			{
-				fieldname: "party_cb",
+				fieldname: "payout_cb",
 				fieldtype: "Column Break",
 			},
 			{
