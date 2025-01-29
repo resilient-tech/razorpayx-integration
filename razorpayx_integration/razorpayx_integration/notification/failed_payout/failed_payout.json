@@ -1,7 +1,7 @@
 {
  "attach_print": 0,
  "channel": "Email",
- "condition": "doc.razorpayx_payout_status == \"Cancelled\" or doc.razorpayx_payout_status == \"Rejected\" or doc.razorpayx_payout_status == \"Failed\" or doc.razorpayx_payout_status == \"Reversed\" ",
+ "condition": "doc.razorpayx_payout_status in [\"Cancelled\", \"Rejected\", \"Failed\", \"Reversed\"]",
  "creation": "2025-01-21 13:45:11.433147",
  "days_in_advance": 0,
  "docstatus": 0,
@@ -13,7 +13,7 @@
  "is_standard": 1,
  "message": "<h3>Payout has been <span style=\"color: red\">{{ doc.razorpayx_payout_status }}</span></h3>\n\n<p><strong>For Payment Entry:</strong> {{ doc.name }}<br></p>\n\n<hr>\n\n<p><strong>Remarks:</strong></p>\n\n<p>{{ doc.remarks }}</p>\n",
  "message_type": "Markdown",
- "modified": "2025-01-29 11:23:53.407822",
+ "modified": "2025-01-29 12:02:01.518357",
  "modified_by": "Administrator",
  "module": "Razorpayx Integration",
  "name": "Failed Payout",
