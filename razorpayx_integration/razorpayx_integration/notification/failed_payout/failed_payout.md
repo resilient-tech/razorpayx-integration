@@ -1,9 +1,8 @@
-<h3>Payout has been <span style="color: red">{{ doc.razorpayx_payout_status }}</span></h3>
+<h2>Payout has been <span style="color: red">{{ doc.razorpayx_payout_status }}</span>!</h2>
 
-<p><strong>For Payment Entry:</strong> {{ doc.name }}<br></p>
+<p><strong>Payment Entry:</strong> {{ doc.name }}<br></p>
 
 <hr>
 
-<p><strong>Remarks:</strong></p>
-
-<p>{{ doc.remarks }}</p>
+<p><strong>Remarks:</strong> {{ doc.remarks }}</p>
+ 
