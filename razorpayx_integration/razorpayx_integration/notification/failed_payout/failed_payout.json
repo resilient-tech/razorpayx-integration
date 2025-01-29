@@ -20,7 +20,7 @@
  "owner": "Administrator",
  "recipients": [
   {
-   "receiver_by_document_field": "owner",
+   "receiver_by_document_field": "payment_authorized_by",
    "receiver_by_role": ""
   }
  ],
