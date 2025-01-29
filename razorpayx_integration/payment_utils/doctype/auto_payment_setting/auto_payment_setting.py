@@ -31,10 +31,13 @@ class AutoPaymentSetting(Document):
         automate_on_tuesday: DF.Check
         automate_on_wednesday: DF.Check
         bank_account: DF.Link
+        claim_early_payment_discount: DF.Check
         company: DF.Link | None
         disabled: DF.Check
-        ignore_blocked_invoice: DF.Check
+        exclude_foreign_currency_invoices: DF.Check
+        ignore_blocked_invoices: DF.Check
         ignore_blocked_suppliers: DF.Check
+        limit_payment_to_outstanding: DF.Check
         payment_threshold: DF.Currency
     # end: auto-generated types
 

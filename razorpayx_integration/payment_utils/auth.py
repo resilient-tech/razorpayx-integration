@@ -171,7 +171,6 @@ def execute_pre_authentication_tasks(payment_entries: list[str]):
         frappe.get_attr(fn)(payment_entries)
 
 
-@frappe.request_cache
 def get_otp_issuer() -> str:
     """
     Get the Payment OTP Issuer.
@@ -186,7 +185,6 @@ def get_otp_issuer() -> str:
     )
 
 
-@frappe.request_cache
 def get_otplogin_key(user: str) -> str:
     """
     Get the OTP Login Key for the user.
@@ -199,7 +197,6 @@ def get_otplogin_key(user: str) -> str:
     return f"{user}_{frappe.scrub(OTP_ISSUER)}_otplogin"
 
 
-@frappe.request_cache
 def get_otpsecret_key(user: str) -> str:
     """
     Get the OTP Secret Key for the user.
@@ -456,10 +453,10 @@ class Authenticate2FA:
     Processor for verifying the OTP or Password for the Payment Entries.
     """
 
-    SUF_USER = "_user"
-    SUF_TOKEN = "_token"
-    SUF_OTP_SECRET = "_otp_secret"
-    SUF_AUTHENTICATED = "_authenticated"
+    _USER = "_user"
+    _TOKEN = "_token"
+    _OTP_SECRET = "_otp_secret"
+    _AUTHENTICATED = "_authenticated"
 
     def __init__(self, authenticator: str, auth_id: str):
         """
@@ -474,7 +471,7 @@ class Authenticate2FA:
         self.tracker = get_login_attempt_tracker(self.user)
 
     def verify(self) -> dict:
-        if not (_user := frappe.cache.get(f"{self.auth_id}{Authenticate2FA.SUF_USER}")):
+        if not (_user := frappe.cache.get(f"{self.auth_id}{Authenticate2FA._USER}")):
             raise frappe.AuthenticationError(_("Invalid Authentication ID"))
 
         if self.user != _user.decode("utf-8"):
@@ -503,7 +500,7 @@ class Authenticate2FA:
         """
         SMS and Email OTP Verification.
         """
-        token = frappe.cache.get(f"{self.auth_id}{Authenticate2FA.SUF_TOKEN}")
+        token = frappe.cache.get(f"{self.auth_id}{Authenticate2FA._TOKEN}")
         otp_secret = self.get_opt_secret()
 
         if not token or not otp_secret:
@@ -536,13 +533,11 @@ class Authenticate2FA:
 
     #### Helper Methods ####
     def get_opt_secret(self) -> str:
-        return frappe.cache.get(f"{self.auth_id}{Authenticate2FA.SUF_OTP_SECRET}")
+        return frappe.cache.get(f"{self.auth_id}{Authenticate2FA._OTP_SECRET}")
 
     def on_success(self) -> dict:
         self.tracker.add_success_attempt()
-        frappe.cache.set(
-            f"{self.auth_id}{Authenticate2FA.SUF_AUTHENTICATED}", "True", 180
-        )
+        frappe.cache.set(f"{self.auth_id}{Authenticate2FA._AUTHENTICATED}", "True", 180)
         return {"verified": True}
 
     def on_failure(self, message) -> dict:

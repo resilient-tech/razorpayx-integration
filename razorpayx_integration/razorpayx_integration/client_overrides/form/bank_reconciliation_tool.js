@@ -1,6 +1,6 @@
 // Copyright (c) 2025, Resilient Tech and contributors
 // For license information, please see license.txt
-const SYNC_BTN_LABEL = __("Sync RazorPayX Transactions");
+const SYNC_BTN_LABEL = __("Sync via RazorPayX");
 
 frappe.ui.form.on("Bank Reconciliation Tool", {
 	refresh: async function (frm) {
@@ -35,7 +35,7 @@ async function toggle_sync_btn(frm) {
 
 	if (!btn) return;
 
-	if (!frm.doc.bank_account || !frappe.user.has_role(payment_utils.PAYOUT_AUTHORIZER)) {
+	if (!frm.doc.bank_account) {
 		btn.hide();
 		return;
 	}
@@ -43,9 +43,6 @@ async function toggle_sync_btn(frm) {
 	const { name } = await razorpayx.get_razorpayx_setting(frm.doc.bank_account);
 	frm.__razorpayx_setting = name;
 
-	if (name) {
-		btn.show();
-	} else {
-		btn.hide();
-	}
+	if (name) btn.show();
+	else btn.hide();
 }
