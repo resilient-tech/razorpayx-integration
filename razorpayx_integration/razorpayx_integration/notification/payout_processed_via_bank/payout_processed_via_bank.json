@@ -16,7 +16,7 @@
  "modified": "2025-01-29 11:45:35.325272",
  "modified_by": "Administrator",
  "module": "Razorpayx Integration",
- "name": "Payout Processed",
+ "name": "Payout Processed via Bank",
  "owner": "Administrator",
  "recipients": [
   {
