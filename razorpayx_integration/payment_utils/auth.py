@@ -381,7 +381,8 @@ class Trigger2FA:
 
     #### Sending Email ####
     def send_token_via_email(self, subject, message):
-        user_email = frappe.db.get_value("User", self.user, "email")
+        user_email = frappe.get_cached_value("User", self.user, "email")
+
         if not user_email:
             return False
 
