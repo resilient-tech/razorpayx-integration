@@ -315,6 +315,15 @@ class PayoutWithPaymentEntry(PayoutWithDocument):
 
         :param response: Payout Response.
         """
+        user = (
+            frappe.get_cached_value("User", "Administrator", "email")
+            if frappe.session.user == "Administrator"
+            else frappe.session.user
+        )
+
+        if user:
+            self.doc.db_set("payment_authorized_by", user, notify=True)
+
         if not response:
             return
 

@@ -100,9 +100,19 @@ CUSTOM_FIELDS = {
             "permlevel": PERMISSION_LEVEL.SEVEN.value,
         },
         {
+            "fieldname": "payment_authorized_by",
+            "label": "Payment Authorized By",
+            "fieldtype": "Data",
+            "insert_after": "is_auto_generated",
+            "options": "Email",
+            "description": "Email of the user who authorized the payment",
+            "hidden": 1,
+            "permlevel": PERMISSION_LEVEL.SEVEN.value,
+        },
+        {
             "fieldname": "cb_online_payment_section",
             "fieldtype": "Column Break",
-            "insert_after": "is_auto_generated",
+            "insert_after": "payment_authorized_by",
         },
         {
             "fieldname": "party_upi_id",
