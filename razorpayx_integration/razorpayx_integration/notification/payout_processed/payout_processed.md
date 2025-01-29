@@ -8,11 +8,11 @@
 <p><strong>Description:</strong> {{ doc.razorpayx_payout_desc }}</p>
 {% endif %}
 
-{% if doc.razorpayx_payout_mode == "NEFT/RTGS" %}
-<p><strong>Bank Account No:</strong> {{ doc.party_bank_account_no }}</p>
-<p><strong>Bank IFSC:</strong> {{ doc.party_bank_ifsc }}</p>
+{% if doc.razorpayx_payout_mode == "Link" %}
+<p>This payment was done after you provided your payment details to <strong>RazorPayX Link</strong></p>
 {% elif doc.razorpayx_payout_mode == "UPI" %}
 <p><strong>UPI ID:</strong> {{ doc.party_upi_id }}</p>
 {% else %}
-<p>This payment was done after you provided your payment details to <strong>RazorPayX Link</strong></p>
+<p><strong>Bank Account No:</strong> {{ doc.party_bank_account_no }}</p>
+<p><strong>Bank IFSC:</strong> {{ doc.party_bank_ifsc }}</p>
 {% endif %}
