@@ -33,8 +33,11 @@
   "automate_on_thursday",
   "configurations_section",
   "ignore_blocked_suppliers",
+  "limit_payment_to_outstanding",
   "column_break_eldq",
-  "ignore_blocked_invoice"
+  "ignore_blocked_invoices",
+  "exclude_foreign_currency_invoices",
+  "claim_early_payment_discount"
  ],
  "fields": [
   {
@@ -162,7 +165,7 @@
   {
    "fieldname": "company_email_templates_section",
    "fieldtype": "Section Break",
-   "label": "Company Email Templates"
+   "label": "Email Templates"
   },
   {
    "fieldname": "column_break_bhwn",
@@ -212,14 +215,34 @@
   },
   {
    "default": "1",
-   "fieldname": "ignore_blocked_invoice",
+   "description": "Payment will be restricted to the lesser amount between total outstanding to the supplier and total due invoices",
+   "fieldname": "limit_payment_to_outstanding",
    "fieldtype": "Check",
-   "label": "Ignore Blocked Invoice"
+   "label": "Limit Payment to Outstanding"
+  },
+  {
+   "default": "1",
+   "description": "This feature enables timely payments to secure cash discounts from vendors according to the payment terms in purchase invoices",
+   "fieldname": "claim_early_payment_discount",
+   "fieldtype": "Check",
+   "label": "Claim Early Payment Discount"
+  },
+  {
+   "default": "1",
+   "fieldname": "exclude_foreign_currency_invoices",
+   "fieldtype": "Check",
+   "label": "Exclude Foreign Currency Invoices"
+  },
+  {
+   "default": "1",
+   "fieldname": "ignore_blocked_invoices",
+   "fieldtype": "Check",
+   "label": "Ignore Blocked Invoices"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-01-25 15:52:13.470125",
+ "modified": "2025-01-29 12:39:06.800298",
  "modified_by": "Administrator",
  "module": "Payment Utils",
  "name": "Auto Payment Setting",
