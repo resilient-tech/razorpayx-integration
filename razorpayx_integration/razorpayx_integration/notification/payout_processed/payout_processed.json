@@ -1,0 +1,33 @@
+{
+ "attach_print": 0,
+ "channel": "Email",
+ "condition": "doc.razorpayx_payout_status == \"Processed\"",
+ "creation": "2025-01-29 12:26:55.180087",
+ "days_in_advance": 0,
+ "docstatus": 0,
+ "doctype": "Notification",
+ "document_type": "Payment Entry",
+ "enabled": 1,
+ "event": "Value Change",
+ "idx": 0,
+ "is_standard": 1,
+ "message": "<p>Payment of <strong>Rs. {{ frappe.utils.fmt_money(doc.paid_amount) }}</strong> has been transferred via RazorPayX</p>\n\n<hr>\n\n<p><strong>URT:</strong> {{ doc.reference_no }}</p>\n\n{% if doc.razorpayx_payout_desc %}\n<p><strong>Description:</strong> {{ doc.razorpayx_payout_desc }}</p>\n{% endif %}\n\n{% if doc.razorpayx_payout_mode == \"NEFT/RTGS\" %}\n<p><strong>Bank Account No:</strong> {{ doc.party_bank_account_no }}</p>\n<p><strong>Bank IFSC:</strong> {{ doc.party_bank_ifsc }}</p>\n{% elif doc.razorpayx_payout_mode == \"UPI\" %}\n<p><strong>UPI ID:</strong> {{ doc.party_upi_id }}</p>\n{% else %}\n<p>This payment was done after you provided your payment details to <strong>RazorPayX Link</strong></p>\n{% endif %}",
+ "message_type": "Markdown",
+ "modified": "2025-01-29 12:32:03.335411",
+ "modified_by": "Administrator",
+ "module": "Razorpayx Integration",
+ "name": "Payout Processed",
+ "owner": "Administrator",
+ "recipients": [
+  {
+   "receiver_by_document_field": "contact_email",
+   "receiver_by_role": ""
+  }
+ ],
+ "send_system_notification": 0,
+ "send_to_all_assignees": 0,
+ "sender": "",
+ "sender_email": "",
+ "subject": "Payment Transferred via RazorPayX",
+ "value_changed": "razorpayx_payout_status"
+}
