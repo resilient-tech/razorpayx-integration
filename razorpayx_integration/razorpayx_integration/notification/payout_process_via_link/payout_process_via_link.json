@@ -1,33 +1,33 @@
 {
-    "attach_print": 0,
-    "channel": "Email",
-    "condition": "doc.razorpayx_payout_status == \"Processed\" and doc.razorpayx_payout_mode == \"Link\"",
-    "creation": "2025-01-29 11:56:55.831724",
-    "days_in_advance": 0,
-    "docstatus": 0,
-    "doctype": "Notification",
-    "document_type": "Payment Entry",
-    "enabled": 0,
-    "event": "Value Change",
-    "idx": 0,
-    "is_standard": 1,
-    "message": "<p>Payment of <strong>Rs. {{ frappe.utils.fmt_money(doc.paid_amount) }}</strong> has been transferred to your Bank Account.</p>\n\n<hr>\n\n<p><strong>URT:</strong> {{ doc.reference_no }}</p>\n\n<p><strong>Description:</strong> {{ doc.razorpayx_payout_desc }}</p>\n\n<hr>\n\n<p>This payment done after you provided your payment details to <strong>RazorPayX Link</strong></p>\n",
-    "message_type": "Markdown",
-    "modified": "2025-01-29 11:56:55.831724",
-    "modified_by": "Administrator",
-    "module": "Razorpayx Integration",
-    "name": "Payout Process via Link",
-    "owner": "Administrator",
-    "recipients": [
-     {
-      "receiver_by_document_field": "contact_email",
-      "receiver_by_role": ""
-     }
-    ],
-    "send_system_notification": 0,
-    "send_to_all_assignees": 0,
-    "sender": "",
-    "sender_email": "",
-    "subject": "Payment Transferred to Your Bank Account via RazorPayX",
-    "value_changed": "razorpayx_payout_status"
-   }
+ "attach_print": 0,
+ "channel": "Email",
+ "condition": "doc.razorpayx_payout_status == \"Processed\" and doc.razorpayx_payout_mode == \"Link\"",
+ "creation": "2025-01-29 11:56:55.831724",
+ "days_in_advance": 0,
+ "docstatus": 0,
+ "doctype": "Notification",
+ "document_type": "Payment Entry",
+ "enabled": 1,
+ "event": "Value Change",
+ "idx": 0,
+ "is_standard": 1,
+ "message": "<p>Payment of <strong>Rs. {{ frappe.utils.fmt_money(doc.paid_amount) }}</strong> has been transferred to your Bank Account.</p>\n\n<hr>\n\n<p><strong>URT:</strong> {{ doc.reference_no }}</p>\n\n<p><strong>Description:</strong> {{ doc.razorpayx_payout_desc }}</p>\n\n<hr>\n\n<p>This payment done after you provided your payment details to <strong>RazorPayX Link</strong></p>\n",
+ "message_type": "Markdown",
+ "modified": "2025-01-29 13:05:06.529230",
+ "modified_by": "Administrator",
+ "module": "Razorpayx Integration",
+ "name": "Payout Process via Link",
+ "owner": "Administrator",
+ "recipients": [
+  {
+   "receiver_by_document_field": "contact_email",
+   "receiver_by_role": ""
+  }
+ ],
+ "send_system_notification": 0,
+ "send_to_all_assignees": 0,
+ "sender": "",
+ "sender_email": "",
+ "subject": "Payment Transferred to Your Bank Account via RazorPayX",
+ "value_changed": "razorpayx_payout_status"
+}

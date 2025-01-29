@@ -1,4 +1,4 @@
-`<p>`Payment of `<strong>`Rs. {{ frappe.utils.fmt_money(doc.paid_amount) }}`</strong>` has been transferred to your UPI ID.`</p>`
+<p>Payment of <strong>Rs. {{ frappe.utils.fmt_money(doc.paid_amount) }}</strong> has been transferred to your UPI ID.</p>
 
 <hr>
 
