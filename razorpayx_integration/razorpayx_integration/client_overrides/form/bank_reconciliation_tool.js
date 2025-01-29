@@ -26,7 +26,7 @@ function sync_transactions(bank_account, razorpayx_setting) {
 		method: "razorpayx_integration.razorpayx_integration.utils.transaction.sync_transactions_for_reconcile",
 		args: { bank_account, razorpayx_setting },
 		freeze: true,
-		freeze_message: __("Syncing Transactions ..."),
+		freeze_message: __("Syncing Transactions. Please wait it may take a while..."),
 	});
 }
 
