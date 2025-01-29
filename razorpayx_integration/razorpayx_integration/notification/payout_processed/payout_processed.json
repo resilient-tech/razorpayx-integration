@@ -1,7 +1,7 @@
 {
  "attach_print": 0,
  "channel": "Email",
- "condition": "doc.razorpayx_payout_status == \"Processed\"",
+ "condition": "doc.razorpayx_payout_status == \"Processed\" and doc.razorpayx_payout_mode == \"NEFT/RTGS\"",
  "creation": "2025-01-29 11:30:55.875900",
  "days_in_advance": 0,
  "docstatus": 0,
@@ -11,9 +11,9 @@
  "event": "Value Change",
  "idx": 0,
  "is_standard": 1,
- "message": "<p>Payment of <strong>Rs. {{ frappe.utils.fmt_money(doc.paid_amount) }}</strong> has been transferred to your account.</p>\n\n<hr>\n\n<p><strong>URT:</strong> {{ doc.reference_no }}</p>\n<p><strong>Description:</strong> {{ doc.razorpayx_payout_desc }}</p>",
+ "message": "<p>Payment of <strong>Rs. {{ frappe.utils.fmt_money(doc.paid_amount) }}</strong> has been transferred to your account.</p>\n\n<hr>\n\n<p><strong>URT:</strong> {{ doc.reference_no }}</p>\n\n<p><strong>Description:</strong> {{ doc.razorpayx_payout_desc }}</p>\n\n<p><strong>Bank Account No:</strong> {{ doc.party_bank_account_no }}</p>\n\n<p><strong>Bank IFSC:</strong> {{ doc.party_bank_ifsc }}</p>",
  "message_type": "Markdown",
- "modified": "2025-01-29 11:30:55.875900",
+ "modified": "2025-01-29 11:45:35.325272",
  "modified_by": "Administrator",
  "module": "Razorpayx Integration",
  "name": "Payout Processed",
@@ -28,6 +28,6 @@
  "send_to_all_assignees": 0,
  "sender": "",
  "sender_email": "",
- "subject": "Payout has been {{ doc.razorpayx_payout_status }} for Payment Entry {{ doc.name }}",
+ "subject": "Payment Transferred to Your Account Ending in {{ doc.party_bank_account_no[-4:] }}",
  "value_changed": "razorpayx_payout_status"
 }
