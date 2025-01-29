@@ -107,6 +107,7 @@ CUSTOM_FIELDS = {
             "options": "Email",
             "description": "Email of the user who authorized the payment",
             "hidden": 1,
+            "no_copy": 1,
             "permlevel": PERMISSION_LEVEL.SEVEN.value,
         },
         {
