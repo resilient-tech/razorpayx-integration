@@ -13,7 +13,7 @@
  "is_standard": 1,
  "message": "<p>Payment of <strong>Rs. {{ frappe.utils.fmt_money(doc.paid_amount) }}</strong> has been transferred to your Bank Account.</p>\n\n<hr>\n\n<p><strong>URT:</strong> {{ doc.reference_no }}</p>\n\n<p><strong>Description:</strong> {{ doc.razorpayx_payout_desc }}</p>\n\n<hr>\n\n<p>This payment done after you provided your payment details to <strong>RazorPayX Link</strong></p>\n",
  "message_type": "Markdown",
- "modified": "2025-01-29 12:12:19.659092",
+ "modified": "2025-01-29 12:23:52.204937",
  "modified_by": "Administrator",
  "module": "Razorpayx Integration",
  "name": "Payout Process via Link",

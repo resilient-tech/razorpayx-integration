@@ -13,7 +13,7 @@
  "is_standard": 1,
  "message": "<p>Payment of <strong>Rs. {{ frappe.utils.fmt_money(doc.paid_amount) }}</strong> has been transferred to your UPI ID.</p>\n\n<hr>\n\n<p><strong>URT:</strong> {{ doc.reference_no }}</p>\n\n<p><strong>Description:</strong> {{ doc.razorpayx_payout_desc }}</p>\n\n<p><strong>UPI ID:</strong> {{ doc.party_upi_id }}</p>\n",
  "message_type": "Markdown",
- "modified": "2025-01-29 12:12:28.424145",
+ "modified": "2025-01-29 12:23:47.634492",
  "modified_by": "Administrator",
  "module": "Razorpayx Integration",
  "name": "Payment Process via UPI",
