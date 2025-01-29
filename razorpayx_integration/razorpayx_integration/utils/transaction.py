@@ -217,7 +217,7 @@ def sync_transactions_for_reconcile(
 
     if not razorpayx_setting:
         razorpayx_setting = frappe.db.get_value(
-            INTEGRATION_DOCTYPE, {"bank_account": bank_account}
+            INTEGRATION_DOCTYPE, {"bank_account": bank_account, "disabled": 0}
         )
 
     if not razorpayx_setting:
