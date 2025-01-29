@@ -28,9 +28,7 @@ Object.assign(razorpayx, {
 	async get_razorpayx_setting(bank_account, fields = "name") {
 		const response = await frappe.db.get_value(
 			razorpayx.RPX_DOCTYPE,
-			{
-				bank_account,
-			},
+			{ bank_account: bank_account, disabled: 0 },
 			fields
 		);
 
