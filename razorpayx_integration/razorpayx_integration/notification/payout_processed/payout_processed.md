@@ -1,18 +1,5 @@
-<p>Payment of <strong>Rs. {{ frappe.utils.fmt_money(doc.paid_amount) }}</strong> has been transferred via RazorPayX</p>
+<p>Dear {{ doc.party_name }},</p>
 
-<hr>
+<p>A payment of Rs. {{ frappe.utils.fmt<em>money(doc.paid_amount) }} has been transferred to you as per the bank details provided by {{ doc.company }}.</p>
 
-<p><strong>URT:</strong> {{ doc.reference_no }}</p>
-
-{% if doc.razorpayx_payout_desc %}
-<p><strong>Description:</strong> {{ doc.razorpayx_payout_desc }}</p>
-{% endif %}
-
-{% if doc.razorpayx_payout_mode == "Link" %}
-<p>This payment was done after you provided your payment details to <strong>RazorPayX Link</strong></p>
-{% elif doc.razorpayx_payout_mode == "UPI" %}
-<p><strong>UPI ID:</strong> {{ doc.party_upi_id }}</p>
-{% else %}
-<p><strong>Bank Account No:</strong> {{ doc.party_bank_account_no }}</p>
-<p><strong>Bank IFSC:</strong> {{ doc.party_bank_ifsc }}</p>
-{% endif %}
+<p>For more information, please check the attachment.</p>
