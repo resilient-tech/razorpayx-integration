@@ -9,9 +9,10 @@ from razorpayx_integration.razorpayx_integration.apis.base import BaseRazorPayXA
 
 class RazorPayXTransaction(BaseRazorPayXAPI):
     """
-    Handle APIs for `Bank Transaction` which are RazorPayX  accounts.
+    Handle APIs for `Transaction`.
 
-    :param account_name: RazorPayX account for which this `Transaction` is associate.
+    :param razorpayx_setting_name: RazorPayX Integration Setting name
+    for which this `Transaction` is associate.
 
     ---
     Reference: https://razorpay.com/docs/api/x/transactions/
@@ -51,7 +52,6 @@ class RazorPayXTransaction(BaseRazorPayXAPI):
     def get_all(
         self,
         *,
-        filters: dict | None = None,
         from_date: DateTimeLikeObject | None = None,
         to_date: DateTimeLikeObject | None = None,
         count: int | None = None,
@@ -61,7 +61,6 @@ class RazorPayXTransaction(BaseRazorPayXAPI):
         """
         Get all `Transaction` associate with given `RazorPayX` account if count is not given.
 
-        :param filters: Result will be filtered as given filters.
         :param from_date: The starting date for which transactions are to be fetched.
         :param to_date: The ending date for which transactions are to be fetched.
         :param count: The number of `Transaction` to be retrieved.
@@ -72,18 +71,11 @@ class RazorPayXTransaction(BaseRazorPayXAPI):
         Example Usage:
 
         ```
-        fund_account = RazorPayXFundAccount(RAZORPAYX_BANK_ACCOUNT)
+        transaction = RazorPayXTransaction(RAZORPAYX_SETTING)
 
-        # Example 1:
-        filters = {
-            "from":"2024-01-01"
-            "to":"2024-06-01"
-        }
-
-        response=fund_account.get_all(filters)
-
-        # Example 2:
-        response=fund_account.get_all(from_date="2024-01-01",to_date="2024-06-01",count=10)
+        response = transaction.get_all(
+            from_date="2024-01-01", to_date="2024-06-01", count=10
+        )
         ```
 
         ---
@@ -93,16 +85,15 @@ class RazorPayXTransaction(BaseRazorPayXAPI):
         ---
         Reference: https://razorpay.com/docs/api/x/transactions/fetch-all
         """
-        if not filters:
-            filters = {}
+        filters = {}
 
-            if from_date:
-                filters["from"] = from_date
+        if from_date:
+            filters["from"] = from_date
 
-            if to_date:
-                filters["to"] = to_date
+        if to_date:
+            filters["to"] = to_date
 
-        if not filters["from"]:
+        if "from" not in filters:
             filters["from"] = self.razorpayx_setting.last_sync_on
 
         # account number is mandatory
@@ -125,7 +116,7 @@ class RazorPayXTransaction(BaseRazorPayXAPI):
         source_docname: str | None = None,
     ) -> list[dict] | None:
         """
-        Get all transactions for today associate with given `RazorPayX` account.
+        Get all transactions for today associate with given RazorPayX Setting.
 
         :param count: The number of transactions to be retrieved.
         :param source_doctype: The source doctype of the transaction.
@@ -138,7 +129,8 @@ class RazorPayXTransaction(BaseRazorPayXAPI):
         self._set_service_details_to_ir_log("Get Transactions For Today")
 
         return self.get_all(
-            filters={"from": today_date, "to": today_date},
+            from_date=today_date,
+            to_date=today_date,
             count=count,
             source_doctype=source_doctype,
             source_docname=source_docname,
@@ -153,14 +145,15 @@ class RazorPayXTransaction(BaseRazorPayXAPI):
         source_docname: str | None = None,
     ) -> list[dict] | None:
         """
-        Get all transactions for specific date associate with given `RazorPayX` account.
+        Get all transactions for specific date associate with given  RazorPayX Setting.
 
         :param date: A date string in "YYYY-MM-DD" format or a (datetime,date) object.
         """
         self._set_service_details_to_ir_log("Get Transactions For Date")
 
         return self.get_all(
-            filters={"from": date, "to": date},
+            from_date=date,
+            to_date=date,
             count=count,
             source_doctype=source_doctype,
             source_docname=source_docname,

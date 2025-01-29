@@ -14,11 +14,12 @@ app_include_js = "razorpayx_integration.bundle.js"
 export_python_type_annotations = True
 
 doctype_js = {
-    "Payment Entry": "razorpayx_integration/client_overrides/payment_entry.js",
+    "Payment Entry": "razorpayx_integration/client_overrides/form/payment_entry.js",
+    "Bank Reconciliation Tool": "razorpayx_integration/client_overrides/form/bank_reconciliation_tool.js",
 }
 
 doctype_list_js = {
-    "Payment Entry": "razorpayx_integration/client_overrides/payment_entry_list.js",
+    "Payment Entry": "razorpayx_integration/client_overrides/list/payment_entry_list.js",
 }
 
 doc_events = {
@@ -29,6 +30,12 @@ doc_events = {
         "on_submit": "razorpayx_integration.razorpayx_integration.server_overrides.payment_entry.on_submit",
         "before_cancel": "razorpayx_integration.razorpayx_integration.server_overrides.payment_entry.before_cancel",
     },
+}
+
+scheduler_events = {
+    "daily": [
+        "razorpayx_integration.razorpayx_integration.utils.transaction.sync_transactions_periodically"
+    ]
 }
 
 before_payment_authentication = "razorpayx_integration.razorpayx_integration.utils.permission.before_payment_authentication"
