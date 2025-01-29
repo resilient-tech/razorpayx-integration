@@ -35,7 +35,7 @@ async function toggle_sync_btn(frm) {
 
 	if (!btn) return;
 
-	if (!frm.doc.bank_account || !frappe.user.has_role(razorpayx.PAYOUT_AUTHORIZER)) {
+	if (!frm.doc.bank_account || !frappe.user.has_role(payment_utils.PAYOUT_AUTHORIZER)) {
 		btn.hide();
 		return;
 	}
