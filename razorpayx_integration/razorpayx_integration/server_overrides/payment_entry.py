@@ -68,7 +68,12 @@ def onload(doc: PaymentEntry, method=None):
 
 
 def validate(doc: PaymentEntry, method=None):
+    set_integration_settings(doc)
     validate_if_already_paid(doc)
+
+    if doc.flags.is_already_paid:
+        return
+
     validate_payout_details(doc)
 
 
@@ -76,7 +81,7 @@ def before_submit(doc: PaymentEntry, method=None):
     # for bulk submission from client side or single submission without payment
     if (
         doc.make_bank_online_payment
-        and not is_already_paid(doc)
+        and not doc.flags.is_already_paid
         and not frappe.flags.authenticated_by_cron_job
         and not get_auth_id(doc)
     ):
@@ -130,6 +135,18 @@ def get_auth_id(doc: PaymentEntry) -> str | None:
 
 
 #### VALIDATIONS ####
+
+
+def set_integration_settings(doc: PaymentEntry):
+    setting = frappe.db.get_value(
+        INTEGRATION_DOCTYPE, {"disabled": 0, "bank_account": doc.bank_account}
+    )
+
+    if setting:
+        doc.integration_doctype = INTEGRATION_DOCTYPE
+        doc.integration_docname = setting
+
+
 def validate_if_already_paid(doc: PaymentEntry):
     """
     If the amended Payment Entry is processed via RazorPayX, then do not allow to change Payout Fields.
@@ -167,18 +184,20 @@ def validate_if_already_paid(doc: PaymentEntry):
         "reference_no",
     ]
 
-    amended_from_doc = frappe.db.get_value(
+    original_doc = frappe.db.get_value(
         "Payment Entry",
         doc.amended_from,
         payout_fields,
         as_dict=True,
     )
 
-    if not amended_from_doc or not amended_from_doc.make_bank_online_payment:
+    if not original_doc or not original_doc.make_bank_online_payment:
         return
 
+    doc.flags.is_already_paid = True
+
     for field in payout_fields:
-        if doc.get(field) != amended_from_doc.get(field):
+        if doc.get(field) != original_doc.get(field):
             msg = _("Field <strong>{0}</strong> cannot be changed.<br><br>").format(
                 doc.meta.get_label(field)
             )
@@ -201,9 +220,6 @@ def validate_payout_details(doc: PaymentEntry):
 
     :param doc: Payment Entry
     """
-    if not is_payout_in_inr(doc):
-        doc.make_bank_online_payment = 0
-
     if not doc.make_bank_online_payment:
         return
 
@@ -214,71 +230,12 @@ def validate_payout_details(doc: PaymentEntry):
             exc=frappe.MandatoryError,
         )
 
-    set_razorpayx_setting(doc)
-
     # Maybe other Integration is used to make payment instead of RazorPayX
-    if not doc.razorpayx_setting:
+    if doc.integration_doctype != INTEGRATION_DOCTYPE:
         return
 
-    validate_razorpayx_setting(doc)
-
-    set_missing_payout_details(doc)
-    validate_party_bank_account(doc)
-    validate_payout_modes(doc)
-
-
-def validate_razorpayx_setting(doc: PaymentEntry):
-    """
-    Validate RazorPayX Integration Setting.
-
-    :param doc: Payment Entry Document
-    """
-    if doc.razorpayx_setting_details.name != doc.razorpayx_setting:
-        frappe.throw(
-            msg=_(
-                "Company Bank Account is not associated with RazorPayX Setting <strong>{0}</strong>."
-            ).format(doc.razorpayx_setting),
-            title=_("Invalid RazorPayX Setting"),
-        )
-
-    if doc.razorpayx_setting_details.disabled:
-        frappe.throw(
-            msg=_(
-                "RazorPayX Setting <strong>{0}</strong> is disabled. Please enable it first to use!"
-            ).format(doc.razorpayx_setting),
-            title=_("Invalid RazorPayX Setting"),
-        )
-
-
-def validate_party_bank_account(doc: PaymentEntry):
-    """
-    Validate Party's Bank Account.
-
-    Check if the Party's Bank Account is disabled or not.
-
-    :param doc: Payment Entry Document
-    """
-
-    if doc.party_bank_account and doc.party_bank_account_details.disabled:
-        frappe.throw(
-            msg=_("Party's Bank Account <strong>{0}</strong> is disabled.").format(
-                doc.party_bank_account
-            ),
-            title=_("Invalid Bank Account"),
-        )
-
-
-def validate_payout_modes(doc: PaymentEntry):
-    """
-    Validate Payout Modes based on RazorPayX User Payout Mode.
-
-    - Bank Payout Mode (NEFT/RTGS)
-    - UPI Payout Mode
-    - Link Payout Mode
-
-    :param doc: Payment Entry Document
-    """
-    validate_razorpayx_user_payout_mode(doc.razorpayx_payout_mode)
+    if not doc.reference_no:
+        doc.reference_no = "*** UTR WILL BE SET AUTOMATICALLY ***"
 
     validate_bank_payout_mode(doc)
     validate_upi_payout_mode(doc)
@@ -310,22 +267,6 @@ def validate_bank_payout_mode(doc: PaymentEntry):
 
     validate_ifsc_code(doc.party_bank_ifsc)
 
-    if doc.party_bank_account_no != doc.party_bank_account_details.account_no:
-        frappe.throw(
-            msg=_(
-                "Party's Bank Account No <strong>{0}</strong> does not match with selected Party's Bank Account."
-            ).format(doc.party_bank_account_no),
-            title=_("Invalid Bank Account No"),
-        )
-
-    if doc.party_bank_ifsc != doc.party_bank_account_details.ifsc_code:
-        frappe.throw(
-            msg=_(
-                "Party's Bank IFSC Code <strong>{0}</strong> does not match with selected Party's Bank Account."
-            ).format(doc.party_bank_ifsc),
-            title=_("Invalid Bank IFSC Code"),
-        )
-
     if (
         doc.razorpayx_pay_instantaneously
         and doc.paid_amount > PAYMENT_MODE_LIMIT.IMPS.value
@@ -352,14 +293,6 @@ def validate_upi_payout_mode(doc: PaymentEntry):
             ),
             title=_("Mandatory Fields Missing"),
             exc=frappe.MandatoryError,
-        )
-
-    if doc.party_upi_id != doc.party_bank_account_details.upi_id:
-        frappe.throw(
-            msg=_(
-                "Party's UPI ID <strong>{0}</strong> does not match with selected Party's Bank Account."
-            ).format(doc.party_upi_id),
-            title=_("Invalid UPI ID"),
         )
 
 
@@ -411,99 +344,6 @@ def validate_link_payout_mode(doc: PaymentEntry):
             ).format(doc.contact_email),
             title=_("Invalid Email"),
         )
-
-
-#### DOC EVENT'S HELPERS ####
-def set_razorpayx_setting(doc: PaymentEntry):
-    """
-    Set RazorPayX Integration Setting on Company's Bank Account.
-
-    :param doc: Payment Entry Document
-    """
-    # Fetch RazorpayX Account based on Bank Account (for validation)
-    doc.razorpayx_setting_details = (
-        get_razorpayx_setting(
-            identifier=doc.bank_account,
-            search_by="bank_account",
-            fields=["name", "disabled"],
-        )
-        or {}
-    )
-
-    if not doc.razorpayx_setting:
-        doc.razorpayx_setting = doc.razorpayx_setting_details.name
-
-
-def set_missing_payout_details(doc: PaymentEntry):
-    """
-    Set missing Payout details of RazorPayX.
-
-    - Party Bank Details
-    - Payout Mode
-    - Reference No
-
-    :param doc: Payment Entry Document
-    """
-    set_party_bank_details(doc)
-    set_payout_mode(doc)
-    set_reference_no(doc)
-
-
-def set_party_bank_details(doc: PaymentEntry):
-    """
-    Setting party's bank details to `party_bank_details`.
-
-    Note: It is a not an actual field, it is temporary stored for validation.
-    """
-    doc.party_bank_account_details = frappe._dict()
-
-    if (
-        doc.party_bank_account
-        and doc.razorpayx_payout_mode != USER_PAYOUT_MODE.LINK.value
-    ):
-        doc.party_bank_account_details = frappe.db.get_value(
-            "Bank Account",
-            doc.party_bank_account,
-            [
-                "branch_code as ifsc_code",
-                "bank_account_no as account_no",
-                "upi_id",
-                "online_payment_mode as payment_mode",
-                "disabled",
-            ],
-            as_dict=True,
-        )
-
-
-def set_payout_mode(doc: PaymentEntry):
-    """
-    Setting RazorPayX payout mode if not set.
-
-    - If not set, then set based on Party Bank Details.
-    - If Party Bank Details not set, then set to `Link` mode.
-
-    :param doc: Payment Entry Document
-    """
-    if doc.razorpayx_payout_mode:
-        return
-
-    def get_mode():
-        if doc.party_bank_account:
-            return doc.party_bank_details.payment_mode
-
-        return USER_PAYOUT_MODE.LINK.value
-
-    doc.razorpayx_payout_mode = get_mode()
-
-
-def set_reference_no(doc: PaymentEntry):
-    """
-    Set Reference No for the Payment Entry if not set.
-
-    :param doc: Payment Entry Document
-    """
-    if not doc.reference_no:
-        doc.reference_no = "*** UTR WILL BE SET AUTOMATICALLY ***"
 
 
 ### ACTIONS ###

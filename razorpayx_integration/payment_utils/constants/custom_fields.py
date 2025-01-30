@@ -111,9 +111,27 @@ CUSTOM_FIELDS = {
             "permlevel": PERMISSION_LEVEL.SEVEN.value,
         },
         {
+            "fieldname": "integration_doctype",
+            "label": "Integration DocType",
+            "fieldtype": "Data",
+            "insert_after": "payment_authorized_by",
+            "print_hide": 1,
+            "read_only": 1,
+            "hidden": 1,
+        },
+        {
+            "fieldname": "integration_docname",
+            "label": "Integration Docname",
+            "fieldtype": "Data",
+            "insert_after": "integration_doctype",
+            "print_hide": 1,
+            "read_only": 1,
+            "hidden": 1,
+        },
+        {
             "fieldname": "cb_online_payment_section",
             "fieldtype": "Column Break",
-            "insert_after": "payment_authorized_by",
+            "insert_after": "integration_docname",
         },
         {
             "fieldname": "party_upi_id",

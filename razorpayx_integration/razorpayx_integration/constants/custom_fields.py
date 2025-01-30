@@ -35,17 +35,6 @@ CUSTOM_FIELDS = {
             "permlevel": PERMISSION_LEVEL.SEVEN.value,
         },
         {
-            "fieldname": "razorpayx_setting",
-            "label": "RazorPayX Integration Setting",
-            "fieldtype": "Link",
-            "insert_after": "razorpayx_payout_section",
-            "options": RAZORPAYX_INTEGRATION_DOCTYPE,
-            "print_hide": 1,
-            "read_only": 1,
-            "hidden": 1,
-            "permlevel": PERMISSION_LEVEL.SEVEN.value,
-        },
-        {
             "fieldname": "razorpayx_payout_mode",
             "label": "RazorPayX Payout Mode",
             "fieldtype": "Select",
