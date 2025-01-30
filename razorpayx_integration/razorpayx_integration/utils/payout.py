@@ -1,12 +1,11 @@
 import pickle
 from abc import ABC, abstractmethod
-from base64 import b64decode
 
 import frappe
 from erpnext.accounts.doctype.payment_entry.payment_entry import PaymentEntry
 from frappe import _
-from frappe.utils import get_link_to_form
 
+from razorpayx_integration.payment_utils.auth import Authenticate2FA
 from razorpayx_integration.payment_utils.constants.enums import BaseEnum
 from razorpayx_integration.razorpayx_integration.apis.payout import (
     RazorPayXCompositePayout,
@@ -79,24 +78,21 @@ class PayoutWithDocument(ABC):
             frappe.throw(
                 title=_("Unauthorized Access"),
                 msg=_("Authentication ID is required to make payout."),
-                exc=frappe.PermissionError,
+                exc=frappe.AuthenticationError,
             )
 
-        if not frappe.cache.get(f"{auth_id}_authenticated"):
+        if not Authenticate2FA.is_authenticated(auth_id):
             frappe.throw(
                 title=_("Unauthorized Access"),
                 msg=_("You are not authorized to access this Payment Entry."),
-                exc=frappe.PermissionError,
+                exc=frappe.AuthenticationError,
             )
 
-        payment_entries = frappe.cache.get(f"{auth_id}_payment_entries")
-        payment_entries = pickle.loads(b64decode(payment_entries))
-
-        if self.doc.name not in payment_entries:
+        if self.doc.name not in Authenticate2FA.get_payment_entries(auth_id):
             frappe.throw(
                 title=_("Unauthorized Access"),
                 msg=_("This Payment Entry is not authenticated for payment."),
-                exc=frappe.PermissionError,
+                exc=frappe.AuthenticationError,
             )
 
         return True

@@ -14,7 +14,7 @@ Reference: https://github.com/frappe/frappe/blob/13fbdbb0c478099dfac6c70b7e05eef
 # TODO: generalize this, not just for payment entries but also for other doctypes
 import os
 import pickle
-from base64 import b32encode, b64encode
+from base64 import b32encode, b64decode, b64encode
 
 import frappe
 import frappe.defaults
@@ -35,6 +35,8 @@ from frappe.utils.password import check_password, decrypt, encrypt
 
 from razorpayx_integration.payment_utils.constants.enums import BaseEnum
 from razorpayx_integration.payment_utils.constants.roles import ROLE_PROFILE
+
+# ! Important: Do not use `cache.get_value` or `cache.set_value` as it not working as expected. Use `cache.get` and `cache.set` instead.
 
 ##### Constants #####
 OTP_ISSUER = "Bank Payments"
@@ -178,6 +180,7 @@ class Utils2FA:
     _OTP_SECRET = "_otp_secret"
     _OTP_LOGIN = "_otp_login"
     _AUTHENTICATED = "_authenticated"
+    _PAYMENT_ENTRIES = "_payment_entries"
 
     #### Getters and Setters ####
     @staticmethod
@@ -348,13 +351,10 @@ class Trigger2FA:
             if not isinstance(v, str | int | float):
                 v = b64encode(pickle.dumps(v)).decode("utf-8")
 
-            # TODO: need to generalize this
-            if k == "payment_entries":
-                # extra time for processing PEs
-                self.pipeline.set(f"{self.auth_id}_{k}", v, expiry_time + 100)
+            # for payment_entries, set expiry time to 100 seconds more than token expiry
+            expiry_time = expiry_time + 100 if k == "payment_entries" else expiry_time
 
-            else:
-                self.pipeline.set(f"{self.auth_id}_{k}", v, expiry_time)
+            self.pipeline.set(f"{self.auth_id}_{k}", v, expiry_time)
 
     #### 2FA Methods ####
     def process_2fa_for_sms(self):
@@ -518,6 +518,18 @@ class Authenticate2FA:
         return self.on_success()
 
     #### Helper Methods ####
+    @staticmethod
+    def is_authenticated(auth_id: str) -> bool:
+        if authenticated := frappe.cache.get(f"{auth_id}{Utils2FA._AUTHENTICATED}"):
+            return authenticated.decode("utf-8") == "True"
+
+        return False
+
+    @staticmethod
+    def get_payment_entries(auth_id: str) -> list[str]:
+        payment_entries = frappe.cache.get(f"{auth_id}{Utils2FA._PAYMENT_ENTRIES}")
+        return pickle.loads(b64decode(payment_entries))
+
     def get_auth_opt_secret(self) -> str:
         return frappe.cache.get(f"{self.auth_id}{Utils2FA._OTP_SECRET}")
 
