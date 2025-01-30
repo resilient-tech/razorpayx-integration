@@ -219,15 +219,20 @@ function set_razorpayx_state_description(frm) {
 }
 
 function set_reference_no_description(frm) {
-	if (
-		["Not Initiated", "Queued", "Processing", "Pending", "Scheduled"].includes(
-			frm.doc.razorpayx_payout_status
-		)
-	)
-		return;
+	function is_payout_link_cancelled() {
+		return (
+			frm.doc.razorpayx_payout_link_id &&
+			!frm.doc.razorpayx_payout_id &&
+			frm.doc.razorpayx_payout_status === "Cancelled"
+		);
+	}
+
+	const not_processed = ["Not Initiated", "Queued", "Processing", "Pending", "Scheduled"];
+
+	if (is_payout_link_cancelled() || not_processed.includes(frm.doc.razorpayx_payout_status)) return;
 
 	frm.get_field("reference_no").set_new_description(
-		__("This is <strong>UTR</strong> of the transaction done via <strong>RazorPayX</strong>")
+		__("This is <strong>UTR</strong> of the payout transaction done via <strong>RazorPayX</strong>")
 	);
 }
 
