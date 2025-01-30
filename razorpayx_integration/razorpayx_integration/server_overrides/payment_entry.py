@@ -43,13 +43,32 @@ PAYOUT_MODES = Literal["NEFT/RTGS", "UPI", "Link"]
 
 #### DOC EVENTS ####
 def onload(doc: PaymentEntry, method=None):
-    doc.set_onload("amended_pe_processed", is_amended_pe_processed(doc))
-    set_permission_details_to_onload(doc)
-    set_auto_cancel_settings_to_onload(doc)
+    doc.set_onload("is_already_paid", is_already_paid(doc))
+
+    doc.set_onload(
+        "has_payout_permission",
+        user_has_payout_permissions(
+            payment_entries=doc.name,
+            razorpayx_setting=doc.razorpayx_setting,
+            throw=False,
+        ),
+    )
+
+    if (
+        doc.docstatus != 1
+        or not doc.razorpayx_setting
+        or not doc.make_bank_online_payment
+    ):
+        return
+
+    doc.set_onload(
+        "auto_cancel_payout_enabled",
+        is_auto_cancel_payout_enabled(doc.razorpayx_setting),
+    )
 
 
 def validate(doc: PaymentEntry, method=None):
-    validate_amended_pe(doc)
+    validate_if_already_paid(doc)
     validate_payout_details(doc)
 
 
@@ -57,7 +76,7 @@ def before_submit(doc: PaymentEntry, method=None):
     # for bulk submission from client side or single submission without payment
     if (
         doc.make_bank_online_payment
-        and not is_amended_pe_processed(doc)
+        and not is_already_paid(doc)
         and not frappe.flags.authenticated_by_cron_job
         and not get_auth_id(doc)
     ):
@@ -110,43 +129,8 @@ def get_auth_id(doc: PaymentEntry) -> str | None:
     return onload.get("auth_id")
 
 
-def set_permission_details_to_onload(doc: PaymentEntry):
-    """
-    Set payout permission details on Payment Entry onload.
-
-    :param doc: Payment Entry Document
-    """
-    doc.set_onload(
-        "has_payout_permission",
-        user_has_payout_permissions(
-            payment_entries=doc.name,
-            razorpayx_setting=doc.razorpayx_setting,
-            throw=False,
-        ),
-    )
-
-
-def set_auto_cancel_settings_to_onload(doc: PaymentEntry):
-    """
-    Set Payout/Link Payout auto cancel settings on Payment Entry onload.
-
-    :param doc: Payment Entry Document
-    """
-    if (
-        doc.docstatus != 1
-        or not doc.razorpayx_setting
-        or not doc.make_bank_online_payment
-    ):
-        return
-
-    doc.set_onload(
-        "auto_cancel_payout",
-        should_auto_cancel_payout(doc.razorpayx_setting),
-    )
-
-
 #### VALIDATIONS ####
-def validate_amended_pe(doc: PaymentEntry):
+def validate_if_already_paid(doc: PaymentEntry):
     """
     If the amended Payment Entry is processed via RazorPayX, then do not allow to change Payout Fields.
 
@@ -217,7 +201,7 @@ def validate_payout_details(doc: PaymentEntry):
 
     :param doc: Payment Entry
     """
-    if not is_base_payout_conditions_met(doc):
+    if not is_payout_in_inr(doc):
         doc.make_bank_online_payment = 0
 
     if not doc.make_bank_online_payment:
@@ -534,7 +518,7 @@ def make_payout_with_razorpayx(doc: PaymentEntry, auth_id: str | None = None):
     :param doc: Payment Entry Document
     :param auth_id: Authentication ID (after otp or password verification)
     """
-    if is_amended_pe_processed(doc):
+    if is_already_paid(doc):
         return
 
     if not can_make_payout(doc):
@@ -569,15 +553,15 @@ def handle_payout_cancellation(
 
         return
 
-    if auto_cancel or should_auto_cancel_payout(doc.razorpayx_setting):
+    if auto_cancel or is_auto_cancel_payout_enabled(doc.razorpayx_setting):
         PayoutWithPaymentEntry(doc).cancel()
 
 
 ### UTILITY ###
 # TODO:? can set response in doc's flag
-def is_amended_pe_processed(doc: PaymentEntry) -> bool | int:
+def is_already_paid(doc: PaymentEntry) -> bool | int:
     """
-    Check if the amended Payment Entry is processed via RazorPayX or not.
+    Check if the original Payment Entry is processed via RazorPayX or not.
 
     :param doc: Payment Entry Document
     """
@@ -585,9 +569,7 @@ def is_amended_pe_processed(doc: PaymentEntry) -> bool | int:
         return False
 
     return frappe.db.get_value(
-        doctype="Payment Entry",
-        filters=doc.amended_from,
-        fieldname="make_bank_online_payment",
+        "Payment Entry", doc.amended_from, "make_bank_online_payment"
     )
 
 
@@ -615,7 +597,7 @@ def can_make_payout(doc: PaymentEntry) -> bool:
     :param doc: Payment Entry Document
     """
     return (
-        is_base_payout_conditions_met(doc)
+        is_payout_in_inr(doc)
         and doc.docstatus == 1
         and doc.make_bank_online_payment
         and doc.razorpayx_setting
@@ -624,7 +606,7 @@ def can_make_payout(doc: PaymentEntry) -> bool:
     )
 
 
-def is_base_payout_conditions_met(doc: PaymentEntry) -> bool:
+def is_payout_in_inr(doc: PaymentEntry) -> bool:
     """
     Check if the base conditions are met to make payout or not.
 
@@ -636,7 +618,7 @@ def is_base_payout_conditions_met(doc: PaymentEntry) -> bool:
     )
 
 
-def should_auto_cancel_payout(razorpayx_setting: str) -> bool | int:
+def is_auto_cancel_payout_enabled(razorpayx_setting: str) -> bool | int:
     """
     Check if the Payout should be auto cancelled or not.
 

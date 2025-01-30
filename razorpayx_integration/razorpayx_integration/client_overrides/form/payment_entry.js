@@ -51,7 +51,7 @@ frappe.ui.form.on("Payment Entry", {
 		const permission = user_has_payout_permissions(frm);
 		toggle_payout_sections(frm, permission);
 
-		if (!permission || !is_payout_in_inr(frm) || is_amended_pe_processed(frm)) {
+		if (!permission || !is_payout_in_inr(frm) || is_already_paid(frm)) {
 			return;
 		}
 
@@ -116,7 +116,7 @@ frappe.ui.form.on("Payment Entry", {
 		if (
 			!is_payout_in_inr(frm) ||
 			!is_payout_via_razorpayx(frm) ||
-			is_amended_pe_processed(frm) ||
+			is_already_paid(frm) ||
 			!user_has_payout_permissions(frm)
 		) {
 			return;
@@ -157,7 +157,7 @@ frappe.ui.form.on("Payment Entry", {
 			!is_payout_via_razorpayx(frm) ||
 			!can_cancel_payout(frm) ||
 			!user_has_payout_permissions(frm) ||
-			frm.doc.__onload.auto_cancel_payout
+			frm.doc.__onload.auto_cancel_payout_enabled
 		) {
 			return;
 		}
@@ -556,19 +556,19 @@ async function set_contact_details(dialog) {
 async function disable_payout_fields_in_amendment(frm) {
 	if (!frm.doc.amended_from || frm.doc.docstatus == 2) return;
 
-	let amended_processed = is_amended_pe_processed(frm);
+	let is_paid = is_already_paid(frm);
 
-	if (amended_processed === undefined) {
+	if (is_paid === undefined) {
 		const response = await frappe.db.get_value(
 			"Payment Entry",
 			frm.doc.amended_from,
 			"make_bank_online_payment"
 		);
 
-		amended_processed = response.message?.make_bank_online_payment || 0;
+		is_paid = response.message?.make_bank_online_payment || 0;
 	}
 
-	frm.toggle_enable(PAYOUT_FIELDS, amended_processed ? 0 : 1);
+	frm.toggle_enable(PAYOUT_FIELDS, is_paid ? 0 : 1);
 }
 
 function validate_payout_description(description) {
@@ -583,8 +583,8 @@ function validate_payout_description(description) {
 }
 
 // ############ UTILITY ############ //
-function is_amended_pe_processed(frm) {
-	return frm.doc?.__onload?.amended_pe_processed;
+function is_already_paid(frm) {
+	return frm.doc?.__onload?.is_already_paid;
 }
 
 async function set_razorpayx_setting(frm) {
