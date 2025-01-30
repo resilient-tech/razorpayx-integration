@@ -27,12 +27,6 @@ from razorpayx_integration.razorpayx_integration.utils.validation import (
     validate_razorpayx_user_payout_mode,
 )
 
-# TODO: Refactor Workflow make it more readable and remove duplicate code
-# TODO: Remove extra docstring!
-# TODO: Keep the function name more meaningful and consistent
-# TODO: with the help of @smit_vora
-
-
 #### CONSTANTS ####
 PAYOUT_MODES = Literal["NEFT/RTGS", "UPI", "Link"]
 
@@ -144,11 +138,6 @@ def set_integration_settings(doc: PaymentEntry):
 
 
 def validate_if_already_paid(doc: PaymentEntry):
-    """
-    If the amended Payment Entry is processed via RazorPayX, then do not allow to change Payout Fields.
-
-    :param doc: Payment Entry Document
-    """
     if not doc.amended_from:
         return
 
@@ -208,14 +197,6 @@ def validate_if_already_paid(doc: PaymentEntry):
 
 
 def validate_payout_details(doc: PaymentEntry):
-    """
-    Validate Payout details of RazorPayX.
-
-    If `RazorPayx Integration` is not found for the Company's Bank Account, then
-    it will just return assuming other Integration is used to make payment.
-
-    :param doc: Payment Entry
-    """
     if not doc.make_bank_online_payment:
         return
 
@@ -226,27 +207,20 @@ def validate_payout_details(doc: PaymentEntry):
             exc=frappe.MandatoryError,
         )
 
-    # Maybe other Integration is used to make payment instead of RazorPayX
+    # other integration support
     if doc.integration_doctype != RAZORPAYX_SETTING:
         return
 
     if not doc.reference_no:
         doc.reference_no = "*** UTR WILL BE SET AUTOMATICALLY ***"
 
+    # validate mode of payout
     validate_bank_payout_mode(doc)
     validate_upi_payout_mode(doc)
     validate_link_payout_mode(doc)
 
 
 def validate_bank_payout_mode(doc: PaymentEntry):
-    """
-    Validate Bank Payout Mode.
-
-    - Validate party bank account no
-    - Validate party bank IFSC code
-
-    :param doc: Payment Entry Document
-    """
     if doc.razorpayx_payout_mode != USER_PAYOUT_MODE.BANK.value:
         return
 
@@ -272,13 +246,6 @@ def validate_bank_payout_mode(doc: PaymentEntry):
 
 
 def validate_upi_payout_mode(doc: PaymentEntry):
-    """
-    Validate UPI Payout Mode.
-
-    - validate party UPI ID
-
-    :param doc: Payment Entry Document
-    """
     if doc.razorpayx_payout_mode != USER_PAYOUT_MODE.UPI.value:
         return
 
@@ -293,14 +260,6 @@ def validate_upi_payout_mode(doc: PaymentEntry):
 
 
 def validate_link_payout_mode(doc: PaymentEntry):
-    """
-    Validate Link Payout Mode.
-
-    - validate Contact's Mobile or Email
-    - validate description
-
-    :param doc: Payment Entry Document
-    """
     if doc.razorpayx_payout_mode != USER_PAYOUT_MODE.LINK.value:
         return
 
@@ -320,7 +279,7 @@ def validate_link_payout_mode(doc: PaymentEntry):
             exc=frappe.MandatoryError,
         )
 
-    # Validate email and contact is correct or not
+    # matches with contact person
     contact_details = get_contact_details(doc.contact_person)
 
     if doc.contact_mobile and doc.contact_mobile != contact_details.get(

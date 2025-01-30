@@ -129,7 +129,7 @@ class PayoutWithDocument(ABC):
             case PAYOUT_CHANNEL.COMPOSITE_UPI.value:
                 return payout_processor.pay_to_upi_id(payout_details)
             case PAYOUT_CHANNEL.LINK_CONTACT_DETAILS.value:
-                return payout_processor.create_with_contact_details(payout_details)
+                return payout_processor.pay(payout_details)
 
     def cancel(self, update_status: bool = True, cancel_doc: bool = False):
         """
@@ -329,7 +329,7 @@ class PayoutWithPaymentEntry(PayoutWithDocument):
         if self.doc.flag._cancel_payout or frappe.db.get_value(
             RAZORPAYX_SETTING, self.doc.integration_docname, "auto_cancel_payout"
         ):
-            return super().cancel(update_status, cancel_doc)
+            super().cancel(update_status, cancel_doc)
 
     ### UTILITY ###
     def can_make_payout(self) -> bool:
@@ -338,7 +338,7 @@ class PayoutWithPaymentEntry(PayoutWithDocument):
             and self.doc.paid_from_account_currency == PAYOUT_CURRENCY.INR.value
             and self.doc.docstatus == 1
             and self.doc.make_bank_online_payment
-            and self.doc.integration_doctype == RAZORPAYX_SETTING
+            and self.razorpayx_setting_name == RAZORPAYX_SETTING
         )
 
     def can_cancel_payout(self) -> bool | int:
@@ -348,7 +348,7 @@ class PayoutWithPaymentEntry(PayoutWithDocument):
                 PAYOUT_STATUS.NOT_INITIATED.value,
                 PAYOUT_STATUS.QUEUED.value,
             ]
-            and self.doc.integration_doctype == RAZORPAYX_SETTING
+            and self.razorpayx_setting_name == RAZORPAYX_SETTING
             and self.doc.make_bank_online_payment
         )
 
@@ -391,7 +391,7 @@ class PayoutWithPaymentEntry(PayoutWithDocument):
 
     ### HELPERS ###
     def _get_razorpayx_setting(self) -> str:
-        return self.doc.razorpayx_setting
+        return self.doc.integration_docname
 
     def _set_payout_channel(self) -> str:
         match self.doc.razorpayx_payout_mode:

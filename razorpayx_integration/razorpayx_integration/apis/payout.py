@@ -643,7 +643,7 @@ class RazorPayXLinkPayout(RazorPayXPayout):
     BASE_PATH = "payout-links"
 
     ### APIs ###
-    def create_with_contact_details(self, payout_details: dict) -> dict:
+    def pay(self, payout_details: dict) -> dict:
         """
         Create a `Link Payout` with party's contact details.
 
@@ -840,3 +840,13 @@ class RazorPayXLinkPayout(RazorPayXPayout):
         Note: 🟢 Override this method to customize the validation.
         """
         validate_razorpayx_payout_description(json["description"])
+
+
+class RazorPayXBankPayout(RazorPayXCompositePayout):
+    def pay(self, payout_details: dict) -> dict:
+        self.pay_to_bank_account(payout_details)
+
+
+class RazorPayXUpiPayout(RazorPayXCompositePayout):
+    def pay(self, payout_details: dict) -> dict:
+        self.pay_to_upi_id(payout_details)
