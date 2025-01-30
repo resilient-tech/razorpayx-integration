@@ -298,6 +298,7 @@ function show_cancel_payout_dialog(frm, callback) {
 		primary_action: async (values) => {
 			dialog.hide();
 
+			// TODO: _cancel_payout
 			if (values.cancel_payout) {
 				await frappe.call({
 					method: `${PE_BASE_PATH}.cancel_payout`,
@@ -493,7 +494,7 @@ async function show_make_payout_dialog(frm) {
 
 function make_payout(auth_id, docname, values) {
 	return frappe.call({
-		method: `${PE_BASE_PATH}.make_payout_with_payment_entry`,
+		method: `${PE_BASE_PATH}.make_payout_with_razorpayx`,
 		args: {
 			auth_id: auth_id,
 			docname: docname,

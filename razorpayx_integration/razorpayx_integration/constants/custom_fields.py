@@ -10,7 +10,7 @@ Note:
         ...
 """
 
-from razorpayx_integration.constants import RAZORPAYX_INTEGRATION_DOCTYPE
+from razorpayx_integration.constants import RAZORPAYX_SETTING
 from razorpayx_integration.payment_utils.constants.custom_fields import (
     BASE_CONDITION_TO_MAKE_ONLINE_PAYMENT,
 )

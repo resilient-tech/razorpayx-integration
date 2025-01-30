@@ -8,9 +8,7 @@ from frappe.core.doctype.submission_queue.submission_queue import queue_submissi
 from frappe.utils import get_link_to_form
 from frappe.utils.scheduler import is_scheduler_inactive
 
-from razorpayx_integration.constants import (
-    RAZORPAYX_INTEGRATION_DOCTYPE as INTEGRATION_DOCTYPE,
-)
+from razorpayx_integration.constants import RAZORPAYX_SETTING
 from razorpayx_integration.payment_utils.utils.validations import validate_ifsc_code
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
     PAYMENT_MODE_LIMIT,
@@ -18,9 +16,7 @@ from razorpayx_integration.razorpayx_integration.constants.payouts import (
     PAYOUT_STATUS,
     USER_PAYOUT_MODE,
 )
-from razorpayx_integration.razorpayx_integration.utils import (
-    get_razorpayx_setting,
-)
+from razorpayx_integration.razorpayx_integration.utils import is_already_paid
 from razorpayx_integration.razorpayx_integration.utils.payout import (
     PayoutWithPaymentEntry,
 )
@@ -43,7 +39,7 @@ PAYOUT_MODES = Literal["NEFT/RTGS", "UPI", "Link"]
 
 #### DOC EVENTS ####
 def onload(doc: PaymentEntry, method=None):
-    doc.set_onload("is_already_paid", is_already_paid(doc))
+    doc.set_onload("is_already_paid", is_already_paid(doc.amended_from))
 
     doc.set_onload(
         "has_payout_permission",
@@ -56,14 +52,16 @@ def onload(doc: PaymentEntry, method=None):
 
     if (
         doc.docstatus != 1
-        or not doc.razorpayx_setting
+        or not doc.integration_docname
         or not doc.make_bank_online_payment
     ):
         return
 
     doc.set_onload(
         "auto_cancel_payout_enabled",
-        is_auto_cancel_payout_enabled(doc.razorpayx_setting),
+        frappe.db.get_value(
+            RAZORPAYX_SETTING, doc.integration_docname, "auto_cancel_payout"
+        ),
     )
 
 
@@ -107,10 +105,10 @@ def before_submit(doc: PaymentEntry, method=None):
 
 def on_submit(doc: PaymentEntry, method=None):
     # early return
-    if not doc.make_bank_online_payment or not doc.razorpayx_setting:
+    if not doc.make_bank_online_payment or doc.integration_doctype != RAZORPAYX_SETTING:
         return
 
-    make_payout_with_razorpayx(doc, auth_id=get_auth_id(doc))
+    PayoutWithPaymentEntry(doc).make_payout(get_auth_id(doc))
 
 
 def before_cancel(doc: PaymentEntry, method=None):
@@ -118,7 +116,7 @@ def before_cancel(doc: PaymentEntry, method=None):
     if doc.flags.__canceled_by_rpx:
         return
 
-    handle_payout_cancellation(doc)
+    PayoutWithPaymentEntry(doc).cancel()
 
 
 ### AUTHORIZATION ###
@@ -135,15 +133,13 @@ def get_auth_id(doc: PaymentEntry) -> str | None:
 
 
 #### VALIDATIONS ####
-
-
 def set_integration_settings(doc: PaymentEntry):
     setting = frappe.db.get_value(
-        INTEGRATION_DOCTYPE, {"disabled": 0, "bank_account": doc.bank_account}
+        RAZORPAYX_SETTING, {"disabled": 0, "bank_account": doc.bank_account}
     )
 
     if setting:
-        doc.integration_doctype = INTEGRATION_DOCTYPE
+        doc.integration_doctype = RAZORPAYX_SETTING
         doc.integration_docname = setting
 
 
@@ -231,7 +227,7 @@ def validate_payout_details(doc: PaymentEntry):
         )
 
     # Maybe other Integration is used to make payment instead of RazorPayX
-    if doc.integration_doctype != INTEGRATION_DOCTYPE:
+    if doc.integration_doctype != RAZORPAYX_SETTING:
         return
 
     if not doc.reference_no:
@@ -346,151 +342,9 @@ def validate_link_payout_mode(doc: PaymentEntry):
         )
 
 
-### ACTIONS ###
-# TODO: need to be refactor
-# TODO: need to be more readable
-# TODO: remove duplicate code
-# TODO: with the help of @smit_vora
-def make_payout_with_razorpayx(doc: PaymentEntry, auth_id: str | None = None):
-    """
-    Make Payout with RazorPayX Integration.
-
-    :param doc: Payment Entry Document
-    :param auth_id: Authentication ID (after otp or password verification)
-    """
-    if is_already_paid(doc):
-        return
-
-    if not can_make_payout(doc):
-        frappe.throw(
-            msg=_(
-                "Payout cannot be made for this Payment Entry. Please check the payout details."
-            ),
-            title=_("Invalid Payment Entry"),
-        )
-
-    PayoutWithPaymentEntry(doc).make_payout(auth_id)
-
-
-def handle_payout_cancellation(
-    doc: PaymentEntry, *, auto_cancel: bool = False, throw: bool = False
-):
-    """
-    Cancel payout and payout link if possible for the Payment Entry.
-
-    Check the settings of RazorPayX Account to auto cancel the payout or not.
-
-    :param doc: Payment Entry Document
-    :param auto_cancel: Flag to auto cancel the payout is true or false
-    :param throw: Throw error if Payout cannot be cancelled, otherwise just return
-    """
-    if not can_cancel_payout(doc):
-        if throw:
-            frappe.throw(
-                title=_("Invalid Action"),
-                msg=_("Payout cannot be cancelled."),
-            )
-
-        return
-
-    if auto_cancel or is_auto_cancel_payout_enabled(doc.razorpayx_setting):
-        PayoutWithPaymentEntry(doc).cancel()
-
-
-### UTILITY ###
-# TODO:? can set response in doc's flag
-def is_already_paid(doc: PaymentEntry) -> bool | int:
-    """
-    Check if the original Payment Entry is processed via RazorPayX or not.
-
-    :param doc: Payment Entry Document
-    """
-    if not doc.amended_from:
-        return False
-
-    return frappe.db.get_value(
-        "Payment Entry", doc.amended_from, "make_bank_online_payment"
-    )
-
-
-def can_cancel_payout(doc: PaymentEntry) -> bool | int:
-    """
-    Check if the Payout can be cancelled or not.
-
-    :param doc: Payment Entry Document
-    """
-    return (
-        doc.razorpayx_payout_status.lower()
-        in [
-            PAYOUT_STATUS.NOT_INITIATED.value,
-            PAYOUT_STATUS.QUEUED.value,
-        ]
-        and doc.razorpayx_setting
-        and doc.make_bank_online_payment
-    )
-
-
-def can_make_payout(doc: PaymentEntry) -> bool:
-    """
-    Check if the Payout can be made or not.
-
-    :param doc: Payment Entry Document
-    """
-    return (
-        is_payout_in_inr(doc)
-        and doc.docstatus == 1
-        and doc.make_bank_online_payment
-        and doc.razorpayx_setting
-        and not doc.razorpayx_payout_id
-        and not doc.razorpayx_payout_link_id
-    )
-
-
-def is_payout_in_inr(doc: PaymentEntry) -> bool:
-    """
-    Check if the base conditions are met to make payout or not.
-
-    :param doc: Payment Entry Document
-    """
-    return (
-        doc.payment_type == "Pay"
-        and doc.paid_from_account_currency == PAYOUT_CURRENCY.INR.value
-    )
-
-
-def is_auto_cancel_payout_enabled(razorpayx_setting: str) -> bool | int:
-    """
-    Check if the Payout should be auto cancelled or not.
-
-    :param razorpayx_setting: RazorPayX Integration Setting name
-    """
-    return frappe.db.get_value(
-        INTEGRATION_DOCTYPE, razorpayx_setting, "auto_cancel_payout"
-    )
-
-
 ### APIs ###
 @frappe.whitelist()
-def cancel_payout(docname: str, razorpayx_setting: str):
-    """
-    Cancel Payout or Payout Link for the Payment Entry.
-
-    :param docname: Payment Entry name
-    :param razorpayx_setting: RazorPayX Integration Setting name associated to company bank account
-    """
-    user_has_payout_permissions(
-        docname,
-        razorpayx_setting,
-        pe_permission="cancel",
-        throw=True,
-    )
-
-    doc = frappe.get_cached_doc("Payment Entry", docname)
-    handle_payout_cancellation(doc, auto_cancel=True, throw=True)
-
-
-@frappe.whitelist()
-def make_payout_with_payment_entry(
+def make_payout_with_razorpayx(
     auth_id: str,
     docname: str,
     payout_mode: PAYOUT_MODES = USER_PAYOUT_MODE.LINK.value,
@@ -529,7 +383,7 @@ def make_payout_with_payment_entry(
     )
 
     validate_payout_details(doc)
-    make_payout_with_razorpayx(doc, auth_id=auth_id)
+    PayoutWithPaymentEntry(doc).make_payout(auth_id)
 
 
 @frappe.whitelist()

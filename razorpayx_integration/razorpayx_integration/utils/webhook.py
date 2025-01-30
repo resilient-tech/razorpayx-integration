@@ -7,7 +7,7 @@ from frappe.utils import get_link_to_form, get_url_to_form
 from frappe.utils.password import get_decrypted_password
 
 from razorpayx_integration.constants import (
-    RAZORPAYX_INTEGRATION_DOCTYPE,
+    RAZORPAYX_SETTING,
 )
 from razorpayx_integration.payment_utils.constants.enums import BaseEnum
 from razorpayx_integration.payment_utils.utils import log_integration_request
@@ -756,6 +756,4 @@ def get_webhook_secret(account_id: str | None = None) -> str | None:
     if not account or not account.name:
         return
 
-    return get_decrypted_password(
-        RAZORPAYX_INTEGRATION_DOCTYPE, account.name, "webhook_secret"
-    )
+    return get_decrypted_password(RAZORPAYX_SETTING, account.name, "webhook_secret")

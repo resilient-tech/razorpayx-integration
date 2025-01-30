@@ -3,7 +3,7 @@ from frappe import _
 from frappe.utils import DateTimeLikeObject, getdate
 
 from razorpayx_integration.constants import (
-    RAZORPAYX_INTEGRATION_DOCTYPE as INTEGRATION_DOCTYPE,
+    RAZORPAYX_SETTING as RAZORPAYX_SETTING,
 )
 from razorpayx_integration.payment_utils.utils import (
     get_str_datetime_from_epoch,
@@ -37,7 +37,7 @@ class RazorpayBankTransaction:
     def set_bank_account(self, bank_account: str | None = None):
         if not bank_account:
             bank_account = frappe.db.get_value(
-                doctype=INTEGRATION_DOCTYPE,
+                doctype=RAZORPAYX_SETTING,
                 filters=self.razorpayx_setting,
                 fieldname="bank_account",
             )
@@ -84,7 +84,7 @@ class RazorpayBankTransaction:
                     f"Failed to Fetch RazorPayX Transactions for Setting: {self.razorpayx_setting}"
                 ),
                 message=frappe.get_traceback(),
-                reference_doctype=INTEGRATION_DOCTYPE,
+                reference_doctype=RAZORPAYX_SETTING,
                 reference_name=self.razorpayx_setting,
             )
 
@@ -217,7 +217,7 @@ def sync_transactions_for_reconcile(
 
     if not razorpayx_setting:
         razorpayx_setting = frappe.db.get_value(
-            INTEGRATION_DOCTYPE, {"bank_account": bank_account, "disabled": 0}
+            RAZORPAYX_SETTING, {"bank_account": bank_account, "disabled": 0}
         )
 
     if not razorpayx_setting:
@@ -251,14 +251,14 @@ def sync_razorpayx_transactions(
     :param to_date: End Date
     :param bank_account: Company Bank Account
     """
-    frappe.has_permission(INTEGRATION_DOCTYPE, throw=True)
+    frappe.has_permission(RAZORPAYX_SETTING, throw=True)
 
     RazorpayBankTransaction(
         razorpayx_setting,
         from_date,
         to_date,
         bank_account=bank_account,
-        source_doctype=INTEGRATION_DOCTYPE,
+        source_doctype=RAZORPAYX_SETTING,
         source_docname=razorpayx_setting,
     ).sync()
 
@@ -272,7 +272,7 @@ def sync_transactions_periodically():
     today = getdate()
 
     settings = frappe.get_all(
-        doctype=INTEGRATION_DOCTYPE,
+        doctype=RAZORPAYX_SETTING,
         filters={"disabled": 0},
         fields=["name", "bank_account"],
     )
@@ -285,7 +285,7 @@ def sync_transactions_periodically():
 
     # update last sync date
     frappe.db.set_value(
-        INTEGRATION_DOCTYPE,
+        RAZORPAYX_SETTING,
         {"name": ("in", {setting.name for setting in settings})},
         "last_sync_on",
         today,

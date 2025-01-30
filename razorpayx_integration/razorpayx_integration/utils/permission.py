@@ -4,7 +4,7 @@ import frappe
 from frappe import _
 
 from razorpayx_integration.constants import (
-    RAZORPAYX_INTEGRATION_DOCTYPE as INTEGRATION_DOCTYPE,
+    RAZORPAYX_SETTING as RAZORPAYX_SETTING,
 )
 from razorpayx_integration.payment_utils.constants.roles import ROLE_PROFILE
 
@@ -62,7 +62,7 @@ def has_integration_access(
     :param integration: RazorPayX Integration Setting name.
     :param throw: If `True`, throws `PermissionError` if user doesn't have access.
     """
-    if integration and frappe.get_value(INTEGRATION_DOCTYPE, integration, "disabled"):
+    if integration and frappe.get_value(RAZORPAYX_SETTING, integration, "disabled"):
         if throw:
             frappe.throw(
                 title=_("Integration Disabled"),
@@ -73,7 +73,7 @@ def has_integration_access(
         return False
 
     return frappe.has_permission(
-        doctype=INTEGRATION_DOCTYPE, doc=integration, throw=throw
+        doctype=RAZORPAYX_SETTING, doc=integration, throw=throw
     )
 
 

@@ -5,6 +5,7 @@ import frappe
 from erpnext.accounts.doctype.payment_entry.payment_entry import PaymentEntry
 from frappe import _
 
+from razorpayx_integration.constants import RAZORPAYX_SETTING
 from razorpayx_integration.payment_utils.auth import Authenticate2FA
 from razorpayx_integration.payment_utils.constants.enums import BaseEnum
 from razorpayx_integration.razorpayx_integration.apis.payout import (
@@ -13,9 +14,11 @@ from razorpayx_integration.razorpayx_integration.apis.payout import (
     RazorPayXPayout,
 )
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
+    PAYOUT_CURRENCY,
     PAYOUT_STATUS,
     USER_PAYOUT_MODE,
 )
+from razorpayx_integration.razorpayx_integration.utils import is_already_paid
 
 
 class PAYOUT_CHANNEL(BaseEnum):
@@ -299,12 +302,56 @@ class PayoutWithPaymentEntry(PayoutWithDocument):
 
         :param auth_id: Authentication ID for making payout.
         """
+        if is_already_paid(self.doc.amended_from):
+            return
+
+        if not self.can_make_payout():
+            frappe.throw(
+                msg=_(
+                    "Payout cannot be made for this Payment Entry. Please check the payout details."
+                ),
+                title=_("Invalid Payment Entry"),
+            )
+
         response = super().make_payout(auth_id)
         self._update_pe_after_payout(response)
 
         return response
 
+    def cancel(self, update_status=True, cancel_doc=False):
+        if not self.can_cancel_payout():
+            frappe.msgprint(
+                title=_("Invalid Action"),
+                msg=_("Payout couldn't be cancelled."),
+            )
+            return
+
+        if self.doc.flag._cancel_payout or frappe.db.get_value(
+            RAZORPAYX_SETTING, self.doc.integration_docname, "auto_cancel_payout"
+        ):
+            return super().cancel(update_status, cancel_doc)
+
     ### UTILITY ###
+    def can_make_payout(self) -> bool:
+        return (
+            self.doc.payment_type == "Pay"
+            and self.doc.paid_from_account_currency == PAYOUT_CURRENCY.INR.value
+            and self.doc.docstatus == 1
+            and self.doc.make_bank_online_payment
+            and self.doc.integration_doctype == RAZORPAYX_SETTING
+        )
+
+    def can_cancel_payout(self) -> bool | int:
+        return (
+            self.doc.razorpayx_payout_status.lower()
+            in [
+                PAYOUT_STATUS.NOT_INITIATED.value,
+                PAYOUT_STATUS.QUEUED.value,
+            ]
+            and self.doc.integration_doctype == RAZORPAYX_SETTING
+            and self.doc.make_bank_online_payment
+        )
+
     def _update_pe_after_payout(self, response: dict | None = None):
         """
         Update Payment Entry after making payout.

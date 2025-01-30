@@ -3,7 +3,7 @@ from typing import Literal
 import frappe
 from frappe import _
 
-from razorpayx_integration.constants import RAZORPAYX_INTEGRATION_DOCTYPE
+from razorpayx_integration.constants import RAZORPAYX_SETTING
 
 
 @frappe.request_cache
@@ -30,7 +30,7 @@ def get_razorpayx_setting(
 
     return (
         frappe.db.get_value(
-            doctype=RAZORPAYX_INTEGRATION_DOCTYPE,
+            doctype=RAZORPAYX_SETTING,
             filters={
                 search_by: identifier,
             },
@@ -43,7 +43,16 @@ def get_razorpayx_setting(
 
 def get_enabled_razorpayx_settings() -> list[str]:
     return frappe.get_all(
-        RAZORPAYX_INTEGRATION_DOCTYPE,
+        RAZORPAYX_SETTING,
         filters={"disabled": 0},
         pluck="name",
+    )
+
+
+def is_already_paid(amended_from) -> bool | int:
+    if not amended_from:
+        return False
+
+    return frappe.db.get_value(
+        "Payment Entry", amended_from, "make_bank_online_payment"
     )
