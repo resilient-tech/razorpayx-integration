@@ -11,9 +11,9 @@
  "event": "Value Change",
  "idx": 0,
  "is_standard": 1,
- "message": "<p>Dear {{ doc.party_name }},</p>\n\n<p>A payment of Rs. {{ frappe.utils.fmt_money(doc.paid_amount) }} has been transferred to you as per the bank details provided by {{ doc.company }}.</p>\n\n<p>For more information, please check the attachment.</p>\n",
+ "message": "<p>M/S {{ doc.party_name }},</p>\n\n<p>A payment of <strong>{{ frappe.utils.fmt_money(doc.paid_amount,currency=\"INR\") }}</strong> has been transferred to you by <strong>{{ doc.company }}<strong>.</p>\n\n<p>For more information, please check the attachment.</p>\n",
  "message_type": "Markdown",
- "modified": "2025-01-29 18:22:32.398859",
+ "modified": "2025-01-30 13:08:31.562574",
  "modified_by": "Administrator",
  "module": "Razorpayx Integration",
  "name": "Payout Processed",
@@ -28,6 +28,6 @@
  "send_to_all_assignees": 0,
  "sender": "",
  "sender_email": "",
- "subject": "Payment of Rs. {{ frappe.utils.fmt_money(doc.paid_amount) }} Transferred to You",
+ "subject": "Payment of Rs. {{ frappe.utils.fmt_money(doc.paid_amount,currency=\"INR\") }} Transferred to You",
  "value_changed": "razorpayx_payout_status"
 }

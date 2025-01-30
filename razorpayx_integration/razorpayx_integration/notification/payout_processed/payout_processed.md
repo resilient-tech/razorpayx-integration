@@ -1,5 +1,5 @@
-<p>Dear {{ doc.party_name }},</p>
+<p>M/S {{ doc.party_name }},</p>
 
-<p>A payment of Rs. {{ frappe.utils.fmt_money(doc.paid_amount) }} has been transferred to you as per the bank details provided by {{ doc.company }}.</p>
+<p>A payment of <strong>{{ frappe.utils.fmt_money(doc.paid_amount,currency="INR") }}</strong> has been transferred to you by <strong>{{ doc.company }}<strong>.</p>
 
 <p>For more information, please check the attachment.</p>

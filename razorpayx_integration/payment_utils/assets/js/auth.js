@@ -39,7 +39,7 @@ Object.assign(payment_utils, {
 			primary_action_label: __("{0} Authenticate", [frappe.utils.icon("permission")]),
 			primary_action: async (values) => {
 				const { verified, message } = await this.verify_authenticator(
-					values.authenticator,
+					values.authenticator.trim(),
 					generation_details.auth_id,
 					generation_details.method === AUTH_METHODS.PASSWORD
 				);
