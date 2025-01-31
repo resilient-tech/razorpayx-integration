@@ -19,14 +19,12 @@ def before_payment_authentication(payment_entries: list[str]) -> None:
 def has_payout_permissions(
     payment_entries: str | list[str] | None = None,
     *,
-    ptype: Literal["submit", "cancel"] = "submit",
     throw: bool = False,
 ):
     """
     Check current user has payout permissions or not!
 
     :param payment_entries: Payment Entry name or list of names.
-    :param ptype: Payment entry permission to check.
     :param throw: If `True`, throws `PermissionError` if user doesn't have access.
 
     ---
@@ -36,7 +34,7 @@ def has_payout_permissions(
     - User have permissions to submit/cancel the PE.
     """
     authorizer_role = has_payment_authorizer_role(throw=throw)
-    permission = has_payment_entry_permission(payment_entries, ptype=ptype, throw=throw)
+    permission = has_payment_entry_permission(payment_entries, throw=throw)
 
     return bool(authorizer_role and permission)
 
@@ -57,7 +55,6 @@ def has_payment_authorizer_role(*, throw=False) -> bool | None:
 def has_payment_entry_permission(
     payment_entries: str | list[str] | None = None,
     *,
-    ptype: Literal["submit", "cancel"] = "submit",
     throw=False,
 ) -> bool | None:
     """
@@ -65,14 +62,13 @@ def has_payment_entry_permission(
     Also checks for RazorPayX Integration Setting permission.
 
     :param payment_entries: Payment Entry name or list of names.
-    :param ptype: Permission type to check.
     :param throw: If `True`, throws `PermissionError` if user doesn't have access.
 
     ---
     If any single PE doesn't have permission, returns `False`.
     """
     if not payment_entries:
-        pe_permission = frappe.has_permission("Payment Entry", ptype, throw=throw)
+        pe_permission = frappe.has_permission("Payment Entry", "submit", throw=throw)
         rpx_permission = frappe.has_permission(doctype=RAZORPAYX_SETTING, throw=throw)
 
         return bool(pe_permission and rpx_permission)
@@ -110,7 +106,9 @@ def has_payment_entry_permission(
 
         # Payment Entry.
         for pe in payment_entries:
-            permission = frappe.has_permission("Payment Entry", ptype, pe, throw=throw)
+            permission = frappe.has_permission(
+                "Payment Entry", "submit", pe, throw=throw
+            )
 
             if not permission:
                 return False
