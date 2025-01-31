@@ -6,6 +6,7 @@ from frappe import _
 from razorpayx_integration.constants import RAZORPAYX_SETTING
 
 
+# TODO: remove this and direct  use in webhook
 @frappe.request_cache
 def get_razorpayx_setting(
     identifier: str,
@@ -49,7 +50,12 @@ def get_enabled_razorpayx_settings() -> list[str]:
     )
 
 
-def is_already_paid(amended_from) -> bool | int:
+def is_already_paid(amended_from: str | None = None) -> bool | int:
+    """
+    Check if the Payment Entry is already paid via Bank Online Payment.
+
+    :param amended_from: Original Payment Entry name.
+    """
     if not amended_from:
         return False
 
