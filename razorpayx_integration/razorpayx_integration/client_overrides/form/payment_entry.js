@@ -8,10 +8,10 @@ const PAYOUT_MODES = {
 };
 
 const PAYOUT_FIELDS = [
-	//  Common
+	// Common
 	"payment_type",
 	"bank_account",
-	// Party related
+	// Party
 	"party",
 	"party_type",
 	"party_name",
@@ -22,9 +22,11 @@ const PAYOUT_FIELDS = [
 	"contact_person",
 	"contact_mobile",
 	"contact_email",
-	// Payout Related
+	// Integration
+	"integration_doctype",
+	"integration_docname",
+	// Payout
 	"paid_amount",
-	"razorpayx_setting",
 	"make_bank_online_payment",
 	"razorpayx_payout_mode",
 	"razorpayx_payout_desc",
@@ -37,65 +39,50 @@ const PAYOUT_FIELDS = [
 
 const DESCRIPTION_REGEX = /^[a-zA-Z0-9 ]{1,30}$/;
 
-// ############ DOC EVENTS ############ //
 frappe.ui.form.on("Payment Entry", {
 	refresh: async function (frm) {
 		// Do not allow to edit fields if Payment is processed by RazorpayX in amendment
 		disable_payout_fields_in_amendment(frm);
 
-		// Set description for fields
+		if (!is_payout_via_razorpayx(frm)) return;
+
+		// update descriptions
 		frm.get_field("payment_type").set_empty_description();
 		frm.get_field("reference_no").set_empty_description();
 		set_reference_no_description(frm);
 
+		// permission checks
 		const permission = user_has_payout_permissions(frm);
 		toggle_payout_sections(frm, permission);
 
-		if (!permission || !is_payout_in_inr(frm) || is_already_paid(frm)) {
-			return;
-		}
+		if (!permission) return;
 
-		// change UI only when payout is via RazorpayX Integration
-		if (is_payout_via_razorpayx(frm)) {
-			update_submit_button_label(frm);
-			set_razorpayx_state_description(frm);
-		}
+		// showing status of razorpayx payout only if permission is there
+		set_razorpayx_state_description(frm);
 
+		if (is_already_paid(frm)) return;
+
+		update_submit_button_label(frm);
+
+		// making payout manually
 		if (can_show_payout_btn(frm)) {
 			frm.add_custom_button(__("Make Payout"), () => show_make_payout_dialog(frm));
 		}
 	},
 
 	validate: function (frm) {
-		if (frm.doc.make_bank_online_payment && !frm.doc.reference_no) {
-			frm.set_value("reference_no", "*** UTR WILL BE SET AUTOMATICALLY ***");
-		}
-
-		if (!is_payout_in_inr(frm) && frm.doc.make_bank_online_payment) {
-			frm.set_value("make_bank_online_payment", 0);
-		}
+		if (is_payout_via_razorpayx(frm)) return;
 
 		if (frm.doc.razorpayx_pay_instantaneously && payment_utils.IMPS_LIMIT > frm.doc.paid_amount) {
 			frm.set_value("razorpayx_pay_instantaneously", 0);
 		}
 
-		if (is_payout_via_razorpayx(frm)) {
-			validate_payout_description(frm.doc.razorpayx_payout_desc);
-		}
+		validate_payout_description(frm.doc.razorpayx_payout_desc);
 	},
 
+	// TODO: Move to utils!
 	bank_account: async function (frm) {
 		if (!frm.doc.bank_account) {
-			frm.set_value("razorpayx_setting", "");
-			frm.set_value("make_bank_online_payment", 0);
-		} else {
-			await set_razorpayx_setting(frm);
-		}
-	},
-
-	// TODO: is it good? Ask Question
-	razorpayx_setting: function (frm) {
-		if (!frm.doc.razorpayx_setting) {
 			frm.set_value("make_bank_online_payment", 0);
 		}
 	},
@@ -106,6 +93,7 @@ frappe.ui.form.on("Payment Entry", {
 		}
 	},
 
+	// TODO: Move to utils!
 	contact_person: function (frm) {
 		if (!frm.doc.contact_person) {
 			reset_values(frm, "contact_email", "contact_mobile");
@@ -113,12 +101,7 @@ frappe.ui.form.on("Payment Entry", {
 	},
 
 	before_submit: async function (frm) {
-		if (
-			!is_payout_in_inr(frm) ||
-			!is_payout_via_razorpayx(frm) ||
-			is_already_paid(frm) ||
-			!user_has_payout_permissions(frm)
-		) {
+		if (!is_payout_via_razorpayx(frm) || is_already_paid(frm) || !user_has_payout_permissions(frm)) {
 			return;
 		}
 
@@ -129,10 +112,7 @@ frappe.ui.form.on("Payment Entry", {
 				frappe.validate = true;
 				frm.__making_payout = true;
 
-				if (!frm.doc.__onload) {
-					frm.doc.__onload = {};
-				}
-				frm.doc.__onload.auth_id = auth_id;
+				set_onload(frm, "auth_id", auth_id);
 
 				resolve();
 			};
@@ -175,24 +155,73 @@ frappe.ui.form.on("Payment Entry", {
 	},
 });
 
-// ############ HELPERS ############ //
-function toggle_payout_sections(frm, permission) {
-	const toggle = permission ? 1 : 0;
+// ############ VALIDATIONS ############ //
+function validate_payout_description(description) {
+	if (!description || DESCRIPTION_REGEX.test(description)) return;
 
-	frm.toggle_display("online_payment_section", toggle);
-	frm.toggle_display("razorpayx_payout_section", toggle);
+	frappe.throw({
+		message: __(
+			"Must be <strong>alphanumeric</strong> and contain <strong>spaces</strong> only, with a maximum of <strong>30</strong> characters."
+		),
+		title: __("Invalid RazorPayX Payout Description"),
+	});
 }
 
-function is_payout_in_inr(frm) {
-	return frm.doc.payment_type === "Pay" && frm.doc.paid_from_account_currency === "INR";
+// ############ UTILITY ############ //
+/**
+ * If current Payment Entry is amended from another Payment Entry,
+ * and original Payment Entry is processed (not mean by status) by RazorPayX, then disable
+ * payout fields in the current Payment Entry.
+ */
+async function disable_payout_fields_in_amendment(frm) {
+	if (!frm.doc.amended_from || frm.doc.docstatus == 2) return;
+
+	let is_paid = is_already_paid(frm);
+
+	if (is_paid === undefined) {
+		const response = await frappe.db.get_value(
+			"Payment Entry",
+			frm.doc.amended_from,
+			"make_bank_online_payment"
+		);
+
+		is_paid = response.message?.make_bank_online_payment || 0;
+	}
+
+	frm.toggle_enable(PAYOUT_FIELDS, is_paid ? 0 : 1);
 }
 
-function is_payout_via_razorpayx(frm) {
-	return frm.doc.make_bank_online_payment && frm.doc.razorpayx_setting;
+function is_already_paid(frm) {
+	return frm.doc?.__onload?.is_already_paid;
+}
+
+function user_has_payout_permissions(frm) {
+	if (frm.doc.__onload) {
+		return frm.doc.__onload.has_payout_permission;
+	}
+
+	return payment_utils.can_user_authorize_payout();
+}
+
+function set_onload(frm, key, value) {
+	if (!frm.doc.__onload) {
+		frm.doc.__onload = {};
+	}
+
+	frm.doc.__onload[key] = value;
 }
 
 function reset_values(frm, ...fields) {
 	fields.forEach((field) => frm.set_value(field, ""));
+}
+
+// ############ HELPERS ############ //
+function is_payout_via_razorpayx(frm) {
+	return (
+		frm.doc.make_bank_online_payment &&
+		frm.doc.integration_doctype === razorpayx.RPX_DOCTYPE &&
+		frm.doc.integration_docname
+	);
 }
 
 function update_submit_button_label(frm) {
@@ -203,37 +232,11 @@ function update_submit_button_label(frm) {
 	});
 }
 
-function set_razorpayx_state_description(frm) {
-	if (frm.doc.__islocal) return;
+function toggle_payout_sections(frm, permission) {
+	const toggle = permission ? 1 : 0;
 
-	const status = frm.doc.razorpayx_payout_status;
-
-	// prettier-ignore
-	// eslint-disable-next-line
-	const description = `<div class="d-flex indicator ${get_indicator(status)} align-item-center justify-content-center">
-							<strong>${status}</strong>
-							${get_rpx_img_container("via")}
-						</div>`;
-
-	frm.get_field("payment_type").set_new_description(description);
-}
-
-function set_reference_no_description(frm) {
-	function is_payout_link_cancelled() {
-		return (
-			frm.doc.razorpayx_payout_link_id &&
-			!frm.doc.razorpayx_payout_id &&
-			frm.doc.razorpayx_payout_status === "Cancelled"
-		);
-	}
-
-	const not_processed = ["Not Initiated", "Queued", "Processing", "Pending", "Scheduled"];
-
-	if (is_payout_link_cancelled() || not_processed.includes(frm.doc.razorpayx_payout_status)) return;
-
-	frm.get_field("reference_no").set_new_description(
-		__("This is <strong>UTR</strong> of the payout transaction done via <strong>RazorPayX</strong>")
-	);
+	frm.toggle_display("online_payment_section", toggle);
+	frm.toggle_display("razorpayx_payout_section", toggle);
 }
 
 function get_indicator(status) {
@@ -260,26 +263,45 @@ function get_rpx_img_container(txt, styles = "", classes = "") {
 		</div>`;
 }
 
-// ############ PE CANCEL HELPERS ############ //
-/**
- * Check if the payout can be cancelled or not related to the Payment Entry.
- * @param {object} frm The doctype's form object
- * @returns {boolean} `true` if the payout can be cancelled, otherwise `false`
- */
+function set_razorpayx_state_description(frm) {
+	if (frm.doc.__islocal) return;
+
+	const status = frm.doc.razorpayx_payout_status;
+
+	// prettier-ignore
+	// eslint-disable-next-line
+	const description = `<div class="d-flex indicator ${get_indicator(status)} align-item-center justify-content-center">
+							<strong>${status}</strong>
+							${get_rpx_img_container("via")}
+						</div>`;
+
+	frm.get_field("payment_type").set_new_description(description);
+}
+
+function set_reference_no_description(frm) {
+	// only payout link available and got cancelled
+	function is_payout_link_cancelled() {
+		return (
+			frm.doc.razorpayx_payout_link_id &&
+			!frm.doc.razorpayx_payout_id &&
+			frm.doc.razorpayx_payout_status === "Cancelled"
+		);
+	}
+
+	const not_processed = ["Not Initiated", "Queued", "Processing", "Pending", "Scheduled"];
+
+	if (is_payout_link_cancelled() || not_processed.includes(frm.doc.razorpayx_payout_status)) return;
+
+	frm.get_field("reference_no").set_new_description(
+		__("This is <strong>UTR</strong> of the payout transaction done via <strong>RazorPayX</strong>")
+	);
+}
+
+// ############ CANCELING PAYOUT HELPERS ############ //
 function can_cancel_payout(frm) {
 	return ["Not Initiated", "Queued"].includes(frm.doc.razorpayx_payout_status);
 }
 
-/**
- * Show dialog to confirm the cancellation of payout.
- *
- * Two options are available:
- * 1. Do not cancel the payout.
- * 2. Cancel the payout.
- *
- * @param {object} frm The doctype's form object
- * @param {function} callback The function to call after confirmation
- */
 function show_cancel_payout_dialog(frm, callback) {
 	const dialog = new frappe.ui.Dialog({
 		title: __("Cancel Payment Entry with Payout"),
@@ -298,19 +320,7 @@ function show_cancel_payout_dialog(frm, callback) {
 		primary_action: async (values) => {
 			dialog.hide();
 
-			// TODO: _cancel_payout
-			if (values.cancel_payout) {
-				await frappe.call({
-					method: `${PE_BASE_PATH}.cancel_payout`,
-					args: {
-						docname: frm.docname,
-						razorpayx_setting: frm.doc.razorpayx_setting,
-					},
-				});
-
-				frm.refresh();
-			}
-
+			set_onload(frm, "cancel_payout", values.cancel_payout);
 			callback && callback();
 		},
 	});
@@ -544,62 +554,4 @@ async function set_contact_details(dialog) {
 		contact_email: response.message.contact_email,
 		contact_mobile: response.message.contact_mobile,
 	});
-}
-
-// ############ VALIDATIONS ############ //
-/**
- * If current Payment Entry is amended from another Payment Entry,
- * and source Payment Entry is processed by RazorPayX, then disable
- * payout fields in the current Payment Entry.
- *
- * @param {object} frm The doctype's form object
- */
-async function disable_payout_fields_in_amendment(frm) {
-	if (!frm.doc.amended_from || frm.doc.docstatus == 2) return;
-
-	let is_paid = is_already_paid(frm);
-
-	if (is_paid === undefined) {
-		const response = await frappe.db.get_value(
-			"Payment Entry",
-			frm.doc.amended_from,
-			"make_bank_online_payment"
-		);
-
-		is_paid = response.message?.make_bank_online_payment || 0;
-	}
-
-	frm.toggle_enable(PAYOUT_FIELDS, is_paid ? 0 : 1);
-}
-
-function validate_payout_description(description) {
-	if (!description || DESCRIPTION_REGEX.test(description)) return;
-
-	frappe.throw({
-		message: __(
-			"Must be <strong>alphanumeric</strong> and contain <strong>spaces</strong> only, with a maximum of <strong>30</strong> characters."
-		),
-		title: __("Invalid RazorPayX Payout Description"),
-	});
-}
-
-// ############ UTILITY ############ //
-function is_already_paid(frm) {
-	return frm.doc?.__onload?.is_already_paid;
-}
-
-async function set_razorpayx_setting(frm) {
-	if (!frm.doc.bank_account) return;
-
-	const { name } = await razorpayx.get_razorpayx_setting(frm.doc.bank_account);
-
-	frm.set_value("razorpayx_setting", name || "");
-}
-
-function user_has_payout_permissions(frm) {
-	if (frm.doc.__onload) {
-		return frm.doc.__onload.has_payout_permission;
-	}
-
-	return payment_utils.can_user_authorize_payout();
 }
