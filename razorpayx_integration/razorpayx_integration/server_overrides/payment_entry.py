@@ -12,8 +12,6 @@ from razorpayx_integration.constants import RAZORPAYX_SETTING
 from razorpayx_integration.payment_utils.utils.validations import validate_ifsc_code
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
     PAYMENT_MODE_LIMIT,
-    PAYOUT_CURRENCY,
-    PAYOUT_STATUS,
     USER_PAYOUT_MODE,
 )
 from razorpayx_integration.razorpayx_integration.utils import is_already_paid
@@ -21,10 +19,7 @@ from razorpayx_integration.razorpayx_integration.utils.payout import (
     PayoutWithPaymentEntry,
 )
 from razorpayx_integration.razorpayx_integration.utils.permission import (
-    user_has_payout_permissions,
-)
-from razorpayx_integration.razorpayx_integration.utils.validation import (
-    validate_razorpayx_user_payout_mode,
+    has_payout_permissions,
 )
 
 #### CONSTANTS ####
@@ -35,13 +30,9 @@ PAYOUT_MODES = Literal["NEFT/RTGS", "UPI", "Link"]
 def onload(doc: PaymentEntry, method=None):
     doc.set_onload("is_already_paid", is_already_paid(doc.amended_from))
 
+    # TODO: TEST! Maybe this fails
     doc.set_onload(
-        "has_payout_permission",
-        user_has_payout_permissions(
-            payment_entries=doc.name,
-            razorpayx_setting=doc.razorpayx_setting,
-            throw=False,
-        ),
+        "has_payout_permission", has_payout_permissions(doc.name, throw=False)
     )
 
     if (
@@ -60,20 +51,20 @@ def onload(doc: PaymentEntry, method=None):
 
 
 def validate(doc: PaymentEntry, method=None):
-    set_integration_settings(doc)
     validate_if_already_paid(doc)
 
-    if doc.flags.is_already_paid:
+    if doc.flags._is_already_paid:
         return
 
+    set_integration_settings(doc)
     validate_payout_details(doc)
 
 
 def before_submit(doc: PaymentEntry, method=None):
     # for bulk submission from client side or single submission without payment
     if (
-        doc.make_bank_online_payment
-        and not doc.flags.is_already_paid
+        is_payout_via_razorpayx(doc)
+        and not doc.flags._is_already_paid
         and not frappe.flags.authenticated_by_cron_job
         and not get_auth_id(doc)
     ):
@@ -98,8 +89,7 @@ def before_submit(doc: PaymentEntry, method=None):
 
 
 def on_submit(doc: PaymentEntry, method=None):
-    # early return
-    if not doc.make_bank_online_payment or doc.integration_doctype != RAZORPAYX_SETTING:
+    if not is_payout_via_razorpayx(doc):
         return
 
     PayoutWithPaymentEntry(doc).make_payout(get_auth_id(doc))
@@ -119,8 +109,6 @@ def get_auth_id(doc: PaymentEntry) -> str | None:
     Get `auth_id` from Payment Entry onload.
 
     It is used to authorize the Payment Entry to make payout.
-
-    :param doc: Payment Entry Document
     """
     onload = doc.get_onload() or frappe._dict()
     return onload.get("auth_id")
@@ -128,11 +116,9 @@ def get_auth_id(doc: PaymentEntry) -> str | None:
 
 #### VALIDATIONS ####
 def set_integration_settings(doc: PaymentEntry):
-    setting = frappe.db.get_value(
+    if setting := frappe.db.get_value(
         RAZORPAYX_SETTING, {"disabled": 0, "bank_account": doc.bank_account}
-    )
-
-    if setting:
+    ):
         doc.integration_doctype = RAZORPAYX_SETTING
         doc.integration_docname = setting
 
@@ -145,7 +131,7 @@ def validate_if_already_paid(doc: PaymentEntry):
         # Common
         "payment_type",
         "bank_account",
-        # Party related
+        # Party
         "party",
         "party_type",
         "party_name",
@@ -156,9 +142,11 @@ def validate_if_already_paid(doc: PaymentEntry):
         "contact_person",
         "contact_mobile",
         "contact_email",
-        # Payout Related
+        # Integration
+        "integration_doctype",
+        "integration_docname",
+        # Payout
         "paid_amount",
-        "razorpayx_setting",
         "make_bank_online_payment",
         "razorpayx_payout_mode",
         "razorpayx_payout_desc",
@@ -179,7 +167,8 @@ def validate_if_already_paid(doc: PaymentEntry):
     if not original_doc or not original_doc.make_bank_online_payment:
         return
 
-    doc.flags.is_already_paid = True
+    # used in next actions and validations
+    doc.flags._is_already_paid = True
 
     for field in payout_fields:
         if doc.get(field) != original_doc.get(field):
@@ -301,6 +290,15 @@ def validate_link_payout_mode(doc: PaymentEntry):
         )
 
 
+### HELPERS ###
+def is_payout_via_razorpayx(doc: PaymentEntry) -> bool:
+    return (
+        doc.make_bank_online_payment
+        and doc.integration_doctype == RAZORPAYX_SETTING
+        and doc.integration_docname
+    )
+
+
 ### APIs ###
 @frappe.whitelist()
 def make_payout_with_razorpayx(
@@ -316,9 +314,8 @@ def make_payout_with_razorpayx(
     :param docname: Payment Entry name
     :param payout_mode: Payout Mode (Bank, UPI, Link)
     """
+    has_payout_permissions(docname, throw=True)
     doc = frappe.get_doc("Payment Entry", docname)
-
-    user_has_payout_permissions(docname, doc.razorpayx_setting, throw=True)
 
     # Set the fields to make payout
     doc.db_set(
@@ -359,7 +356,7 @@ def bulk_pay_and_submit(
     ---
     Reference: [Frappe Bulk Submit/Cancel](https://github.com/frappe/frappe/blob/3eda272bd61b1e73b74d30b1704d885a39c75d0c/frappe/desk/doctype/bulk_update/bulk_update.py#L51)
     """
-    user_has_payout_permissions(payment_entries=docnames, throw=True)
+    has_payout_permissions(docnames, throw=True)
 
     if isinstance(docnames, str):
         docnames = frappe.parse_json(docnames)
