@@ -90,6 +90,7 @@ CUSTOM_FIELDS = {
             "insert_after": "online_payment_section",
             "description": "Make online payment using <strong>Payments Integration</strong>",
             "permlevel": PERMISSION_LEVEL.SEVEN.value,
+            "no_copy": 1,
         },
         {
             "fieldname": "is_auto_generated",
@@ -98,6 +99,7 @@ CUSTOM_FIELDS = {
             "insert_after": "make_bank_online_payment",
             "hidden": 1,
             "permlevel": PERMISSION_LEVEL.SEVEN.value,
+            "no_copy": 1,
         },
         {
             "fieldname": "payment_authorized_by",
@@ -118,6 +120,7 @@ CUSTOM_FIELDS = {
             "print_hide": 1,
             "read_only": 1,
             "hidden": 1,
+            "no_copy": 1,
         },
         {
             "fieldname": "integration_docname",
@@ -127,6 +130,7 @@ CUSTOM_FIELDS = {
             "print_hide": 1,
             "read_only": 1,
             "hidden": 1,
+            "no_copy": 1,
         },
         {
             "fieldname": "cb_online_payment_section",
