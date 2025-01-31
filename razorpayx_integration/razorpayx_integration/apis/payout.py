@@ -850,6 +850,6 @@ class RazorPayXBankPayout(RazorPayXCompositePayout):
         return self.pay_to_bank_account(payout_details)
 
 
-class RazorPayXUpiPayout(RazorPayXCompositePayout):
+class RazorPayXUPIPayout(RazorPayXCompositePayout):
     def pay(self, payout_details: dict) -> dict:
         return self.pay_to_upi_id(payout_details)

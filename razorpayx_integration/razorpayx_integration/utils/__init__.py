@@ -1,6 +1,7 @@
 from typing import Literal
 
 import frappe
+from erpnext.accounts.doctype.payment_entry.payment_entry import PaymentEntry
 from frappe import _
 
 from razorpayx_integration.constants import RAZORPAYX_SETTING
@@ -61,4 +62,21 @@ def is_already_paid(amended_from: str | None = None) -> bool | int:
 
     return frappe.db.get_value(
         "Payment Entry", amended_from, "make_bank_online_payment"
+    )
+
+
+def is_payout_via_razorpayx(doc: PaymentEntry) -> bool:
+    """
+    Check if the Payment Entry is paid via RazorPayX.
+    """
+    return bool(
+        doc.make_bank_online_payment
+        and doc.integration_doctype == RAZORPAYX_SETTING
+        and doc.integration_docname
+    )
+
+
+def is_auto_cancel_payout_enabled(razorpayx_setting: str) -> bool | int:
+    return frappe.db.get_value(
+        RAZORPAYX_SETTING, razorpayx_setting, "auto_cancel_payout"
     )
