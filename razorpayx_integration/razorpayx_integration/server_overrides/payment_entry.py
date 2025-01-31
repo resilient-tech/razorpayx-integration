@@ -34,12 +34,11 @@ UTR_PLACEHOLDER = "*** UTR WILL BE SET AUTOMATICALLY ***"
 
 #### DOC EVENTS ####
 def onload(doc: PaymentEntry, method=None):
+    doc.set_onload("is_already_paid", is_already_paid(doc.amended_from))
+
     if not is_payout_via_razorpayx(doc):
         return
 
-    doc.set_onload("is_already_paid", is_already_paid(doc.amended_from))
-
-    # TODO: TEST! Maybe this fails
     doc.set_onload(
         "has_payout_permission", has_payout_permissions(doc.name, throw=False)
     )
