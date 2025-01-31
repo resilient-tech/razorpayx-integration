@@ -44,7 +44,7 @@ frappe.ui.form.on("Payment Entry", {
 		// Do not allow to edit fields if Payment is processed by RazorpayX in amendment
 		disable_payout_fields_in_amendment(frm);
 
-		if (!is_payout_via_razorpayx(frm)) return;
+		if (!razorpayx.is_payout_via_razorpayx(frm.doc)) return;
 
 		// update descriptions
 		frm.get_field("payment_type").set_empty_description();
@@ -71,7 +71,7 @@ frappe.ui.form.on("Payment Entry", {
 	},
 
 	validate: function (frm) {
-		if (is_payout_via_razorpayx(frm)) return;
+		if (razorpayx.is_payout_via_razorpayx(frm.doc)) return;
 
 		if (frm.doc.razorpayx_pay_instantaneously && payment_utils.IMPS_LIMIT > frm.doc.paid_amount) {
 			frm.set_value("razorpayx_pay_instantaneously", 0);
@@ -80,28 +80,18 @@ frappe.ui.form.on("Payment Entry", {
 		validate_payout_description(frm.doc.razorpayx_payout_desc);
 	},
 
-	// TODO: Move to utils!
-	bank_account: async function (frm) {
-		if (!frm.doc.bank_account) {
-			frm.set_value("make_bank_online_payment", 0);
-		}
-	},
-
 	party_bank_account: function (frm) {
 		if (!frm.doc.party_bank_account) {
 			frm.set_value("razorpayx_payout_mode", PAYOUT_MODES.LINK);
 		}
 	},
 
-	// TODO: Move to utils!
-	contact_person: function (frm) {
-		if (!frm.doc.contact_person) {
-			reset_values(frm, "contact_email", "contact_mobile");
-		}
-	},
-
 	before_submit: async function (frm) {
-		if (!is_payout_via_razorpayx(frm) || is_already_paid(frm) || !user_has_payout_permissions(frm)) {
+		if (
+			!razorpayx.is_payout_via_razorpayx(frm.doc) ||
+			is_already_paid(frm) ||
+			!user_has_payout_permissions(frm)
+		) {
 			return;
 		}
 
@@ -112,7 +102,7 @@ frappe.ui.form.on("Payment Entry", {
 				frappe.validate = true;
 				frm.__making_payout = true;
 
-				set_onload(frm, "auth_id", auth_id);
+				payment_utils.set_onload(frm, "auth_id", auth_id);
 
 				resolve();
 			};
@@ -134,7 +124,7 @@ frappe.ui.form.on("Payment Entry", {
 
 	before_cancel: async function (frm) {
 		if (
-			!is_payout_via_razorpayx(frm) ||
+			!razorpayx.is_payout_via_razorpayx(frm.doc) ||
 			!can_cancel_payout(frm) ||
 			!user_has_payout_permissions(frm) ||
 			frm.doc.__onload.auto_cancel_payout_enabled
@@ -203,27 +193,7 @@ function user_has_payout_permissions(frm) {
 	return payment_utils.can_user_authorize_payout();
 }
 
-function set_onload(frm, key, value) {
-	if (!frm.doc.__onload) {
-		frm.doc.__onload = {};
-	}
-
-	frm.doc.__onload[key] = value;
-}
-
-function reset_values(frm, ...fields) {
-	fields.forEach((field) => frm.set_value(field, ""));
-}
-
 // ############ HELPERS ############ //
-function is_payout_via_razorpayx(frm) {
-	return (
-		frm.doc.make_bank_online_payment &&
-		frm.doc.integration_doctype === razorpayx.RPX_DOCTYPE &&
-		frm.doc.integration_docname
-	);
-}
-
 function update_submit_button_label(frm) {
 	if (frm.doc.docstatus !== 0 || frm.doc.__islocal) return;
 
@@ -320,7 +290,7 @@ function show_cancel_payout_dialog(frm, callback) {
 		primary_action: async (values) => {
 			dialog.hide();
 
-			set_onload(frm, "cancel_payout", values.cancel_payout);
+			payment_utils.set_onload(frm, "cancel_payout", values.cancel_payout);
 			callback && callback();
 		},
 	});
