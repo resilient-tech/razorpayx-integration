@@ -12,9 +12,14 @@ from razorpayx_integration.constants import RAZORPAYX_SETTING
 from razorpayx_integration.payment_utils.utils.validations import validate_ifsc_code
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
     PAYMENT_MODE_LIMIT,
+    PAYOUT_CURRENCY,
     USER_PAYOUT_MODE,
 )
-from razorpayx_integration.razorpayx_integration.utils import is_already_paid
+from razorpayx_integration.razorpayx_integration.utils import (
+    is_already_paid,
+    is_auto_cancel_payout_enabled,
+    is_payout_via_razorpayx,
+)
 from razorpayx_integration.razorpayx_integration.utils.payout import (
     PayoutWithPaymentEntry,
 )
@@ -24,10 +29,14 @@ from razorpayx_integration.razorpayx_integration.utils.permission import (
 
 #### CONSTANTS ####
 PAYOUT_MODES = Literal["NEFT/RTGS", "UPI", "Link"]
+UTR_PLACEHOLDER = "*** UTR WILL BE SET AUTOMATICALLY ***"
 
 
 #### DOC EVENTS ####
 def onload(doc: PaymentEntry, method=None):
+    if not is_payout_via_razorpayx(doc):
+        return
+
     doc.set_onload("is_already_paid", is_already_paid(doc.amended_from))
 
     # TODO: TEST! Maybe this fails
@@ -35,19 +44,11 @@ def onload(doc: PaymentEntry, method=None):
         "has_payout_permission", has_payout_permissions(doc.name, throw=False)
     )
 
-    if (
-        doc.docstatus != 1
-        or not doc.integration_docname
-        or not doc.make_bank_online_payment
-    ):
-        return
-
-    doc.set_onload(
-        "auto_cancel_payout_enabled",
-        frappe.db.get_value(
-            RAZORPAYX_SETTING, doc.integration_docname, "auto_cancel_payout"
-        ),
-    )
+    if doc.docstatus == 1:
+        doc.set_onload(
+            "auto_cancel_payout_enabled",
+            is_auto_cancel_payout_enabled(doc.integration_docname),
+        )
 
 
 def validate(doc: PaymentEntry, method=None):
@@ -92,12 +93,12 @@ def on_submit(doc: PaymentEntry, method=None):
     if not is_payout_via_razorpayx(doc):
         return
 
-    PayoutWithPaymentEntry(doc).make_payout(get_auth_id(doc))
+    PayoutWithPaymentEntry(doc).make(get_auth_id(doc))
 
 
 def before_cancel(doc: PaymentEntry, method=None):
     # PE is cancelled by RazorPayX webhook or PE is cancelled when payout got cancelled
-    if doc.flags.__canceled_by_rpx:
+    if not is_payout_via_razorpayx(doc) or doc.flags.__canceled_by_rpx:
         return
 
     PayoutWithPaymentEntry(doc).cancel()
@@ -116,6 +117,13 @@ def get_auth_id(doc: PaymentEntry) -> str | None:
 
 #### VALIDATIONS ####
 def set_integration_settings(doc: PaymentEntry):
+    if doc.paid_from_account_currency != PAYOUT_CURRENCY.INR.value:
+        if doc.integration_doctype == RAZORPAYX_SETTING:
+            doc.integration_doctype = ""
+            doc.integration_docname = ""
+
+        return
+
     if setting := frappe.db.get_value(
         RAZORPAYX_SETTING, {"disabled": 0, "bank_account": doc.bank_account}
     ):
@@ -200,8 +208,8 @@ def validate_payout_details(doc: PaymentEntry):
     if doc.integration_doctype != RAZORPAYX_SETTING:
         return
 
-    if not doc.reference_no:
-        doc.reference_no = "*** UTR WILL BE SET AUTOMATICALLY ***"
+    if not doc.reference_no or doc.docstatus == 0:
+        doc.reference_no = UTR_PLACEHOLDER
 
     # validate mode of payout
     validate_bank_payout_mode(doc)
@@ -290,15 +298,6 @@ def validate_link_payout_mode(doc: PaymentEntry):
         )
 
 
-### HELPERS ###
-def is_payout_via_razorpayx(doc: PaymentEntry) -> bool:
-    return (
-        doc.make_bank_online_payment
-        and doc.integration_doctype == RAZORPAYX_SETTING
-        and doc.integration_docname
-    )
-
-
 ### APIs ###
 @frappe.whitelist()
 def make_payout_with_razorpayx(
@@ -321,7 +320,7 @@ def make_payout_with_razorpayx(
     doc.db_set(
         {
             "make_bank_online_payment": 1,
-            # Party Details
+            # Party
             "party_bank_account": kwargs.get("party_bank_account"),
             "party_bank_account_no": kwargs.get("party_bank_account_no"),
             "party_bank_ifsc": kwargs.get("party_bank_ifsc"),
@@ -329,17 +328,19 @@ def make_payout_with_razorpayx(
             "contact_person": kwargs.get("contact_person"),
             "contact_mobile": kwargs.get("contact_mobile"),
             "contact_email": kwargs.get("contact_email"),
-            # RazorPayX Details
+            # RazorPayX
             "razorpayx_payout_mode": payout_mode,
             "razorpayx_payout_desc": kwargs.get("razorpayx_payout_desc"),
             "razorpayx_pay_instantaneously": int(
                 kwargs.get("razorpayx_pay_instantaneously", 0)
             ),
+            # ERPNext
+            "reference_no": UTR_PLACEHOLDER,
         }
     )
 
     validate_payout_details(doc)
-    PayoutWithPaymentEntry(doc).make_payout(auth_id)
+    PayoutWithPaymentEntry(doc).make(auth_id)
 
 
 @frappe.whitelist()
