@@ -10,10 +10,11 @@ Note:
         ...
 """
 
+
 from razorpayx_integration.payment_utils.constants.payouts import PAYOUT_MODE
 from razorpayx_integration.payment_utils.constants.roles import PERMISSION_LEVEL
 
-BASE_CONDITION_TO_MAKE_ONLINE_PAYMENT = "doc.payment_type=='Pay' && doc.party && doc.party_type && doc.paid_from_account_currency === 'INR'"
+BASE_CONDITION_TO_MAKE_ONLINE_PAYMENT = "doc.payment_type=='Pay' && doc.party && doc.party_type && doc.integration_doctype && doc.integration_docname"
 
 
 CUSTOM_FIELDS = {
