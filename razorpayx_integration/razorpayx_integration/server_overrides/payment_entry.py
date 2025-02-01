@@ -315,6 +315,16 @@ def make_payout_with_razorpayx(
     has_payout_permissions(docname, throw=True)
     doc = frappe.get_doc("Payment Entry", docname)
 
+    if doc.make_bank_online_payment:
+        frappe.msgprint(
+            msg=_(
+                "Payout for <strong>{0}</strong> is already in <strong>{1}</strong> state"
+            ).format(docname, doc.razorpayx_payout_status),
+            alert=True,
+        )
+
+        return
+
     # Set the fields to make payout
     doc.db_set(
         {
