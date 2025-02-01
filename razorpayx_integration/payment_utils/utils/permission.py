@@ -73,6 +73,10 @@ def has_payment_entry_permission(
         return False
 
     for doctype, docname in integration_settings:
+        # integration setting is not set
+        if not doctype or not docname:
+            continue
+
         permission = frappe.has_permission(doctype, doc=docname, throw=throw)
 
         if not permission:
