@@ -194,7 +194,9 @@ class RazorpayBankTransaction:
 
         :param mapped_transaction: Mapped Bank Transaction
         """
-        return frappe.get_doc(mapped_transaction).insert()
+        return (
+            frappe.get_doc(mapped_transaction).insert(ignore_permissions=True).submit()
+        )
 
 
 ######### APIs #########
