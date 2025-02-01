@@ -66,7 +66,7 @@ export APPS_JSON_BASE64=$(echo ${APPS_JSON} | base64 -w 0)
 
 ### Manual
 
-Once you've [set up a Frappe site](https://frappeframework.com/docs/v14/user/en/installation/), installing India Compliance is simple:
+Once you've [set up a Frappe site](https://frappeframework.com/docs/v14/user/en/installation/), install app by executing the following commands in your bench directory.
 
 <details>
 <summary>Using Bench CLI</summary><br>
