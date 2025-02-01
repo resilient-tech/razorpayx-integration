@@ -36,7 +36,33 @@ class PayoutWithPaymentEntry:
         self.doc = doc
         self.razorpayx_setting_name = self.doc.integration_docname
 
-    #### MAKE ####
+    ### Make Payout | Payout Link ###
+    def make(self, auth_id: str | None = None) -> dict | None:
+        """
+        Make payout with given Payment Entry.
+
+        :param auth_id: Authentication ID for making payout.
+        """
+        if is_already_paid(self.doc.amended_from):
+            return
+
+        if not self._can_make_payout():
+            frappe.throw(
+                msg=_(
+                    "Payout cannot be made for this Payment Entry. Please check the payout details."
+                ),
+                title=_("Invalid Payment Entry"),
+            )
+
+        self._is_authenticated_payout(auth_id)
+
+        payout_processor = self._get_payout_processor()
+        response = payout_processor.pay(self._get_payout_details())
+
+        self._update_after_making(response)
+
+        return response
+
     def _is_authenticated_payout(self, auth_id: str | None = None) -> bool:
         """
         Check if the Payout (Payment Entry) is authenticated or not.
@@ -111,33 +137,6 @@ class PayoutWithPaymentEntry:
             "description": self.doc.razorpayx_payout_desc,
         }
 
-    ### Make Payout | Payout Link ###
-    def make(self, auth_id: str | None = None) -> dict | None:
-        """
-        Make payout with given Payment Entry.
-
-        :param auth_id: Authentication ID for making payout.
-        """
-        if is_already_paid(self.doc.amended_from):
-            return
-
-        if not self._can_make_payout():
-            frappe.throw(
-                msg=_(
-                    "Payout cannot be made for this Payment Entry. Please check the payout details."
-                ),
-                title=_("Invalid Payment Entry"),
-            )
-
-        self._is_authenticated_payout(auth_id)
-
-        payout_processor = self._get_payout_processor()
-        response = payout_processor.pay(self._get_payout_details())
-
-        self._update_after_making(response)
-
-        return response
-
     def _update_after_making(self, response: dict | None = None):
         self._update_authorized_by()
 
@@ -174,12 +173,6 @@ class PayoutWithPaymentEntry:
             self.doc.db_set("payment_authorized_by", user, notify=True)
 
     #### Cancel Payout | Payout Link ####
-    def _can_cancel_payout_or_link(self) -> bool:
-        return self.doc.razorpayx_payout_status.lower() in [
-            PAYOUT_STATUS.QUEUED.value,
-            PAYOUT_STATUS.NOT_INITIATED.value,
-        ] and is_payout_via_razorpayx(self.doc)
-
     def cancel(self, cancel_pe: bool = False):
         """
         Cancel payout and payout link of source document.
@@ -254,6 +247,12 @@ class PayoutWithPaymentEntry:
         self._update_after_cancelling(response, cancel_pe=cancel_pe)
 
         return response
+
+    def _can_cancel_payout_or_link(self) -> bool:
+        return self.doc.razorpayx_payout_status.lower() in [
+            PAYOUT_STATUS.QUEUED.value,
+            PAYOUT_STATUS.NOT_INITIATED.value,
+        ] and is_payout_via_razorpayx(self.doc)
 
     def _update_after_cancelling(self, response: dict, *, cancel_pe: bool = False):
         """
