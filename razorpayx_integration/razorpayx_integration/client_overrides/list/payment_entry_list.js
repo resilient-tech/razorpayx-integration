@@ -36,7 +36,8 @@ frappe.listview_settings["Payment Entry"] = {
 
 			if (ineligible_docs.length) {
 				frappe.show_alert({
-					message: __("Skipping ineligible Payment Entries:<br><strong>{0}</strong>", [
+					message: __("Skipping {0} ineligible Payment Entries:<br><strong>[{1}]</strong>", [
+						ineligible_docs.length,
 						ineligible_docs.join(", "),
 					]),
 					indicator: "yellow",
