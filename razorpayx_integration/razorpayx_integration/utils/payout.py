@@ -184,6 +184,8 @@ class PayoutWithPaymentEntry:
         """
         Cancel payout and payout link of source document.
 
+        This method supported only after cancelling Payment Entry's `before cancel` doc event.
+
         :param cancel_pe: Cancel Payment Entry or not.
 
         ---
@@ -191,19 +193,18 @@ class PayoutWithPaymentEntry:
         - ⚠️ Only `queued` payout can be cancelled, otherwise it will raise error.
         - ⚠️ Only `issued` payout link can be cancelled, otherwise it will raise error.
         """
-
-        def manually_canceled():
-            onload = self.doc.get_onload() or frappe._dict()
-            return onload.get("cancel_payout")
+        marked_to_cancel = PayoutWithPaymentEntry.is_cancel_payout_marked(self.doc.name)
 
         if not self._can_cancel_payout_or_link():
-            frappe.msgprint(
-                title=_("Invalid Action"),
-                msg=_("Payout couldn't be cancelled."),
-            )
+            # from client side manually marked to cancel
+            if marked_to_cancel:
+                frappe.msgprint(
+                    title=_("Invalid Action"),
+                    msg=_("Payout couldn't be cancelled."),
+                )
             return
 
-        if manually_canceled() or is_auto_cancel_payout_enabled(
+        if marked_to_cancel or is_auto_cancel_payout_enabled(
             self.doc.razorpayx_setting_name
         ):
             self.cancel_payout(cancel_pe=cancel_pe)
@@ -270,3 +271,40 @@ class PayoutWithPaymentEntry:
         if cancel_pe and self.doc.docstatus == 1:
             self.doc.flags.__canceled_by_rpx = True
             self.doc.cancel()
+
+    @staticmethod
+    def get_cancel_payout_key(docname: str) -> str:
+        return f"cancel_payout_{frappe.scrub(docname)}"
+
+    @staticmethod
+    def is_cancel_payout_marked(docname: str) -> bool:
+        key = PayoutWithPaymentEntry.get_cancel_payout_key(docname)
+
+        if flag := frappe.cache.get(key):
+            return flag.decode("utf-8") == "True"
+
+        return False
+
+
+@frappe.whitelist()
+def mark_payout_for_cancellation(docname: str, cancel: bool | int):
+    """
+    Marking Payment Entry's payout or payout link for cancellation.
+
+    Saving in cache to remember the action.
+
+    :param docname: Payment Entry name.
+    :param cancel: Cancel or not.
+    """
+
+    def get_mark() -> str:
+        return "True" if cancel else "False"
+
+    frappe.has_permission("Payment Entry", "cancel", doc=docname, throw=True)
+
+    setting = frappe.db.get_value("Payment Entry", docname, "integration_docname")
+    frappe.has_permission(RAZORPAYX_SETTING, doc=setting, throw=True)
+
+    frappe.cache.set(
+        PayoutWithPaymentEntry.get_cancel_payout_key(docname), get_mark(), 100
+    )
