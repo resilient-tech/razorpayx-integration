@@ -36,16 +36,21 @@ We choose RazorpayX because:
 
 ## 📦 Installation
 
-### Frappe Cloud
+Choose one of the following methods to install RazorpayX Integration to your ERPNext site.
+
+<details>
+<summary>☁️ Frappe Cloud</summary><br>
 
 Sign up for a [Frappe Cloud](https://frappecloud.com/dashboard/signup?referrer=99df7a8f) free trial, create a new site with Frappe Version-15 or above, and install ERPNext and RazorpayX-Integration from the Apps.
 
-### Docker
+</details>
+
+<details>
+<summary>🐳 Docker</summary><br>
 
 Use [this guide](https://github.com/frappe/frappe_docker/blob/main/docs/custom-apps.md) to deploy RazorpayX-Integration by building your custom image.
 
-<details>
-<summary>Sample Apps JSON</summary><br>
+Sample Apps JSON
 
 ```shell
 export APPS_JSON='[
@@ -64,12 +69,12 @@ export APPS_JSON_BASE64=$(echo ${APPS_JSON} | base64 -w 0)
 
 </details>
 
-### Manual
-
-Once you've [set up a Frappe site](https://frappeframework.com/docs/v14/user/en/installation/), install app by executing the following commands in your bench directory.
-
 <details>
-<summary>Using Bench CLI</summary><br>
+<summary>⌨️ Manual</summary><br>
+
+Once you've [set up a Frappe site](https://frappeframework.com/docs/v14/user/en/installation/), install app by executing the following commands:
+
+Using Bench CLI
 
 Download the App using the Bench CLI
 
