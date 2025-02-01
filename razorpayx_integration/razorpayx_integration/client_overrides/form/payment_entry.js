@@ -44,25 +44,25 @@ frappe.ui.form.on("Payment Entry", {
 		// Do not allow to edit fields if Payment is processed by RazorpayX in amendment
 		disable_payout_fields_in_amendment(frm);
 
-		if (!razorpayx.is_payout_via_razorpayx(frm.doc)) return;
-
-		set_reference_no_description(frm);
-
 		// permission checks
 		const permission = user_has_payout_permissions(frm);
 		toggle_payout_sections(frm, permission);
 
-		if (!permission) return;
+		if (frm.doc.integration_doctype !== razorpayx.RPX_DOCTYPE || !frm.doc.integration_docname) return;
 
-		// showing status of razorpayx payout only if permission is there
-		set_razorpayx_state_description(frm);
+		// payout is/will made via RazorPayX
+		if (frm.doc.make_bank_online_payment) {
+			set_razorpayx_state_description(frm);
+			set_reference_no_description(frm);
+		}
 
-		if (is_already_paid(frm)) return;
+		if (!permission || is_already_paid(frm)) return;
 
+		// user can make payout `on submit` or `after submit`
 		update_submit_button_label(frm);
 
 		// making payout manually
-		if (can_show_payout_btn(frm)) {
+		if (frm.doc.docstatus === 1 && !frm.doc.make_bank_online_payment) {
 			frm.add_custom_button(__("Make Payout"), () => show_make_payout_dialog(frm));
 		}
 	},
@@ -192,7 +192,7 @@ function user_has_payout_permissions(frm) {
 
 // ############ HELPERS ############ //
 function update_submit_button_label(frm) {
-	if (frm.doc.docstatus !== 0 || frm.doc.__islocal) return;
+	if (frm.doc.docstatus !== 0 || frm.doc.__islocal || !frm.doc.make_bank_online_payment) return;
 
 	frm.page.set_primary_action(__("Pay and Submit"), () => {
 		frm.savesubmit();
@@ -298,10 +298,6 @@ function show_cancel_payout_dialog(frm, callback) {
 }
 
 // ############ MAKING PAYOUT HELPERS ############ //
-function can_show_payout_btn(frm) {
-	return frm.doc.docstatus === 1 && !frm.doc.make_bank_online_payment && frm.doc.razorpayx_setting;
-}
-
 async function show_make_payout_dialog(frm) {
 	// depends on conditions
 	const BANK_MODE = `doc.razorpayx_payout_mode === '${PAYOUT_MODES.BANK}'`;
