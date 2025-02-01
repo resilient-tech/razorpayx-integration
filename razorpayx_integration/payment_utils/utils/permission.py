@@ -58,6 +58,7 @@ def has_payment_entry_permission(
             "Payment Entry",
             filters={"name": ("in", payment_entries)},
             fields=("integration_doctype", "integration_docname"),
+            as_list=True,
         )
     )
 
