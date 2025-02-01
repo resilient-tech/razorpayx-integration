@@ -1,47 +1,50 @@
-# RazorpayX Integration
+<div align="center">
 
-Automat Payments By RazorPayX API For Frappe Apps
+<h1>RazorpayX Integration</h1>
 
-## Code Formatting & Linting
+Power your ERPNext payments with RazorpayX – Automate payouts, reconcile transactions, and manage business finances effortlessly.
+<br><br>
 
-This repository uses [pre-commit](https://pre-commit.com) to ensure that basic code style and correctness requirements are met before merging any PRs. While the suite of linting/formatting tools might keep evolving you just need to install `pre-commit` to get started. It will install and configure the required tools.
+</div>
 
-### Installing pre-commit
+## 💡 Motivation
 
-```bash
-cd apps/razorpayx_integration
-pip install pre-commit
-```
+Bank integrations in India are usually costly and complex, mainly available to corporates.
 
-### Adding pre-commit hook to git
+We choose RazorpayX because:
 
-```bash
-pre-commit install
-```
+-   It is a tech layer over traditional bank accounts.
+-   It ensures robust security.
+-   Funds remain secure with a regulated bank.
+-   Onboarding process is hassle-free.
+-   No upfront cost, minimal charges beyond free limits.
 
-This will configure a git pre-commit hook which will ensure that your changes pass bare-minimum style/correctness requirements for accepting the changes.
+## ✨ Features
 
-#### Usage
+-   Automated bulk payouts for vendors
+-   Real-time payment status tracking & transaction reconciliation
+-   Support for multiple payment modes (IMPS/NEFT/RTGS/UPI)
+-   Pre-built templates for workflows and notifications
+-   Configurable to cater to diverse business processes 
 
-Pre-commit runs automatically while trying to commit changes:
+## 🚀 Why Use This Integration?
 
-![Pre-Commit Run Image](https://github.com/user-attachments/assets/0ba0aa50-f510-4d6e-ab65-f14d069bfee0)
+-   <em>Save Time</em>: Eliminate manual bank transactions from netbanking portals
+-   <em>Reduce Errors</em>: Auto-sync payment data between ERPNext and Bank
+-   <em>Financial Control</em>: Approval workflows before initiating payouts
+-   <em>Secure</em>: Role based access with 2FA to authorize manual payouts
 
-If there are  changes done by `pre-commit`, you need to add them to the staging area and retry committing.
+## 📦 Installation
 
-You can skip running pre-commit by passing the `-n` flag like so:
+## ⚙️ Configuration
 
-```bash
-git commit -n
-```
+## 📚 Documentation
 
-Current checks:
+## Contributing
 
-* Whitespace trimming (style)
-* ruff - linting, formatting, import sorting for python
-* prettier - formatting JS files
-* eslint - linter for JS files
+-   [Issue Guidelines](https://github.com/frappe/erpnext/wiki/Issue-Guidelines)
+-   [Pull Request Requirements](https://github.com/frappe/erpnext/wiki/Contribution-Guidelines)
 
 ## License
 
-MIT
+GNU General Public License (v3)
