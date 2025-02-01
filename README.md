@@ -36,6 +36,56 @@ We choose RazorpayX because:
 
 ## 📦 Installation
 
+### Frappe Cloud
+
+- Simply signup with [Frappe Cloud](https://frappecloud.com/dashboard/signup?referrer=99df7a8f) for a free trial and create a new site.
+- Select Frappe Version-15 or above and select ERPNext and RazorpayX-Integration from Apps to Install.
+
+### Docker
+
+Use [this guide](https://github.com/frappe/frappe_docker/blob/main/docs/custom-apps.md) to deploy RazorpayX-Integration by building your custom image.
+
+<details>
+<summary>Sample Apps JSON</summary>
+
+```shell
+export APPS_JSON='[
+  {
+    "url": "https://github.com/frappe/erpnext",
+    "branch": "version-15"
+  },
+  {
+    "url": "https://github.com/resilient-tech/razorpayx-integration",
+    "branch": "version-15"
+  }
+]'
+
+export APPS_JSON_BASE64=$(echo ${APPS_JSON} | base64 -w 0)
+```
+
+</details>
+
+### Manual
+
+Once you've [set up a Frappe site](https://frappeframework.com/docs/v14/user/en/installation/), installing India Compliance is simple:
+
+<details>
+<summary>Using Bench CLI</summary>
+
+Download the App using the Bench CLI
+
+```sh
+bench get-app https://github.com/resilient-tech/india-compliance.git
+```
+
+Install the App on your site
+
+```sh
+bench --site [site name] install-app india_compliance
+```
+
+</details>
+
 ## ⚙️ Configuration
 
 ## 📚 Documentation
