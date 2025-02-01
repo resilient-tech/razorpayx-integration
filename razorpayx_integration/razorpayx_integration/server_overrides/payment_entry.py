@@ -363,10 +363,11 @@ def bulk_pay_and_submit(
     ---
     Reference: [Frappe Bulk Submit/Cancel](https://github.com/frappe/frappe/blob/3eda272bd61b1e73b74d30b1704d885a39c75d0c/frappe/desk/doctype/bulk_update/bulk_update.py#L51)
     """
-    has_payout_permissions(docnames, throw=True)
 
     if isinstance(docnames, str):
         docnames = frappe.parse_json(docnames)
+
+    has_payout_permissions(docnames, throw=True)
 
     if len(docnames) < 20:
         return _bulk_pay_and_submit(auth_id, docnames, task_id)
