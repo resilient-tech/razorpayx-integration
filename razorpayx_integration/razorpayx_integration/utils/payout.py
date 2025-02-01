@@ -2,7 +2,6 @@ import frappe
 from erpnext.accounts.doctype.payment_entry.payment_entry import PaymentEntry
 from frappe import _
 
-from razorpayx_integration.constants import RAZORPAYX_SETTING
 from razorpayx_integration.payment_utils.auth import Authenticate2FA
 from razorpayx_integration.razorpayx_integration.apis.payout import (
     RazorPayXBankPayout,
@@ -283,27 +282,3 @@ class PayoutWithPaymentEntry:
             return flag.decode("utf-8") == "True"
 
         return False
-
-
-@frappe.whitelist()
-def mark_payout_for_cancellation(docname: str, cancel: bool | int):
-    """
-    Marking Payment Entry's payout or payout link for cancellation.
-
-    Saving in cache to remember the action.
-
-    :param docname: Payment Entry name.
-    :param cancel: Cancel or not.
-    """
-
-    def get_mark() -> str:
-        return "True" if cancel else "False"
-
-    frappe.has_permission("Payment Entry", "cancel", doc=docname, throw=True)
-
-    setting = frappe.db.get_value("Payment Entry", docname, "integration_docname")
-    frappe.has_permission(RAZORPAYX_SETTING, doc=setting, throw=True)
-
-    frappe.cache.set(
-        PayoutWithPaymentEntry.get_cancel_payout_key(docname), get_mark(), 100
-    )

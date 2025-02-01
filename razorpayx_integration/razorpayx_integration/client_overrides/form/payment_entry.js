@@ -510,7 +510,7 @@ function show_cancel_payout_dialog(frm, callback) {
 			dialog.hide();
 
 			frappe.call({
-				method: "razorpayx_integration.razorpayx_integration.utils.payout.mark_payout_for_cancellation",
+				method: `${PE_BASE_PATH}.mark_payout_for_cancellation`,
 				args: {
 					docname: frm.docname,
 					cancel: values.cancel_payout,
