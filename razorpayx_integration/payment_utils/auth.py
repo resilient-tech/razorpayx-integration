@@ -82,7 +82,7 @@ def generate_otp(payment_entries: list[str] | str) -> dict | None:
         payment_entries = frappe.parse_json(payment_entries)
 
     # checks permission and other tasks before sending OTP
-    execute_pre_authentication_tasks(payment_entries)
+    run_before_payment_authentication(payment_entries, throw=True)
 
     return Trigger2FA(payment_entries).send_otp()
 
@@ -163,14 +163,19 @@ def reset_otp_secret(user: str):
 
 
 ##### Utilities #####
-def execute_pre_authentication_tasks(payment_entries: list[str]):
+def run_before_payment_authentication(
+    payment_entries: str | list[str], throw: bool = False
+) -> bool:
     """
     Run `before_payment_authentication` hooks before sending OTP.
 
     :param payment_entries: List of payment entry names.
     """
     for fn in frappe.get_hooks("before_payment_authentication"):
-        frappe.get_attr(fn)(payment_entries)
+        if not frappe.get_attr(fn)(payment_entries, throw=throw):
+            return False
+
+    return True
 
 
 class Utils2FA:

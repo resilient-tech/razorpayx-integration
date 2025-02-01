@@ -80,8 +80,8 @@ function prompt_transactions_sync_date(frm) {
 function sync_transactions(razorpayx_setting, bank_account, from_date, to_date) {
 	frappe.show_alert({
 		message: __("Syncing Transactions from <strong>{0}</strong> to <strong>{1}</strong>", [
-			razorpayx.get_date_in_user_fmt(from_date),
-			razorpayx.get_date_in_user_fmt(to_date),
+			payment_utils.get_date_in_user_fmt(from_date),
+			payment_utils.get_date_in_user_fmt(to_date),
 		]),
 		indicator: "blue",
 	});

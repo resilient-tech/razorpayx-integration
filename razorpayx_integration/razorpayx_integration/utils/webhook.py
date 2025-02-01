@@ -7,7 +7,7 @@ from frappe.utils import get_link_to_form, get_url_to_form
 from frappe.utils.password import get_decrypted_password
 
 from razorpayx_integration.constants import (
-    RAZORPAYX_INTEGRATION_DOCTYPE,
+    RAZORPAYX_SETTING,
 )
 from razorpayx_integration.payment_utils.constants.enums import BaseEnum
 from razorpayx_integration.payment_utils.utils import log_integration_request
@@ -20,9 +20,6 @@ from razorpayx_integration.razorpayx_integration.constants.payouts import (
 from razorpayx_integration.razorpayx_integration.constants.webhooks import (
     EVENTS_TYPE,
     SUPPORTED_EVENTS,
-)
-from razorpayx_integration.razorpayx_integration.utils import (
-    get_razorpayx_setting,
 )
 
 # API: TUNNEL_URL/api/method/razorpayx_integration.razorpayx_integration.utils.webhooks.razorpayx_webhook_listener
@@ -80,8 +77,7 @@ class RazorPayXWebhook:
         if not self.account_id:
             self.account_id = self.payload.get("account_id")
 
-        settings = get_razorpayx_setting(self.account_id, "account_id")
-        self.razorpayx_setting_name = settings.name
+        self.razorpayx_setting_name = get_razorpayx_setting(self.account_id)
 
     def set_common_payload_attributes(self):
         """
@@ -739,6 +735,24 @@ def is_valid_webhook_signature(
         return False
 
 
+@frappe.request_cache
+def get_razorpayx_setting(account_id: str) -> str | None:
+    """
+    Fetch the RazorpayX Integration Setting name based on the identifier.
+
+    :param account_id: RazorPayX Account ID (Business ID).
+    """
+    if account_id.startswith("acc_"):
+        account_id = account_id.removeprefix("acc_")
+
+    return frappe.db.get_value(
+        doctype=RAZORPAYX_SETTING,
+        filters={
+            "account_id": account_id,
+        },
+    )
+
+
 def get_webhook_secret(account_id: str | None = None) -> str | None:
     """
     Get the webhook secret from the account id.
@@ -751,11 +765,9 @@ def get_webhook_secret(account_id: str | None = None) -> str | None:
     if not account_id:
         return
 
-    account = get_razorpayx_setting(identifier=account_id, search_by="account_id")
+    setting = get_razorpayx_setting(account_id)
 
-    if not account or not account.name:
+    if not setting:
         return
 
-    return get_decrypted_password(
-        RAZORPAYX_INTEGRATION_DOCTYPE, account.name, "webhook_secret"
-    )
+    return get_decrypted_password(RAZORPAYX_SETTING, setting, "webhook_secret")

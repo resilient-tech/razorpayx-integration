@@ -7,7 +7,7 @@ from frappe import _
 from frappe.app import UNSAFE_HTTP_METHODS
 
 from razorpayx_integration.constants import (
-    RAZORPAYX_INTEGRATION_DOCTYPE,
+    RAZORPAYX_SETTING,
 )
 from razorpayx_integration.payment_utils.constants.enums import BaseEnum
 from razorpayx_integration.payment_utils.utils import (
@@ -50,7 +50,7 @@ class BaseRazorPayXAPI:
         :param razorpayx_setting_name: RazorPayX Integration Setting name.
         """
         self.razorpayx_setting: RazorPayXIntegrationSetting = frappe.get_doc(
-            RAZORPAYX_INTEGRATION_DOCTYPE, razorpayx_setting_name
+            RAZORPAYX_SETTING, razorpayx_setting_name
         )
 
         self.authenticate_razorpayx_setting()

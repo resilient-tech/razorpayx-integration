@@ -10,7 +10,7 @@ Note:
         ...
 """
 
-from razorpayx_integration.constants import RAZORPAYX_INTEGRATION_DOCTYPE
+from razorpayx_integration.constants import RAZORPAYX_SETTING
 from razorpayx_integration.payment_utils.constants.custom_fields import (
     BASE_CONDITION_TO_MAKE_ONLINE_PAYMENT,
 )
@@ -29,27 +29,16 @@ CUSTOM_FIELDS = {
             "label": "RazorPayX Payout Details",
             "fieldtype": "Section Break",
             "insert_after": "party_bank_ifsc",  ## Insert After `PARTY BANK IFSC` field (Payment Utils Custom Field)
-            "depends_on": f"eval: {BASE_CONDITION_TO_MAKE_ONLINE_PAYMENT} && doc.razorpayx_setting && doc.make_bank_online_payment",
+            "depends_on": f"eval: {BASE_CONDITION_TO_MAKE_ONLINE_PAYMENT} && doc.make_bank_online_payment && doc.paid_from_account_currency === 'INR' && doc.integration_doctype === '{RAZORPAYX_SETTING}'",
             "collapsible": 1,
             "collapsible_depends_on": "eval: doc.docstatus === 0",
-            "permlevel": PERMISSION_LEVEL.SEVEN.value,
-        },
-        {
-            "fieldname": "razorpayx_setting",
-            "label": "RazorPayX Integration Setting",
-            "fieldtype": "Link",
-            "insert_after": "razorpayx_payout_section",
-            "options": RAZORPAYX_INTEGRATION_DOCTYPE,
-            "print_hide": 1,
-            "read_only": 1,
-            "hidden": 1,
             "permlevel": PERMISSION_LEVEL.SEVEN.value,
         },
         {
             "fieldname": "razorpayx_payout_mode",
             "label": "RazorPayX Payout Mode",
             "fieldtype": "Select",
-            "insert_after": "razorpayx_setting",
+            "insert_after": "razorpayx_payout_section",
             "fetch_from": "party_bank_account.online_payment_mode",
             "options": USER_PAYOUT_MODE.values_as_string(),
             "default": USER_PAYOUT_MODE.LINK.value,
