@@ -4,10 +4,10 @@ from frappe import _
 
 from razorpayx_integration.payment_utils.auth import Authenticate2FA
 from razorpayx_integration.razorpayx_integration.apis.payout import (
-    RazorPayXBankPayout,
-    RazorPayXLinkPayout,
-    RazorPayXPayout,
-    RazorPayXUPIPayout,
+    RazorpayXBankPayout,
+    RazorpayXLinkPayout,
+    RazorpayXPayout,
+    RazorpayXUPIPayout,
 )
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
     PAYOUT_CURRENCY,
@@ -107,14 +107,14 @@ class PayoutWithPaymentEntry:
 
     def _get_payout_processor(
         self,
-    ) -> RazorPayXBankPayout | RazorPayXUPIPayout | RazorPayXLinkPayout:
+    ) -> RazorpayXBankPayout | RazorpayXUPIPayout | RazorpayXLinkPayout:
         match self.doc.razorpayx_payout_mode:
             case USER_PAYOUT_MODE.BANK.value:
-                return RazorPayXBankPayout(self.razorpayx_setting_name)
+                return RazorpayXBankPayout(self.razorpayx_setting_name)
             case USER_PAYOUT_MODE.UPI.value:
-                return RazorPayXUPIPayout(self.razorpayx_setting_name)
+                return RazorpayXUPIPayout(self.razorpayx_setting_name)
             case USER_PAYOUT_MODE.LINK.value:
-                return RazorPayXLinkPayout(self.razorpayx_setting_name)
+                return RazorpayXLinkPayout(self.razorpayx_setting_name)
 
     def _get_payout_details(self) -> dict:
         return {
@@ -215,7 +215,7 @@ class PayoutWithPaymentEntry:
         if not self.doc.razorpayx_payout_id:
             return
 
-        response = RazorPayXPayout(self.razorpayx_setting_name).cancel(
+        response = RazorpayXPayout(self.razorpayx_setting_name).cancel(
             self.doc.razorpayx_payout_id,
             source_doctype=self.doc.doctype,
             source_docname=self.doc.name,
@@ -237,7 +237,7 @@ class PayoutWithPaymentEntry:
         if not self.doc.razorpayx_payout_link_id:
             return
 
-        response = RazorPayXLinkPayout(self.razorpayx_setting_name).cancel(
+        response = RazorpayXLinkPayout(self.razorpayx_setting_name).cancel(
             self.doc.razorpayx_payout_link_id,
             source_doctype=self.doc.doctype,
             source_docname=self.doc.name,

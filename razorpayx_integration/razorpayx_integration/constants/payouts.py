@@ -7,7 +7,7 @@ DESCRIPTION_REGEX = r"^[a-zA-Z0-9 ]{1,30}$"
 ### ENUMS ###
 class CONTACT_TYPE(BaseEnum):
     """
-    Default Contact Type available in RazorPayX.
+    Default Contact Type available in RazorpayX.
     """
 
     EMPLOYEE = "employee"

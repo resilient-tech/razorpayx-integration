@@ -16,7 +16,7 @@ from razorpayx_integration.payment_utils.utils import (
     get_start_of_day_epoch,
 )
 from razorpayx_integration.razorpayx_integration.doctype.razorpayx_integration_setting.razorpayx_integration_setting import (
-    RazorPayXIntegrationSetting,
+    RazorpayXIntegrationSetting,
 )
 
 RAZORPAYX_BASE_API_URL = "https://api.razorpay.com/v1/"
@@ -30,13 +30,13 @@ class SUPPORTED_HTTP_METHOD(BaseEnum):
     PATCH = "PATCH"
 
 
-class BaseRazorPayXAPI:
+class BaseRazorpayXAPI:
     """
-    Base class for RazorPayX APIs.
+    Base class for RazorpayX APIs.
 
-    Must need `RazorPayX Integration Account` name to initiate API.
+    Must need `RazorpayX Integration Account` name to initiate API.
 
-    :param razorpayx_setting_name: RazorPayX Integration Setting name.
+    :param razorpayx_setting_name: RazorpayX Integration Setting name.
     """
 
     ### CLASS ATTRIBUTES ###
@@ -45,11 +45,11 @@ class BaseRazorPayXAPI:
     ### SETUP ###
     def __init__(self, razorpayx_setting_name: str, *args, **kwargs):
         """
-        Initialize the RazorPayX API.
+        Initialize the RazorpayX API.
 
-        :param razorpayx_setting_name: RazorPayX Integration Setting name.
+        :param razorpayx_setting_name: RazorpayX Integration Setting name.
         """
-        self.razorpayx_setting: RazorPayXIntegrationSetting = frappe.get_doc(
+        self.razorpayx_setting: RazorpayXIntegrationSetting = frappe.get_doc(
             RAZORPAYX_SETTING, razorpayx_setting_name
         )
 
@@ -73,26 +73,26 @@ class BaseRazorPayXAPI:
         """
         Check setting is enabled or not?
 
-        Check RazorPayX API credentials `Id` and `Secret` are set or not?
+        Check RazorpayX API credentials `Id` and `Secret` are set or not?
         """
         if self.razorpayx_setting.disabled:
             frappe.throw(
                 msg=_("To use {0} setting, please enable it first!").format(
                     frappe.bold(self.razorpayx_setting.name)
                 ),
-                title=_("RazorPayX Integration Setting Is Disable"),
+                title=_("RazorpayX Integration Setting Is Disable"),
             )
 
         if not self.razorpayx_setting.key_id or not self.razorpayx_setting.key_secret:
             frappe.throw(
-                msg=_("Please set <strong>RazorPayX</strong> API credentials."),
+                msg=_("Please set <strong>RazorpayX</strong> API credentials."),
                 title=_("API Credentials Are Missing"),
             )
 
         if not self.razorpayx_setting.webhook_secret:
             frappe.msgprint(
                 msg=_(
-                    "RazorPayX Webhook Secret is missing! <br> You will not receive any updates!"
+                    "RazorpayX Webhook Secret is missing! <br> You will not receive any updates!"
                 ),
                 indicator="yellow",
                 alert=True,
@@ -141,7 +141,7 @@ class BaseRazorPayXAPI:
         self, filters: dict | None = None, count: int | None = None
     ) -> list[dict] | None:
         """
-        Fetches all data of given RazorPayX account for specific API.
+        Fetches all data of given RazorpayX account for specific API.
 
         :param filters: Filters for fetching filtered response.
         :param count: Total number of item to be fetched.If not given fetches all.
@@ -272,7 +272,7 @@ class BaseRazorPayXAPI:
             self._mask_sensitive_info(ir_log)
 
             if not ir_log.integration_request_service:
-                ir_log.integration_request_service = "RazorPayX Integration"
+                ir_log.integration_request_service = "RazorpayX Integration"
 
             enqueue_integration_request(**ir_log)
 
@@ -348,7 +348,7 @@ class BaseRazorPayXAPI:
         :param service_set:  Set flag that service name for Integration request has been set or not.
         """
         self.default_log_values.update(
-            {"integration_request_service": f"RazorPayX - {service_name}"}
+            {"integration_request_service": f"RazorpayX - {service_name}"}
         )
 
         self.ir_service_set = service_set
@@ -376,7 +376,7 @@ class BaseRazorPayXAPI:
     ### ERROR HANDLING ###
     def _handle_failed_api_response(self, response_json: dict | None = None):
         """
-        Handle failed API response from RazorPayX.
+        Handle failed API response from RazorpayX.
 
         ---
         Error response format:
@@ -396,8 +396,8 @@ class BaseRazorPayXAPI:
         ---
         Reference: https://razorpay.com/docs/errors/#sample-code
         """
-        error_msg = "There is some error in <strong>RazorPayX</strong>"
-        title = _("RazorPayX API Failed")
+        error_msg = "There is some error in <strong>RazorpayX</strong>"
+        title = _("RazorpayX API Failed")
 
         if response_json:
             error_msg = (
@@ -417,7 +417,7 @@ class BaseRazorPayXAPI:
         """
         Handle custom error message.
 
-        :param error_msg: RazorPayX API error message.
+        :param error_msg: RazorpayX API error message.
         :param title: Title of the error message.
         """
         match error_msg:
@@ -436,19 +436,19 @@ class BaseRazorPayXAPI:
 
             case "Authentication failed":
                 error_msg = _(
-                    "RazorPayX API credentials are invalid. Please set valid <strong>Key ID</strong> and <strong>Key Secret</strong>."
+                    "RazorpayX API credentials are invalid. Please set valid <strong>Key ID</strong> and <strong>Key Secret</strong>."
                 )
 
-                title = _("RazorPayX Authentication Failed")
+                title = _("RazorpayX Authentication Failed")
 
             case "The RazorpayX Account number is invalid.":
                 error_msg = _(
-                    "Bank Account number is not matching with the <strong>RazorPayX</strong> account. <br> Please set valid <strong>Bank Account</strong>."
+                    "Bank Account number is not matching with the <strong>RazorpayX</strong> account. <br> Please set valid <strong>Bank Account</strong>."
                 )
 
                 title = _("Invalid Bank Account Number")
 
         if not title:
-            title = _("RazorPayX API Failed")
+            title = _("RazorpayX API Failed")
 
         frappe.throw(title=title, msg=error_msg)

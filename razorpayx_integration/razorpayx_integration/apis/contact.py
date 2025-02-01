@@ -1,6 +1,6 @@
 from frappe.utils import validate_email_address
 
-from razorpayx_integration.razorpayx_integration.apis.base import BaseRazorPayXAPI
+from razorpayx_integration.razorpayx_integration.apis.base import BaseRazorpayXAPI
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
     CONTACT_TYPE,
 )
@@ -11,11 +11,11 @@ from razorpayx_integration.razorpayx_integration.constants.payouts import (
 # TODO: Add source doctype and docname to IR log
 
 
-class RazorPayXContact(BaseRazorPayXAPI):
+class RazorpayXContact(BaseRazorpayXAPI):
     """
-    Handle APIs for RazorPayX Contact.
+    Handle APIs for RazorpayX Contact.
 
-    :param account_name: RazorPayX account for which this `Contact` is associate.
+    :param account_name: RazorpayX account for which this `Contact` is associate.
 
     ---
     Reference: https://razorpay.com/docs/api/x/contacts
@@ -31,7 +31,7 @@ class RazorPayXContact(BaseRazorPayXAPI):
     ### APIs ###
     def create(self, **kwargs) -> dict:
         """
-        Creates `RazorPayX Contact`.
+        Creates `RazorpayX Contact`.
 
         :param dict json: Full details of the contact to create.
         :param str name: [*] The name of the contact.
@@ -44,7 +44,7 @@ class RazorPayXContact(BaseRazorPayXAPI):
         ---
         Example Usage:
         ```
-        contact = RazorPayXContact(RAZORPAYX_BANK_ACCOUNT)
+        contact = RazorpayXContact(RAZORPAYX_BANK_ACCOUNT)
 
         # Using args
         response = contact.create(
@@ -99,7 +99,7 @@ class RazorPayXContact(BaseRazorPayXAPI):
         self, filters: dict | None = None, count: int | None = None
     ) -> list[dict]:
         """
-        Get all `Contacts` associate with given `RazorPayX` account if limit is not given.
+        Get all `Contacts` associate with given `RazorpayX` account if limit is not given.
 
         :param filters: Result will be filtered as given filters.
         :param count: The number of contacts to be retrieved.
@@ -109,7 +109,7 @@ class RazorPayXContact(BaseRazorPayXAPI):
         ---
         Example Usage:
         ```
-        contact = RazorPayXContact(RAZORPAYX_BANK_ACCOUNT)
+        contact = RazorpayXContact(RAZORPAYX_BANK_ACCOUNT)
 
         filters = {
             "name":"joe",
@@ -137,7 +137,7 @@ class RazorPayXContact(BaseRazorPayXAPI):
 
     def update(self, id: str, **kwargs):
         """
-        Updates `RazorPayX Contact`.
+        Updates `RazorpayX Contact`.
 
         :param id: Contact Id of whom to update details (Ex.`cont_hkj012yuGJ`).
         :param dict json: Full details of contact to create.
@@ -151,7 +151,7 @@ class RazorPayXContact(BaseRazorPayXAPI):
         ---
         Example Usage:
         ```
-        contact = RazorPayXContact(RAZORPAYX_BANK_ACCOUNT)
+        contact = RazorpayXContact(RAZORPAYX_BANK_ACCOUNT)
 
         # Using args
         response = contact.update(
@@ -223,7 +223,7 @@ class RazorPayXContact(BaseRazorPayXAPI):
     ### Helpers ###
     def get_mapped_request(self, request: dict) -> dict:
         """
-        Maps given request data to RazorPayX request data structure.
+        Maps given request data to RazorpayX request data structure.
         """
         json = request.get("json")
 
@@ -252,7 +252,7 @@ class RazorPayXContact(BaseRazorPayXAPI):
 
     def get_contact_type(self, request: dict) -> str | None:
         """
-        Get the RazorPayX Contact Type for given ERPNext DocType.
+        Get the RazorpayX Contact Type for given ERPNext DocType.
 
         :param request: Request data.
 

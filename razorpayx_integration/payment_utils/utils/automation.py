@@ -1,5 +1,5 @@
 # TODO: create PE
-# TODO: Pay via RazorPayX on submit
+# TODO: Pay via RazorpayX on submit
 
 
 def autocreate_payment_entry():

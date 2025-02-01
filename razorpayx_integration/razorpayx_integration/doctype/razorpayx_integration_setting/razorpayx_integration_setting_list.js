@@ -3,7 +3,7 @@
 
 const WEBHOOK_PATH = "razorpayx_integration.razorpayx_integration.utils.webhook.razorpayx_webhook_listener";
 
-frappe.listview_settings["RazorPayX Integration Setting"] = {
+frappe.listview_settings["RazorpayX Integration Setting"] = {
 	refresh: function (list_view) {
 		const copy_icon = frappe.utils.icon("clipboard");
 

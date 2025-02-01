@@ -10,7 +10,7 @@ from razorpayx_integration.payment_utils.utils import (
     paisa_to_rupees,
 )
 from razorpayx_integration.razorpayx_integration.apis.transaction import (
-    RazorPayXTransaction,
+    RazorpayXTransaction,
 )
 
 
@@ -45,7 +45,7 @@ class RazorpayBankTransaction:
         if not bank_account:
             frappe.throw(
                 msg=_(
-                    "Company Bank Account not found for RazorPayX Integration Setting <strong>{0}</strong>"
+                    "Company Bank Account not found for RazorpayX Integration Setting <strong>{0}</strong>"
                 ).format(self.razorpayx_setting),
                 title=_("Company Bank Account Not Found"),
             )
@@ -68,10 +68,10 @@ class RazorpayBankTransaction:
 
     def fetch_transactions(self) -> list[dict] | None:
         """
-        Fetching Bank Transactions from RazorPayX API.
+        Fetching Bank Transactions from RazorpayX API.
         """
         try:
-            return RazorPayXTransaction(self.razorpayx_setting).get_all(
+            return RazorpayXTransaction(self.razorpayx_setting).get_all(
                 from_date=self.from_date,
                 to_date=self.to_date,
                 source_doctype=self.source_doctype,
@@ -81,7 +81,7 @@ class RazorpayBankTransaction:
         except Exception:
             frappe.log_error(
                 title=(
-                    f"Failed to Fetch RazorPayX Transactions for Setting: {self.razorpayx_setting}"
+                    f"Failed to Fetch RazorpayX Transactions for Setting: {self.razorpayx_setting}"
                 ),
                 message=frappe.get_traceback(),
                 reference_doctype=RAZORPAYX_SETTING,
@@ -92,7 +92,7 @@ class RazorpayBankTransaction:
         """
         Get existing bank account transactions from the ERPNext database.
 
-        :param transactions: List of transactions from RazorPayX API.
+        :param transactions: List of transactions from RazorpayX API.
         """
         return set(
             frappe.get_all(
@@ -110,9 +110,9 @@ class RazorpayBankTransaction:
 
     def map(self, transaction: dict):
         """
-        Map RazorPayX transaction to ERPNext's Bank Transaction.
+        Map RazorpayX transaction to ERPNext's Bank Transaction.
 
-        :param transaction: RazorPayX Transaction
+        :param transaction: RazorpayX Transaction
         """
 
         def format_notes(source):
@@ -203,14 +203,14 @@ def sync_transactions_for_reconcile(
     bank_account: str, razorpayx_setting: str | None = None
 ):
     """
-    Sync RazorPayX bank account transactions.
+    Sync RazorpayX bank account transactions.
 
     Syncs from the last sync date to the current date.
 
     If last sync date is not set, it will sync all transactions.
 
     :param bank_account: Company Bank Account
-    :param razorpayx_setting: RazorPayX Integration Setting
+    :param razorpayx_setting: RazorpayX Integration Setting
     """
     BRT = "Bank Reconciliation Tool"
     frappe.has_permission(BRT, throw=True)
@@ -223,7 +223,7 @@ def sync_transactions_for_reconcile(
     if not razorpayx_setting:
         frappe.throw(
             _(
-                "RazorPayX Integration Setting not found for Bank Account <strong>{0}</strong>"
+                "RazorpayX Integration Setting not found for Bank Account <strong>{0}</strong>"
             ).format(bank_account)
         )
 
@@ -244,9 +244,9 @@ def sync_razorpayx_transactions(
     bank_account: str | None = None,
 ):
     """
-    Sync RazorPayX bank account transactions.
+    Sync RazorpayX bank account transactions.
 
-    :param razorpayx_setting: RazorPayX Integration Setting which has the bank account.
+    :param razorpayx_setting: RazorpayX Integration Setting which has the bank account.
     :param from_date: Start Date
     :param to_date: End Date
     :param bank_account: Company Bank Account
@@ -265,7 +265,7 @@ def sync_razorpayx_transactions(
 
 def sync_transactions_periodically():
     """
-    Sync all enabled RazorPayX bank account transactions.
+    Sync all enabled RazorpayX bank account transactions.
 
     Called by scheduler.
     """

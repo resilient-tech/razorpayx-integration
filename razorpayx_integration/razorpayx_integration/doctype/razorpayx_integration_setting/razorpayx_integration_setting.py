@@ -6,7 +6,7 @@ from frappe import _
 from frappe.model.document import Document
 
 
-class RazorPayXIntegrationSetting(Document):
+class RazorpayXIntegrationSetting(Document):
     # begin: auto-generated types
     # This code is auto-generated. Do not modify anything in this block.
 
@@ -36,7 +36,7 @@ class RazorPayXIntegrationSetting(Document):
 
     def validate_api_credentials(self):
         from razorpayx_integration.razorpayx_integration.apis.validate_razorpayx import (
-            RazorPayXValidation,
+            RazorpayXValidation,
         )
 
         if self.disabled:
@@ -44,7 +44,7 @@ class RazorPayXIntegrationSetting(Document):
 
         if not self.key_id or not self.key_secret:
             frappe.throw(
-                msg=_("Please set <strong>RazorPayX</strong> API credentials."),
+                msg=_("Please set <strong>RazorpayX</strong> API credentials."),
                 title=_("API Credentials Are Missing"),
             )
 
@@ -55,7 +55,7 @@ class RazorPayXIntegrationSetting(Document):
         ):
             return
 
-        RazorPayXValidation(
+        RazorpayXValidation(
             self.key_id,
             self.get_password(fieldname="key_secret"),
             self.account_number,

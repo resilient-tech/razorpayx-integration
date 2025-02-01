@@ -50,7 +50,7 @@ frappe.ui.form.on("Payment Entry", {
 
 		if (frm.doc.integration_doctype !== razorpayx.RPX_DOCTYPE || !frm.doc.integration_docname) return;
 
-		// payout is/will made via RazorPayX
+		// payout is/will made via RazorpayX
 		if (frm.doc.make_bank_online_payment) {
 			set_razorpayx_state_description(frm);
 			set_reference_no_description(frm);
@@ -150,14 +150,14 @@ function validate_payout_description(description) {
 		message: __(
 			"Must be <strong>alphanumeric</strong> and contain <strong>spaces</strong> only, with a maximum of <strong>30</strong> characters."
 		),
-		title: __("Invalid RazorPayX Payout Description"),
+		title: __("Invalid RazorpayX Payout Description"),
 	});
 }
 
 // ############ UTILITY ############ //
 /**
  * If current Payment Entry is amended from another Payment Entry,
- * and original Payment Entry is processed (not mean by status) by RazorPayX, then disable
+ * and original Payment Entry is processed (not mean by status) by RazorpayX, then disable
  * payout fields in the current Payment Entry.
  */
 async function disable_payout_fields_in_amendment(frm) {
@@ -260,7 +260,7 @@ function set_reference_no_description(frm) {
 	if (is_payout_link_cancelled() || not_processed.includes(frm.doc.razorpayx_payout_status)) return;
 
 	frm.get_field("reference_no").set_new_description(
-		__("This is <strong>UTR</strong> of the payout transaction done via <strong>RazorPayX</strong>")
+		__("This is <strong>UTR</strong> of the payout transaction done via <strong>RazorpayX</strong>")
 	);
 }
 

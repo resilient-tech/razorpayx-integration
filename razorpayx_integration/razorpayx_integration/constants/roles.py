@@ -15,11 +15,11 @@ from razorpayx_integration.payment_utils.constants.roles import (
 
 
 class ROLE_PROFILE(BaseEnum):
-    RAZORPAYX_MANAGER = "RazorPayX Integration Manager"
+    RAZORPAYX_MANAGER = "RazorpayX Integration Manager"
 
 
 ROLES = [
-    ## RazorPayX Integration Setting ##
+    ## RazorpayX Integration Setting ##
     {
         "doctype": RAZORPAYX_SETTING,
         "role_name": ROLE_PROFILE.RAZORPAYX_MANAGER.value,

@@ -93,7 +93,7 @@ def on_submit(doc: PaymentEntry, method=None):
 
 
 def before_cancel(doc: PaymentEntry, method=None):
-    # PE is cancelled by RazorPayX webhook or PE is cancelled when payout got cancelled
+    # PE is cancelled by RazorpayX webhook or PE is cancelled when payout got cancelled
     if not is_payout_via_razorpayx(doc) or doc.flags.__canceled_by_rpx:
         return
 
@@ -180,7 +180,7 @@ def validate_if_already_paid(doc: PaymentEntry):
                 doc.meta.get_label(field)
             )
             msg += _(
-                "The source Payment Entry <strong>{0}</strong> is processed via RazorPayX."
+                "The source Payment Entry <strong>{0}</strong> is processed via RazorpayX."
             ).format(get_link_to_form("Payment Entry", doc.amended_from))
 
             frappe.throw(
@@ -303,7 +303,7 @@ def make_payout_with_razorpayx(
     **kwargs,
 ):
     """
-    Make RazorPayX Payout or Payout Link with Payment Entry.
+    Make RazorpayX Payout or Payout Link with Payment Entry.
 
     :param auth_id: Authentication ID (after otp or password verification)
     :param docname: Payment Entry name
@@ -334,7 +334,7 @@ def make_payout_with_razorpayx(
             "contact_person": kwargs.get("contact_person"),
             "contact_mobile": kwargs.get("contact_mobile"),
             "contact_email": kwargs.get("contact_email"),
-            # RazorPayX
+            # RazorpayX
             "razorpayx_payout_mode": payout_mode,
             "razorpayx_payout_desc": kwargs.get("razorpayx_payout_desc"),
             "razorpayx_pay_instantaneously": int(

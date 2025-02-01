@@ -11,7 +11,7 @@ from razorpayx_integration.constants import (
 )
 from razorpayx_integration.payment_utils.constants.enums import BaseEnum
 from razorpayx_integration.payment_utils.utils import log_integration_request
-from razorpayx_integration.razorpayx_integration.apis.payout import RazorPayXLinkPayout
+from razorpayx_integration.razorpayx_integration.apis.payout import RazorpayXLinkPayout
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
     PAYOUT_LINK_STATUS,
     PAYOUT_ORDERS,
@@ -28,7 +28,7 @@ from razorpayx_integration.razorpayx_integration.constants.webhooks import (
 
 
 ###### WEBHOOK PROCESSORS ######
-class RazorPayXWebhook:
+class RazorpayXWebhook:
     """
     Base class for RazorpayX Webhook Processor.
     """
@@ -72,7 +72,7 @@ class RazorPayXWebhook:
 
     def set_razorpayx_setting_name(self):
         """
-        Set the RazorPayX Setting Name using the `account_id`.
+        Set the RazorpayX Setting Name using the `account_id`.
         """
         if not self.account_id:
             self.account_id = self.payload.get("account_id")
@@ -177,7 +177,7 @@ class RazorPayXWebhook:
         return get_url_to_form("Integration Request", self.integration_request)
 
 
-class PayoutWebhook(RazorPayXWebhook):
+class PayoutWebhook(RazorpayXWebhook):
     """
     Processor for RazorpayX Payout Webhook.
 
@@ -330,7 +330,7 @@ class PayoutWebhook(RazorPayXWebhook):
             return True
 
         try:
-            payout_link = RazorPayXLinkPayout(self.razorpayx_setting_name)
+            payout_link = RazorpayXLinkPayout(self.razorpayx_setting_name)
             status = payout_link.get_by_id(link_id, "status")
 
             if self.is_payout_link_cancelled(status):
@@ -347,7 +347,7 @@ class PayoutWebhook(RazorPayXWebhook):
 
         except Exception:
             frappe.log_error(
-                title="RazorPayX Payout Link Cancellation Failed",
+                title="RazorpayX Payout Link Cancellation Failed",
                 message=f"Source: {self.get_ir_formlink()}\n\n{frappe.get_traceback()}",
             )
 
@@ -566,7 +566,7 @@ class TransactionWebhook(PayoutWebhook):
         )
 
 
-class AccountWebhook(RazorPayXWebhook):
+class AccountWebhook(RazorpayXWebhook):
     """
     Processor for RazorpayX Account Webhook.
 
@@ -603,9 +603,9 @@ WEBHOOK_PROCESSORS_MAP = {
 @frappe.whitelist(allow_guest=True)
 def razorpayx_webhook_listener():
     """
-    RazorPayX Webhook Listener.
+    RazorpayX Webhook Listener.
 
-    It is the entry point for the RazorPayX Webhook.
+    It is the entry point for the RazorpayX Webhook.
     """
 
     def is_unsupported_event(event: str | None) -> bool:
@@ -642,7 +642,7 @@ def razorpayx_webhook_listener():
     ir_log = {
         "request_id": event_id,
         "status": "Completed",
-        "integration_request_service": f"RazorPayX - {event or 'Unknown'}",
+        "integration_request_service": f"RazorpayX - {event or 'Unknown'}",
         "request_headers": request_headers,
         "data": payload,
         "is_remote_request": True,
@@ -691,7 +691,7 @@ def is_valid_webhook_signature(
     request_headers: str | None = None,
 ) -> bool:
     """
-    Check if the RazorPayX Webhook Signature is valid or not.
+    Check if the RazorpayX Webhook Signature is valid or not.
 
     :param row_payload: Raw payload data (Do not parse the data).
     :param request_headers: Request headers.
@@ -712,10 +712,10 @@ def is_valid_webhook_signature(
 
     try:
         if not webhook_secret:
-            raise Exception("RazorPayX Webhook Secret Not Found")
+            raise Exception("RazorpayX Webhook Secret Not Found")
 
         if signature != get_expected_signature(webhook_secret):
-            raise Exception("RazorPayX Webhook Signature Mismatch")
+            raise Exception("RazorpayX Webhook Signature Mismatch")
 
         return True
 
@@ -728,7 +728,7 @@ def is_valid_webhook_signature(
         message += f"{frappe.get_traceback()}"
 
         frappe.log_error(
-            title="Invalid RazorPayX Webhook Signature",
+            title="Invalid RazorpayX Webhook Signature",
             message=message,
         )
 
@@ -740,7 +740,7 @@ def get_razorpayx_setting(account_id: str) -> str | None:
     """
     Fetch the RazorpayX Integration Setting name based on the identifier.
 
-    :param account_id: RazorPayX Account ID (Business ID).
+    :param account_id: RazorpayX Account ID (Business ID).
     """
     if account_id.startswith("acc_"):
         account_id = account_id.removeprefix("acc_")
@@ -757,7 +757,7 @@ def get_webhook_secret(account_id: str | None = None) -> str | None:
     """
     Get the webhook secret from the account id.
 
-    :param account_id: RazorPayX Account ID (Business ID).
+    :param account_id: RazorpayX Account ID (Business ID).
 
     ---
     Note: `account_id` should be in the format `acc_XXXXXX`.

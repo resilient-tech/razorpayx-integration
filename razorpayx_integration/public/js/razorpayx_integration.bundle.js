@@ -2,5 +2,5 @@
 import "../../payment_utils/assets/js/utils";
 import "../../payment_utils/assets/js/auth";
 
-// RazorPayX Integration
+// RazorpayX Integration
 import "./utils";

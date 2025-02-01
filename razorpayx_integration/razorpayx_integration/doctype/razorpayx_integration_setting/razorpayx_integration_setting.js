@@ -1,7 +1,7 @@
 // Copyright (c) 2024, Resilient Tech and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("RazorPayX Integration Setting", {
+frappe.ui.form.on("RazorpayX Integration Setting", {
 	setup: function (frm) {
 		frm.set_query("bank_account", function () {
 			return {
@@ -18,7 +18,7 @@ frappe.ui.form.on("RazorPayX Integration Setting", {
 
 		frm.set_intro(
 			__(
-				`Get RazorPayX API's Key <strong>ID</strong> and <strong>Secret</strong> from
+				`Get RazorpayX API's Key <strong>ID</strong> and <strong>Secret</strong> from
 					<a target="_blank" href="https://x.razorpay.com/settings/developer-controls">
 						here {0}
 					</a>

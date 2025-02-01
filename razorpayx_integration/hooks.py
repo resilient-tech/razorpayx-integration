@@ -1,7 +1,7 @@
 app_name = "razorpayx_integration"
-app_title = "RazorPayX Integration"
+app_title = "RazorpayX Integration"
 app_publisher = "Resilient Tech"
-app_description = "Automat Payments By RazorPayX API For Frappe Apps"
+app_description = "Automat Payments By RazorpayX API For Frappe Apps"
 app_email = "info@resilient.tech"
 app_license = "MIT"
 required_apps = ["frappe/erpnext"]
@@ -42,4 +42,6 @@ scheduler_events = {
     ]
 }
 
-before_payment_authentication = "razorpayx_integration.payment_utils.utils.permission.has_payout_permissions"
+before_payment_authentication = (
+    "razorpayx_integration.payment_utils.utils.permission.has_payout_permissions"
+)

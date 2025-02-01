@@ -146,7 +146,7 @@
    "label": "Account"
   },
   {
-   "description": " This is a <strong> Business ID </strong>found in RazorPayX settings.\n\nGet it from <strong><a target=\"_blank\" href=\"https://x.razorpay.com/settings/business\">here.</a></strong>",
+   "description": " This is a <strong> Business ID </strong>found in RazorpayX settings.\n\nGet it from <strong><a target=\"_blank\" href=\"https://x.razorpay.com/settings/business\">here.</a></strong>",
    "fieldname": "account_id",
    "fieldtype": "Data",
    "in_list_view": 1,
@@ -193,7 +193,7 @@
  "modified": "2025-01-24 11:31:22.076310",
  "modified_by": "Administrator",
  "module": "Razorpayx Integration",
- "name": "RazorPayX Integration Setting",
+ "name": "RazorpayX Integration Setting",
  "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [

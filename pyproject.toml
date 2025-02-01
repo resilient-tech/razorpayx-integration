@@ -3,7 +3,7 @@ name = "razorpayx_integration"
 authors = [
     { name = "Resilient Tech", email = "info@resilient.tech"}
 ]
-description = "Automat Payments By RazorPayX API For Frappe Apps"
+description = "Automat Payments By RazorpayX API For Frappe Apps"
 requires-python = ">=3.10"
 readme = "README.md"
 dynamic = ["version"]

@@ -1,6 +1,6 @@
 frappe.provide("razorpayx");
 
-const RPX_DOCTYPE = "RazorPayX Integration Setting";
+const RPX_DOCTYPE = "RazorpayX Integration Setting";
 
 Object.assign(razorpayx, {
 	RPX_DOCTYPE,

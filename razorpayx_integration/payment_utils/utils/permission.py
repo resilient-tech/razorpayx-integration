@@ -41,7 +41,7 @@ def has_payment_entry_permission(
 ) -> bool | None:
     """
     Check if user can submit/cancel the payment entries.
-    Also checks for RazorPayX Integration Setting permission.
+    Also checks for RazorpayX Integration Setting permission.
 
     :param payment_entries: Payment Entry name or list of names.
     :param throw: If `True`, throws `PermissionError` if user doesn't have access.

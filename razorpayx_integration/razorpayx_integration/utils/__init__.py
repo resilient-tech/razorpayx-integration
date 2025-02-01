@@ -20,7 +20,7 @@ def is_already_paid(amended_from: str | None = None) -> bool | int:
 
 def is_payout_via_razorpayx(doc: PaymentEntry) -> bool:
     """
-    Check if the Payment Entry is paid via RazorPayX.
+    Check if the Payment Entry is paid via RazorpayX.
     """
     return bool(
         doc.make_bank_online_payment

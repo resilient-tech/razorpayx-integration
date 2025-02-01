@@ -4,7 +4,7 @@ from razorpayx_integration.payment_utils.utils import (
     rupees_to_paisa,
     to_hyphenated,
 )
-from razorpayx_integration.razorpayx_integration.apis.base import BaseRazorPayXAPI
+from razorpayx_integration.razorpayx_integration.apis.base import BaseRazorpayXAPI
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
     CONTACT_TYPE,
     CONTACT_TYPE_MAP,
@@ -20,11 +20,11 @@ from razorpayx_integration.razorpayx_integration.utils.validation import (
 )
 
 
-class RazorPayXPayout(BaseRazorPayXAPI):
+class RazorpayXPayout(BaseRazorpayXAPI):
     """
     Handle APIs for `Payout`.
 
-    :param razorpayx_setting_name: RazorPayX Integration Setting from which `Payout` will be created.
+    :param razorpayx_setting_name: RazorpayX Integration Setting from which `Payout` will be created.
 
     ---
     Note:
@@ -256,7 +256,7 @@ class RazorPayXPayout(BaseRazorPayXAPI):
 
     def _get_mapped_payout_request_body(self, payout_details: dict) -> dict:
         """
-        Mapping the request data to RazorPayX `Payout` API's required format.
+        Mapping the request data to RazorpayX `Payout` API's required format.
 
         :param payout_details: Request data for `Payout`.
 
@@ -407,11 +407,11 @@ class RazorPayXPayout(BaseRazorPayXAPI):
             validate_razorpayx_payout_description(narration)
 
 
-class RazorPayXCompositePayout(RazorPayXPayout):
+class RazorpayXCompositePayout(RazorpayXPayout):
     """
     Handle APIs for `Composite Payout`.
 
-    :param account_name: RazorPayX Integration account from which `Payout` will be created.
+    :param account_name: RazorpayX Integration account from which `Payout` will be created.
 
     ---
     Note:
@@ -504,7 +504,7 @@ class RazorPayXCompositePayout(RazorPayXPayout):
     ### HELPERS ###
     def _get_mapped_payout_request_body(self, payout_details) -> dict:
         """
-        Mapping the request data to RazorPayX `Composite Payout` API's required format.
+        Mapping the request data to RazorpayX `Composite Payout` API's required format.
 
         :param payout_details: Request body for `Payout`.
 
@@ -625,11 +625,11 @@ class RazorPayXCompositePayout(RazorPayXPayout):
         }
 
 
-class RazorPayXLinkPayout(RazorPayXPayout):
+class RazorpayXLinkPayout(RazorpayXPayout):
     """
     Handle APIs for `Link Payout`.
 
-    :param account_name: RazorPayX Integration account from which `Payout` will be created.
+    :param account_name: RazorpayX Integration account from which `Payout` will be created.
 
     ---
     Note:
@@ -685,7 +685,7 @@ class RazorPayXLinkPayout(RazorPayXPayout):
         ⚠️ This method is not maintained and used in the current implementation. ⚠️
 
         ---
-        Create a `Link Payout` with party's `RazorPayX Contact ID`.
+        Create a `Link Payout` with party's `RazorpayX Contact ID`.
 
         :param payout_details: Request body for `Payout`.
 
@@ -697,7 +697,7 @@ class RazorPayXLinkPayout(RazorPayXPayout):
         - `source_doctype` :str: The source document type.
         - `source_docname` :str: The source document name.
         - `party_type` :str: The type of party to be paid (Ex. `Customer`, `Supplier`, `Employee`).
-        - `razorpayx_party_contact_id` :str: The RazorPayX Contact ID of the party (Ex. `cont_00HjGh1`).
+        - `razorpayx_party_contact_id` :str: The RazorpayX Contact ID of the party (Ex. `cont_00HjGh1`).
         - `description` :str: Description of the payout.
            - Maximum length `30` characters. Allowed characters: `a-z`, `A-Z`, `0-9` and `space`.
 
@@ -778,7 +778,7 @@ class RazorPayXLinkPayout(RazorPayXPayout):
     ### HELPERS ###
     def _get_mapped_payout_request_body(self, payout_details: dict) -> dict:
         """
-        Mapping the request data to RazorPayX `Link Payout` API's required format.
+        Mapping the request data to RazorpayX `Link Payout` API's required format.
 
         :param payout_details: Request body for `Payout`.
 
@@ -845,11 +845,11 @@ class RazorPayXLinkPayout(RazorPayXPayout):
 
 
 #### Wrapper Classes ####
-class RazorPayXBankPayout(RazorPayXCompositePayout):
+class RazorpayXBankPayout(RazorpayXCompositePayout):
     def pay(self, payout_details: dict) -> dict:
         return self.pay_to_bank_account(payout_details)
 
 
-class RazorPayXUPIPayout(RazorPayXCompositePayout):
+class RazorpayXUPIPayout(RazorpayXCompositePayout):
     def pay(self, payout_details: dict) -> dict:
         return self.pay_to_upi_id(payout_details)
