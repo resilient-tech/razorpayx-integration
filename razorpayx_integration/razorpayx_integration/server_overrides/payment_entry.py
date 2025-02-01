@@ -9,6 +9,9 @@ from frappe.utils import get_link_to_form
 from frappe.utils.scheduler import is_scheduler_inactive
 
 from razorpayx_integration.constants import RAZORPAYX_SETTING
+from razorpayx_integration.payment_utils.auth import (
+    run_before_payment_authentication as has_payout_permissions,
+)
 from razorpayx_integration.payment_utils.utils.validations import validate_ifsc_code
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
     PAYMENT_MODE_LIMIT,
@@ -22,9 +25,6 @@ from razorpayx_integration.razorpayx_integration.utils import (
 )
 from razorpayx_integration.razorpayx_integration.utils.payout import (
     PayoutWithPaymentEntry,
-)
-from razorpayx_integration.razorpayx_integration.utils.permission import (
-    has_payout_permissions,
 )
 
 #### CONSTANTS ####

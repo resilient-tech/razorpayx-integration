@@ -42,4 +42,4 @@ scheduler_events = {
     ]
 }
 
-before_payment_authentication = "razorpayx_integration.razorpayx_integration.utils.permission.before_payment_authentication"
+before_payment_authentication = "razorpayx_integration.payment_utils.utils.permission.has_payout_permissions"
