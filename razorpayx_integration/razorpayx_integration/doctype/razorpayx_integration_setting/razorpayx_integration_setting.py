@@ -62,12 +62,6 @@ class RazorpayXIntegrationSetting(Document):
         ).validate_credentials()
 
     def validate_bank_account(self):
-        if not self.bank_account:
-            frappe.throw(
-                msg=_("Please set Bank Account."),
-                title=_("Bank Account Is Missing"),
-            )
-
         bank_account = frappe.get_value(
             "Bank Account",
             self.bank_account,
@@ -93,10 +87,10 @@ class RazorpayXIntegrationSetting(Document):
                 title=_("Invalid Bank Account"),
             )
 
-
-# Time for creation and payment with checkbox (description) for payment entry.
-# Payout settings. To determine which invoices to pay.
-# 1. Payment Entry Creation: By Party / By Invoice
-# 2. Sequence: By Posting Date / By Due Date: (relevant for insufficent funds)
-# 3. Enqueue payout if insufficent funds. If this is not checked, don't submit the payment entry as long as funds are not available.
-# Documentation HTML. RTGS / NEFT.
+        if not self.account_number:
+            frappe.throw(
+                msg=_(
+                    "Please set <strong>Bank Account Number</strong> in bank account."
+                ),
+                title=_("Account Number Is Missing"),
+            )

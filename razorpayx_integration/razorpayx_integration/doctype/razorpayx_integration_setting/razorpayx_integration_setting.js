@@ -1,5 +1,6 @@
 // Copyright (c) 2024, Resilient Tech and contributors
 // For license information, please see license.txt
+const WEBHOOK_PATH = "razorpayx_integration.razorpayx_integration.utils.webhook.razorpayx_webhook_listener";
 
 frappe.ui.form.on("RazorpayX Integration Setting", {
 	setup: function (frm) {
@@ -29,6 +30,12 @@ frappe.ui.form.on("RazorpayX Integration Setting", {
 	},
 
 	refresh: function (frm) {
+		// listner
+		frm.$wrapper.find(".webhook-url").on("click", function () {
+			const webhook = `${frappe.urllib.get_base_url()}/api/method/${WEBHOOK_PATH}`;
+			frappe.utils.copy_to_clipboard(webhook);
+		});
+
 		if (frm.doc.__islocal) return;
 
 		frm.add_custom_button(__("Sync Transactions"), () => {
