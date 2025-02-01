@@ -264,39 +264,6 @@ function set_reference_no_description(frm) {
 	);
 }
 
-// ############ CANCELING PAYOUT HELPERS ############ //
-function can_cancel_payout(frm) {
-	return ["Not Initiated", "Queued"].includes(frm.doc.razorpayx_payout_status);
-}
-
-function show_cancel_payout_dialog(frm, callback) {
-	const dialog = new frappe.ui.Dialog({
-		title: __("Cancel Payment Entry with Payout"),
-		fields: [
-			{
-				fieldname: "cancel_payout",
-				label: __("Cancel Payout"),
-				fieldtype: "Check",
-				default: 1,
-				description: __(
-					"This will cancel the payout and payout link for this Payment Entry if checked."
-				),
-			},
-		],
-		primary_action_label: __("Continue"),
-		primary_action: async (values) => {
-			dialog.hide();
-
-			payment_utils.set_onload(frm, "cancel_payout", values.cancel_payout);
-			callback && callback();
-		},
-	});
-
-	// Make primary action button Background Red
-	dialog.get_primary_btn().removeClass("btn-primary").addClass("btn-danger");
-	dialog.show();
-}
-
 // ############ MAKING PAYOUT HELPERS ############ //
 async function show_make_payout_dialog(frm) {
 	// depends on conditions
@@ -517,4 +484,44 @@ async function set_contact_details(dialog) {
 		contact_email: response.message.contact_email,
 		contact_mobile: response.message.contact_mobile,
 	});
+}
+
+// ############ CANCELING PAYOUT HELPERS ############ //
+function can_cancel_payout(frm) {
+	return ["Not Initiated", "Queued"].includes(frm.doc.razorpayx_payout_status);
+}
+
+function show_cancel_payout_dialog(frm, callback) {
+	const dialog = new frappe.ui.Dialog({
+		title: __("Cancel Payment Entry with Payout"),
+		fields: [
+			{
+				fieldname: "cancel_payout",
+				label: __("Cancel Payout"),
+				fieldtype: "Check",
+				default: 1,
+				description: __(
+					"This will cancel the payout and payout link for this Payment Entry if checked."
+				),
+			},
+		],
+		primary_action_label: __("Continue"),
+		primary_action: (values) => {
+			dialog.hide();
+
+			frappe.call({
+				method: "razorpayx_integration.razorpayx_integration.utils.payout.mark_payout_for_cancellation",
+				args: {
+					docname: frm.docname,
+					cancel: values.cancel_payout,
+				},
+			});
+
+			callback && callback();
+		},
+	});
+
+	// Make primary action button Background Red
+	dialog.get_primary_btn().removeClass("btn-primary").addClass("btn-danger");
+	dialog.show();
 }
