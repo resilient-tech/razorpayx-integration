@@ -205,7 +205,7 @@ class PayoutWithPaymentEntry:
             return
 
         if marked_to_cancel or is_auto_cancel_payout_enabled(
-            self.doc.razorpayx_setting_name
+            self.razorpayx_setting_name
         ):
             self.cancel_payout(cancel_pe=cancel_pe)
             self.cancel_payout_link(cancel_pe=cancel_pe)
