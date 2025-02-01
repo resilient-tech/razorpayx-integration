@@ -38,7 +38,7 @@ CUSTOM_FIELDS = {
             "fieldname": "razorpayx_payout_mode",
             "label": "RazorPayX Payout Mode",
             "fieldtype": "Select",
-            "insert_after": "razorpayx_setting",
+            "insert_after": "razorpayx_payout_section",
             "fetch_from": "party_bank_account.online_payment_mode",
             "options": USER_PAYOUT_MODE.values_as_string(),
             "default": USER_PAYOUT_MODE.LINK.value,

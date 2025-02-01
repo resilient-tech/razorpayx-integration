@@ -46,9 +46,6 @@ frappe.ui.form.on("Payment Entry", {
 
 		if (!razorpayx.is_payout_via_razorpayx(frm.doc)) return;
 
-		// update descriptions
-		frm.get_field("payment_type").set_empty_description();
-		frm.get_field("reference_no").set_empty_description();
 		set_reference_no_description(frm);
 
 		// permission checks

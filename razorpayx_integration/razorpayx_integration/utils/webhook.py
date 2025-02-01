@@ -770,4 +770,4 @@ def get_webhook_secret(account_id: str | None = None) -> str | None:
     if not setting:
         return
 
-    return get_decrypted_password(RAZORPAYX_SETTING, setting.name, "webhook_secret")
+    return get_decrypted_password(RAZORPAYX_SETTING, setting, "webhook_secret")

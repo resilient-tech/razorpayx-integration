@@ -175,7 +175,7 @@ class PayoutWithPaymentEntry:
 
     #### Cancel Payout | Payout Link ####
     def _can_cancel_payout_or_link(self) -> bool:
-        return self.doc.razorpayx_payout_status.lower() not in [
+        return self.doc.razorpayx_payout_status.lower() in [
             PAYOUT_STATUS.QUEUED.value,
             PAYOUT_STATUS.NOT_INITIATED.value,
         ] and is_payout_via_razorpayx(self.doc)
