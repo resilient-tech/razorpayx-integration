@@ -79,13 +79,13 @@ Using Bench CLI
 Download the App using the Bench CLI
 
 ```sh
-bench get-app https://github.com/resilient-tech/india-compliance.git
+bench get-app https://github.com/resilient-tech/razorpayx-integration.git --branch version-15
 ```
 
 Install the App on your site
 
 ```sh
-bench --site [site name] install-app india_compliance
+bench --site [site name] install-app razorpayx-integration
 ```
 
 </details>
