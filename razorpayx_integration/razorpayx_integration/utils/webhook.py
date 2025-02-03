@@ -257,6 +257,16 @@ class PayoutWebhook(RazorpayXWebhook):
         )
 
         if not docname:
+            # payout maybe made from the Payout Link so find the Payment Entry by source docname and doctype
+            if not self.source_doctype or not self.source_docname:
+                return
+
+            docname = get_latest_amended_document(
+                self.source_doctype, self.source_docname
+            )
+
+        # source is not available in the database
+        if not docname:
             return
 
         self.source_doc = frappe.get_doc(doctype, docname)
@@ -316,7 +326,12 @@ class PayoutWebhook(RazorpayXWebhook):
         if not status:
             return
 
-        self.source_doc.update({"razorpayx_payout_status": status.title()}).save()
+        value = {"razorpayx_payout_status": status.title()}
+
+        if self.source_doc.docstatus == 2:
+            self.source_doc.db_set(value, notify=True)
+        else:
+            self.source_doc.update(value).save()
 
     def cancel_payout_link(self) -> bool:
         """
@@ -771,3 +786,48 @@ def get_webhook_secret(account_id: str | None = None) -> str | None:
         return
 
     return get_decrypted_password(RAZORPAYX_SETTING, setting, "webhook_secret")
+
+
+def get_latest_amended_document(doctype: str, docname: str) -> str | None:
+    """
+    Retrieve the latest amended document.
+
+    If the document does not exist, it returns `None`.
+
+    If the document is amended, it returns the latest amended document.
+
+    This process continues until the final amended document is found.
+
+    :param doctype: The type of the document.
+    :param docname: The name of the document.
+    """
+
+    docstatus = frappe.db.get_value(
+        doctype,
+        docname,
+        "docstatus",
+    )
+
+    # document does not exist
+    if docstatus is None:
+        return
+
+    if docstatus != 2 or not frappe.db.exists(doctype, {"amended_from": docname}):
+        return docname
+
+    # document is cancelled and amended
+    while True:
+        amended = frappe.db.get_value(
+            doctype,
+            {"amended_from": docname},
+            ["name", "docstatus"],
+            as_dict=True,
+        )
+
+        if not amended:
+            return docname
+
+        if amended.docstatus != 2:
+            return amended.name
+
+        docname = amended.name
