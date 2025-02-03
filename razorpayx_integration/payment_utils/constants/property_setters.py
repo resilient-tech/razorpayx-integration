@@ -23,6 +23,13 @@ PROPERTY_SETTERS = [
     },
     {
         "doctype": "Payment Entry",
+        "fieldname": "reference_no",
+        "property": "default",
+        "property_type": "Data",
+        "value": "-",
+    },
+    {
+        "doctype": "Payment Entry",
         "fieldname": "contact_person",
         "property": "depends_on",
         "property_type": "Data",
