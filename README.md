@@ -27,7 +27,7 @@ We choose RazorpayX because:
 - Pre-built templates for workflows and notifications
 - Configurable to cater to diverse business processes
 
-## 🤔 Why Use This Integration?
+## 📈 Why Use This Integration?
 
 - <em>Save Time</em>: Eliminate manual bank transactions from netbanking portals
 - <em>Reduce Errors</em>: Auto-sync payment data between ERPNext and Bank
