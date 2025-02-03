@@ -12,7 +12,7 @@ from razorpayx_integration.constants import RAZORPAYX_SETTING
 from razorpayx_integration.payment_utils.auth import (
     run_before_payment_authentication as has_payout_permissions,
 )
-from razorpayx_integration.payment_utils.utils.validations import validate_ifsc_code
+from razorpayx_integration.payment_utils.utils.validation import validate_ifsc_code
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
     PAYMENT_MODE_LIMIT,
     PAYOUT_CURRENCY,
