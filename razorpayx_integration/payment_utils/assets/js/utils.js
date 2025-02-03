@@ -32,4 +32,13 @@ Object.assign(payment_utils, {
 	reset_values(frm, ...fields) {
 		fields.forEach((field) => frm.set_value(field, ""));
 	},
+
+	async get_employee_contact_details(employee) {
+		const { message } = await frappe.db.get_value("Employee", employee, [
+			"cell_number as contact_mobile",
+			"prefered_email as contact_email",
+		]);
+
+		return message;
+	},
 });

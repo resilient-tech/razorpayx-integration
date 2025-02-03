@@ -11,9 +11,19 @@ frappe.ui.form.on("Payment Entry", {
 		}
 	},
 
+	party: async function (frm) {
+		if (frm.doc.contact_mobile) frm.set_value("contact_mobile", "");
+
+		if (frm.doc.party_type !== "Employee" || !frm.doc.party) return;
+
+		const details = await payment_utils.get_employee_contact_details(frm.doc.party);
+
+		if (details) frm.set_value(details);
+	},
+
 	contact_person: function (frm) {
-		if (!frm.doc.contact_person) {
-			payment_utils.reset_values(frm, "contact_email", "contact_mobile");
+		if (!frm.doc.contact_person && frm.doc.contact_mobile) {
+			frm.set_value("contact_mobile", "");
 		}
 	},
 });

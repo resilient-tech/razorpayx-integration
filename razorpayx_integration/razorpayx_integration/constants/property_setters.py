@@ -16,7 +16,7 @@ PROPERTY_SETTERS = [
         "fieldname": "contact_person",
         "property": "mandatory_depends_on",
         "property_type": "Data",
-        "value": LINK_MODE_CONDITION,
+        "value": LINK_MODE_CONDITION + " && doc.party_type !== 'Employee'",
     },
     {
         "doctype": "Payment Entry",

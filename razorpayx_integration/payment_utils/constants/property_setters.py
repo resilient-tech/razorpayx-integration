@@ -21,6 +21,27 @@ PROPERTY_SETTERS = [
         "property_type": "Check",
         "value": 1,
     },
+    {
+        "doctype": "Payment Entry",
+        "fieldname": "contact_person",
+        "property": "depends_on",
+        "property_type": "Data",
+        "value": "eval: doc.party_type !== 'Employee'",
+    },
+    {
+        "doctype": "Payment Entry",
+        "fieldname": "contact_person",
+        "property": "read_only_depends_on",
+        "property_type": "Data",
+        "value": "eval: doc.party_type === 'Employee'",
+    },
+    {
+        "doctype": "Payment Entry",
+        "fieldname": "contact_email",
+        "property": "depends_on",
+        "property_type": "Data",
+        "value": "eval: doc.contact_person || doc.party_type === 'Employee'",
+    },
 ]
 
 # PE mandatory fields on `make_bank_online_payment`

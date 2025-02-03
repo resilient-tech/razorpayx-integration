@@ -262,21 +262,48 @@ def validate_link_payout_mode(doc: PaymentEntry):
     if doc.razorpayx_payout_mode != USER_PAYOUT_MODE.LINK.value:
         return
 
-    if not (doc.contact_mobile or doc.contact_email):
-        frappe.throw(
-            msg=_(
-                "Any one of Party's Mobile or Email is mandatory to make payout with link."
-            ),
-            title=_("Mandatory Fields Missing"),
-            exc=frappe.MandatoryError,
-        )
-
     if not doc.razorpayx_payout_desc:
         frappe.throw(
             msg=_("Payout Description is mandatory to make payment with Link."),
             title=_("Mandatory Fields Missing"),
             exc=frappe.MandatoryError,
         )
+
+    is_employee = doc.party_type == "Employee"
+
+    if is_employee:
+        if not (doc.contact_mobile or doc.contact_email):
+            contact_details = frappe.get_value(
+                "Employee",
+                doc.party,
+                [
+                    "cell_number as contact_mobile",
+                    "prefered_email as contact_email",
+                ],
+                as_dict=True,
+            )
+
+            # why db_set? : if calls from API, then it will not update the value
+            doc.db_set(contact_details)
+
+    if not (doc.contact_mobile or doc.contact_email):
+        msg = ""
+
+        if is_employee:
+            msg = _(
+                "Set Employee's Mobile or Preferred Email to make payout with link."
+            )
+        else:
+            msg = _("Party's Mobile or Email is mandatory to make payout with link.")
+
+        frappe.throw(
+            msg=msg,
+            title=_("Contact Details Missing"),
+            exc=frappe.MandatoryError,
+        )
+
+    if is_employee:
+        return
 
     # matches with contact person
     contact_details = get_contact_details(doc.contact_person)

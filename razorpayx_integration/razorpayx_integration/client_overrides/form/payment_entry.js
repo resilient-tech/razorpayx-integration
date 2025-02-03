@@ -68,13 +68,27 @@ frappe.ui.form.on("Payment Entry", {
 	},
 
 	validate: function (frm) {
-		if (razorpayx.is_payout_via_razorpayx(frm.doc)) return;
+		if (!razorpayx.is_payout_via_razorpayx(frm.doc)) return;
 
 		if (frm.doc.razorpayx_pay_instantaneously && payment_utils.IMPS_LIMIT > frm.doc.paid_amount) {
 			frm.set_value("razorpayx_pay_instantaneously", 0);
 		}
 
 		validate_payout_description(frm.doc.razorpayx_payout_desc);
+
+		if (frm.doc.razorpayx_payout_mode === PAYOUT_MODES.LINK) {
+			if (!frm.doc.contact_mobile && !frm.doc.contact_email) {
+				let msg = "";
+
+				if (frm.doc.party_type === "Employee") {
+					msg = __("Set Employee's Mobile or Preferred Email to make payout with link.");
+				} else {
+					msg = __("Any one of Party's Mobile or Email is mandatory to make payout with link.");
+				}
+
+				frappe.throw({ message: msg, title: __("Contact Details Missing") });
+			}
+		}
 	},
 
 	party_bank_account: function (frm) {
@@ -352,7 +366,8 @@ async function show_make_payout_dialog(frm) {
 				fieldtype: "Link",
 				options: "Contact",
 				default: frm.doc.contact_person,
-				mandatory_depends_on: `eval: ${LINK_MODE}`,
+				depends_on: `eval: ${frm.doc.party_type !== "Employee"}`,
+				mandatory_depends_on: `eval: ${LINK_MODE} && ${frm.doc.party_type !== "Employee"}`,
 				get_query: function () {
 					return {
 						filters: {
@@ -365,29 +380,31 @@ async function show_make_payout_dialog(frm) {
 					set_contact_details(dialog);
 				},
 			},
-			{
-				fieldname: "contact_mobile",
-				label: "Mobile",
-				fieldtype: "Data",
-				options: "Phone",
-				depends_on: `eval: doc.contact_person && doc.contact_mobile`,
-				read_only: 1,
-				default: frm.doc.contact_mobile,
-			},
-			{
-				fieldname: "party_contact_cb",
-				fieldtype: "Column Break",
-			},
+			// TODO: depends_on isn't working
 			{
 				fieldname: "contact_email",
 				label: "Email",
 				fieldtype: "Data",
 				options: "Email",
-				depends_on: `eval:doc.contact_person && doc.contact_email`,
-				mandatory_depends_on: `eval: ${LINK_MODE}`,
+				// depends_on: "eval: doc.contact_email",
 				read_only: 1,
 				default: frm.doc.contact_email,
 			},
+			{
+				fieldname: "party_contact_cb",
+				fieldtype: "Column Break",
+			},
+			// TODO: depends_on isn't working
+			{
+				fieldname: "contact_mobile",
+				label: "Mobile",
+				fieldtype: "Data",
+				options: "Phone",
+				depends_on: "eval: doc.contact_mobile",
+				read_only: 1,
+				default: frm.doc.contact_mobile,
+			},
+
 			{
 				fieldname: "payout_section_break",
 				label: __("Payout Details"),

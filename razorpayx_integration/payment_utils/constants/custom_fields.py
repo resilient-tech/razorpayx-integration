@@ -71,7 +71,7 @@ CUSTOM_FIELDS = {
             "fieldtype": "Data",
             "insert_after": "party_name",
             "options": "Phone",
-            "depends_on": "eval: doc.contact_person",
+            "depends_on": "eval: doc.contact_person || doc.party_type === 'Employee'",
             "read_only": 1,
             "permlevel": PERMISSION_LEVEL.SEVEN.value,
         },
