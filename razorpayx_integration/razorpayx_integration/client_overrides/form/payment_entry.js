@@ -233,6 +233,18 @@ function get_rpx_img_container(txt, styles = "", classes = "") {
 function set_razorpayx_state_description(frm) {
 	if (frm.doc.__islocal) return;
 
+	const amended = payment_utils.get_onload(frm, "is_document_amended");
+	const field = frm.get_field("payment_type");
+
+	if (amended) {
+		field.set_new_description(
+			__("Check latest payout status here <strong>{0}</strong>", [
+				frappe.utils.get_form_link("Payment Entry", amended, true),
+			])
+		);
+
+		return;
+	}
 	const status = frm.doc.razorpayx_payout_status;
 
 	// prettier-ignore
@@ -242,7 +254,7 @@ function set_razorpayx_state_description(frm) {
 							${get_rpx_img_container("via")}
 						</div>`;
 
-	frm.get_field("payment_type").set_new_description(description);
+	field.set_new_description(description);
 }
 
 function set_reference_no_description(frm) {

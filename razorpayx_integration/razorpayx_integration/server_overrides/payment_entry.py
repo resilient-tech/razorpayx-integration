@@ -46,6 +46,12 @@ def onload(doc: PaymentEntry, method=None):
             is_auto_cancel_payout_enabled(doc.integration_docname),
         )
 
+    if doc.docstatus == 2:
+        doc.set_onload(
+            "is_document_amended",
+            frappe.db.exists("Payment Entry", {"amended_from": doc.name}),
+        )
+
 
 def validate(doc: PaymentEntry, method=None):
     validate_if_already_paid(doc)
