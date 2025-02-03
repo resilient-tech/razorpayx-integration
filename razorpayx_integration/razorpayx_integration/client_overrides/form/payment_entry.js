@@ -124,7 +124,7 @@ frappe.ui.form.on("Payment Entry", {
 			!razorpayx.is_payout_via_razorpayx(frm.doc) ||
 			!can_cancel_payout(frm) ||
 			!user_has_payout_permissions(frm) ||
-			frm.doc.__onload.auto_cancel_payout_enabled
+			payment_utils.get_onload(frm, "auto_cancel_payout_enabled")
 		) {
 			return;
 		}
@@ -179,12 +179,12 @@ async function disable_payout_fields_in_amendment(frm) {
 }
 
 function is_already_paid(frm) {
-	return frm.doc?.__onload?.is_already_paid;
+	return payment_utils.get_onload(frm, "is_already_paid");
 }
 
 function user_has_payout_permissions(frm) {
 	if (frm.doc.__onload) {
-		return frm.doc.__onload.has_payout_permission;
+		return payment_utils.get_onload(frm, "has_payout_permission");
 	}
 
 	return payment_utils.can_user_authorize_payout();

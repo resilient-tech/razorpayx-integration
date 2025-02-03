@@ -25,6 +25,10 @@ Object.assign(payment_utils, {
 		frm.doc.__onload[key] = value;
 	},
 
+	get_onload(frm, key) {
+		return frm.doc && frm.doc.__onload ? frm.doc.__onload[key] : undefined;
+	},
+
 	reset_values(frm, ...fields) {
 		fields.forEach((field) => frm.set_value(field, ""));
 	},
