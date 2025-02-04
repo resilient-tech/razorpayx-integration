@@ -213,6 +213,13 @@ def validate_payout_details(doc: PaymentEntry):
     if not doc.reference_no or doc.docstatus == 0:
         doc.reference_no = UTR_PLACEHOLDER
 
+    if doc.razorpayx_payout_mode != USER_PAYOUT_MODE.BANK.value or (
+        doc.razorpayx_pay_instantaneously
+        and doc.paid_amount > PAYMENT_MODE_LIMIT.IMPS.value
+    ):
+        # why db_set? : if calls from API, then it will not update the value
+        doc.db_set("razorpayx_pay_instantaneously", 0)
+
     # validate mode of payout
     validate_bank_payout_mode(doc)
     validate_upi_payout_mode(doc)
@@ -235,13 +242,6 @@ def validate_bank_payout_mode(doc: PaymentEntry):
         )
 
     validate_ifsc_code(doc.party_bank_ifsc)
-
-    if (
-        doc.razorpayx_pay_instantaneously
-        and doc.paid_amount > PAYMENT_MODE_LIMIT.IMPS.value
-    ):
-        # why db_set? : if calls from API, then it will not update the value
-        doc.db_set("razorpayx_pay_instantaneously", 0)
 
 
 def validate_upi_payout_mode(doc: PaymentEntry):
@@ -354,6 +354,8 @@ def make_payout_with_razorpayx(
         )
 
         return
+
+    print("Kwargs: ", kwargs)
 
     # Set the fields to make payout
     doc.db_set(

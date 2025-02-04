@@ -70,7 +70,7 @@ frappe.ui.form.on("Payment Entry", {
 	validate: function (frm) {
 		if (!razorpayx.is_payout_via_razorpayx(frm.doc)) return;
 
-		if (frm.doc.razorpayx_pay_instantaneously && payment_utils.IMPS_LIMIT > frm.doc.paid_amount) {
+		if (frm.doc.razorpayx_pay_instantaneously && payment_utils.IMPS_LIMIT < frm.doc.paid_amount) {
 			frm.set_value("razorpayx_pay_instantaneously", 0);
 		}
 
