@@ -35,6 +35,14 @@ PROPERTY_SETTERS = [
         "property_type": "Data",
         "value": "eval: doc.contact_person || doc.party_type === 'Employee'",
     },
+    ### Bank Account ###
+    {
+        "doctype": "Bank Account",
+        "fieldname": "branch_code",
+        "property": "description",
+        "property_type": "Data",
+        "value": "For Indian bank accounts, enter the branch <strong>IFSC code</strong>",
+    },
 ]
 
 # PE mandatory fields on `make_bank_online_payment`
