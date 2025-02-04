@@ -47,7 +47,6 @@ CUSTOM_FIELDS = {
             "fieldtype": "Data",
             "insert_after": "iban",
             "placeholder": "Eg. 9999999999@okicici",
-            "depends_on": f"eval: doc.online_payment_mode === '{PAYOUT_MODE.UPI.value}'",
             "mandatory_depends_on": f"eval: doc.online_payment_mode === '{PAYOUT_MODE.UPI.value}'",
             "no_copy": 1,
         },
