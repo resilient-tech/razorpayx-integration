@@ -678,7 +678,6 @@ def razorpayx_webhook_listener():
         process_razorpayx_webhook,
         payload=payload,
         integration_request=ir.name,
-        now=frappe.conf.developer_mode,
     )
 
 
