@@ -279,6 +279,7 @@ class RazorpayXPayout(BaseRazorpayXAPI):
             "notes": {
                 "source_doctype": "Payment Entry",
                 "source_docname": "PE-0001",
+                "description": "Payout for customer",
             },
         }
         ```
@@ -316,6 +317,7 @@ class RazorpayXPayout(BaseRazorpayXAPI):
             "notes": {
                 "source_doctype": "Payment Entry",
                 "source_docname": "PE-0001",
+                "description": "Payout for customer",
             },
         }
         ```
@@ -341,6 +343,7 @@ class RazorpayXPayout(BaseRazorpayXAPI):
             return {
                 "source_doctype": payout_details["source_doctype"],
                 "source_docname": payout_details["source_docname"],
+                "description": payout_details.get("description", ""),
                 **payout_details.get("notes", {}),
             }
 
@@ -542,6 +545,7 @@ class RazorpayXCompositePayout(RazorpayXPayout):
             "notes": {
                 "source_doctype": "Payment Entry",
                 "source_docname": "PE-0001",
+                "description": "Payout for customer",
             },
         }
         ```
@@ -807,6 +811,7 @@ class RazorpayXLinkPayout(RazorpayXPayout):
             "notes": {
                 "source_doctype": "Payment Entry",
                 "source_docname": "PE-0001",
+                "description": "Payout for customer",
             },
             "expire_by": 1545384058,
         }
