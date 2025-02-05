@@ -175,6 +175,7 @@ class RazorpayBankTransaction:
                 "Payment Entry",
                 {"docstatus": 1, "clearance_date": ["is", "not set"], **filters},
                 fieldname=["name", "paid_amount"],
+                order_by="creation desc",  # to get latest
                 as_dict=True,
             )
 
