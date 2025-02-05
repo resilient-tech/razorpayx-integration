@@ -17,6 +17,16 @@ def has_payout_permissions(payment_entries: str | list[str], throw: bool = False
     - User can read integration documents.
     - User have permissions to submit/cancel the PE.
     """
+    if frappe.session.user == "Administrator":
+        if throw:
+            frappe.throw(
+                msg=_("Administrator can't authorize the payout."),
+                title=_("Permission Error"),
+                exc=frappe.PermissionError,
+            )
+
+        return False
+
     authorizer_role = has_payment_authorizer_role(throw=throw)
     permission = has_payment_entry_permission(payment_entries, throw=throw)
 

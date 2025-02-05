@@ -14,7 +14,11 @@ Object.assign(payment_utils, {
 	},
 
 	can_user_authorize_payout() {
-		return frappe.user.has_role(PAYOUT_AUTHORIZER) && frappe.perm.has_perm("Payment Entry", 0, "submit");
+		return (
+			frappe.session.user !== "Administrator" &&
+			frappe.user.has_role(PAYOUT_AUTHORIZER) &&
+			frappe.perm.has_perm("Payment Entry", 0, "submit")
+		);
 	},
 
 	set_onload(frm, key, value) {
