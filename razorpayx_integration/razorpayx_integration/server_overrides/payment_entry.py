@@ -36,20 +36,10 @@ UTR_PLACEHOLDER = "*** UTR WILL BE SET AUTOMATICALLY ***"
 def onload(doc: PaymentEntry, method=None):
     doc.set_onload("is_already_paid", is_already_paid(doc.amended_from))
 
-    doc.set_onload(
-        "has_payout_permission", has_payout_permissions(doc.name, throw=False)
-    )
-
     if doc.docstatus == 1 and is_payout_via_razorpayx(doc):
         doc.set_onload(
             "auto_cancel_payout_enabled",
             is_auto_cancel_payout_enabled(doc.integration_docname),
-        )
-
-    if doc.docstatus == 2:
-        doc.set_onload(
-            "is_document_amended",
-            frappe.db.exists("Payment Entry", {"amended_from": doc.name}),
         )
 
 
