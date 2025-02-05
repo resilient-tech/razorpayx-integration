@@ -38,6 +38,7 @@ class AutoPaymentSetting(Document):
         ignore_blocked_invoices: DF.Check
         ignore_blocked_suppliers: DF.Check
         limit_payment_to_outstanding: DF.Check
+        pay_on_submit: DF.Check
         payment_threshold: DF.Currency
     # end: auto-generated types
 
