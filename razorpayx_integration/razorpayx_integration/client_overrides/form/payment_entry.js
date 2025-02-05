@@ -292,6 +292,13 @@ function set_reference_no_description(frm) {
 
 // ############ MAKING PAYOUT HELPERS ############ //
 async function show_make_payout_dialog(frm) {
+	if (frm.is_dirty()) {
+		frappe.throw({
+			message: __("Please save the document's changes before making payout."),
+			title: __("Unsaved Changes"),
+		});
+	}
+
 	// depends on conditions
 	const BANK_MODE = `doc.razorpayx_payout_mode === '${PAYOUT_MODES.BANK}'`;
 	const UPI_MODE = `doc.razorpayx_payout_mode === '${PAYOUT_MODES.UPI}'`;
