@@ -345,8 +345,6 @@ def make_payout_with_razorpayx(
 
         return
 
-    print("Kwargs: ", kwargs)
-
     # Set the fields to make payout
     doc.db_set(
         {
