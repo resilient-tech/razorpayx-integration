@@ -39,10 +39,7 @@ doc_events = {
         "before_cancel": "razorpayx_integration.razorpayx_integration.server_overrides.payment_entry.before_cancel",
     },
     "Bank Account": {
-        "validate": [
-            "razorpayx_integration.payment_utils.server_overrides.bank_account.validate",
-            "razorpayx_integration.razorpayx_integration.server_overrides.bank_account.validate",
-        ],
+        "validate": "razorpayx_integration.payment_utils.server_overrides.bank_account.validate",
     },
 }
 
