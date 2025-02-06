@@ -63,6 +63,7 @@ class RazorpayXWebhook:
         self.source_docname = ""
         self.source_doctype = ""
         self.source_doc = None  # Set manually in the sub class if needed.
+        self.referenced_docs = set()
         self.notes = {}
 
         self.set_razorpayx_setting_name()  # Mandatory
@@ -222,7 +223,11 @@ class PayoutWebhook(RazorpayXWebhook):
         if self.id:
             values["razorpayx_payout_id"] = self.id
 
-        self.source_doc.db_set(values, notify=True)
+        # update the Payment Entry
+        if values:
+            self.source_doc.db_set(values, notify=True)
+            self.update_referenced_pes(values, self.status)
+
         self.update_payout_status(self.status)
 
         if self.should_cancel_payment_entry() and self.cancel_payout_link():
@@ -323,6 +328,7 @@ class PayoutWebhook(RazorpayXWebhook):
 
         :param status: Payout Webhook Status.
         """
+
         if not status:
             return
 
@@ -332,6 +338,23 @@ class PayoutWebhook(RazorpayXWebhook):
             self.source_doc.db_set(value, notify=True)
         else:
             self.source_doc.update(value).save()
+
+    def update_referenced_pes(self, values: dict, status: str | None = None):
+        """
+        Update the referenced docs based on the values.
+
+        :param values: dict - Values to be updated in the referenced docs.
+        :param status: str - Webhook Payout Status.
+        """
+        if not self.referenced_docs:
+            return
+
+        if status:
+            values["razorpayx_payout_status"] = status.title()
+
+        frappe.db.set_value(
+            "Payment Entry", {"name": ["in", self.referenced_docs]}, values
+        )
 
     def cancel_payout_link(self) -> bool:
         """
@@ -454,6 +477,7 @@ class PayoutLinkWebhook(PayoutWebhook):
 
         if values:
             self.source_doc.db_set(values, notify=True)
+            self.update_referenced_pes(values)
 
         if self.should_cancel_payment_entry():
             self.update_payout_status(PAYOUT_STATUS.CANCELLED.value)
@@ -552,7 +576,10 @@ class TransactionWebhook(PayoutWebhook):
         if self.id:
             values["razorpayx_payout_id"] = self.id
 
-        self.source_doc.db_set(values)
+        if values:
+            self.source_doc.db_set(values, notify=True)
+            self.update_referenced_pes(values, self.status)
+
         self.update_payout_status(self.status)
 
     def update_bank_transaction(self):
