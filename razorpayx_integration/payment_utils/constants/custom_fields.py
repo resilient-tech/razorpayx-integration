@@ -47,6 +47,7 @@ CUSTOM_FIELDS = {
             "fieldtype": "Data",
             "insert_after": "iban",
             "placeholder": "Eg. 9999999999@okicici",
+            "depends_on": "",  # TODO: remove after split
             "mandatory_depends_on": f"eval: doc.online_payment_mode === '{PAYOUT_MODE.UPI.value}'",
             "no_copy": 1,
         },
@@ -71,6 +72,8 @@ CUSTOM_FIELDS = {
             "insert_after": "party_name",
             "options": "Phone",
             "read_only": 1,
+            "depends_on": "",  # TODO: remove after split
+            "no_copy": 0,  # TODO: remove after split
             "permlevel": PERMISSION_LEVEL.SEVEN.value,
         },
         {

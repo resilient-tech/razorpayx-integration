@@ -84,6 +84,7 @@ CUSTOM_FIELDS = {
             "depends_on": "eval: doc.make_bank_online_payment && doc.creation",
             "read_only": 1,
             "allow_on_submit": 1,
+            "in_list_view": 0,  # TODO: remove after split
             "in_standard_filter": 1,
             "permlevel": PERMISSION_LEVEL.SEVEN.value,
             "no_copy": 1,
