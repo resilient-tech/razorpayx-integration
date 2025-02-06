@@ -60,7 +60,7 @@ class RazorpayXWebhook:
         self.source_docname = ""
         self.source_doctype = ""
         self.source_doc = None  # Set manually in the sub class if needed.
-        self.referenced_docs = set()
+        self.referenced_docnames = []
         self.notes = {}
 
         self.set_razorpayx_setting_name()  # Mandatory
@@ -264,14 +264,14 @@ class PayoutWebhook(RazorpayXWebhook):
         :param values: dict - Values to be updated.
         :param status: str - Webhook Payout Status.
         """
-        if not self.referenced_docs:
+        if not self.referenced_docnames:
             return
 
         if status:
             values["razorpayx_payout_status"] = status.title()
 
         frappe.db.set_value(
-            "Payment Entry", {"name": ["in", self.referenced_docs]}, values
+            "Payment Entry", {"name": ["in", self.referenced_docnames]}, values
         )
 
     def handle_cancellation(self):
@@ -298,36 +298,35 @@ class PayoutWebhook(RazorpayXWebhook):
         """
         Get and Set the source doc.
 
-        Fetch last created Payment Entry based on the id fields.
-
-        - `Doctype` and `Docname` in the `notes` may be get cancelled and amended.
+        - Fetch last created Doc based on the id fields.
+        - If not fetched by ID, find by source doctype and docname.
+        - Set Other referenced docnames.
         """
         if not self.id or not self.event_type:
             return
 
         doctype = self.source_doctype or "Payment Entry"
 
-        docname = frappe.db.get_value(
+        docnames = frappe.db.get_all(
             doctype=doctype,
             filters={self.id_field: self.id},
             pluck="name",
             order_by="creation desc",
         )
 
-        if not docname:
-            # payout maybe made from the Payout Link so find the Payment Entry by source docname and doctype
+        if not docnames:
+            # payout maybe made from the Payout Link so find the doc by source docname and doctype
             if not self.source_doctype or not self.source_docname:
                 return
 
-            docname = get_latest_amended_document(
-                self.source_doctype, self.source_docname
-            )
+            docnames = get_referenced_docnames(self.source_doctype, self.source_docname)
 
-        # source is not available in the database
-        if not docname:
+        # references are not available
+        if not docnames:
             return
 
-        self.source_doc = frappe.get_doc(doctype, docname)
+        self.source_doc = frappe.get_doc(doctype, docnames[0])
+        self.referenced_docnames = docnames[1:]  # to avoid updating the same doc
 
         return self.source_doc
 
@@ -586,11 +585,11 @@ class TransactionWebhook(PayoutWebhook):
         """
         Check if the order is maintained or not.
         """
-        is_valid_type = self.transaction_type in TRANSACTION_TYPE.values()
+        is_valid_transaction = self.transaction_type in TRANSACTION_TYPE.values()
 
         # if status not available, depend on the type
-        if not self.status or not is_valid_type:
-            return is_valid_type
+        if not self.status or not is_valid_transaction:
+            return is_valid_transaction
 
         # if status available, compare with the source doc payout status
         pe_status = self.source_doc.razorpayx_payout_status.lower()
@@ -803,20 +802,15 @@ def get_webhook_secret(account_id: str | None = None) -> str | None:
     return get_decrypted_password(RAZORPAYX_SETTING, setting, "webhook_secret")
 
 
-def get_latest_amended_document(doctype: str, docname: str) -> str | None:
+def get_referenced_docnames(doctype: str, docname: str) -> list[str] | None:
     """
-    Retrieve the latest amended document.
+    Get the referenced docnames based.
 
-    If the document does not exist, it returns `None`.
+    - Order by creation date.
 
-    If the document is amended, it returns the latest amended document.
-
-    This process continues until the final amended document is found.
-
-    :param doctype: The type of the document.
-    :param docname: The name of the document.
+    :param doctype: Source Doctype.
+    :param docname: Source Docname.
     """
-
     docstatus = frappe.db.get_value(
         doctype,
         docname,
@@ -828,7 +822,9 @@ def get_latest_amended_document(doctype: str, docname: str) -> str | None:
         return
 
     if docstatus != 2 or not frappe.db.exists(doctype, {"amended_from": docname}):
-        return docname
+        return [docname]
+
+    docnames = []
 
     # document is cancelled and amended
     while True:
@@ -840,9 +836,13 @@ def get_latest_amended_document(doctype: str, docname: str) -> str | None:
         )
 
         if not amended:
-            return docname
+            break
 
         if amended.docstatus != 2:
-            return amended.name
+            docnames.append(amended.name)
+            break
 
         docname = amended.name
+        docnames.append(docname)
+
+    return docnames
