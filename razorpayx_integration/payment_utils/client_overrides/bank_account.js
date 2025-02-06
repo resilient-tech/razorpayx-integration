@@ -6,7 +6,7 @@ frappe.ui.form.on("Bank Account", {
 		if (!frm.doc.is_company_account && (!frm.doc.party || !frm.doc.party_type)) {
 			frappe.msgprint({
 				message: __(
-					"This bank account will not be used by <strong>RazorpayX</strong> as it is neither a company account nor a party account."
+					"This bank account may not be usable without assigning it to a party or company."
 				),
 				title: __("Warning"),
 				indicator: "yellow",
