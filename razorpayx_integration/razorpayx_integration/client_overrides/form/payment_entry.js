@@ -247,18 +247,6 @@ function get_rpx_img_container(txt, styles = "", classes = "") {
 function set_razorpayx_state_description(frm) {
 	if (frm.doc.__islocal) return;
 
-	const amended = payment_utils.get_onload(frm, "is_document_amended");
-	const field = frm.get_field("payment_type");
-
-	if (amended) {
-		field.set_new_description(
-			__("Check latest payout status here <strong>{0}</strong>", [
-				frappe.utils.get_form_link("Payment Entry", amended, true),
-			])
-		);
-
-		return;
-	}
 	const status = frm.doc.razorpayx_payout_status;
 
 	// prettier-ignore
@@ -268,7 +256,7 @@ function set_razorpayx_state_description(frm) {
 							${get_rpx_img_container("via")}
 						</div>`;
 
-	field.set_new_description(description);
+	frm.get_field("payment_type").set_new_description(description);
 }
 
 function set_reference_no_description(frm) {
@@ -281,9 +269,8 @@ function set_reference_no_description(frm) {
 		);
 	}
 
-	const not_processed = ["Not Initiated", "Queued", "Processing", "Pending", "Scheduled"];
-
-	if (is_payout_link_cancelled() || not_processed.includes(frm.doc.razorpayx_payout_status)) return;
+	if (!["Reversed", "Processed"].includes(frm.doc.razorpayx_payout_status) || is_payout_link_cancelled())
+		return;
 
 	frm.get_field("reference_no").set_new_description(
 		__("This is <strong>UTR</strong> of the payout transaction done via <strong>RazorpayX</strong>")

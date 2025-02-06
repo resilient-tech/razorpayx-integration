@@ -11,9 +11,3 @@ def onload(doc: PaymentEntry, method=None):
     doc.set_onload(
         "has_payout_permission", has_payout_permissions(doc.name, throw=False)
     )
-
-    if doc.docstatus == 2:
-        doc.set_onload(
-            "is_document_amended",
-            frappe.db.exists("Payment Entry", {"amended_from": doc.name}),
-        )
