@@ -3,7 +3,6 @@ from typing import Literal
 import frappe
 from erpnext.accounts.doctype.payment_entry.payment_entry import PaymentEntry
 from frappe import _
-from frappe.contacts.doctype.contact.contact import get_contact_details
 from frappe.core.doctype.submission_queue.submission_queue import queue_submission
 from frappe.utils import get_link_to_form
 from frappe.utils.scheduler import is_scheduler_inactive
@@ -207,7 +206,7 @@ def validate_payout_details(doc: PaymentEntry):
         doc.razorpayx_pay_instantaneously
         and doc.paid_amount > PAYMENT_MODE_LIMIT.IMPS.value
     ):
-        # why db_set? : if calls from API, then it will not update the value
+        # why db_set? : if calls from API, then it will not update the value without db_set
         doc.db_set("razorpayx_pay_instantaneously", 0)
 
     # validate mode of payout
@@ -254,37 +253,38 @@ def validate_link_payout_mode(doc: PaymentEntry):
 
     if not doc.razorpayx_payout_desc:
         frappe.throw(
-            msg=_("Payout Description is mandatory to make payment with Link."),
+            msg=_("Payout Description is mandatory to make Payout Link."),
             title=_("Mandatory Fields Missing"),
             exc=frappe.MandatoryError,
         )
 
-    is_employee = doc.party_type == "Employee"
+    if doc.party_type != "Employee" and not doc.contact_person:
+        frappe.throw(
+            msg=_("Contact Person is mandatory to make payout with link."),
+            title=_("Mandatory Field Missing"),
+            exc=frappe.MandatoryError,
+        )
 
-    if is_employee:
-        if not (doc.contact_mobile or doc.contact_email):
-            contact_details = frappe.get_value(
-                "Employee",
-                doc.party,
-                [
-                    "cell_number as contact_mobile",
-                    "prefered_email as contact_email",
-                ],
-                as_dict=True,
-            )
+    # get contact details of party
+    contact_details = get_party_contact_details(doc)
+    party_mobile = contact_details["contact_mobile"]
+    party_email = contact_details["contact_email"]
 
-            # why db_set? : if calls from API, then it will not update the value
-            doc.db_set(contact_details)
+    if (
+        not doc.contact_email
+        and not doc.contact_mobile
+        and (party_email or party_mobile)
+    ):
+        # why db_set? : if calls from API, then it will not update the value without db_set
+        doc.db_set({"contact_email": party_email, "contact_mobile": party_mobile})
 
-    if not (doc.contact_mobile or doc.contact_email):
-        msg = ""
-
-        if is_employee:
+    if not party_email and not party_mobile:
+        if doc.party_type == "Employee":
             msg = _(
                 "Set Employee's Mobile or Preferred Email to make payout with link."
             )
         else:
-            msg = _("Party's Mobile or Email is mandatory to make payout with link.")
+            msg = _("Set valid Contact to make payout with link.")
 
         frappe.throw(
             msg=msg,
@@ -292,29 +292,40 @@ def validate_link_payout_mode(doc: PaymentEntry):
             exc=frappe.MandatoryError,
         )
 
-    if is_employee:
-        return
-
-    # matches with contact person
-    contact_details = get_contact_details(doc.contact_person)
-
-    if doc.contact_mobile and doc.contact_mobile != contact_details.get(
-        "contact_mobile"
-    ):
+    if doc.contact_mobile and doc.contact_mobile != party_mobile:
         frappe.throw(
-            msg=_(
-                "Contact's Mobile <strong>{0}</strong> does not match with selected Contact."
-            ).format(doc.contact_mobile),
-            title=_("Invalid Mobile"),
+            msg=_("Mobile Number does not match with Party's Mobile Number"),
+            title=_("Invalid Mobile Number"),
         )
 
-    if doc.contact_email and doc.contact_email != contact_details.get("contact_email"):
+    if doc.contact_email and doc.contact_email != party_email:
         frappe.throw(
-            msg=_(
-                "Contact's Email <strong>{0}</strong> does not match with selected Contact."
-            ).format(doc.contact_email),
-            title=_("Invalid Email"),
+            msg=_("Email ID does not match with Party's Email ID"),
+            title=_("Invalid Email ID"),
         )
+
+
+def get_party_contact_details(doc: PaymentEntry) -> dict | None:
+    """
+    Get Party's contact details as Payment Entry's contact fields.
+
+    - Mobile Number
+    - Email ID
+    """
+    if doc.party_type == "Employee":
+        return frappe.get_value(
+            "Employee",
+            doc.party,
+            ["cell_number as contact_mobile", "prefered_email as contact_email"],
+            as_dict=True,
+        )
+
+    return frappe.get_value(
+        "Contact",
+        doc.contact_person,
+        ["mobile_no as contact_mobile", "email_id as contact_email"],
+        as_dict=True,
+    )
 
 
 ### APIs ###
