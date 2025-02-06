@@ -22,10 +22,6 @@ from razorpayx_integration.razorpayx_integration.constants.webhooks import (
     SUPPORTED_EVENTS,
 )
 
-# API: TUNNEL_URL/api/method/razorpayx_integration.razorpayx_integration.utils.webhooks.razorpayx_webhook_listener
-# regenerate code: lt --port 8001
-# FIX OTP: 754081
-
 
 ###### WEBHOOK PROCESSORS ######
 class RazorpayXWebhook:
@@ -54,6 +50,7 @@ class RazorpayXWebhook:
 
         self.event = ""
         self.event_type = ""
+        self.id_field = ""
 
         self.payload_entity = {}
         self.status = ""
@@ -70,6 +67,7 @@ class RazorpayXWebhook:
         self.set_common_payload_attributes()  # Mandatory
         self.setup_respective_webhook_payload()
         self.set_source_doctype_and_docname()
+        self.id_field = self.set_id_field()
 
     def set_razorpayx_setting_name(self):
         """
@@ -137,7 +135,7 @@ class RazorpayXWebhook:
         Also set the source doc if not set.
 
         Note: Call this manually in the sub class if needed, because the source doc
-        is not set in the `setup_webhook_payload` method.
+        is not set in the `setup_respective_webhook_payload` method.
         """
         if not self.source_doctype or not self.source_docname:
             return
@@ -165,6 +163,14 @@ class RazorpayXWebhook:
         Note: ⚠️ This method should be overridden in the sub class.
         """
         return True
+
+    def set_id_field(self):
+        """
+        set the integration payout related ID field.
+
+        Helpful for fetching reference docs and updating the data.
+        """
+        pass
 
     def get_ir_formlink(self, html: bool = False) -> str:
         """
@@ -207,7 +213,7 @@ class PayoutWebhook(RazorpayXWebhook):
         """
         self.update_payment_entry()
 
-    def update_payment_entry(self):
+    def update_payment_entry(self, update_status: bool = True):
         """
         Update Payment Entry based on the webhook status.
 
@@ -221,19 +227,73 @@ class PayoutWebhook(RazorpayXWebhook):
         values = self.get_updated_reference()
 
         if self.id:
-            values["razorpayx_payout_id"] = self.id
+            values[self.id_field] = self.id
 
-        # update the Payment Entry
         if values:
             self.source_doc.db_set(values, notify=True)
             self.update_referenced_pes(values, self.status)
 
-        self.update_payout_status(self.status)
+        if update_status:
+            self.update_payout_status(self.status)
 
+        self.handle_cancellation()
+
+    def update_payout_status(self, status: str | None = None):
+        """
+        Update RazorpayX Payout Status in Payment Entry.
+
+        To trigger notification on change of status.
+
+        :param status: Payout Webhook Status.
+        """
+
+        if not status or status not in PAYOUT_STATUS.values():
+            return
+
+        value = {"razorpayx_payout_status": status.title()}
+
+        if self.source_doc.docstatus == 2:
+            self.source_doc.db_set(value, notify=True)
+        else:
+            self.source_doc.update(value).save()
+
+    def update_referenced_pes(self, values: dict, status: str | None = None):
+        """
+        Update the referenced payment entries.
+
+        :param values: dict - Values to be updated.
+        :param status: str - Webhook Payout Status.
+        """
+        if not self.referenced_docs:
+            return
+
+        if status:
+            values["razorpayx_payout_status"] = status.title()
+
+        frappe.db.set_value(
+            "Payment Entry", {"name": ["in", self.referenced_docs]}, values
+        )
+
+    def handle_cancellation(self):
+        """
+        Handle the payment entry cancellation.
+
+        - Cancel the Payment Entry if the payout is failed.
+        - Cancel the Payout Link if the payout is made from the Payout Link.
+        """
         if self.should_cancel_payment_entry() and self.cancel_payout_link():
             self.cancel_payment_entry()
 
     ### UTILITIES ###
+    def set_id_field(self) -> str:
+        field_mapper = {
+            EVENTS_TYPE.PAYOUT.value: "razorpayx_payout_id",
+            EVENTS_TYPE.TRANSACTION.value: "razorpayx_payout_id",
+            EVENTS_TYPE.PAYOUT_LINK.value: "razorpayx_payout_link_id",
+        }
+
+        self.id_fieldfield = field_mapper.get(self.event_type) or "razorpayx_payout_id"
+
     def get_source_doc(self):
         """
         Get and Set the source doc.
@@ -242,21 +302,14 @@ class PayoutWebhook(RazorpayXWebhook):
 
         - `Doctype` and `Docname` in the `notes` may be get cancelled and amended.
         """
-        field_mapper = {
-            EVENTS_TYPE.PAYOUT.value: "razorpayx_payout_id",
-            EVENTS_TYPE.TRANSACTION.value: "razorpayx_payout_id",
-            EVENTS_TYPE.PAYOUT_LINK.value: "razorpayx_payout_link_id",
-        }
-
         if not self.id or not self.event_type:
             return
 
-        id_field = field_mapper.get(self.event_type) or "razorpayx_payout_id"
         doctype = self.source_doctype or "Payment Entry"
 
         docname = frappe.db.get_value(
             doctype=doctype,
-            filters={id_field: self.id},
+            filters={self.id_field: self.id},
             pluck="name",
             order_by="creation desc",
         )
@@ -320,42 +373,7 @@ class PayoutWebhook(RazorpayXWebhook):
             "remarks": get_new_remarks(),
         }
 
-    def update_payout_status(self, status: str | None = None):
-        """
-        Update RazorpayX Payout Status in Payment Entry.
-
-        To trigger notification on change of status.
-
-        :param status: Payout Webhook Status.
-        """
-
-        if not status:
-            return
-
-        value = {"razorpayx_payout_status": status.title()}
-
-        if self.source_doc.docstatus == 2:
-            self.source_doc.db_set(value, notify=True)
-        else:
-            self.source_doc.update(value).save()
-
-    def update_referenced_pes(self, values: dict, status: str | None = None):
-        """
-        Update the referenced docs based on the values.
-
-        :param values: dict - Values to be updated in the referenced docs.
-        :param status: str - Webhook Payout Status.
-        """
-        if not self.referenced_docs:
-            return
-
-        if status:
-            values["razorpayx_payout_status"] = status.title()
-
-        frappe.db.set_value(
-            "Payment Entry", {"name": ["in", self.referenced_docs]}, values
-        )
-
+    ### CANCELLATION ###
     def cancel_payout_link(self) -> bool:
         """
         Cancel the Payout Link if the Payout is made from the Payout Link.
@@ -402,12 +420,11 @@ class PayoutWebhook(RazorpayXWebhook):
         """
         Check if the Payment Entry should be cancelled or not.
         """
-        if (
+        return (
             self.status
             and self.source_doc.docstatus == 1
             and self.is_payout_cancelled(self.status)
-        ):
-            return True
+        )
 
     def is_payout_cancelled(self, status: str) -> bool:
         """
@@ -451,6 +468,15 @@ class PayoutLinkWebhook(PayoutWebhook):
     Reference: https://razorpay.com/docs/webhooks/payloads/x/payout-links/
     """
 
+    ### APIs ###
+    def update_payment_entry(self):
+        super().update_payment_entry(update_status=False)
+
+    def handle_cancellation(self):
+        if self.should_cancel_payment_entry():
+            self.update_payout_status(PAYOUT_STATUS.CANCELLED.value)
+            self.cancel_payment_entry()
+
     ### UTILITIES ###
     def is_order_maintained(self) -> bool:
         """
@@ -460,39 +486,15 @@ class PayoutLinkWebhook(PayoutWebhook):
         """
         return bool(self.status)
 
-    def update_payment_entry(self):
-        """
-        Update Payment Entry based on the webhook status.
-
-        - If failed, cancel the Payment Entry.
-            - Change Payment Status to `Cancelled`.
-        """
-        if not self.should_update_payment_entry():
-            return
-
-        values = self.get_updated_reference()
-
-        if self.id:
-            values["razorpayx_payout_link_id"] = self.id
-
-        if values:
-            self.source_doc.db_set(values, notify=True)
-            self.update_referenced_pes(values)
-
-        if self.should_cancel_payment_entry():
-            self.update_payout_status(PAYOUT_STATUS.CANCELLED.value)
-            self.cancel_payment_entry()
-
     def should_cancel_payment_entry(self) -> bool:
         """
         Check if the Payment Entry should be cancelled or not.
         """
-        if (
+        return (
             self.status
             and self.source_doc.docstatus == 1
             and self.is_payout_link_cancelled()
-        ):
-            return True
+        )
 
 
 class TransactionWebhook(PayoutWebhook):
@@ -513,14 +515,6 @@ class TransactionWebhook(PayoutWebhook):
     ---
     Reference: https://razorpay.com/docs/webhooks/payloads/x/transactions/
     """
-
-    ### APIs ###
-    def process_webhook(self, *args, **kwargs):
-        """
-        Process RazorpayX Payout Related Webhooks.
-        """
-        self.update_payment_entry()
-        self.update_bank_transaction()
 
     ### SETUP ###
     def setup_respective_webhook_payload(self):
@@ -551,36 +545,16 @@ class TransactionWebhook(PayoutWebhook):
             self.id = get_payout_id()
             self.notes = self.transaction_source.get("notes") or {}
 
-    ### UTILITIES ###
-    def is_order_maintained(self):
+    ### APIs ###
+    def process_webhook(self, *args, **kwargs):
         """
-        Check if the order is maintained or not.
+        Process RazorpayX Payout Related Webhooks.
         """
-        valid_transaction = self.transaction_type in TRANSACTION_TYPE.values()
+        self.update_payment_entry()
+        self.update_bank_transaction()
 
-        if not self.status:
-            return valid_transaction
-
-        pe_status = self.source_doc.razorpayx_payout_status.lower()
-
-        return (
-            PAYOUT_ORDERS[self.status] > PAYOUT_ORDERS[pe_status] and valid_transaction
-        )
-
-    def update_payment_entry(self):
-        if not self.should_update_payment_entry():
-            return
-
-        values = self.get_updated_reference()
-
-        if self.id:
-            values["razorpayx_payout_id"] = self.id
-
-        if values:
-            self.source_doc.db_set(values, notify=True)
-            self.update_referenced_pes(values, self.status)
-
-        self.update_payout_status(self.status)
+    def handle_cancellation(self):
+        pass
 
     def update_bank_transaction(self):
         """
@@ -606,6 +580,21 @@ class TransactionWebhook(PayoutWebhook):
             "reference_number",
             self.utr,
         )
+
+    ### UTILITIES ###
+    def is_order_maintained(self):
+        """
+        Check if the order is maintained or not.
+        """
+        is_valid_type = self.transaction_type in TRANSACTION_TYPE.values()
+
+        # if status not available, depend on the type
+        if not self.status or not is_valid_type:
+            return is_valid_type
+
+        # if status available, compare with the source doc payout status
+        pe_status = self.source_doc.razorpayx_payout_status.lower()
+        return PAYOUT_ORDERS[self.status] > PAYOUT_ORDERS[pe_status]
 
 
 class AccountWebhook(RazorpayXWebhook):
