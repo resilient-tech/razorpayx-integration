@@ -67,7 +67,7 @@ class RazorpayXWebhook:
         self.set_common_payload_attributes()  # Mandatory
         self.setup_respective_webhook_payload()
         self.set_source_doctype_and_docname()
-        self.id_field = self.set_id_field()
+        self.set_id_field()
 
     def set_razorpayx_setting_name(self):
         """
@@ -271,7 +271,7 @@ class PayoutWebhook(RazorpayXWebhook):
             values["razorpayx_payout_status"] = status.title()
 
         frappe.db.set_value(
-            "Payment Entry", {"name": ["in", self.referenced_docnames]}, values
+            "Payment Entry", {"name": ["in", set(self.referenced_docnames)]}, values
         )
 
     def handle_cancellation(self):
@@ -292,7 +292,7 @@ class PayoutWebhook(RazorpayXWebhook):
             EVENTS_TYPE.PAYOUT_LINK.value: "razorpayx_payout_link_id",
         }
 
-        self.id_fieldfield = field_mapper.get(self.event_type) or "razorpayx_payout_id"
+        self.id_field = field_mapper.get(self.event_type) or "razorpayx_payout_id"
 
     def get_source_doc(self):
         """
@@ -306,13 +306,15 @@ class PayoutWebhook(RazorpayXWebhook):
             return
 
         doctype = self.source_doctype or "Payment Entry"
+        docnames = []
 
-        docnames = frappe.db.get_all(
-            doctype=doctype,
-            filters={self.id_field: self.id},
-            pluck="name",
-            order_by="creation desc",
-        )
+        if self.id_field:
+            docnames = frappe.db.get_all(
+                doctype=doctype,
+                filters={self.id_field: self.id},
+                pluck="name",
+                order_by="creation desc",
+            )
 
         if not docnames:
             # payout maybe made from the Payout Link so find the doc by source docname and doctype
@@ -688,7 +690,7 @@ def razorpayx_webhook_listener():
     if unsupported_event:
         return
 
-    ## Process the webhook ##
+    # Process the webhook ##
     frappe.enqueue(
         process_razorpayx_webhook,
         payload=payload,
