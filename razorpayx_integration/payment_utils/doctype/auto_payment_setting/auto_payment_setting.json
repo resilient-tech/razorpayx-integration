@@ -15,7 +15,6 @@
   "auto_generate_entries",
   "column_break_cmbf",
   "auto_submit_entries",
-  "pay_on_submit",
   "payment_threshold",
   "company_email_templates_section",
   "auto_generate_report",
@@ -126,12 +125,12 @@
    "label": "Thursday"
   },
   {
-   "depends_on": "eval: doc.pay_on_submit && auto_submit_entries",
-   "description": "Payment entries upto this threshold will be paid automatically.",
+   "depends_on": "eval: doc.auto_submit_entries",
+   "description": "Payment entries upto this threshold will be submitted automatically.",
    "fieldname": "payment_threshold",
    "fieldtype": "Currency",
    "label": "Payment Threshold",
-   "mandatory_depends_on": "eval: doc.pay_on_submit && auto_submit_entries"
+   "mandatory_depends_on": "eval: doc.auto_submit_entries"
   },
   {
    "fieldname": "account_tab",
@@ -239,19 +238,11 @@
    "fieldname": "ignore_blocked_invoices",
    "fieldtype": "Check",
    "label": "Ignore Blocked Invoices"
-  },
-  {
-   "default": "0",
-   "depends_on": "eval: doc.auto_submit_entries",
-   "description": "If the <strong>Bank Account</strong> is associated with any payment integration, the payment will be initiated.",
-   "fieldname": "pay_on_submit",
-   "fieldtype": "Check",
-   "label": "Pay On Submit"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-02-05 17:47:42.046147",
+ "modified": "2025-02-06 12:39:57.809232",
  "modified_by": "Administrator",
  "module": "Payment Utils",
  "name": "Auto Payment Setting",
