@@ -191,9 +191,9 @@ Object.assign(payment_utils, {
 				{
 					fieldname: "info",
 					fieldtype: "HTML",
-					options: `<div class="form-message yellow">
-								<div>${__("Do not close this dialog until you authenticate.")}</div>
-							</div> <br>`,
+					options: `<div class="alert alert-warning" role="alert">
+            					${__("Do not close this dialog until you authenticate.")}
+        					</div> <br>`,
 				},
 				auth_field,
 			],

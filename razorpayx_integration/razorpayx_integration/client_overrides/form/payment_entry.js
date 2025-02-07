@@ -513,16 +513,14 @@ function can_cancel_payout(frm) {
 
 function show_cancel_payout_dialog(frm, callback) {
 	const dialog = new frappe.ui.Dialog({
-		title: __("Cancel Payment Entry with Payout"),
+		title: __("Cancel Payout"),
 		fields: [
 			{
 				fieldname: "cancel_payout",
 				label: __("Cancel Payout"),
 				fieldtype: "Check",
 				default: 1,
-				description: __(
-					"This will cancel the payout and payout link for this Payment Entry if checked."
-				),
+				description: __("Payout will be cancelled along with Payment Entry if checked."),
 			},
 		],
 		primary_action_label: __("Continue"),
