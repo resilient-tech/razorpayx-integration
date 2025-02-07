@@ -826,7 +826,7 @@ def get_referenced_docnames(doctype: str, docname: str) -> list[str] | None:
     if docstatus != 2 or not frappe.db.exists(doctype, {"amended_from": docname}):
         return [docname]
 
-    docnames = []
+    docnames = [docname]
 
     # document is cancelled and amended
     while True:
@@ -841,10 +841,10 @@ def get_referenced_docnames(doctype: str, docname: str) -> list[str] | None:
             break
 
         if amended.docstatus != 2:
-            docnames.append(amended.name)
+            docnames.insert(0, amended.name)
             break
 
         docname = amended.name
-        docnames.append(docname)
+        docnames.insert(0, docname)
 
     return docnames
