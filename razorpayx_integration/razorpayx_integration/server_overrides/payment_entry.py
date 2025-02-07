@@ -3,7 +3,6 @@ from typing import Literal
 import frappe
 from erpnext.accounts.doctype.payment_entry.payment_entry import PaymentEntry
 from frappe import _
-from frappe.contacts.doctype.contact.contact import get_contact_details
 from frappe.core.doctype.submission_queue.submission_queue import queue_submission
 from frappe.utils import get_link_to_form
 from frappe.utils.scheduler import is_scheduler_inactive
@@ -12,7 +11,7 @@ from razorpayx_integration.constants import RAZORPAYX_SETTING
 from razorpayx_integration.payment_utils.auth import (
     run_before_payment_authentication as has_payout_permissions,
 )
-from razorpayx_integration.payment_utils.utils.validations import validate_ifsc_code
+from razorpayx_integration.payment_utils.utils.validation import validate_ifsc_code
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
     PAYMENT_MODE_LIMIT,
     PAYOUT_CURRENCY,
@@ -35,10 +34,6 @@ UTR_PLACEHOLDER = "*** UTR WILL BE SET AUTOMATICALLY ***"
 #### DOC EVENTS ####
 def onload(doc: PaymentEntry, method=None):
     doc.set_onload("is_already_paid", is_already_paid(doc.amended_from))
-
-    doc.set_onload(
-        "has_payout_permission", has_payout_permissions(doc.name, throw=False)
-    )
 
     if doc.docstatus == 1 and is_payout_via_razorpayx(doc):
         doc.set_onload(
@@ -207,6 +202,13 @@ def validate_payout_details(doc: PaymentEntry):
     if not doc.reference_no or doc.docstatus == 0:
         doc.reference_no = UTR_PLACEHOLDER
 
+    if doc.razorpayx_payout_mode != USER_PAYOUT_MODE.BANK.value or (
+        doc.razorpayx_pay_instantaneously
+        and doc.paid_amount > PAYMENT_MODE_LIMIT.IMPS.value
+    ):
+        # why db_set? : if calls from API, then it will not update the value without db_set
+        doc.db_set("razorpayx_pay_instantaneously", 0)
+
     # validate mode of payout
     validate_bank_payout_mode(doc)
     validate_upi_payout_mode(doc)
@@ -230,13 +232,6 @@ def validate_bank_payout_mode(doc: PaymentEntry):
 
     validate_ifsc_code(doc.party_bank_ifsc)
 
-    if (
-        doc.razorpayx_pay_instantaneously
-        and doc.paid_amount > PAYMENT_MODE_LIMIT.IMPS.value
-    ):
-        # why db_set? : if calls from API, then it will not update the value
-        doc.db_set("razorpayx_pay_instantaneously", 0)
-
 
 def validate_upi_payout_mode(doc: PaymentEntry):
     if doc.razorpayx_payout_mode != USER_PAYOUT_MODE.UPI.value:
@@ -256,42 +251,81 @@ def validate_link_payout_mode(doc: PaymentEntry):
     if doc.razorpayx_payout_mode != USER_PAYOUT_MODE.LINK.value:
         return
 
-    if not (doc.contact_mobile or doc.contact_email):
-        frappe.throw(
-            msg=_(
-                "Any one of Party's Mobile or Email is mandatory to make payout with link."
-            ),
-            title=_("Mandatory Fields Missing"),
-            exc=frappe.MandatoryError,
-        )
-
     if not doc.razorpayx_payout_desc:
         frappe.throw(
-            msg=_("Payout Description is mandatory to make payment with Link."),
+            msg=_("Payout Description is mandatory to make Payout Link."),
             title=_("Mandatory Fields Missing"),
             exc=frappe.MandatoryError,
         )
 
-    # matches with contact person
-    contact_details = get_contact_details(doc.contact_person)
+    if doc.party_type != "Employee" and not doc.contact_person:
+        frappe.throw(
+            msg=_("Contact Person is mandatory to make payout with link."),
+            title=_("Mandatory Field Missing"),
+            exc=frappe.MandatoryError,
+        )
 
-    if doc.contact_mobile and doc.contact_mobile != contact_details.get(
-        "contact_mobile"
+    # get contact details of party
+    contact_details = get_party_contact_details(doc)
+    party_mobile = contact_details["contact_mobile"]
+    party_email = contact_details["contact_email"]
+
+    if (
+        not doc.contact_email
+        and not doc.contact_mobile
+        and (party_email or party_mobile)
     ):
+        # why db_set? : if calls from API, then it will not update the value without db_set
+        doc.db_set({"contact_email": party_email, "contact_mobile": party_mobile})
+
+    if not party_email and not party_mobile:
+        if doc.party_type == "Employee":
+            msg = _(
+                "Set Employee's Mobile or Preferred Email to make payout with link."
+            )
+        else:
+            msg = _("Set valid Contact to make payout with link.")
+
         frappe.throw(
-            msg=_(
-                "Contact's Mobile <strong>{0}</strong> does not match with selected Contact."
-            ).format(doc.contact_mobile),
-            title=_("Invalid Mobile"),
+            msg=msg,
+            title=_("Contact Details Missing"),
+            exc=frappe.MandatoryError,
         )
 
-    if doc.contact_email and doc.contact_email != contact_details.get("contact_email"):
+    if doc.contact_mobile and doc.contact_mobile != party_mobile:
         frappe.throw(
-            msg=_(
-                "Contact's Email <strong>{0}</strong> does not match with selected Contact."
-            ).format(doc.contact_email),
-            title=_("Invalid Email"),
+            msg=_("Mobile Number does not match with Party's Mobile Number"),
+            title=_("Invalid Mobile Number"),
         )
+
+    if doc.contact_email and doc.contact_email != party_email:
+        frappe.throw(
+            msg=_("Email ID does not match with Party's Email ID"),
+            title=_("Invalid Email ID"),
+        )
+
+
+def get_party_contact_details(doc: PaymentEntry) -> dict | None:
+    """
+    Get Party's contact details as Payment Entry's contact fields.
+
+    - Mobile Number
+    - Email ID
+    """
+    if doc.party_type == "Employee":
+        return frappe.get_value(
+            "Employee",
+            doc.party,
+            ["cell_number as contact_mobile", "prefered_email as contact_email"],
+            as_dict=True,
+        )
+
+    return frappe.get_value(
+        "Contact",
+        doc.contact_person,
+        ["mobile_no as contact_mobile", "email_id as contact_email"],
+        as_dict=True,
+    )
 
 
 ### APIs ###

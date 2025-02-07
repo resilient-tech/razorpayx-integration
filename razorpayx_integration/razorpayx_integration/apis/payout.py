@@ -279,6 +279,7 @@ class RazorpayXPayout(BaseRazorpayXAPI):
             "notes": {
                 "source_doctype": "Payment Entry",
                 "source_docname": "PE-0001",
+                "description": "Payout for customer",
             },
         }
         ```
@@ -316,6 +317,7 @@ class RazorpayXPayout(BaseRazorpayXAPI):
             "notes": {
                 "source_doctype": "Payment Entry",
                 "source_docname": "PE-0001",
+                "description": "Payout for customer",
             },
         }
         ```
@@ -341,6 +343,7 @@ class RazorpayXPayout(BaseRazorpayXAPI):
             return {
                 "source_doctype": payout_details["source_doctype"],
                 "source_docname": payout_details["source_docname"],
+                "description": payout_details.get("description", ""),
                 **payout_details.get("notes", {}),
             }
 
@@ -369,7 +372,7 @@ class RazorpayXPayout(BaseRazorpayXAPI):
             "email": "gauravemail@gmail.com",
             "contact": "9123456789",
             "type": "customer",
-            "reference_id": "cont_00HjGh1",
+            "reference_id": "Customer: Gaurav",
         }
 
         # If `razorpayx_party_contact_id` is provided
@@ -386,11 +389,11 @@ class RazorpayXPayout(BaseRazorpayXAPI):
             return {"id": contact_id}
 
         return {
-            "name": payout_details["party_name"],
+            "name": self.sanitize_party_name(payout_details["party_name"]),
             "email": payout_details.get("party_email", ""),
             "contact": payout_details.get("party_mobile", ""),
             "type": get_type(),
-            "reference_id": payout_details.get("party_id", ""),
+            "reference_id": f"{payout_details['party_type']}: {payout_details.get('party_id', '')}",
         }
 
     ### VALIDATIONS ###
@@ -534,7 +537,7 @@ class RazorpayXCompositePayout(RazorpayXPayout):
                     "email": "gauravemail@gmail.com",
                     "contact": "9123456789",
                     "type": "customer",
-                    "reference_id": "cont_00HjGh1",
+                    "reference_id": "Customer: Gaurav",
                 },
             },
             "reference_id": "ACC-PAY-002-2024-06-01",
@@ -542,6 +545,7 @@ class RazorpayXCompositePayout(RazorpayXPayout):
             "notes": {
                 "source_doctype": "Payment Entry",
                 "source_docname": "PE-0001",
+                "description": "Payout for customer",
             },
         }
         ```
@@ -580,7 +584,7 @@ class RazorpayXCompositePayout(RazorpayXPayout):
                 "email": "gauravemail@gmail.com",
                 "contact": "9123456789",
                 "type": "customer",
-                "reference_id": "cont_00HjGh1",
+                "reference_id": "Customer: Gaurav",
             },
         }
 
@@ -595,7 +599,7 @@ class RazorpayXCompositePayout(RazorpayXPayout):
                 "email": "gauravemail@gmail.com",
                 "contact": "9123456789",
                 "type": "customer",
-                "reference_id": "cont_00HjGh1",
+                "reference_id": "Customer: Gaurav",
             },
         }
         ```
@@ -807,6 +811,7 @@ class RazorpayXLinkPayout(RazorpayXPayout):
             "notes": {
                 "source_doctype": "Payment Entry",
                 "source_docname": "PE-0001",
+                "description": "Payout for customer",
             },
             "expire_by": 1545384058,
         }

@@ -18,6 +18,7 @@ doctype_js = {
         "payment_utils/client_overrides/payment_entry.js",
         "razorpayx_integration/client_overrides/form/payment_entry.js",
     ],
+    "Bank Account": "payment_utils/client_overrides/bank_account.js",
     "Bank Reconciliation Tool": "razorpayx_integration/client_overrides/form/bank_reconciliation_tool.js",
     "User": "payment_utils/client_overrides/user.js",
 }
@@ -28,11 +29,17 @@ doctype_list_js = {
 
 doc_events = {
     "Payment Entry": {
-        "onload": "razorpayx_integration.razorpayx_integration.server_overrides.payment_entry.onload",
+        "onload": [
+            "razorpayx_integration.payment_utils.server_overrides.payment_entry.onload",
+            "razorpayx_integration.razorpayx_integration.server_overrides.payment_entry.onload",
+        ],
         "validate": "razorpayx_integration.razorpayx_integration.server_overrides.payment_entry.validate",
         "before_submit": "razorpayx_integration.razorpayx_integration.server_overrides.payment_entry.before_submit",
         "on_submit": "razorpayx_integration.razorpayx_integration.server_overrides.payment_entry.on_submit",
         "before_cancel": "razorpayx_integration.razorpayx_integration.server_overrides.payment_entry.before_cancel",
+    },
+    "Bank Account": {
+        "validate": "razorpayx_integration.payment_utils.server_overrides.bank_account.validate",
     },
 }
 

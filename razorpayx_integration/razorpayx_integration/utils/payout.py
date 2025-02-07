@@ -23,7 +23,7 @@ from razorpayx_integration.razorpayx_integration.utils import (
 
 class PayoutWithPaymentEntry:
     """
-    Handle RazorPayx Payout | Payout Link with Payment Entry.
+    Handle Razorpayx Payout | Payout Link with Payment Entry.
 
     :param payment_entry: Payment Entry doc.
 

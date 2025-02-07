@@ -1,3 +1,4 @@
+import re
 from urllib.parse import urljoin
 
 import frappe
@@ -336,6 +337,28 @@ class BaseRazorpayXAPI:
         Validation happen before `get_all()` to reduce API calls.
         """
         pass
+
+    def sanitize_party_name(self, party_name: str) -> str:
+        """
+        Convert the given ERPNext party name to a valid RazorpayX Contact Name.
+
+        - Replace unsupported characters with `-`.
+        - Remove special characters from the start and end of the name.
+        - Trim the name to 50 characters.
+        - If the name is less than 3 characters, append `.` to the name.
+
+        :param contact_name: ERPNext party name.
+
+        ---
+        - Supported characters: `a-z`, `A-Z`, `0-9`, `space`, `'` , `-` , `_` , `/` , `(` , `)` and `.`
+        """
+        # replace unsupported characters with `-`
+        party_name = re.sub(r"[^a-zA-Z0-9\s'._/()-]", "-", party_name)
+
+        # remove special characters from the start and end
+        party_name = re.sub(r"^[^a-zA-Z0-9]+|[^a-zA-Z0-9.]+$", "", party_name.strip())
+
+        return party_name[:50].ljust(3, ".")
 
     ### LOGGING ###
     def _set_service_details_to_ir_log(

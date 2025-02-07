@@ -30,10 +30,9 @@ frappe.ui.form.on("RazorpayX Integration Setting", {
 	},
 
 	refresh: function (frm) {
-		// listner
+		// listener to copy webhook url
 		frm.$wrapper.find(".webhook-url").on("click", function () {
-			const webhook = `${frappe.urllib.get_base_url()}/api/method/${WEBHOOK_PATH}`;
-			frappe.utils.copy_to_clipboard(webhook);
+			frappe.utils.copy_to_clipboard(`${frappe.urllib.get_base_url()}/api/method/${WEBHOOK_PATH}`);
 		});
 
 		if (frm.doc.__islocal) return;

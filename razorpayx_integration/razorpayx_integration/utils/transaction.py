@@ -115,15 +115,27 @@ class RazorpayBankTransaction:
         :param transaction: RazorpayX Transaction
         """
 
-        def format_notes(source):
+        def get_description(source: dict) -> str | None:
             # TODO: Needs description of payout/bank transfer or other transactions
-            notes = source.get("notes")
+            notes = source.get("notes") or {}
 
-            if isinstance(notes, dict):
-                return "\n".join(notes.values())
-            elif isinstance(notes, list | tuple):
-                return "\n".join(notes)
-            return notes
+            if not notes:
+                return
+
+            description = ""
+            source_doctype = notes.get("source_doctype")
+            source_docname = notes.get("source_docname")
+
+            if source_doctype and source_docname:
+                description = f"{source_doctype}: {source_docname}"
+
+            if desc := notes.get("description"):
+                description += f"\nNarration: {desc}"
+
+            if not description:
+                description = "\n".join(notes.values())
+
+            return description
 
         # Some transactions do not have source
         source = transaction.get("source") or {}
@@ -138,7 +150,7 @@ class RazorpayBankTransaction:
             "closing_balance": paisa_to_rupees(transaction["balance"]),
             "currency": transaction["currency"],
             "transaction_type": source.get("mode"),
-            "description": format_notes(source),
+            "description": get_description(source),
             "reference_number": source.get("utr") or source.get("bank_reference"),
         }
 
@@ -163,6 +175,7 @@ class RazorpayBankTransaction:
                 "Payment Entry",
                 {"docstatus": 1, "clearance_date": ["is", "not set"], **filters},
                 fieldname=["name", "paid_amount"],
+                order_by="creation desc",  # to get latest
                 as_dict=True,
             )
 

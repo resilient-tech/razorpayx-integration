@@ -21,6 +21,28 @@ PROPERTY_SETTERS = [
         "property_type": "Check",
         "value": 1,
     },
+    {
+        "doctype": "Payment Entry",
+        "fieldname": "reference_no",
+        "property": "default",
+        "property_type": "Data",
+        "value": "-",
+    },
+    {
+        "doctype": "Payment Entry",
+        "fieldname": "contact_email",
+        "property": "depends_on",
+        "property_type": "Data",
+        "value": "eval: doc.contact_person || doc.party_type === 'Employee'",
+    },
+    ### Bank Account ###
+    {
+        "doctype": "Bank Account",
+        "fieldname": "branch_code",
+        "property": "description",
+        "property_type": "Data",
+        "value": "For Indian bank accounts, enter the branch <strong>IFSC code</strong>",
+    },
 ]
 
 # PE mandatory fields on `make_bank_online_payment`

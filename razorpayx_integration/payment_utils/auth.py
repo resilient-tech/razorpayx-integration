@@ -265,7 +265,7 @@ class Utils2FA:
         <p style="text-align: center;">
         <strong style="font-size: 20px;">{{ otp }}</strong></p>
         <br>
-        <p><strong>Payment Entries Authorized:</strong> [{{ payment_entries }}]</p>
+        <p><strong>Payment Entries to Authenticate: </strong>{{ payment_entries }}</p>
         <br>
         <p><strong>Note:</strong> This code expires in 5 minutes.</p>
         """

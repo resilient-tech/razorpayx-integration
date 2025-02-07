@@ -55,6 +55,7 @@ CUSTOM_FIELDS = {
             "depends_on": f"eval: doc.razorpayx_payout_mode === '{USER_PAYOUT_MODE.BANK.value}' && doc.paid_amount <= {PAYMENT_MODE_LIMIT.IMPS.value}",
             "description": "Payment will be done with <strong>IMPS</strong> mode.",
             "permlevel": PERMISSION_LEVEL.SEVEN.value,
+            "no_copy": 1,
         },
         {
             "fieldname": "razorpayx_payout_cb",
@@ -71,6 +72,7 @@ CUSTOM_FIELDS = {
             "mandatory_depends_on": f"eval:doc.make_bank_online_payment && doc.razorpayx_payout_mode === '{USER_PAYOUT_MODE.LINK.value}'",
             "length": 30,
             "permlevel": PERMISSION_LEVEL.SEVEN.value,
+            "no_copy": 1,
         },
         {
             "fieldname": "razorpayx_payout_status",
@@ -82,7 +84,7 @@ CUSTOM_FIELDS = {
             "depends_on": "eval: doc.make_bank_online_payment && doc.creation",
             "read_only": 1,
             "allow_on_submit": 1,
-            "in_list_view": 1,
+            "in_list_view": 0,  # TODO: remove after split
             "in_standard_filter": 1,
             "permlevel": PERMISSION_LEVEL.SEVEN.value,
             "no_copy": 1,

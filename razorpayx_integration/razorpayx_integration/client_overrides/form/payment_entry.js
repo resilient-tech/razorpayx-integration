@@ -68,13 +68,27 @@ frappe.ui.form.on("Payment Entry", {
 	},
 
 	validate: function (frm) {
-		if (razorpayx.is_payout_via_razorpayx(frm.doc)) return;
+		if (!razorpayx.is_payout_via_razorpayx(frm.doc)) return;
 
-		if (frm.doc.razorpayx_pay_instantaneously && payment_utils.IMPS_LIMIT > frm.doc.paid_amount) {
+		if (frm.doc.razorpayx_pay_instantaneously && payment_utils.IMPS_LIMIT < frm.doc.paid_amount) {
 			frm.set_value("razorpayx_pay_instantaneously", 0);
 		}
 
 		validate_payout_description(frm.doc.razorpayx_payout_desc);
+
+		if (frm.doc.razorpayx_payout_mode === PAYOUT_MODES.LINK) {
+			if (!frm.doc.contact_mobile && !frm.doc.contact_email) {
+				let msg = "";
+
+				if (frm.doc.party_type === "Employee") {
+					msg = __("Set Employee's Mobile or Preferred Email to make payout with link.");
+				} else {
+					msg = __("Any one of Party's Mobile or Email is mandatory to make payout with link.");
+				}
+
+				frappe.throw({ message: msg, title: __("Contact Details Missing") });
+			}
+		}
 	},
 
 	party_bank_account: function (frm) {
@@ -124,7 +138,7 @@ frappe.ui.form.on("Payment Entry", {
 			!razorpayx.is_payout_via_razorpayx(frm.doc) ||
 			!can_cancel_payout(frm) ||
 			!user_has_payout_permissions(frm) ||
-			frm.doc.__onload.auto_cancel_payout_enabled
+			payment_utils.get_onload(frm, "auto_cancel_payout_enabled")
 		) {
 			return;
 		}
@@ -179,12 +193,12 @@ async function disable_payout_fields_in_amendment(frm) {
 }
 
 function is_already_paid(frm) {
-	return frm.doc?.__onload?.is_already_paid;
+	return payment_utils.get_onload(frm, "is_already_paid");
 }
 
 function user_has_payout_permissions(frm) {
 	if (frm.doc.__onload) {
-		return frm.doc.__onload.has_payout_permission;
+		return payment_utils.get_onload(frm, "has_payout_permission");
 	}
 
 	return payment_utils.can_user_authorize_payout();
@@ -255,9 +269,8 @@ function set_reference_no_description(frm) {
 		);
 	}
 
-	const not_processed = ["Not Initiated", "Queued", "Processing", "Pending", "Scheduled"];
-
-	if (is_payout_link_cancelled() || not_processed.includes(frm.doc.razorpayx_payout_status)) return;
+	if (!["Reversed", "Processed"].includes(frm.doc.razorpayx_payout_status) || is_payout_link_cancelled())
+		return;
 
 	frm.get_field("reference_no").set_new_description(
 		__("This is <strong>UTR</strong> of the payout transaction done via <strong>RazorpayX</strong>")
@@ -266,6 +279,13 @@ function set_reference_no_description(frm) {
 
 // ############ MAKING PAYOUT HELPERS ############ //
 async function show_make_payout_dialog(frm) {
+	if (frm.is_dirty()) {
+		frappe.throw({
+			message: __("Please save the document's changes before making payout."),
+			title: __("Unsaved Changes"),
+		});
+	}
+
 	// depends on conditions
 	const BANK_MODE = `doc.razorpayx_payout_mode === '${PAYOUT_MODES.BANK}'`;
 	const UPI_MODE = `doc.razorpayx_payout_mode === '${PAYOUT_MODES.UPI}'`;
@@ -340,7 +360,7 @@ async function show_make_payout_dialog(frm) {
 				fieldtype: "Link",
 				options: "Contact",
 				default: frm.doc.contact_person,
-				mandatory_depends_on: `eval: ${LINK_MODE}`,
+				mandatory_depends_on: `eval: ${LINK_MODE} && ${frm.doc.party_type !== "Employee"}`,
 				get_query: function () {
 					return {
 						filters: {
@@ -354,28 +374,28 @@ async function show_make_payout_dialog(frm) {
 				},
 			},
 			{
-				fieldname: "contact_mobile",
-				label: "Mobile",
+				fieldname: "contact_email",
+				label: "Email",
 				fieldtype: "Data",
-				options: "Phone",
-				depends_on: `eval: doc.contact_person && doc.contact_mobile`,
+				options: "Email",
+				// depends_on: "eval: doc.contact_email",
 				read_only: 1,
-				default: frm.doc.contact_mobile,
+				default: frm.doc.contact_email,
 			},
 			{
 				fieldname: "party_contact_cb",
 				fieldtype: "Column Break",
 			},
 			{
-				fieldname: "contact_email",
-				label: "Email",
+				fieldname: "contact_mobile",
+				label: "Mobile",
 				fieldtype: "Data",
-				options: "Email",
-				depends_on: `eval:doc.contact_person && doc.contact_email`,
-				mandatory_depends_on: `eval: ${LINK_MODE}`,
+				options: "Phone",
+				depends_on: "eval: doc.contact_mobile",
 				read_only: 1,
-				default: frm.doc.contact_email,
+				default: frm.doc.contact_mobile,
 			},
+
 			{
 				fieldname: "payout_section_break",
 				label: __("Payout Details"),
@@ -493,16 +513,14 @@ function can_cancel_payout(frm) {
 
 function show_cancel_payout_dialog(frm, callback) {
 	const dialog = new frappe.ui.Dialog({
-		title: __("Cancel Payment Entry with Payout"),
+		title: __("Cancel Payout"),
 		fields: [
 			{
 				fieldname: "cancel_payout",
 				label: __("Cancel Payout"),
 				fieldtype: "Check",
 				default: 1,
-				description: __(
-					"This will cancel the payout and payout link for this Payment Entry if checked."
-				),
+				description: __("Payout will be cancelled along with Payment Entry if checked."),
 			},
 		],
 		primary_action_label: __("Continue"),
