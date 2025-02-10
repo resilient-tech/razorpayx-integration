@@ -32,15 +32,6 @@ class USER_PAYOUT_MODE(BaseEnum):
     LINK = "Link"
 
 
-class RAZORPAYX_PAYOUT_MODE(BaseEnum):
-    NEFT = "NEFT"
-    RTGS = "RTGS"
-    IMPS = "IMPS"
-    UPI = "UPI"
-    LINK = "Link"  # Actually not available in RazorpayX API
-    CARD = "card"
-
-
 class PAYOUT_CURRENCY(BaseEnum):
     INR = "INR"
 

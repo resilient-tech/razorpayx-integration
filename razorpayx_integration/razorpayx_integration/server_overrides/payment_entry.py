@@ -147,7 +147,7 @@ def validate_if_already_paid(doc: PaymentEntry):
         # Payout
         "paid_amount",
         "make_bank_online_payment",
-        "razorpayx_payout_mode",
+        "bank_payment_mode",
         "razorpayx_payout_desc",
         "razorpayx_payout_status",
         "razorpayx_pay_instantaneously",
@@ -202,6 +202,7 @@ def validate_payout_details(doc: PaymentEntry):
     if not doc.reference_no or doc.docstatus == 0:
         doc.reference_no = UTR_PLACEHOLDER
 
+    # TODO: need changes for mode
     if doc.razorpayx_payout_mode != USER_PAYOUT_MODE.BANK.value or (
         doc.razorpayx_pay_instantaneously
         and doc.paid_amount > PAYMENT_MODE_LIMIT.IMPS.value
