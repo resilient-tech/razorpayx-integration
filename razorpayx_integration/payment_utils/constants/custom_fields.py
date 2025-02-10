@@ -60,6 +60,13 @@ CUSTOM_FIELDS = {
             "no_copy": 1,
         },
         {
+            "fieldname": "bank_payment_mode",
+            "label": "Bank Payment Mode",
+            "fieldtype": "Select",
+            "insert_after": "make_bank_online_payment",
+            "permlevel": PERMISSION_LEVEL.SEVEN.value,
+        },
+        {
             "fieldname": "is_auto_generated",
             "label": "Is Auto Generated",
             "fieldtype": "Check",
