@@ -1,12 +1,18 @@
 frappe.provide("payment_utils");
 
 const PAYOUT_AUTHORIZER = "Online Payments Authorizer";
-const IMPS_LIMIT = 5_00_000;
 const PAY_ICON = "expenses";
+const BANK_PAYMENT_MODE = {
+	NEFT: "NEFT",
+	IMPS: "IMPS",
+	RTGS: "RTGS",
+	UPI: "UPI",
+	LINK: "Link",
+};
 
 Object.assign(payment_utils, {
 	PAYOUT_AUTHORIZER,
-	IMPS_LIMIT,
+	BANK_PAYMENT_MODE,
 	PAY_ICON,
 
 	get_date_in_user_fmt(date) {
