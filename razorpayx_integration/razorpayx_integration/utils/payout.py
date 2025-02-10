@@ -105,6 +105,7 @@ class PayoutWithPaymentEntry:
             and is_payout_via_razorpayx(self.doc)
         )
 
+    # TODO: need to mode to refactor
     def _get_payout_processor(
         self,
     ) -> RazorpayXBankPayout | RazorpayXUPIPayout | RazorpayXLinkPayout:
