@@ -66,7 +66,7 @@ CUSTOM_FIELDS = {
             "insert_after": "make_bank_online_payment",
             "options": BANK_PAYMENT_MODE.values_as_string(),
             "default": BANK_PAYMENT_MODE.LINK.value,
-            "depends_on": f"eval: {BASE_CONDITION_TO_MAKE_ONLINE_PAYMENT} && doc.make_bank_online_payment",
+            "depends_on": "eval: doc.make_bank_online_payment",
             "permlevel": PERMISSION_LEVEL.SEVEN.value,
         },
         {

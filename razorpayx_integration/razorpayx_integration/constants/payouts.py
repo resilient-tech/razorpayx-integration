@@ -22,16 +22,6 @@ class FUND_ACCOUNT_TYPE(BaseEnum):
     # CARD = "card" # ! Not supported currently
 
 
-class USER_PAYOUT_MODE(BaseEnum):
-    """
-    Custom Payout Mode for ERPNext User.
-    """
-
-    BANK = "NEFT/RTGS"  # NEFT/RTGS will be decided based on the amount at payout time
-    UPI = "UPI"
-    LINK = "Link"
-
-
 class PAYOUT_CURRENCY(BaseEnum):
     INR = "INR"
 
@@ -84,19 +74,6 @@ class PAYOUT_LINK_STATUS(BaseEnum):
     CANCELLED = "cancelled"
     REJECTED = "rejected"
     EXPIRED = "expired"
-
-
-# TODO: concern with @smit_vora
-class PAYMENT_MODE_LIMIT(BaseEnum):
-    """
-    Reference:
-    - https://www.bankbazaar.com/ifsc/difference-neft-rtgs-imps.html
-    """
-
-    UPI = 1_00_000  # 1 Lakh INR
-    NEFT = 2_00_000  # 2 Lakh INR
-    IMPS = 5_00_000  # 5 Lakh INR
-    RTGS = "INFINITE"  # No Limit
 
 
 ### MAPPINGS ###

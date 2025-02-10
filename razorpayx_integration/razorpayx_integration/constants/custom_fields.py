@@ -12,17 +12,13 @@ Note:
 
 from razorpayx_integration.constants import RAZORPAYX_SETTING
 from razorpayx_integration.payment_utils.constants.custom_fields import (
-    BASE_CONDITION_TO_MAKE_ONLINE_PAYMENT,
+    BASE_CONDITION_TO_MAKE_ONLINE_PAYMENT as PAYOUT_BASE_CONDITION,
 )
-from razorpayx_integration.razorpayx_integration.constants.payouts import (
-    PAYMENT_MODE_LIMIT,
-    PAYOUT_STATUS,
-    USER_PAYOUT_MODE,
-)
+from razorpayx_integration.payment_utils.constants.payouts import BANK_PAYMENT_MODE
+from razorpayx_integration.razorpayx_integration.constants.payouts import PAYOUT_STATUS
 from razorpayx_integration.razorpayx_integration.constants.roles import PERMISSION_LEVEL
 
-# TODO: change depends_on to `integration_doctype` and `integration_docname` fields for effective condition
-# TODO: remove reference of `doc.razorpayx_payout_mode` from `depends_on` and `mandatory_depends_on` fields
+PAYOUT_VIA_RAZORPAYX = f"doc.make_bank_online_payment && doc.integration_doctype === '{RAZORPAYX_SETTING}' && doc.integration_docname"
 
 CUSTOM_FIELDS = {
     "Payment Entry": [
@@ -32,7 +28,7 @@ CUSTOM_FIELDS = {
             "label": "RazorpayX Payout Details",
             "fieldtype": "Section Break",
             "insert_after": "party_bank_ifsc",  ## Insert After `PARTY BANK IFSC` field (Payment Utils Custom Field)
-            "depends_on": f"eval: {BASE_CONDITION_TO_MAKE_ONLINE_PAYMENT} && doc.make_bank_online_payment && doc.paid_from_account_currency === 'INR' && doc.integration_doctype === '{RAZORPAYX_SETTING}'",
+            "depends_on": f"eval: {PAYOUT_BASE_CONDITION} && doc.paid_from_account_currency === 'INR' && {PAYOUT_VIA_RAZORPAYX}",
             "collapsible": 1,
             "collapsible_depends_on": "eval: doc.docstatus === 0",
             "permlevel": PERMISSION_LEVEL.SEVEN.value,
@@ -43,7 +39,7 @@ CUSTOM_FIELDS = {
             "fieldtype": "Data",
             "insert_after": "razorpayx_payout_section",
             "depends_on": "eval: doc.make_bank_online_payment",
-            "mandatory_depends_on": f"eval:doc.make_bank_online_payment && doc.razorpayx_payout_mode === '{USER_PAYOUT_MODE.LINK.value}'",
+            "mandatory_depends_on": f"eval: {PAYOUT_VIA_RAZORPAYX} && doc.bank_payment_mode === '{BANK_PAYMENT_MODE.LINK.value}'",
             "length": 30,
             "permlevel": PERMISSION_LEVEL.SEVEN.value,
             "no_copy": 1,
@@ -61,7 +57,7 @@ CUSTOM_FIELDS = {
             "insert_after": "razorpayx_payout_cb",
             "options": PAYOUT_STATUS.title_case_values(as_string=True),
             "default": PAYOUT_STATUS.NOT_INITIATED.value.title(),
-            "depends_on": "eval: doc.make_bank_online_payment && doc.creation",
+            "depends_on": f"eval: {PAYOUT_VIA_RAZORPAYX} && doc.creation",
             "read_only": 1,
             "allow_on_submit": 1,
             "in_list_view": 0,  # TODO: remove after split

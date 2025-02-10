@@ -1,5 +1,20 @@
+from razorpayx_integration.payment_utils.constants.payouts import BANK_PAYMENT_MODE
+
+BASE = (
+    "doc.make_bank_online_payment && doc.integration_doctype && doc.integration_docname"
+)
+UPI_MODE_CONDITION = (
+    f"{BASE} && doc.bank_payment_mode === '{BANK_PAYMENT_MODE.UPI.value}'"
+)
+LINK_MODE_CONDITION = (
+    f"{BASE} && doc.bank_payment_mode === '{BANK_PAYMENT_MODE.LINK.value}'"
+)
+BANK_MODE_CONDITION = f"{BASE} && [{BANK_PAYMENT_MODE.NEFT.value}, {BANK_PAYMENT_MODE.RTGS.value}, {BANK_PAYMENT_MODE.IMPS.value}].includes(doc.bank_payment_mode)"
+
+
 PROPERTY_SETTERS = [
     ### Payment Entry ###
+    # general
     {
         "doctype": "Payment Entry",
         "fieldname": "reference_date",
@@ -28,12 +43,62 @@ PROPERTY_SETTERS = [
         "property_type": "Data",
         "value": "-",
     },
+    # payout/payment related
+    {
+        "doctype": "Payment Entry",
+        "fieldname": "contact_person",
+        "property": "mandatory_depends_on",
+        "property_type": "Data",
+        "value": LINK_MODE_CONDITION + " && doc.party_type !== 'Employee'",
+    },
     {
         "doctype": "Payment Entry",
         "fieldname": "contact_email",
         "property": "depends_on",
         "property_type": "Data",
         "value": "eval: doc.contact_person || doc.party_type === 'Employee'",
+    },
+    {
+        "doctype": "Payment Entry",
+        "fieldname": "party_upi_id",
+        "property": "mandatory_depends_on",
+        "property_type": "Data",
+        "value": UPI_MODE_CONDITION,
+    },
+    {
+        "doctype": "Payment Entry",
+        "fieldname": "party_upi_id",
+        "property": "depends_on",
+        "property_type": "Data",
+        "value": UPI_MODE_CONDITION,
+    },
+    {
+        "doctype": "Payment Entry",
+        "fieldname": "party_bank_account_no",
+        "property": "mandatory_depends_on",
+        "property_type": "Data",
+        "value": BANK_MODE_CONDITION,
+    },
+    {
+        "doctype": "Payment Entry",
+        "fieldname": "party_bank_account_no",
+        "property": "depends_on",
+        "property_type": "Data",
+        "value": BANK_MODE_CONDITION,
+    },
+    {
+        "doctype": "Payment Entry",
+        "fieldname": "party_bank_ifsc",
+        "property": "mandatory_depends_on",
+        "property_type": "Data",
+        "value": BANK_MODE_CONDITION,
+    },
+    {
+        "doctype": "Payment Entry",
+        "fieldname": "party_bank_ifsc",
+        "property": "depends_on",
+        "property_type": "Data",
+        "value": BANK_MODE_CONDITION,
     },
     ### Bank Account ###
     {
@@ -72,6 +137,3 @@ for doctype, fields in STANDARD_FIELDS_TO_HIDE.items():
                 "value": 1,
             }
         )
-
-
-# TODO:? add bank account fields: is_default,disable permission level?? (Helpful in workflow)
