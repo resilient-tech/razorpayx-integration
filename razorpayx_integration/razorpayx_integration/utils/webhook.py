@@ -6,9 +6,7 @@ from frappe import _
 from frappe.utils import get_link_to_form, get_url_to_form
 from frappe.utils.password import get_decrypted_password
 
-from razorpayx_integration.constants import (
-    RAZORPAYX_SETTING,
-)
+from razorpayx_integration.constants import RAZORPAYX_SETTING
 from razorpayx_integration.payment_utils.constants.enums import BaseEnum
 from razorpayx_integration.payment_utils.utils import log_integration_request
 from razorpayx_integration.razorpayx_integration.apis.payout import RazorpayXLinkPayout
@@ -361,17 +359,14 @@ class PayoutWebhook(RazorpayXWebhook):
         Get PE's `reference_no` and `remarks` based on the UTR.
         """
 
-        def get_new_remarks() -> str:
-            return self.source_doc.remarks.replace(
-                self.source_doc.reference_no, self.utr
-            )
-
         if not self.utr:
             return {}
 
         return {
             "reference_no": self.utr,
-            "remarks": get_new_remarks(),
+            "remarks": self.source_doc.remarks.replace(
+                self.source_doc.reference_no, self.utr
+            ),
         }
 
     ### CANCELLATION ###
