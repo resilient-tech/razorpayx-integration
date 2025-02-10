@@ -1,15 +1,24 @@
-from razorpayx_integration.payment_utils.constants.payouts import BANK_PAYMENT_MODE
+from razorpayx_integration.payment_utils.constants.payouts import (
+    BANK_PAYMENT_MODE as PAYOUT_MODE,
+)
+
+BANK_MODES = [
+    PAYOUT_MODE.NEFT.value,
+    PAYOUT_MODE.RTGS.value,
+    PAYOUT_MODE.IMPS.value,
+]
+
+BANK_ACCOUNT_REQD_MODES = [*BANK_MODES, PAYOUT_MODE.UPI.value]
 
 BASE = (
     "doc.make_bank_online_payment && doc.integration_doctype && doc.integration_docname"
 )
-UPI_MODE_CONDITION = (
-    f"{BASE} && doc.bank_payment_mode === '{BANK_PAYMENT_MODE.UPI.value}'"
+UPI_MODE_CONDITION = f"{BASE} && doc.bank_payment_mode === '{PAYOUT_MODE.UPI.value}'"
+LINK_MODE_CONDITION = f"{BASE} && doc.bank_payment_mode === '{PAYOUT_MODE.LINK.value}'"
+BANK_MODE_CONDITION = f"{BASE} && {BANK_MODES}.includes(doc.bank_payment_mode)"
+BANK_ACCOUNT_REQD_CONDITION = (
+    f"{BASE} && {BANK_ACCOUNT_REQD_MODES}.includes(doc.bank_payment_mode)"
 )
-LINK_MODE_CONDITION = (
-    f"{BASE} && doc.bank_payment_mode === '{BANK_PAYMENT_MODE.LINK.value}'"
-)
-BANK_MODE_CONDITION = f"{BASE} && [{BANK_PAYMENT_MODE.NEFT.value}, {BANK_PAYMENT_MODE.RTGS.value}, {BANK_PAYMENT_MODE.IMPS.value}].includes(doc.bank_payment_mode)"
 
 
 PROPERTY_SETTERS = [
@@ -57,6 +66,13 @@ PROPERTY_SETTERS = [
         "property": "depends_on",
         "property_type": "Data",
         "value": "eval: doc.contact_person || doc.party_type === 'Employee'",
+    },
+    {
+        "doctype": "Payment Entry",
+        "fieldname": "party_bank_account",
+        "property": "mandatory_depends_on",
+        "property_type": "Data",
+        "value": BANK_ACCOUNT_REQD_CONDITION,
     },
     {
         "doctype": "Payment Entry",

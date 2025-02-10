@@ -255,11 +255,10 @@ async function show_make_payout_dialog(frm) {
 		});
 	}
 
-	// TODO: need changes for status
 	// depends on conditions
-	const BANK_MODE = `doc.razorpayx_payout_mode === '${PAYOUT_MODES.BANK}'`;
-	const UPI_MODE = `doc.razorpayx_payout_mode === '${PAYOUT_MODES.UPI}'`;
-	const LINK_MODE = `doc.razorpayx_payout_mode === '${PAYOUT_MODES.LINK}'`;
+	const BANK_MODE = `${payment_utils.BANK_PAYMENT_MODE.NEFT}, ${payment_utils.BANK_PAYMENT_MODE.RTGS}, ${payment_utils.BANK_PAYMENT_MODE.IMPS}.includes(doc.bank_payment_mode)`;
+	const UPI_MODE = `doc.bank_payment_mode === '${payment_utils.BANK_PAYMENT_MODE.UPI}'`;
+	const LINK_MODE = `doc.bank_payment_mode === '${payment_utils.BANK_PAYMENT_MODE.LINK}'`;
 
 	const dialog = new frappe.ui.Dialog({
 		title: __("Enter Payout Details"),
@@ -375,7 +374,7 @@ async function show_make_payout_dialog(frm) {
 				fieldname: "bank_payment_mode",
 				label: __("Payout Mode"),
 				fieldtype: "Select",
-				options: Object.values(PAYOUT_MODES),
+				options: Object.values(payment_utils.BANK_PAYMENT_MODE),
 				default: frm.doc.bank_payment_mode,
 				read_only: 1,
 				reqd: 1,
@@ -415,14 +414,13 @@ async function show_make_payout_dialog(frm) {
 	dialog.show();
 }
 
-// TODO: need changes for mode
 function make_payout(auth_id, docname, values) {
 	return frappe.call({
 		method: `${PE_BASE_PATH}.make_payout_with_razorpayx`,
 		args: {
 			auth_id: auth_id,
 			docname: docname,
-			payout_mode: values.razorpayx_payout_mode,
+			payout_mode: values.bank_payment_mode,
 			...values,
 		},
 		freeze: true,
@@ -432,6 +430,13 @@ function make_payout(auth_id, docname, values) {
 
 async function set_party_bank_details(dialog) {
 	const party_bank_account = dialog.get_value("party_bank_account");
+
+	if (!party_bank_account) {
+		dialog.set_value("bank_payment_mode", payment_utils.BANK_PAYMENT_MODE.LINK);
+		return;
+	}
+
+	dialog.set_value("bank_payment_mode", payment_utils.BANK_PAYMENT_MODE.NEFT);
 
 	const response = await frappe.db.get_value("Bank Account", party_bank_account, [
 		"branch_code as party_bank_ifsc",
