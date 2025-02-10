@@ -18,40 +18,6 @@ BASE_CONDITION_TO_MAKE_ONLINE_PAYMENT = "doc.payment_type=='Pay' && doc.party &&
 
 
 CUSTOM_FIELDS = {
-    # NOTE: update bank account custom fields in particular integration if required
-    "Bank Account": [
-        {
-            "fieldname": "online_payment_section",
-            "label": "Online Payment Details",
-            "fieldtype": "Section Break",
-            "insert_after": "party",
-            "depends_on": "eval: !doc.is_company_account && doc.party_type && doc.party",
-        },
-        {
-            "fieldname": "online_payment_mode",
-            "label": "Online Payment Mode",
-            "fieldtype": "Select",
-            "insert_after": "online_payment_section",
-            "options": PAYOUT_MODE.values_as_string(),
-            "default": PAYOUT_MODE.BANK.value,
-        },
-        {
-            "fieldname": "online_payment_cb",
-            "fieldtype": "Column Break",
-            "insert_after": "online_payment_mode",
-        },
-        # For `UPI` payment mode
-        {
-            "fieldname": "upi_id",
-            "label": "UPI ID",
-            "fieldtype": "Data",
-            "insert_after": "iban",
-            "placeholder": "Eg. 9999999999@okicici",
-            "depends_on": "",  # TODO: remove after split
-            "mandatory_depends_on": f"eval: doc.online_payment_mode === '{PAYOUT_MODE.UPI.value}'",
-            "no_copy": 1,
-        },
-    ],
     "Bank Transaction": [
         {
             "fieldname": "closing_balance",
