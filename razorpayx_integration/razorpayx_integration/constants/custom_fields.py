@@ -14,7 +14,7 @@ from razorpayx_integration.constants import RAZORPAYX_SETTING
 from razorpayx_integration.payment_utils.constants.custom_fields import (
     BASE_CONDITION_TO_MAKE_ONLINE_PAYMENT as PAYOUT_BASE_CONDITION,
 )
-from razorpayx_integration.payment_utils.constants.payouts import BANK_PAYMENT_MODE
+from razorpayx_integration.payment_utils.constants.payments import TRANSFER_METHOD
 from razorpayx_integration.razorpayx_integration.constants.payouts import PAYOUT_STATUS
 from razorpayx_integration.razorpayx_integration.constants.roles import PERMISSION_LEVEL
 
@@ -39,7 +39,7 @@ CUSTOM_FIELDS = {
             "fieldtype": "Data",
             "insert_after": "razorpayx_payout_section",
             "depends_on": "eval: doc.make_bank_online_payment",
-            "mandatory_depends_on": f"eval: {PAYOUT_VIA_RAZORPAYX} && doc.bank_payment_mode === '{BANK_PAYMENT_MODE.LINK.value}'",
+            "mandatory_depends_on": f"eval: {PAYOUT_VIA_RAZORPAYX} && doc.payment_transfer_method === '{TRANSFER_METHOD.LINK.value}'",
             "length": 30,
             "permlevel": PERMISSION_LEVEL.SEVEN.value,
             "no_copy": 1,

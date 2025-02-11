@@ -1,8 +1,8 @@
 import frappe
 from frappe import _
 
-from razorpayx_integration.payment_utils.constants.payouts import (
-    BANK_PAYMENT_MODE as PAYOUT_MODE,
+from razorpayx_integration.payment_utils.constants.payments import (
+    TRANSFER_METHOD as PAYOUT_MODE,
 )
 from razorpayx_integration.payment_utils.utils import (
     rupees_to_paisa,

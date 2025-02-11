@@ -18,7 +18,7 @@ frappe.ui.form.on("Payment Entry", {
 
 		if (!frm.doc.make_bank_online_payment) return;
 
-		if (frm.doc.bank_payment_mode === PAYMENT_MODE.LINK) {
+		if (frm.doc.payment_transfer_method === PAYMENT_MODE.LINK) {
 			if (!frm.doc.contact_mobile && !frm.doc.contact_email) {
 				let msg = "";
 
@@ -32,7 +32,8 @@ frappe.ui.form.on("Payment Entry", {
 			}
 		}
 
-		if (frm.doc.bank_payment_mode === PAYMENT_MODE.IMPS && frm.doc.paid_amount > 5_00_000) {
+		// TODO: need to be in utils so can use in dialog box also.
+		if (frm.doc.payment_transfer_method === PAYMENT_MODE.IMPS && frm.doc.paid_amount > 5_00_000) {
 			frappe.throw({
 				message: __("Amount should be less than {0} for <strong>{1}</strong> transfer", [
 					format_currency(5_00_000, "INR"),
@@ -42,7 +43,7 @@ frappe.ui.form.on("Payment Entry", {
 			});
 		}
 
-		if (frm.doc.bank_payment_mode === PAYMENT_MODE.UPI && frm.doc.paid_amount > 1_00_000) {
+		if (frm.doc.payment_transfer_method === PAYMENT_MODE.UPI && frm.doc.paid_amount > 1_00_000) {
 			frappe.throw({
 				message: __("Amount should be less than {0} for <strong>{1}</strong> transfer", [
 					format_currency(1_00_000, "INR"),
@@ -52,7 +53,7 @@ frappe.ui.form.on("Payment Entry", {
 			});
 		}
 
-		if (frm.doc.bank_payment_mode === PAYMENT_MODE.RTGS && frm.doc.paid_amount < 2_00_000) {
+		if (frm.doc.payment_transfer_method === PAYMENT_MODE.RTGS && frm.doc.paid_amount < 2_00_000) {
 			frappe.throw({
 				message: __("Amount should be greater than {0} for <strong>{1}</strong> transfer", [
 					format_currency(2_00_000, "INR"),
@@ -81,9 +82,9 @@ frappe.ui.form.on("Payment Entry", {
 
 	party_bank_account: function (frm) {
 		if (!frm.doc.party_bank_account) {
-			frm.set_value("bank_payment_mode", payment_utils.BANK_PAYMENT_MODE.LINK);
+			frm.set_value("payment_transfer_method", payment_utils.BANK_PAYMENT_MODE.LINK);
 		} else {
-			frm.set_value("bank_payment_mode", payment_utils.BANK_PAYMENT_MODE.NEFT);
+			frm.set_value("payment_transfer_method", payment_utils.BANK_PAYMENT_MODE.NEFT);
 		}
 	},
 

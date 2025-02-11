@@ -3,8 +3,8 @@ from erpnext.accounts.doctype.payment_entry.payment_entry import PaymentEntry
 from frappe import _
 
 from razorpayx_integration.payment_utils.auth import Authenticate2FA
-from razorpayx_integration.payment_utils.constants.payouts import (
-    BANK_PAYMENT_MODE as PAYOUT_MODE,
+from razorpayx_integration.payment_utils.constants.payments import (
+    TRANSFER_METHOD as PAYOUT_MODE,
 )
 from razorpayx_integration.razorpayx_integration.apis.payout import (
     RazorpayXCompositePayout,
@@ -58,7 +58,7 @@ class PayoutWithPaymentEntry:
         setting = self.razorpayx_setting_name
         payout_details = self._get_payout_details()
 
-        if self.doc.bank_payment_mode == PAYOUT_MODE.LINK.value:
+        if self.doc.payment_transfer_method == PAYOUT_MODE.LINK.value:
             response = RazorpayXLinkPayout(setting).pay(payout_details)
         else:
             response = RazorpayXCompositePayout(setting).pay(payout_details)
@@ -117,7 +117,7 @@ class PayoutWithPaymentEntry:
             "source_docname": self.doc.name,
             "amount": self.doc.paid_amount,
             "party_type": self.doc.party_type,
-            "mode": self.doc.bank_payment_mode,
+            "mode": self.doc.payment_transfer_method,
             # Party Details
             "party_id": self.doc.party,
             "party_name": self.doc.party_name,

@@ -11,7 +11,7 @@ Note:
 """
 
 
-from razorpayx_integration.payment_utils.constants.payouts import BANK_PAYMENT_MODE
+from razorpayx_integration.payment_utils.constants.payments import TRANSFER_METHOD
 from razorpayx_integration.payment_utils.constants.roles import PERMISSION_LEVEL
 
 BASE_CONDITION_TO_MAKE_ONLINE_PAYMENT = "doc.payment_type=='Pay' && doc.party && doc.party_type && doc.integration_doctype && doc.integration_docname"
@@ -60,12 +60,12 @@ CUSTOM_FIELDS = {
             "no_copy": 1,
         },
         {
-            "fieldname": "bank_payment_mode",
-            "label": "Bank Payment Mode",
+            "fieldname": "payment_transfer_method",
+            "label": "Payment Transfer Method",
             "fieldtype": "Select",
             "insert_after": "make_bank_online_payment",
-            "options": BANK_PAYMENT_MODE.values_as_string(),
-            "default": BANK_PAYMENT_MODE.LINK.value,
+            "options": TRANSFER_METHOD.values_as_string(),
+            "default": TRANSFER_METHOD.LINK.value,
             "depends_on": "eval: doc.make_bank_online_payment",
             "permlevel": PERMISSION_LEVEL.SEVEN.value,
         },
@@ -73,7 +73,7 @@ CUSTOM_FIELDS = {
             "fieldname": "is_auto_generated",
             "label": "Is Auto Generated",
             "fieldtype": "Check",
-            "insert_after": "bank_payment_mode",
+            "insert_after": "payment_transfer_method",
             "hidden": 1,
             "permlevel": PERMISSION_LEVEL.SEVEN.value,
             "no_copy": 1,

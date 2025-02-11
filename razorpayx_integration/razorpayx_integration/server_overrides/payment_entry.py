@@ -11,11 +11,10 @@ from razorpayx_integration.constants import RAZORPAYX_SETTING
 from razorpayx_integration.payment_utils.auth import (
     run_before_payment_authentication as has_payout_permissions,
 )
+from razorpayx_integration.payment_utils.constants.payments import TRANSFER_METHOD
 from razorpayx_integration.payment_utils.utils.validation import validate_ifsc_code
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
-    PAYMENT_MODE_LIMIT,
     PAYOUT_CURRENCY,
-    USER_PAYOUT_MODE,
 )
 from razorpayx_integration.razorpayx_integration.utils import (
     is_already_paid,
@@ -27,7 +26,7 @@ from razorpayx_integration.razorpayx_integration.utils.payout import (
 )
 
 #### CONSTANTS ####
-PAYOUT_MODES = Literal["NEFT/RTGS", "UPI", "Link"]
+PAYOUT_MODES = Literal["NEFT", "RTGS", "IMPS", "UPI", "Link"]
 UTR_PLACEHOLDER = "*** UTR WILL BE SET AUTOMATICALLY ***"
 
 
@@ -147,7 +146,7 @@ def validate_if_already_paid(doc: PaymentEntry):
         # Payout
         "paid_amount",
         "make_bank_online_payment",
-        "bank_payment_mode",
+        "payment_transfer_method",
         "razorpayx_payout_desc",
         "razorpayx_payout_status",
         "razorpayx_pay_instantaneously",
@@ -185,7 +184,7 @@ def validate_if_already_paid(doc: PaymentEntry):
 
 
 def validate_payout_details(doc: PaymentEntry):
-    if not doc.make_bank_online_payment:
+    if not doc.make_bank_online_payment or doc.integration_doctype != RAZORPAYX_SETTING:
         return
 
     if not doc.bank_account:
@@ -195,20 +194,8 @@ def validate_payout_details(doc: PaymentEntry):
             exc=frappe.MandatoryError,
         )
 
-    # other integration support
-    if doc.integration_doctype != RAZORPAYX_SETTING:
-        return
-
     if not doc.reference_no or doc.docstatus == 0:
         doc.reference_no = UTR_PLACEHOLDER
-
-    # TODO: need changes for mode
-    if doc.razorpayx_payout_mode != USER_PAYOUT_MODE.BANK.value or (
-        doc.razorpayx_pay_instantaneously
-        and doc.paid_amount > PAYMENT_MODE_LIMIT.IMPS.value
-    ):
-        # why db_set? : if calls from API, then it will not update the value without db_set
-        doc.db_set("razorpayx_pay_instantaneously", 0)
 
     # validate mode of payout
     validate_bank_payout_mode(doc)
@@ -334,7 +321,7 @@ def get_party_contact_details(doc: PaymentEntry) -> dict | None:
 def make_payout_with_razorpayx(
     auth_id: str,
     docname: str,
-    payout_mode: PAYOUT_MODES = USER_PAYOUT_MODE.LINK.value,
+    payout_mode: PAYOUT_MODES = TRANSFER_METHOD.LINK.value,
     **kwargs,
 ):
     """
@@ -342,7 +329,8 @@ def make_payout_with_razorpayx(
 
     :param auth_id: Authentication ID (after otp or password verification)
     :param docname: Payment Entry name
-    :param payout_mode: Payout Mode (Bank, UPI, Link)
+    :param payout_mode: Payout Mode (NEFT, RTGS, IMPS, UPI, Link)
+    :param kwargs: Payout Details
     """
     has_payout_permissions(docname, throw=True)
     doc = frappe.get_doc("Payment Entry", docname)
@@ -361,6 +349,7 @@ def make_payout_with_razorpayx(
     doc.db_set(
         {
             "make_bank_online_payment": 1,
+            "payment_transfer_method": payout_mode,
             # Party
             "party_bank_account": kwargs.get("party_bank_account"),
             "party_bank_account_no": kwargs.get("party_bank_account_no"),
@@ -370,11 +359,7 @@ def make_payout_with_razorpayx(
             "contact_mobile": kwargs.get("contact_mobile"),
             "contact_email": kwargs.get("contact_email"),
             # RazorpayX
-            "razorpayx_payout_mode": payout_mode,
             "razorpayx_payout_desc": kwargs.get("razorpayx_payout_desc"),
-            "razorpayx_pay_instantaneously": int(
-                kwargs.get("razorpayx_pay_instantaneously", 0)
-            ),
             # ERPNext
             "reference_no": UTR_PLACEHOLDER,
         }
@@ -479,14 +464,12 @@ def mark_payout_for_cancellation(docname: str, cancel: bool | int):
     :param cancel: Cancel or not.
     """
 
-    def get_mark() -> str:
-        return "True" if cancel else "False"
-
     frappe.has_permission("Payment Entry", "cancel", doc=docname, throw=True)
 
     setting = frappe.db.get_value("Payment Entry", docname, "integration_docname")
     frappe.has_permission(RAZORPAYX_SETTING, doc=setting, throw=True)
 
-    frappe.cache.set(
-        PayoutWithPaymentEntry.get_cancel_payout_key(docname), get_mark(), 100
-    )
+    key = PayoutWithPaymentEntry.get_cancel_payout_key(docname)
+    value = "True" if cancel else "False"
+
+    frappe.cache.set(key, value, 100)
