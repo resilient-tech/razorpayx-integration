@@ -1,29 +1,7 @@
 from razorpayx_integration.payment_utils.constants.payments import (
-    TRANSFER_METHOD as PAYOUT_MODE,
+    BANK_ACCOUNT_REQD_METHODS,
+    TRANSFER_METHOD,
 )
-
-BANK_MODES = [
-    PAYOUT_MODE.NEFT.value,
-    PAYOUT_MODE.RTGS.value,
-    PAYOUT_MODE.IMPS.value,
-]
-
-BANK_ACCOUNT_REQD_MODES = [*BANK_MODES, PAYOUT_MODE.UPI.value]
-
-BASE = (
-    "doc.make_bank_online_payment && doc.integration_doctype && doc.integration_docname"
-)
-UPI_MODE_CONDITION = (
-    f"{BASE} && doc.payment_transfer_method === '{PAYOUT_MODE.UPI.value}'"
-)
-LINK_MODE_CONDITION = (
-    f"{BASE} && doc.payment_transfer_method === '{PAYOUT_MODE.LINK.value}'"
-)
-BANK_MODE_CONDITION = f"{BASE} && {BANK_MODES}.includes(doc.payment_transfer_method)"
-BANK_ACCOUNT_REQD_CONDITION = (
-    f"{BASE} && {BANK_ACCOUNT_REQD_MODES}.includes(doc.payment_transfer_method)"
-)
-
 
 PROPERTY_SETTERS = [
     ### Payment Entry ###
@@ -62,7 +40,7 @@ PROPERTY_SETTERS = [
         "fieldname": "contact_person",
         "property": "mandatory_depends_on",
         "property_type": "Data",
-        "value": LINK_MODE_CONDITION + " && doc.party_type !== 'Employee'",
+        "value": f"doc.make_bank_online_payment && doc.payment_transfer_method === '{TRANSFER_METHOD.LINK.value}' && doc.party_type !== 'Employee'",
     },
     {
         "doctype": "Payment Entry",
@@ -76,49 +54,7 @@ PROPERTY_SETTERS = [
         "fieldname": "party_bank_account",
         "property": "mandatory_depends_on",
         "property_type": "Data",
-        "value": BANK_ACCOUNT_REQD_CONDITION,
-    },
-    {
-        "doctype": "Payment Entry",
-        "fieldname": "party_upi_id",
-        "property": "mandatory_depends_on",
-        "property_type": "Data",
-        "value": UPI_MODE_CONDITION,
-    },
-    {
-        "doctype": "Payment Entry",
-        "fieldname": "party_upi_id",
-        "property": "depends_on",
-        "property_type": "Data",
-        "value": UPI_MODE_CONDITION,
-    },
-    {
-        "doctype": "Payment Entry",
-        "fieldname": "party_bank_account_no",
-        "property": "mandatory_depends_on",
-        "property_type": "Data",
-        "value": BANK_MODE_CONDITION,
-    },
-    {
-        "doctype": "Payment Entry",
-        "fieldname": "party_bank_account_no",
-        "property": "depends_on",
-        "property_type": "Data",
-        "value": BANK_MODE_CONDITION,
-    },
-    {
-        "doctype": "Payment Entry",
-        "fieldname": "party_bank_ifsc",
-        "property": "mandatory_depends_on",
-        "property_type": "Data",
-        "value": BANK_MODE_CONDITION,
-    },
-    {
-        "doctype": "Payment Entry",
-        "fieldname": "party_bank_ifsc",
-        "property": "depends_on",
-        "property_type": "Data",
-        "value": BANK_MODE_CONDITION,
+        "value": f"doc.make_bank_online_payment && {BANK_ACCOUNT_REQD_METHODS}.includes(doc.payment_transfer_method)",
     },
     ### Bank Account ###
     {

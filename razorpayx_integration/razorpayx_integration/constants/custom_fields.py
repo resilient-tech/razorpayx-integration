@@ -11,14 +11,12 @@ Note:
 """
 
 from razorpayx_integration.constants import RAZORPAYX_SETTING
-from razorpayx_integration.payment_utils.constants.custom_fields import (
-    BASE_CONDITION_TO_MAKE_ONLINE_PAYMENT as PAYOUT_BASE_CONDITION,
-)
 from razorpayx_integration.payment_utils.constants.payments import TRANSFER_METHOD
 from razorpayx_integration.razorpayx_integration.constants.payouts import PAYOUT_STATUS
 from razorpayx_integration.razorpayx_integration.constants.roles import PERMISSION_LEVEL
 
 PAYOUT_VIA_RAZORPAYX = f"doc.make_bank_online_payment && doc.integration_doctype === '{RAZORPAYX_SETTING}' && doc.integration_docname"
+PAYOUT_BASE_CONDITION = f"doc.payment_type=='Pay' && doc.party && doc.party_type && doc.paid_from_account_currency === 'INR' && {PAYOUT_VIA_RAZORPAYX}"
 
 CUSTOM_FIELDS = {
     "Payment Entry": [
@@ -28,7 +26,7 @@ CUSTOM_FIELDS = {
             "label": "RazorpayX Payout Details",
             "fieldtype": "Section Break",
             "insert_after": "party_bank_ifsc",  ## Insert After `PARTY BANK IFSC` field (Payment Utils Custom Field)
-            "depends_on": f"eval: {PAYOUT_BASE_CONDITION} && doc.paid_from_account_currency === 'INR' && {PAYOUT_VIA_RAZORPAYX}",
+            "depends_on": PAYOUT_BASE_CONDITION,
             "collapsible": 1,
             "collapsible_depends_on": "eval: doc.docstatus === 0",
             "permlevel": PERMISSION_LEVEL.SEVEN.value,

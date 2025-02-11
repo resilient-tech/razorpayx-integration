@@ -10,12 +10,14 @@ Note:
         ...
 """
 
-
-from razorpayx_integration.payment_utils.constants.payments import TRANSFER_METHOD
+from razorpayx_integration.payment_utils.constants.payments import (
+    BANK_METHODS,
+    TRANSFER_METHOD,
+)
 from razorpayx_integration.payment_utils.constants.roles import PERMISSION_LEVEL
 
-BASE_CONDITION_TO_MAKE_ONLINE_PAYMENT = "doc.payment_type=='Pay' && doc.party && doc.party_type && doc.integration_doctype && doc.integration_docname"
-
+UPI_MODE_CONDITION = f"doc.make_bank_online_payment && doc.payment_transfer_method === '{TRANSFER_METHOD.UPI.value}'"
+BANK_MODE_CONDITION = f"doc.make_bank_online_payment && {BANK_METHODS}.includes(doc.payment_transfer_method)"
 
 CUSTOM_FIELDS = {
     "Bank Transaction": [
@@ -47,7 +49,7 @@ CUSTOM_FIELDS = {
             "label": "Online Payment Details",
             "fieldtype": "Section Break",
             "insert_after": "contact_email",
-            "depends_on": f"eval: {BASE_CONDITION_TO_MAKE_ONLINE_PAYMENT}",
+            "depends_on": "eval: doc.payment_type=='Pay' && doc.party && doc.party_type && doc.integration_doctype && doc.integration_docname",
             "permlevel": PERMISSION_LEVEL.SEVEN.value,
         },
         {
@@ -67,6 +69,7 @@ CUSTOM_FIELDS = {
             "options": TRANSFER_METHOD.values_as_string(),
             "default": TRANSFER_METHOD.LINK.value,
             "depends_on": "eval: doc.make_bank_online_payment",
+            "mandatory_depends_on": "eval: doc.make_bank_online_payment",
             "permlevel": PERMISSION_LEVEL.SEVEN.value,
         },
         {
@@ -119,8 +122,10 @@ CUSTOM_FIELDS = {
             "label": "Party UPI ID",
             "fieldtype": "Data",
             "insert_after": "cb_online_payment_section",
-            "fetch_from": "party_bank_account.upi_id",  # Note: update at integration level if required
+            "fetch_from": "party_bank_account.upi_id",
             "read_only": 1,
+            "depends_on": UPI_MODE_CONDITION,
+            "mandatory_depends_on": UPI_MODE_CONDITION,
             "permlevel": PERMISSION_LEVEL.SEVEN.value,
         },
         {
@@ -128,8 +133,10 @@ CUSTOM_FIELDS = {
             "label": "Party Bank Account No",
             "fieldtype": "Data",
             "insert_after": "party_upi_id",
-            "fetch_from": "party_bank_account.bank_account_no",  # Note: update at integration level if required
+            "fetch_from": "party_bank_account.bank_account_no",
             "read_only": 1,
+            "depends_on": BANK_MODE_CONDITION,
+            "mandatory_depends_on": BANK_MODE_CONDITION,
             "permlevel": PERMISSION_LEVEL.SEVEN.value,
         },
         {
@@ -137,8 +144,10 @@ CUSTOM_FIELDS = {
             "label": "Party Bank IFSC Code",
             "fieldtype": "Data",
             "insert_after": "party_bank_account_no",
-            "fetch_from": "party_bank_account.branch_code",  # Note: update at integration level if required
+            "fetch_from": "party_bank_account.branch_code",
             "read_only": 1,
+            "depends_on": BANK_MODE_CONDITION,
+            "mandatory_depends_on": BANK_MODE_CONDITION,
             "permlevel": PERMISSION_LEVEL.SEVEN.value,
         },
     ],
