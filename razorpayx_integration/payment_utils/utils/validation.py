@@ -12,12 +12,10 @@ def validate_ifsc_code(ifsc_code: str, throw=True) -> bool | None:
     """
     response = requests.get(f"https://ifsc.razorpay.com/{ifsc_code}")
 
-    is_valid = response.status_code == 200
-
-    if not is_valid and throw:
+    if response.status_code != 200 and throw:
         frappe.throw(
             msg=_("Invalid IFSC Code: <strong>{0}</strong>").format(ifsc_code),
             title=_("Invalid IFSC Code"),
         )
 
-    return is_valid
+    return response.status_code == 200
