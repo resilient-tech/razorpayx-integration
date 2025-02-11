@@ -3,16 +3,16 @@ from erpnext.accounts.doctype.payment_entry.payment_entry import PaymentEntry
 from frappe import _
 
 from razorpayx_integration.payment_utils.auth import Authenticate2FA
+from razorpayx_integration.payment_utils.constants.payouts import (
+    BANK_PAYMENT_MODE as PAYOUT_MODE,
+)
 from razorpayx_integration.razorpayx_integration.apis.payout import (
-    RazorpayXBankPayout,
+    RazorpayXCompositePayout,
     RazorpayXLinkPayout,
-    RazorpayXPayout,
-    RazorpayXUPIPayout,
 )
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
     PAYOUT_CURRENCY,
     PAYOUT_STATUS,
-    USER_PAYOUT_MODE,
 )
 from razorpayx_integration.razorpayx_integration.utils import (
     is_already_paid,
@@ -55,8 +55,13 @@ class PayoutWithPaymentEntry:
 
         self._is_authenticated_payout(auth_id)
 
-        payout_processor = self._get_payout_processor()
-        response = payout_processor.pay(self._get_payout_details())
+        setting = self.razorpayx_setting_name
+        payout_details = self._get_payout_details()
+
+        if self.doc.bank_payment_mode == PAYOUT_MODE.LINK.value:
+            response = RazorpayXLinkPayout(setting).pay(payout_details)
+        else:
+            response = RazorpayXCompositePayout(setting).pay(payout_details)
 
         self._update_after_making(response)
 
@@ -105,40 +110,40 @@ class PayoutWithPaymentEntry:
             and is_payout_via_razorpayx(self.doc)
         )
 
-    # TODO: need to mode to refactor
-    def _get_payout_processor(
-        self,
-    ) -> RazorpayXBankPayout | RazorpayXUPIPayout | RazorpayXLinkPayout:
-        match self.doc.razorpayx_payout_mode:
-            case USER_PAYOUT_MODE.BANK.value:
-                return RazorpayXBankPayout(self.razorpayx_setting_name)
-            case USER_PAYOUT_MODE.UPI.value:
-                return RazorpayXUPIPayout(self.razorpayx_setting_name)
-            case USER_PAYOUT_MODE.LINK.value:
-                return RazorpayXLinkPayout(self.razorpayx_setting_name)
-
     def _get_payout_details(self) -> dict:
         return {
-            # Mandatory
+            # Mandatory for all
             "source_doctype": self.doc.doctype,
             "source_docname": self.doc.name,
             "amount": self.doc.paid_amount,
             "party_type": self.doc.party_type,
+            "mode": self.doc.bank_payment_mode,
             # Party Details
             "party_id": self.doc.party,
             "party_name": self.doc.party_name,
-            "party_bank_account_no": self.doc.party_bank_account_no,
-            "party_bank_ifsc": self.doc.party_bank_ifsc,
-            "party_upi_id": self.doc.party_upi_id,
-            "party_email": self.doc.contact_email,
-            "party_mobile": self.doc.contact_mobile,
+            "party_payment_details": {
+                "bank_account_no": self.doc.party_bank_account_no,
+                "bank_ifsc": self.doc.party_bank_ifsc,
+                "upi_id": self.doc.party_upi_id,
+            },
+            "party_contact_details": {
+                "party_name": self.doc.party_name,
+                "party_mobile": self.doc.party_mobile,
+                "party_email": self.doc.party_email,
+            },
             # Payment Details
-            "pay_instantaneously": self.doc.razorpayx_pay_instantaneously,
             "description": self.doc.razorpayx_payout_desc,
         }
 
     def _update_after_making(self, response: dict | None = None):
-        self._update_authorized_by()
+        user = (
+            frappe.get_cached_value("User", "Administrator", "email")
+            if frappe.session.user == "Administrator"
+            else frappe.session.user
+        )
+
+        if user:
+            self.doc.db_set("payment_authorized_by", user, notify=True)
 
         if not response:
             return
@@ -161,16 +166,6 @@ class PayoutWithPaymentEntry:
 
         if (status := response.get("status")) and entity == "payout":
             self.doc.update({"razorpayx_payout_status": status.title()}).save()
-
-    def _update_authorized_by(self):
-        user = (
-            frappe.get_cached_value("User", "Administrator", "email")
-            if frappe.session.user == "Administrator"
-            else frappe.session.user
-        )
-
-        if user:
-            self.doc.db_set("payment_authorized_by", user, notify=True)
 
     #### Cancel Payout | Payout Link ####
     def cancel(self, cancel_pe: bool = False):
@@ -216,7 +211,7 @@ class PayoutWithPaymentEntry:
         if not self.doc.razorpayx_payout_id:
             return
 
-        response = RazorpayXPayout(self.razorpayx_setting_name).cancel(
+        response = RazorpayXCompositePayout(self.razorpayx_setting_name).cancel(
             self.doc.razorpayx_payout_id,
             source_doctype=self.doc.doctype,
             source_docname=self.doc.name,
