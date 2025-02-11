@@ -334,13 +334,52 @@ def delete_custom_fields(custom_fields: dict):
     """
     Delete custom fields from the given doctypes.
 
-    :param custom_fields: {doctype: [fields]}
+    :param custom_fields: Dictionary of doctypes with fields to be deleted.
+
+    ---
+    Structure of the `custom_fields` dictionary:
+
+    ```py
+    # first structure
+    {
+        "DocType1": ["field1", "field2", ...],
+        "DocType2": ["field1", "field2", ...],
+        ...
+    }
+
+    # second structure
+    {
+        "DocType1": [
+            {"fieldname": "field1", ...},
+            {"fieldname": "field2", ...},
+            ...
+        ],
+        "DocType2": [
+            {"fieldname": "field1", ...},
+            {"fieldname": "field2", ...},
+            ...
+        ],
+        ...
+    }
+    ```
+
     """
     for doctype, fields in custom_fields.items():
+        fieldnames = []
+
+        if isinstance(fields, list) and fields:
+            if isinstance(fields[0], str):
+                fieldnames = fields
+            elif isinstance(fields[0], dict):
+                fieldnames = [field["fieldname"] for field in fields]
+
+        if not fieldnames:
+            continue
+
         frappe.db.delete(
             "Custom Field",
             {
-                "fieldname": ("in", [field["fieldname"] for field in fields]),
+                "fieldname": ("in", fieldnames),
                 "dt": doctype,
             },
         )
@@ -365,6 +404,8 @@ def delete_property_setters(property_setters: list[dict]):
                 property_setter[fieldname] = property_setter.pop(key)
 
         frappe.db.delete("Property Setter", property_setter)
+
+        frappe.clear_cache(doctype=property_setter["doc_type"])
 
 
 def delete_roles_and_permissions(roles: list[dict]):
