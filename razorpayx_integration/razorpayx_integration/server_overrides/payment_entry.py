@@ -152,7 +152,6 @@ def validate_if_already_paid(doc: PaymentEntry):
         "payment_transfer_method",
         "razorpayx_payout_desc",
         "razorpayx_payout_status",
-        "razorpayx_pay_instantaneously",
         "razorpayx_payout_id",
         "razorpayx_payout_link_id",
         "reference_no",
