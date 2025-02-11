@@ -326,7 +326,7 @@ class RazorpayXPayout(BaseRazorpayXAPI):
         ---
         Contact Sample:
         ```
-        # If `razorpayx_party_contact_id` is not provided
+        # If `razorpayx_contact_id` is not provided
         {
             "name": "Gaurav Kumar",
             "email": "gauravemail@gmail.com",
@@ -415,8 +415,9 @@ class RazorpayXCompositePayout(RazorpayXPayout):
                 - `upi_id` :str: UPI ID of the party (Ex. `gauravkumar@exampleupi`).
         Optional:
         - `party_id` :str: Id of the party (Ex. Docname of the party).
-        - `party_mobile` :str: Mobile number of the party.
-        - `party_email` :str: Email of the party.
+        - `party_contact_details` :dict: Contact details of the party.
+            - `party_mobile` :str: Mobile number of the party.
+            - `party_email` :str: Email of the party.
         - `description` :str: Description of the payout.
            - Maximum length `30` characters. Allowed characters: `a-z`, `A-Z`, `0-9` and `space`.
         - `reference_id` :str: Reference Id of the payout.
@@ -434,6 +435,7 @@ class RazorpayXCompositePayout(RazorpayXPayout):
         self._validate_payout_mode(mode)
 
         payment_details = payout_details["party_payment_details"]
+        payout_details.update(**payout_details.pop("party_contact_details"))
 
         if mode == PAYOUT_MODE.UPI.value:
             service = "Make Composite Payout to UPI ID"
