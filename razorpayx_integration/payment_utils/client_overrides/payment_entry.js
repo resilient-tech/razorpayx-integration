@@ -32,36 +32,7 @@ frappe.ui.form.on("Payment Entry", {
 			}
 		}
 
-		// TODO: need to be in utils so can use in dialog box also.
-		if (frm.doc.payment_transfer_method === TRANSFER_METHOD.IMPS && frm.doc.paid_amount > 5_00_000) {
-			frappe.throw({
-				message: __("Amount should be less than {0} for <strong>{1}</strong> transfer", [
-					format_currency(5_00_000, "INR"),
-					TRANSFER_METHOD.IMPS,
-				]),
-				title: __("Amount Limit Exceeded"),
-			});
-		}
-
-		if (frm.doc.payment_transfer_method === TRANSFER_METHOD.UPI && frm.doc.paid_amount > 1_00_000) {
-			frappe.throw({
-				message: __("Amount should be less than {0} for <strong>{1}</strong> transfer", [
-					format_currency(1_00_000, "INR"),
-					TRANSFER_METHOD.UPI,
-				]),
-				title: __("Amount Limit Exceeded"),
-			});
-		}
-
-		if (frm.doc.payment_transfer_method === TRANSFER_METHOD.RTGS && frm.doc.paid_amount < 2_00_000) {
-			frappe.throw({
-				message: __("Amount should be greater than {0} for <strong>{1}</strong> transfer", [
-					format_currency(2_00_000, "INR"),
-					TRANSFER_METHOD.RTGS,
-				]),
-				title: __("Insufficient Amount"),
-			});
-		}
+		payment_utils.validate_payment_transfer_method(frm.doc.payment_transfer_method, frm.doc.paid_amount);
 	},
 
 	bank_account: async function (frm) {

@@ -51,4 +51,34 @@ Object.assign(payment_utils, {
 
 		return message;
 	},
+
+	validate_payment_transfer_method(method, amount) {
+		if ([PAYMENT_TRANSFER_METHOD.NEFT, PAYMENT_TRANSFER_METHOD.LINK].includes(method)) return;
+
+		if (method === PAYMENT_TRANSFER_METHOD.IMPS && amount > 5_00_000) {
+			frappe.throw({
+				message: __("Amount should be less than {0} for <strong>{1}</strong> transfer", [
+					format_currency(5_00_000, "INR"),
+					PAYMENT_TRANSFER_METHOD.IMPS,
+				]),
+				title: __("Amount Limit Exceeded"),
+			});
+		} else if (method === PAYMENT_TRANSFER_METHOD.UPI && amount > 1_00_000) {
+			frappe.throw({
+				message: __("Amount should be less than {0} for <strong>{1}</strong> transfer", [
+					format_currency(1_00_000, "INR"),
+					PAYMENT_TRANSFER_METHOD.UPI,
+				]),
+				title: __("Amount Limit Exceeded"),
+			});
+		} else if (method === PAYMENT_TRANSFER_METHOD.RTGS && amount < 2_00_000) {
+			frappe.throw({
+				message: __("Amount should be greater than {0} for <strong>{1}</strong> transfer", [
+					format_currency(2_00_000, "INR"),
+					PAYMENT_TRANSFER_METHOD.RTGS,
+				]),
+				title: __("Insufficient Amount"),
+			});
+		}
+	},
 });
