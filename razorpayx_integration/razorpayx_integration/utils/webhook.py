@@ -325,7 +325,7 @@ class PayoutWebhook(RazorpayXWebhook):
         if not docnames:
             return
 
-        self.source_doc = frappe.get_doc(doctype, docnames[0])
+        self.source_doc = frappe.get_doc(doctype, docnames[0], for_update=True)
         self.referenced_docnames = docnames[1:]  # to avoid updating the same doc
 
         return self.source_doc
