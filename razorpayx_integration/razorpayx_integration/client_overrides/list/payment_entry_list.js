@@ -11,7 +11,7 @@ frappe.listview_settings["Payment Entry"] = {
 
 	onload: function (list_view) {
 		// Add `Pay and Submit` button to the Payment Entry list view
-		if (!payment_utils.can_user_authorize_payout()) return;
+		if (!payment_utils.can_user_authorize_payment()) return;
 
 		list_view.page.add_actions_menu_item(__("Pay and Submit"), () => {
 			const selected_docs = list_view.get_checked_items();

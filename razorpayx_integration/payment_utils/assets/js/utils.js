@@ -1,8 +1,8 @@
 frappe.provide("payment_utils");
 
-const PAYOUT_AUTHORIZER = "Online Payments Authorizer";
+const PAYMENT_AUTHORIZER = "Online Payments Authorizer";
 const PAY_ICON = "expenses";
-const BANK_PAYMENT_MODE = {
+const PAYMENT_TRANSFER_METHOD = {
 	NEFT: "NEFT",
 	IMPS: "IMPS",
 	RTGS: "RTGS",
@@ -11,18 +11,18 @@ const BANK_PAYMENT_MODE = {
 };
 
 Object.assign(payment_utils, {
-	PAYOUT_AUTHORIZER,
-	BANK_PAYMENT_MODE,
+	PAYMENT_AUTHORIZER,
+	PAYMENT_TRANSFER_METHOD,
 	PAY_ICON,
 
 	get_date_in_user_fmt(date) {
 		return frappe.datetime.str_to_user(date, null, frappe.datetime.get_user_date_fmt());
 	},
 
-	can_user_authorize_payout() {
+	can_user_authorize_payment() {
 		return (
 			frappe.session.user !== "Administrator" &&
-			frappe.user.has_role(PAYOUT_AUTHORIZER) &&
+			frappe.user.has_role(PAYMENT_AUTHORIZER) &&
 			frappe.perm.has_perm("Payment Entry", 0, "submit")
 		);
 	},

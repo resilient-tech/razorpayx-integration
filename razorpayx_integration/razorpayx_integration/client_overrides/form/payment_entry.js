@@ -22,7 +22,7 @@ const PAYOUT_FIELDS = [
 	// Payout
 	"paid_amount",
 	"make_bank_online_payment",
-	"payment_transfer_method",
+	"TRANSFER_METHOD",
 	"razorpayx_payout_desc",
 	"razorpayx_payout_status",
 	"razorpayx_payout_id",
@@ -31,6 +31,8 @@ const PAYOUT_FIELDS = [
 ];
 
 const DESCRIPTION_REGEX = /^[a-zA-Z0-9 ]{1,30}$/;
+
+const TRANSFER_METHOD = payment_utils.PAYMENT_TRANSFER_METHOD;
 
 frappe.ui.form.on("Payment Entry", {
 	refresh: async function (frm) {
@@ -167,10 +169,10 @@ function is_already_paid(frm) {
 
 function user_has_payout_permissions(frm) {
 	if (frm.doc.__onload) {
-		return payment_utils.get_onload(frm, "has_payout_permission");
+		return payment_utils.get_onload(frm, "has_payment_permission");
 	}
 
-	return payment_utils.can_user_authorize_payout();
+	return payment_utils.can_user_authorize_payment();
 }
 
 // ############ HELPERS ############ //
@@ -256,9 +258,9 @@ async function show_make_payout_dialog(frm) {
 	}
 
 	// depends on conditions
-	const BANK_MODE = `${payment_utils.BANK_PAYMENT_MODE.NEFT}, ${payment_utils.BANK_PAYMENT_MODE.RTGS}, ${payment_utils.BANK_PAYMENT_MODE.IMPS}.includes(doc.payment_transfer_method)`;
-	const UPI_MODE = `doc.payment_transfer_method === '${payment_utils.BANK_PAYMENT_MODE.UPI}'`;
-	const LINK_MODE = `doc.payment_transfer_method === '${payment_utils.BANK_PAYMENT_MODE.LINK}'`;
+	const BANK_MODE = `${TRANSFER_METHOD.NEFT}, ${TRANSFER_METHOD.RTGS}, ${TRANSFER_METHOD.IMPS}.includes(doc.TRANSFER_METHOD)`;
+	const UPI_MODE = `doc.TRANSFER_METHOD === '${TRANSFER_METHOD.UPI}'`;
+	const LINK_MODE = `doc.TRANSFER_METHOD === '${TRANSFER_METHOD.LINK}'`;
 
 	const dialog = new frappe.ui.Dialog({
 		title: __("Enter Payout Details"),
@@ -371,11 +373,11 @@ async function show_make_payout_dialog(frm) {
 				fieldtype: "Section Break",
 			},
 			{
-				fieldname: "payment_transfer_method",
+				fieldname: "TRANSFER_METHOD",
 				label: __("Payout Mode"),
 				fieldtype: "Select",
-				options: Object.values(payment_utils.BANK_PAYMENT_MODE),
-				default: frm.doc.payment_transfer_method,
+				options: Object.values(TRANSFER_METHOD),
+				default: frm.doc.TRANSFER_METHOD,
 				read_only: 1,
 				reqd: 1,
 				description: `<div class="d-flex align-items-center justify-content-end">
@@ -420,7 +422,7 @@ function make_payout(auth_id, docname, values) {
 		args: {
 			auth_id: auth_id,
 			docname: docname,
-			payout_mode: values.payment_transfer_method,
+			payout_mode: values.TRANSFER_METHOD,
 			...values,
 		},
 		freeze: true,
@@ -432,11 +434,11 @@ async function set_party_bank_details(dialog) {
 	const party_bank_account = dialog.get_value("party_bank_account");
 
 	if (!party_bank_account) {
-		dialog.set_value("payment_transfer_method", payment_utils.BANK_PAYMENT_MODE.LINK);
+		dialog.set_value("TRANSFER_METHOD", TRANSFER_METHOD.LINK);
 		return;
 	}
 
-	dialog.set_value("payment_transfer_method", payment_utils.BANK_PAYMENT_MODE.NEFT);
+	dialog.set_value("TRANSFER_METHOD", TRANSFER_METHOD.NEFT);
 
 	const response = await frappe.db.get_value("Bank Account", party_bank_account, [
 		"branch_code as party_bank_ifsc",
