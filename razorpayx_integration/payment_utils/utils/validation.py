@@ -2,13 +2,14 @@ import frappe
 import requests
 from frappe import _
 
+from razorpayx_integration.payment_utils.constants.payouts import (
+    BANK_PAYMENT_MODE as PAYOUT_MODE,
+)
 
-def validate_ifsc_code(ifsc_code: str, throw=True) -> bool | None:
+
+def validate_ifsc_code(ifsc_code: str, throw: bool = False) -> bool | None:
     """
     Validate IFSC Code using Razorpay API.
-
-    :param ifsc_code: IFSC Code to validate.
-    :param throw: Raise exception if IFSC Code is invalid.
     """
     response = requests.get(f"https://ifsc.razorpay.com/{ifsc_code}")
 
@@ -19,3 +20,18 @@ def validate_ifsc_code(ifsc_code: str, throw=True) -> bool | None:
         )
 
     return response.status_code == 200
+
+
+def validate_payout_mode(payout_mode: str, throw: bool = False) -> bool | None:
+    if PAYOUT_MODE.has_value(payout_mode):
+        return True
+
+    if throw:
+        frappe.throw(
+            msg=_(
+                "Invalid Payout Mode: <strong>{0}</strong>. Must be one of: {1}"
+            ).format(payout_mode, PAYOUT_MODE.values_as_html_list()),
+            title=_("Invalid Payout Mode"),
+        )
+
+    return False

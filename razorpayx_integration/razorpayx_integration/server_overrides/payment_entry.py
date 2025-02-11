@@ -231,7 +231,7 @@ def validate_bank_payout_mode(doc: PaymentEntry):
             exc=frappe.MandatoryError,
         )
 
-    validate_ifsc_code(doc.party_bank_ifsc)
+    validate_ifsc_code(doc.party_bank_ifsc, throw=True)
 
 
 def validate_upi_payout_mode(doc: PaymentEntry):
