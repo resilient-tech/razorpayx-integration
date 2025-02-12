@@ -559,7 +559,9 @@ class RazorpayXCompositePayout(RazorpayXPayout):
                 case FUND_ACCOUNT_TYPE.BANK_ACCOUNT.value:
                     return {
                         "bank_account": {
-                            "name": payout_details["party_name"],
+                            "name": self.sanitize_party_name(
+                                payout_details["party_name"]
+                            ),
                             "ifsc": payout_details["party_bank_ifsc"],
                             "account_number": payout_details["party_bank_account_no"],
                         }

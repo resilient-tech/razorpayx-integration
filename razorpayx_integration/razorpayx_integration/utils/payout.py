@@ -128,8 +128,8 @@ class PayoutWithPaymentEntry:
             },
             "party_contact_details": {
                 "party_name": self.doc.party_name,
-                "party_mobile": self.doc.party_mobile,
-                "party_email": self.doc.party_email,
+                "party_mobile": self.doc.contact_mobile,
+                "party_email": self.doc.contact_email,
             },
             # Payment Details
             "description": self.doc.razorpayx_payout_desc,

@@ -26,10 +26,10 @@ def onload(doc: PaymentEntry, method=None):
 
 
 def validate(doc: PaymentEntry, method=None):
-    if not (
-        doc.make_bank_online_payment
-        and not doc.integration_docname
-        and not doc.integration_doctype
+    if (
+        not doc.make_bank_online_payment
+        or not doc.integration_docname
+        or not doc.integration_doctype
     ):
         return
 
@@ -51,7 +51,7 @@ def validate_bank_payment_method(doc: PaymentEntry):
     ):
         frappe.throw(
             msg=_(
-                "Party's Bank Account Details is mandatory to make payment. Please set valid <strong>Party Bank Account</strong>."
+                "Party's Bank Account Details is mandatory to make payment. <br> Please set valid <strong>Party Bank Account</strong>."
             ),
             title=_("Mandatory Fields Missing"),
             exc=frappe.MandatoryError,
