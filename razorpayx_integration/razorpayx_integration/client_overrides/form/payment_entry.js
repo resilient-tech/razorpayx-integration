@@ -30,8 +30,6 @@ const PAYOUT_FIELDS = [
 	"reference_no",
 ];
 
-const DESCRIPTION_REGEX = /^[a-zA-Z0-9 ]{1,30}$/;
-
 frappe.ui.form.on("Payment Entry", {
 	refresh: async function (frm) {
 		// Do not allow to edit fields if Payment is processed by RazorpayX in amendment
@@ -63,7 +61,7 @@ frappe.ui.form.on("Payment Entry", {
 	validate: function (frm) {
 		if (!razorpayx.is_payout_via_razorpayx(frm.doc)) return;
 
-		validate_payout_description(frm.doc.razorpayx_payout_desc);
+		razorpayx.validate_payout_description(frm.doc.razorpayx_payout_desc);
 	},
 
 	before_submit: async function (frm) {
@@ -124,18 +122,6 @@ frappe.ui.form.on("Payment Entry", {
 		});
 	},
 });
-
-// ############ VALIDATIONS ############ //
-function validate_payout_description(description) {
-	if (!description || DESCRIPTION_REGEX.test(description)) return;
-
-	frappe.throw({
-		message: __(
-			"Must be <strong>alphanumeric</strong> and contain <strong>spaces</strong> only, with a maximum of <strong>30</strong> characters."
-		),
-		title: __("Invalid RazorpayX Payout Description"),
-	});
-}
 
 // ############ UTILITY ############ //
 /**
@@ -395,7 +381,7 @@ async function show_make_payout_dialog(frm) {
 		],
 		primary_action_label: __("{0} Pay", [frappe.utils.icon(payment_utils.PAY_ICON)]),
 		primary_action: (values) => {
-			validate_payout_description(values.razorpayx_payout_desc);
+			razorpayx.validate_payout_description(values.razorpayx_payout_desc);
 			payment_utils.validate_payment_transfer_method(
 				values.payment_transfer_method,
 				frm.doc.paid_amount
