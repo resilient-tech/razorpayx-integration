@@ -25,8 +25,8 @@ CUSTOM_FIELDS = {
             "fieldname": "razorpayx_payout_section",
             "label": "RazorpayX Payout Details",
             "fieldtype": "Section Break",
-            "insert_after": "party_bank_ifsc",  ## Insert After `PARTY BANK IFSC` field (Payment Utils Custom Field)
-            "depends_on": PAYOUT_BASE_CONDITION,
+            "insert_after": "integration_docname",  ## Insert After `Integration Docname` field (Payment Utils Custom Field)
+            "depends_on": f"eval: {PAYOUT_BASE_CONDITION}",
             "collapsible": 1,
             "collapsible_depends_on": "eval: doc.docstatus === 0",
             "permlevel": PERMISSION_LEVEL.SEVEN.value,

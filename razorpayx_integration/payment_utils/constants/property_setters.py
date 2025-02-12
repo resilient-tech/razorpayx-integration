@@ -40,7 +40,7 @@ PROPERTY_SETTERS = [
         "fieldname": "contact_person",
         "property": "mandatory_depends_on",
         "property_type": "Data",
-        "value": f"doc.make_bank_online_payment && doc.payment_transfer_method === '{TRANSFER_METHOD.LINK.value}' && doc.party_type !== 'Employee'",
+        "value": f"eval: doc.make_bank_online_payment && doc.payment_transfer_method === '{TRANSFER_METHOD.LINK.value}' && doc.party_type !== 'Employee'",
     },
     {
         "doctype": "Payment Entry",
@@ -54,7 +54,7 @@ PROPERTY_SETTERS = [
         "fieldname": "party_bank_account",
         "property": "mandatory_depends_on",
         "property_type": "Data",
-        "value": f"doc.make_bank_online_payment && {BANK_ACCOUNT_REQD_METHODS}.includes(doc.payment_transfer_method)",
+        "value": f"eval: doc.make_bank_online_payment && {BANK_ACCOUNT_REQD_METHODS}.includes(doc.payment_transfer_method)",
     },
     ### Bank Account ###
     {

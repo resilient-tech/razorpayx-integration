@@ -32,6 +32,17 @@ CUSTOM_FIELDS = {
             "no_copy": 1,
         },
     ],
+    "Bank Account": [  # For `UPI` payment mode
+        {
+            "fieldname": "upi_id",
+            "label": "UPI ID",
+            "fieldtype": "Data",
+            "insert_after": "iban",
+            "placeholder": "Eg. 9999999999@okicici",
+            "depends_on": "",  # TODO: remove after split
+            "no_copy": 1,
+        },
+    ],
     "Payment Entry": [
         {
             "fieldname": "contact_mobile",
@@ -58,7 +69,7 @@ CUSTOM_FIELDS = {
             "label": "Make Online Payment",
             "fieldtype": "Check",
             "insert_after": "online_payment_section",
-            "description": "Make online payment using <strong>Payments Integration</strong>",
+            "description": "Make online payment using <strong>Payment Integrations</strong>",
             "permlevel": PERMISSION_LEVEL.SEVEN.value,
             "no_copy": 1,
         },
@@ -85,8 +96,8 @@ CUSTOM_FIELDS = {
             "insert_after": "cb_online_payment_section",
             "fetch_from": "party_bank_account.upi_id",
             "read_only": 1,
-            "depends_on": UPI_MODE_CONDITION,
-            "mandatory_depends_on": UPI_MODE_CONDITION,
+            "depends_on": f"eval: {UPI_MODE_CONDITION}",
+            "mandatory_depends_on": f"eval: {UPI_MODE_CONDITION}",
             "permlevel": PERMISSION_LEVEL.SEVEN.value,
         },
         {
@@ -96,8 +107,8 @@ CUSTOM_FIELDS = {
             "insert_after": "party_upi_id",
             "fetch_from": "party_bank_account.bank_account_no",
             "read_only": 1,
-            "depends_on": BANK_MODE_CONDITION,
-            "mandatory_depends_on": BANK_MODE_CONDITION,
+            "depends_on": f"eval: {BANK_MODE_CONDITION}",
+            "mandatory_depends_on": f"eval: {BANK_MODE_CONDITION}",
             "permlevel": PERMISSION_LEVEL.SEVEN.value,
         },
         {
@@ -107,8 +118,8 @@ CUSTOM_FIELDS = {
             "insert_after": "party_bank_account_no",
             "fetch_from": "party_bank_account.branch_code",
             "read_only": 1,
-            "depends_on": BANK_MODE_CONDITION,
-            "mandatory_depends_on": BANK_MODE_CONDITION,
+            "depends_on": f"eval: {BANK_MODE_CONDITION}",
+            "mandatory_depends_on": f"eval: {BANK_MODE_CONDITION}",
             "permlevel": PERMISSION_LEVEL.SEVEN.value,
         },
         ### Read Only and Hidden Fields Section ###
