@@ -1,7 +1,8 @@
 # Copyright (c) 2024, Resilient Tech and contributors
 # For license information, please see license.txt
 
-# import frappe
+import frappe
+from frappe import _
 from frappe.model.document import Document
 
 # Auto Payment Setting
@@ -41,4 +42,18 @@ class AutoPaymentSetting(Document):
         payment_threshold: DF.Currency
     # end: auto-generated types
 
-    pass
+    def validate(self):
+        self.validate_default_discount_account()
+
+    def validate_default_discount_account(self):
+        if not self.claim_early_payment_discount:
+            return
+
+        default_discount_account = frappe.get_cached_value(
+            "Company", self.company, "default_discount_account"
+        )
+
+        if not default_discount_account:
+            frappe.throw(
+                _("Please set a default discount account in the company settings.")
+            )
