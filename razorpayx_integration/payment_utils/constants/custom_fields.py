@@ -83,6 +83,7 @@ CUSTOM_FIELDS = {
             "in_standard_filter": 1,
             "depends_on": "eval: doc.make_bank_online_payment",
             "mandatory_depends_on": "eval: doc.make_bank_online_payment",
+            "no_copy": 1,
             "permlevel": PERMISSION_LEVEL.SEVEN.value,
         },
         {
