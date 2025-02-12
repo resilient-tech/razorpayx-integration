@@ -16,8 +16,8 @@ from razorpayx_integration.payment_utils.constants.payments import (
 )
 from razorpayx_integration.payment_utils.constants.roles import PERMISSION_LEVEL
 
-UPI_MODE_CONDITION = f"doc.make_bank_online_payment && doc.payment_transfer_method === '{TRANSFER_METHOD.UPI.value}'"
-BANK_MODE_CONDITION = f"doc.make_bank_online_payment && {BANK_METHODS}.includes(doc.payment_transfer_method)"
+UPI_MODE_CONDITION = f"doc.payment_transfer_method === '{TRANSFER_METHOD.UPI.value}'"
+BANK_MODE_CONDITION = f"{BANK_METHODS}.includes(doc.payment_transfer_method)"
 
 CUSTOM_FIELDS = {
     "Bank Transaction": [
@@ -80,6 +80,7 @@ CUSTOM_FIELDS = {
             "insert_after": "make_bank_online_payment",
             "options": TRANSFER_METHOD.values_as_string(),
             "default": TRANSFER_METHOD.LINK.value,
+            "in_standard_filter": 1,
             "depends_on": "eval: doc.make_bank_online_payment",
             "mandatory_depends_on": "eval: doc.make_bank_online_payment",
             "permlevel": PERMISSION_LEVEL.SEVEN.value,
@@ -97,7 +98,7 @@ CUSTOM_FIELDS = {
             "fetch_from": "party_bank_account.upi_id",
             "read_only": 1,
             "depends_on": f"eval: {UPI_MODE_CONDITION}",
-            "mandatory_depends_on": f"eval: {UPI_MODE_CONDITION}",
+            "mandatory_depends_on": f"eval: doc.make_bank_online_payment && {UPI_MODE_CONDITION}",
             "permlevel": PERMISSION_LEVEL.SEVEN.value,
         },
         {
@@ -108,7 +109,7 @@ CUSTOM_FIELDS = {
             "fetch_from": "party_bank_account.bank_account_no",
             "read_only": 1,
             "depends_on": f"eval: {BANK_MODE_CONDITION}",
-            "mandatory_depends_on": f"eval: {BANK_MODE_CONDITION}",
+            "mandatory_depends_on": f"eval: doc.make_bank_online_payment &&  {BANK_MODE_CONDITION}",
             "permlevel": PERMISSION_LEVEL.SEVEN.value,
         },
         {
@@ -119,7 +120,7 @@ CUSTOM_FIELDS = {
             "fetch_from": "party_bank_account.branch_code",
             "read_only": 1,
             "depends_on": f"eval: {BANK_MODE_CONDITION}",
-            "mandatory_depends_on": f"eval: {BANK_MODE_CONDITION}",
+            "mandatory_depends_on": f"eval: doc.make_bank_online_payment && {BANK_MODE_CONDITION}",
             "permlevel": PERMISSION_LEVEL.SEVEN.value,
         },
         ### Read Only and Hidden Fields Section ###
