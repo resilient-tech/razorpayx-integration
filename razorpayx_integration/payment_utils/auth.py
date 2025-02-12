@@ -14,7 +14,7 @@ Reference: https://github.com/frappe/frappe/blob/13fbdbb0c478099dfac6c70b7e05eef
 # TODO: generalize this, not just for payment entries but also for other doctypes
 import os
 import pickle
-from base64 import b32encode, b64encode
+from base64 import b32encode, b64decode, b64encode
 
 import frappe
 import frappe.defaults
@@ -35,6 +35,8 @@ from frappe.utils.password import check_password, decrypt, encrypt
 
 from razorpayx_integration.payment_utils.constants.enums import BaseEnum
 from razorpayx_integration.payment_utils.constants.roles import ROLE_PROFILE
+
+# ! Important: Do not use `cache.get_value` or `cache.set_value` as it not working as expected. Use `cache.get` and `cache.set` instead.
 
 ##### Constants #####
 OTP_ISSUER = "Bank Payments"
@@ -80,7 +82,7 @@ def generate_otp(payment_entries: list[str] | str) -> dict | None:
         payment_entries = frappe.parse_json(payment_entries)
 
     # checks permission and other tasks before sending OTP
-    execute_pre_authentication_tasks(payment_entries)
+    run_before_payment_authentication(payment_entries, throw=True)
 
     return Trigger2FA(payment_entries).send_otp()
 
@@ -123,11 +125,11 @@ def reset_otp_secret(user: str):
             title=_("Enable Two Factor Auth"),
         )
 
-    otp_issuer = get_otp_issuer()
+    otp_issuer = Utils2FA.get_otp_issuer()
     user_email = frappe.get_cached_value("User", user, "email")
 
-    clear_default(get_otplogin_key(user))
-    clear_default(get_otpsecret_key(user))
+    clear_default(Utils2FA.get_otp_login_key(user))
+    clear_default(Utils2FA.get_otp_secret_key(user))
 
     email_args = {
         "recipients": user_email,
@@ -161,52 +163,121 @@ def reset_otp_secret(user: str):
 
 
 ##### Utilities #####
-def execute_pre_authentication_tasks(payment_entries: list[str]):
+def run_before_payment_authentication(
+    payment_entries: str | list[str], throw: bool = False
+) -> bool:
     """
     Run `before_payment_authentication` hooks before sending OTP.
 
     :param payment_entries: List of payment entry names.
     """
     for fn in frappe.get_hooks("before_payment_authentication"):
-        frappe.get_attr(fn)(payment_entries)
+        if not frappe.get_attr(fn)(payment_entries, throw=throw):
+            return False
+
+    return True
 
 
-def get_otp_issuer() -> str:
-    """
-    Get the Payment OTP Issuer.
+class Utils2FA:
+    #### Suffixes for cache keys####
+    _USER = "_user"
+    _TOKEN = "_token"
+    _OTP_SECRET = "_otp_secret"
+    _OTP_LOGIN = "_otp_login"
+    _AUTHENTICATED = "_authenticated"
+    _PAYMENT_ENTRIES = "_payment_entries"
 
-    Structure:
-    ```py
-    f"{system_setting_name} - {OTP_ISSUER}"
-    ```
-    """
-    return (
-        f"{get_system_settings('otp_issuer_name') or 'Frappe Framework'} - {OTP_ISSUER}"
-    )
+    #### Getters and Setters ####
+    @staticmethod
+    def get_otp_issuer() -> str:
+        return f"{get_system_settings('otp_issuer_name') or 'Frappe Framework'} - {OTP_ISSUER}"
 
+    @staticmethod
+    def get_otp_login_key(user: str) -> str:
+        return f"{user}_{frappe.scrub(OTP_ISSUER)}{Utils2FA._OTP_LOGIN}"
 
-def get_otplogin_key(user: str) -> str:
-    """
-    Get the OTP Login Key for the user.
+    @staticmethod
+    def get_otp_secret_key(user: str) -> str:
+        return f"{user}_{frappe.scrub(OTP_ISSUER)}{Utils2FA._OTP_SECRET}"
 
-    Structure:
-    ```py
-    f"{user}_{frappe.scrub(OTP_ISSUER)}_otplogin"
-    ```
-    """
-    return f"{user}_{frappe.scrub(OTP_ISSUER)}_otplogin"
+    @staticmethod
+    def get_verification_method() -> str:
+        """
+        Get the verification method to authenticate the payment entries.
 
+        :return: Verification method (Password, SMS, Email, OTP App)
+        """
+        if Utils2FA.is_two_factor_enabled():
+            return get_system_settings("two_factor_method")
 
-def get_otpsecret_key(user: str) -> str:
-    """
-    Get the OTP Secret Key for the user.
+        return AUTH_METHOD.PASSWORD.value
 
-    Structure:
-    ```py
-    f"{user}_{frappe.scrub(OTP_ISSUER)}_otpsecret"
-    ```
-    """
-    return f"{user}_{frappe.scrub(OTP_ISSUER)}_otpsecret"
+    @staticmethod
+    def get_otp_secret(user) -> str:
+        """
+        Get OTP Secret for the user.
+
+        And set OTP Secret to default for user if not set.
+        """
+        key = Utils2FA.get_otp_secret_key(user)
+
+        if otp_secret := get_default(key):
+            return decrypt(otp_secret, key=key)
+
+        otp_secret = b32encode(os.urandom(10)).decode("utf-8")
+        set_default(key, encrypt(otp_secret))
+
+        return otp_secret
+
+    @staticmethod
+    def get_otp_login(user) -> str:
+        return get_default(Utils2FA.get_otp_login_key(user))
+
+    @staticmethod
+    def is_two_factor_enabled() -> int:
+        return cint(get_system_settings("enable_two_factor_auth"))
+
+    #### Sending Email ####
+    @staticmethod
+    def send_authentication_email(user: str, subject: str, message: str) -> bool:
+        user_email = frappe.get_cached_value("User", user, "email")
+
+        if not user_email:
+            return False
+
+        frappe.sendmail(
+            recipients=user_email,
+            subject=subject,
+            message=message,
+            header=[_("Verification Code"), "blue"],
+            delayed=False,
+        )
+
+        return True
+
+    @staticmethod
+    def get_email_body_for_2fa(
+        otp: str, paid_amount: int | float, payment_entries: str, **kwargs
+    ):
+        body = """
+        <p>Enter the verification code below to authenticate the payment of <strong>{{ paid_amount }}</strong></p>
+        <br>
+        <p style="text-align: center;">
+        <strong style="font-size: 20px;">{{ otp }}</strong></p>
+        <br>
+        <p><strong>Payment Entries to Authenticate: </strong>{{ payment_entries }}</p>
+        <br>
+        <p><strong>Note:</strong> This code expires in 5 minutes.</p>
+        """
+
+        return frappe.render_template(
+            body,
+            {
+                "otp": otp,
+                "paid_amount": fmt_money(paid_amount, currency="INR"),
+                "payment_entries": payment_entries,
+            },
+        )
 
 
 ##### Processors #####
@@ -234,11 +305,10 @@ class Trigger2FA:
         Generates `auth_id` for the user and stores the data in cache.
         """
         self.auth_id = frappe.generate_hash(length=8)
+        self.otp_issuer = Utils2FA.get_otp_issuer()
+        self.auth_method = Utils2FA.get_verification_method()
 
         self.cache_2fa_data(user=self.user, payment_entries=self.payment_entries)
-
-        self.otp_issuer = get_otp_issuer()
-        self.auth_method = self.get_verification_method()
 
         if self.auth_method == AUTH_METHOD.PASSWORD.value:
             self.pipeline.execute()
@@ -249,7 +319,7 @@ class Trigger2FA:
                 "prompt": "Confirm your login password",
             }
 
-        self.otp_secret = self.get_otpsecret(self.user)
+        self.otp_secret = Utils2FA.get_otp_secret(self.user)
         self.token = pyotp.TOTP(self.otp_secret).now()
 
         self.cache_2fa_data(otp_secret=self.otp_secret)
@@ -269,17 +339,15 @@ class Trigger2FA:
         if self.auth_method == AUTH_METHOD.OTP_APP.value:
             self.pipeline.execute()
 
-            if self.get_otplogin(self.user):
+            if Utils2FA.get_otp_login(self.user):
                 return self.process_2fa_for_otp_app()
 
             return self.email_2fa_for_otp_app()
 
     ### Caching Data ###
     def cache_2fa_data(self, **kwargs):
-        auth_method = self.get_verification_method()
-
         # set increased expiry time for SMS and Email
-        if auth_method in [AUTH_METHOD.SMS.value, AUTH_METHOD.EMAIL.value]:
+        if self.auth_method in [AUTH_METHOD.SMS.value, AUTH_METHOD.EMAIL.value]:
             expiry_time = 300
         else:
             expiry_time = 180
@@ -288,13 +356,10 @@ class Trigger2FA:
             if not isinstance(v, str | int | float):
                 v = b64encode(pickle.dumps(v)).decode("utf-8")
 
-            # TODO: need to generalize this
-            if k == "payment_entries":
-                # extra time for processing PEs
-                self.pipeline.set(f"{self.auth_id}_{k}", v, expiry_time + 100)
+            # for payment_entries, set expiry time to 100 seconds more than token expiry
+            expiry_time = expiry_time + 100 if k == "payment_entries" else expiry_time
 
-            else:
-                self.pipeline.set(f"{self.auth_id}_{k}", v, expiry_time)
+            self.pipeline.set(f"{self.auth_id}_{k}", v, expiry_time)
 
     #### 2FA Methods ####
     def process_2fa_for_sms(self):
@@ -328,9 +393,10 @@ class Trigger2FA:
             ),
         }
 
-        status = self.send_token_via_email(
+        status = Utils2FA.send_authentication_email(
+            user=self.user,
             subject=_("OTP from {0} for authorizing payment").format(self.otp_issuer),
-            message=self.email_body_for_2fa(**template_args),
+            message=Utils2FA.get_email_body_for_2fa(**template_args),
         )
 
         return {
@@ -342,7 +408,7 @@ class Trigger2FA:
         }
 
     def process_2fa_for_otp_app(self):
-        setup_complete = True if self.get_otplogin(self.user) else False
+        setup_complete = True if Utils2FA.get_otp_login(self.user) else False
 
         return {
             "method": self.auth_method,
@@ -358,7 +424,8 @@ class Trigger2FA:
         )
         qrcode_link = get_link_for_qrcode(self.user, totp_uri)
 
-        status = self.send_token_via_email(
+        status = Utils2FA.send_authentication_email(
+            user=self.user,
             subject=_("OTP registration code from {0}").format(self.otp_issuer),
             message=_(
                 "Please click on the link below and follow the instructions on"
@@ -376,87 +443,11 @@ class Trigger2FA:
             "auth_id": self.auth_id,
         }
 
-    #### Sending Email ####
-    def send_token_via_email(self, subject, message):
-        user_email = frappe.get_cached_value("User", self.user, "email")
-
-        if not user_email:
-            return False
-
-        frappe.sendmail(
-            recipients=user_email,
-            subject=subject,
-            message=message,
-            header=[_("Verification Code"), "blue"],
-            delayed=False,
-        )
-
-        return True
-
-    def email_body_for_2fa(self, **kwargs):
-        # format amount
-        kwargs["paid_amount"] = fmt_money(kwargs["paid_amount"], currency="INR")
-
-        body = """
-        Enter the verification code below to authenticate the payment of Rs. <strong>{{ paid_amount }}</strong>:
-        <br><br>
-        <strong style="font-size: 18px;">{{ otp }}</strong>
-        <br><br>
-        <strong>Payment Entries Authorized:</strong> {{ payment_entries }}<br>
-        <strong>Note:</strong> This code expires in 5 minutes.
-        """
-
-        return frappe.render_template(body, kwargs)
-
-    #### Helper Methods ####
-    @staticmethod
-    def get_verification_method() -> str:
-        """
-        Get the verification method to authenticate the payment entries.
-
-        :return: Verification method (Password, SMS, Email, OTP App)
-        """
-        if Trigger2FA.is_two_factor_enabled():
-            return get_system_settings("two_factor_method")
-
-        return AUTH_METHOD.PASSWORD.value
-
-    @staticmethod
-    def is_two_factor_enabled():
-        # TODO: allow server override from config ???
-        return cint(get_system_settings("enable_two_factor_auth"))
-
-    @staticmethod
-    def get_otplogin(user):
-        return get_default(get_otplogin_key(user))
-
-    @staticmethod
-    def get_otpsecret(user):
-        """
-        Get OTP Secret for the user.
-
-        And set OTP Secret to default for user if not set.
-        """
-        key = get_otpsecret_key(user)
-
-        if otp_secret := get_default(key):
-            return decrypt(otp_secret, key=key)
-
-        otp_secret = b32encode(os.urandom(10)).decode("utf-8")
-        set_default(key, encrypt(otp_secret))
-
-        return otp_secret
-
 
 class Authenticate2FA:
     """
     Processor for verifying the OTP or Password for the Payment Entries.
     """
-
-    _USER = "_user"
-    _TOKEN = "_token"
-    _OTP_SECRET = "_otp_secret"
-    _AUTHENTICATED = "_authenticated"
 
     def __init__(self, authenticator: str, auth_id: str):
         """
@@ -471,20 +462,20 @@ class Authenticate2FA:
         self.tracker = get_login_attempt_tracker(self.user)
 
     def verify(self) -> dict:
-        if not (_user := frappe.cache.get(f"{self.auth_id}{Authenticate2FA._USER}")):
+        if not (_user := frappe.cache.get(f"{self.auth_id}{Utils2FA._USER}")):
             raise frappe.AuthenticationError(_("Invalid Authentication ID"))
 
         if self.user != _user.decode("utf-8"):
             raise frappe.AuthenticationError(_("Invalid user Authentication ID"))
 
-        auth_method = Trigger2FA.get_verification_method()
-        if auth_method == AUTH_METHOD.PASSWORD.value:
+        self.auth_method = Utils2FA.get_verification_method()
+        if self.auth_method == AUTH_METHOD.PASSWORD.value:
             return self.with_password()
 
-        if auth_method in [AUTH_METHOD.SMS.value, AUTH_METHOD.EMAIL.value]:
+        if self.auth_method in [AUTH_METHOD.SMS.value, AUTH_METHOD.EMAIL.value]:
             return self.with_hotp()
 
-        if auth_method == AUTH_METHOD.OTP_APP.value:
+        if self.auth_method == AUTH_METHOD.OTP_APP.value:
             return self.with_totp()
 
     #### Verification With Methods ####
@@ -500,8 +491,8 @@ class Authenticate2FA:
         """
         SMS and Email OTP Verification.
         """
-        token = frappe.cache.get(f"{self.auth_id}{Authenticate2FA._TOKEN}")
-        otp_secret = self.get_opt_secret()
+        token = frappe.cache.get(f"{self.auth_id}{Utils2FA._TOKEN}")
+        otp_secret = self.get_auth_opt_secret()
 
         if not token or not otp_secret:
             return self.on_failure(_("Session expired. Please try again."))
@@ -516,7 +507,7 @@ class Authenticate2FA:
         """
         OTP App Verification.
         """
-        otp_secret = self.get_opt_secret()
+        otp_secret = self.get_auth_opt_secret()
 
         if not otp_secret:
             return self.on_failure(_("Session expired. Please try again."))
@@ -525,19 +516,31 @@ class Authenticate2FA:
         if not totp.verify(self.authenticator):
             return self.on_failure(_("Invalid verification code"))
 
-        if not Trigger2FA.get_otplogin(self.user):
-            set_default(get_otplogin_key(self.user), 1)
+        if not Utils2FA.get_otp_login(self.user):
+            set_default(Utils2FA.get_otp_login_key(self.user), 1)
             delete_qrimage(self.user)
 
         return self.on_success()
 
     #### Helper Methods ####
-    def get_opt_secret(self) -> str:
-        return frappe.cache.get(f"{self.auth_id}{Authenticate2FA._OTP_SECRET}")
+    @staticmethod
+    def is_authenticated(auth_id: str) -> bool:
+        if authenticated := frappe.cache.get(f"{auth_id}{Utils2FA._AUTHENTICATED}"):
+            return authenticated.decode("utf-8") == "True"
+
+        return False
+
+    @staticmethod
+    def get_payment_entries(auth_id: str) -> list[str]:
+        payment_entries = frappe.cache.get(f"{auth_id}{Utils2FA._PAYMENT_ENTRIES}")
+        return pickle.loads(b64decode(payment_entries))
+
+    def get_auth_opt_secret(self) -> str:
+        return frappe.cache.get(f"{self.auth_id}{Utils2FA._OTP_SECRET}")
 
     def on_success(self) -> dict:
         self.tracker.add_success_attempt()
-        frappe.cache.set(f"{self.auth_id}{Authenticate2FA._AUTHENTICATED}", "True", 180)
+        frappe.cache.set(f"{self.auth_id}{Utils2FA._AUTHENTICATED}", "True", 180)
         return {"verified": True}
 
     def on_failure(self, message) -> dict:

@@ -1,17 +1,17 @@
 from frappe.utils import DateTimeLikeObject, today
 
-from razorpayx_integration.razorpayx_integration.apis.base import BaseRazorPayXAPI
+from razorpayx_integration.razorpayx_integration.apis.base import BaseRazorpayXAPI
 
 # TODO: Multiple Account can more easily connect with APIs, currently for each account new object initiation require!
 # TODO: Need changes as per new design.
 # TODO: can use db.bulk_update ???
 
 
-class RazorPayXTransaction(BaseRazorPayXAPI):
+class RazorpayXTransaction(BaseRazorpayXAPI):
     """
     Handle APIs for `Transaction`.
 
-    :param razorpayx_setting_name: RazorPayX Integration Setting name
+    :param razorpayx_setting_name: RazorpayX Integration Setting name
     for which this `Transaction` is associate.
 
     ---
@@ -59,7 +59,7 @@ class RazorPayXTransaction(BaseRazorPayXAPI):
         source_docname: str | None = None,
     ) -> list[dict] | None:
         """
-        Get all `Transaction` associate with given `RazorPayX` account if count is not given.
+        Get all `Transaction` associate with given `RazorpayX` account if count is not given.
 
         :param from_date: The starting date for which transactions are to be fetched.
         :param to_date: The ending date for which transactions are to be fetched.
@@ -71,7 +71,7 @@ class RazorPayXTransaction(BaseRazorPayXAPI):
         Example Usage:
 
         ```
-        transaction = RazorPayXTransaction(RAZORPAYX_SETTING)
+        transaction = RazorpayXTransaction(RAZORPAYX_SETTING)
 
         response = transaction.get_all(
             from_date="2024-01-01", to_date="2024-06-01", count=10
@@ -116,7 +116,7 @@ class RazorPayXTransaction(BaseRazorPayXAPI):
         source_docname: str | None = None,
     ) -> list[dict] | None:
         """
-        Get all transactions for today associate with given RazorPayX Setting.
+        Get all transactions for today associate with given RazorpayX Setting.
 
         :param count: The number of transactions to be retrieved.
         :param source_doctype: The source doctype of the transaction.
@@ -145,7 +145,7 @@ class RazorPayXTransaction(BaseRazorPayXAPI):
         source_docname: str | None = None,
     ) -> list[dict] | None:
         """
-        Get all transactions for specific date associate with given  RazorPayX Setting.
+        Get all transactions for specific date associate with given  RazorpayX Setting.
 
         :param date: A date string in "YYYY-MM-DD" format or a (datetime,date) object.
         """

@@ -1,20 +1,11 @@
-from razorpayx_integration.payment_utils.constants.custom_fields import (
-    BASE_CONDITION_TO_MAKE_ONLINE_PAYMENT,
-)
+from razorpayx_integration.constants import RAZORPAYX_SETTING
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
     USER_PAYOUT_MODE,
 )
 
-STANDARD_FIELDS_TO_HIDE = {"Employee": ["bank_name", "bank_ac_no", "iban"]}
-
-# PE mandatory fields on `make_bank_online_payment`
-PE_MANDATORY_FIELDS_FOR_PAYMENT = [
-    "bank_account",  # Company Bank Account
-]
-
-UPI_MODE_CONDITION = f"eval: doc.make_bank_online_payment && doc.razorpayx_payout_mode === '{USER_PAYOUT_MODE.UPI.value}'"
-BANK_MODE_CONDITION = f"eval: doc.make_bank_online_payment && doc.razorpayx_payout_mode === '{USER_PAYOUT_MODE.BANK.value}'"
-LINK_MODE_CONDITION = f"eval: doc.make_bank_online_payment && doc.razorpayx_payout_mode === '{USER_PAYOUT_MODE.LINK.value}'"
+UPI_MODE_CONDITION = f"eval: doc.make_bank_online_payment  && doc.integration_doctype === '{RAZORPAYX_SETTING}' && doc.razorpayx_payout_mode === '{USER_PAYOUT_MODE.UPI.value}'"
+BANK_MODE_CONDITION = f"eval: doc.make_bank_online_payment && doc.integration_doctype === '{RAZORPAYX_SETTING}' && doc.razorpayx_payout_mode === '{USER_PAYOUT_MODE.BANK.value}'"
+LINK_MODE_CONDITION = f"eval: doc.make_bank_online_payment && doc.integration_doctype === '{RAZORPAYX_SETTING}' && doc.razorpayx_payout_mode === '{USER_PAYOUT_MODE.LINK.value}'"
 
 MANDATORY_BANK_DETAILS_CONDITION = f"eval: doc.party_type && doc.party && doc.online_payment_mode === '{USER_PAYOUT_MODE.BANK.value}'"
 
@@ -25,7 +16,7 @@ PROPERTY_SETTERS = [
         "fieldname": "contact_person",
         "property": "mandatory_depends_on",
         "property_type": "Data",
-        "value": LINK_MODE_CONDITION,
+        "value": LINK_MODE_CONDITION + " && doc.party_type !== 'Employee'",
     },
     {
         "doctype": "Payment Entry",
@@ -68,27 +59,6 @@ PROPERTY_SETTERS = [
         "property": "depends_on",
         "property_type": "Data",
         "value": BANK_MODE_CONDITION,
-    },
-    {
-        "doctype": "Payment Entry",
-        "fieldname": "online_payment_section",
-        "property": "depends_on",
-        "property_type": "Data",
-        "value": f"eval: {BASE_CONDITION_TO_MAKE_ONLINE_PAYMENT} && doc.razorpayx_setting",
-    },
-    {
-        "doctype": "Payment Entry",
-        "fieldname": "make_bank_online_payment",
-        "property": "depends_on",
-        "property_type": "Data",
-        "value": f"eval: {BASE_CONDITION_TO_MAKE_ONLINE_PAYMENT} && doc.razorpayx_setting",
-    },
-    {
-        "doctype": "Payment Entry",
-        "fieldname": "bank_account",
-        "property": "description",
-        "property_type": "Data",
-        "value": "Reselect the <strong>Company Bank Account</strong> if payment options are not visible.",
     },
     ## Bank Account ##
     {
@@ -127,26 +97,3 @@ PROPERTY_SETTERS = [
         "value": MANDATORY_BANK_DETAILS_CONDITION,
     },
 ]
-
-for doctype, fields in STANDARD_FIELDS_TO_HIDE.items():
-    for field in fields:
-        PROPERTY_SETTERS.append(
-            {
-                "doctype": doctype,
-                "fieldname": field,
-                "property": "hidden",
-                "property_type": "Check",
-                "value": 1,
-            }
-        )
-
-for field in PE_MANDATORY_FIELDS_FOR_PAYMENT:
-    PROPERTY_SETTERS.append(
-        {
-            "doctype": "Payment Entry",
-            "fieldname": field,
-            "property": "mandatory_depends_on",
-            "property_type": "Data",
-            "value": "eval: doc.make_bank_online_payment",
-        }
-    )

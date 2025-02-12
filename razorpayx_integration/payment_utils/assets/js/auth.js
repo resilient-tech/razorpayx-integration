@@ -39,7 +39,7 @@ Object.assign(payment_utils, {
 			primary_action_label: __("{0} Authenticate", [frappe.utils.icon("permission")]),
 			primary_action: async (values) => {
 				const { verified, message } = await this.verify_authenticator(
-					values.authenticator,
+					values.authenticator.trim(),
 					generation_details.auth_id,
 					generation_details.method === AUTH_METHODS.PASSWORD
 				);
@@ -191,9 +191,9 @@ Object.assign(payment_utils, {
 				{
 					fieldname: "info",
 					fieldtype: "HTML",
-					options: `<div class="form-message yellow">
-								<div>${__("Do not close this dialog until you authenticate.")}</div>
-							</div>`,
+					options: `<div class="alert alert-warning" role="alert">
+            					${__("Do not close this dialog until you authenticate.")}
+        					</div> <br>`,
 				},
 				auth_field,
 			],

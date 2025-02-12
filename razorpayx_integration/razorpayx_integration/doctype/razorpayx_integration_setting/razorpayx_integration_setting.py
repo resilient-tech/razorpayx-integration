@@ -6,7 +6,7 @@ from frappe import _
 from frappe.model.document import Document
 
 
-class RazorPayXIntegrationSetting(Document):
+class RazorpayXIntegrationSetting(Document):
     # begin: auto-generated types
     # This code is auto-generated. Do not modify anything in this block.
 
@@ -36,7 +36,7 @@ class RazorPayXIntegrationSetting(Document):
 
     def validate_api_credentials(self):
         from razorpayx_integration.razorpayx_integration.apis.validate_razorpayx import (
-            RazorPayXValidation,
+            RazorpayXValidation,
         )
 
         if self.disabled:
@@ -44,7 +44,7 @@ class RazorPayXIntegrationSetting(Document):
 
         if not self.key_id or not self.key_secret:
             frappe.throw(
-                msg=_("Please set <strong>RazorPayX</strong> API credentials."),
+                msg=_("Please set <strong>RazorpayX</strong> API credentials."),
                 title=_("API Credentials Are Missing"),
             )
 
@@ -55,19 +55,13 @@ class RazorPayXIntegrationSetting(Document):
         ):
             return
 
-        RazorPayXValidation(
+        RazorpayXValidation(
             self.key_id,
             self.get_password(fieldname="key_secret"),
             self.account_number,
         ).validate_credentials()
 
     def validate_bank_account(self):
-        if not self.bank_account:
-            frappe.throw(
-                msg=_("Please set Bank Account."),
-                title=_("Bank Account Is Missing"),
-            )
-
         bank_account = frappe.get_value(
             "Bank Account",
             self.bank_account,
@@ -93,10 +87,10 @@ class RazorPayXIntegrationSetting(Document):
                 title=_("Invalid Bank Account"),
             )
 
-
-# Time for creation and payment with checkbox (description) for payment entry.
-# Payout settings. To determine which invoices to pay.
-# 1. Payment Entry Creation: By Party / By Invoice
-# 2. Sequence: By Posting Date / By Due Date: (relevant for insufficent funds)
-# 3. Enqueue payout if insufficent funds. If this is not checked, don't submit the payment entry as long as funds are not available.
-# Documentation HTML. RTGS / NEFT.
+        if not self.account_number:
+            frappe.throw(
+                msg=_(
+                    "Please set <strong>Bank Account Number</strong> in bank account."
+                ),
+                title=_("Account Number Is Missing"),
+            )

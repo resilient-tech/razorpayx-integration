@@ -1,9 +1,5 @@
-<h3>Payout has been <span style="color: red">{{ doc.razorpayx_payout_status }}</span></h3>
+<p>Dear {{ frappe.db.get_value("User", {"email": doc.payment_authorized_by},"first_name") }},</p>
 
-<strong>For Payment Entry:</strong> {{ doc.name }}<br>
+<p>The payout has been <span style="color: red">{{ doc.razorpayx_payout_status }}!</span> for Payment Entry {{ doc.name }}.</p>
 
-<hr>
-
-<strong>Remarks:</strong>
-
-<p>{{ doc.remarks }}</p>
+<p>For more details, visit your ERPNext site and check the details.</p>

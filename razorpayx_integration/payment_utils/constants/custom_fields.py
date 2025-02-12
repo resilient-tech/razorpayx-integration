@@ -10,10 +10,11 @@ Note:
         ...
 """
 
+
 from razorpayx_integration.payment_utils.constants.payouts import PAYOUT_MODE
 from razorpayx_integration.payment_utils.constants.roles import PERMISSION_LEVEL
 
-BASE_CONDITION_TO_MAKE_ONLINE_PAYMENT = "doc.payment_type=='Pay' && doc.party && doc.party_type && doc.paid_from_account_currency === 'INR'"
+BASE_CONDITION_TO_MAKE_ONLINE_PAYMENT = "doc.payment_type=='Pay' && doc.party && doc.party_type && doc.integration_doctype && doc.integration_docname"
 
 
 CUSTOM_FIELDS = {
@@ -46,7 +47,7 @@ CUSTOM_FIELDS = {
             "fieldtype": "Data",
             "insert_after": "iban",
             "placeholder": "Eg. 9999999999@okicici",
-            "depends_on": f"eval: doc.online_payment_mode === '{PAYOUT_MODE.UPI.value}'",
+            "depends_on": "",  # TODO: remove after split
             "mandatory_depends_on": f"eval: doc.online_payment_mode === '{PAYOUT_MODE.UPI.value}'",
             "no_copy": 1,
         },
@@ -70,10 +71,10 @@ CUSTOM_FIELDS = {
             "fieldtype": "Data",
             "insert_after": "party_name",
             "options": "Phone",
-            "depends_on": "eval: doc.contact_person",
             "read_only": 1,
+            "depends_on": "",  # TODO: remove after split
+            "no_copy": 0,  # TODO: remove after split
             "permlevel": PERMISSION_LEVEL.SEVEN.value,
-            "no_copy": 1,
         },
         {
             "fieldname": "online_payment_section",
@@ -90,6 +91,7 @@ CUSTOM_FIELDS = {
             "insert_after": "online_payment_section",
             "description": "Make online payment using <strong>Payments Integration</strong>",
             "permlevel": PERMISSION_LEVEL.SEVEN.value,
+            "no_copy": 1,
         },
         {
             "fieldname": "is_auto_generated",
@@ -98,11 +100,43 @@ CUSTOM_FIELDS = {
             "insert_after": "make_bank_online_payment",
             "hidden": 1,
             "permlevel": PERMISSION_LEVEL.SEVEN.value,
+            "no_copy": 1,
+        },
+        {
+            "fieldname": "payment_authorized_by",
+            "label": "Payment Authorized By",
+            "fieldtype": "Data",
+            "insert_after": "is_auto_generated",
+            "options": "Email",
+            "description": "Email of the user who authorized the payment",
+            "hidden": 1,
+            "no_copy": 1,
+            "permlevel": PERMISSION_LEVEL.SEVEN.value,
+        },
+        {
+            "fieldname": "integration_doctype",
+            "label": "Integration DocType",
+            "fieldtype": "Data",
+            "insert_after": "payment_authorized_by",
+            "print_hide": 1,
+            "read_only": 1,
+            "hidden": 1,
+            "no_copy": 1,
+        },
+        {
+            "fieldname": "integration_docname",
+            "label": "Integration Docname",
+            "fieldtype": "Data",
+            "insert_after": "integration_doctype",
+            "print_hide": 1,
+            "read_only": 1,
+            "hidden": 1,
+            "no_copy": 1,
         },
         {
             "fieldname": "cb_online_payment_section",
             "fieldtype": "Column Break",
-            "insert_after": "is_auto_generated",
+            "insert_after": "integration_docname",
         },
         {
             "fieldname": "party_upi_id",

@@ -1,5 +1,5 @@
 """
-Custom fields which are helpful for payments via RazorPayX
+Custom fields which are helpful for payments via RazorpayX
 
 Note:
     - Keep sequence like this:
@@ -10,7 +10,7 @@ Note:
         ...
 """
 
-from razorpayx_integration.constants import RAZORPAYX_INTEGRATION_DOCTYPE
+from razorpayx_integration.constants import RAZORPAYX_SETTING
 from razorpayx_integration.payment_utils.constants.custom_fields import (
     BASE_CONDITION_TO_MAKE_ONLINE_PAYMENT,
 )
@@ -26,30 +26,19 @@ CUSTOM_FIELDS = {
         #### PAYOUT SECTION START ####
         {
             "fieldname": "razorpayx_payout_section",
-            "label": "RazorPayX Payout Details",
+            "label": "RazorpayX Payout Details",
             "fieldtype": "Section Break",
             "insert_after": "party_bank_ifsc",  ## Insert After `PARTY BANK IFSC` field (Payment Utils Custom Field)
-            "depends_on": f"eval: {BASE_CONDITION_TO_MAKE_ONLINE_PAYMENT} && doc.razorpayx_setting && doc.make_bank_online_payment",
+            "depends_on": f"eval: {BASE_CONDITION_TO_MAKE_ONLINE_PAYMENT} && doc.make_bank_online_payment && doc.paid_from_account_currency === 'INR' && doc.integration_doctype === '{RAZORPAYX_SETTING}'",
             "collapsible": 1,
             "collapsible_depends_on": "eval: doc.docstatus === 0",
             "permlevel": PERMISSION_LEVEL.SEVEN.value,
         },
         {
-            "fieldname": "razorpayx_setting",
-            "label": "RazorPayX Integration Setting",
-            "fieldtype": "Link",
-            "insert_after": "razorpayx_payout_section",
-            "options": RAZORPAYX_INTEGRATION_DOCTYPE,
-            "print_hide": 1,
-            "read_only": 1,
-            "hidden": 1,
-            "permlevel": PERMISSION_LEVEL.SEVEN.value,
-        },
-        {
             "fieldname": "razorpayx_payout_mode",
-            "label": "RazorPayX Payout Mode",
+            "label": "RazorpayX Payout Mode",
             "fieldtype": "Select",
-            "insert_after": "razorpayx_setting",
+            "insert_after": "razorpayx_payout_section",
             "fetch_from": "party_bank_account.online_payment_mode",
             "options": USER_PAYOUT_MODE.values_as_string(),
             "default": USER_PAYOUT_MODE.LINK.value,
@@ -66,6 +55,7 @@ CUSTOM_FIELDS = {
             "depends_on": f"eval: doc.razorpayx_payout_mode === '{USER_PAYOUT_MODE.BANK.value}' && doc.paid_amount <= {PAYMENT_MODE_LIMIT.IMPS.value}",
             "description": "Payment will be done with <strong>IMPS</strong> mode.",
             "permlevel": PERMISSION_LEVEL.SEVEN.value,
+            "no_copy": 1,
         },
         {
             "fieldname": "razorpayx_payout_cb",
@@ -82,10 +72,11 @@ CUSTOM_FIELDS = {
             "mandatory_depends_on": f"eval:doc.make_bank_online_payment && doc.razorpayx_payout_mode === '{USER_PAYOUT_MODE.LINK.value}'",
             "length": 30,
             "permlevel": PERMISSION_LEVEL.SEVEN.value,
+            "no_copy": 1,
         },
         {
             "fieldname": "razorpayx_payout_status",
-            "label": "RazorPayX Payout Status",
+            "label": "RazorpayX Payout Status",
             "fieldtype": "Select",
             "insert_after": "razorpayx_payout_desc",
             "options": PAYOUT_STATUS.title_case_values(as_string=True),
@@ -93,21 +84,21 @@ CUSTOM_FIELDS = {
             "depends_on": "eval: doc.make_bank_online_payment && doc.creation",
             "read_only": 1,
             "allow_on_submit": 1,
-            "in_list_view": 1,
+            "in_list_view": 0,  # TODO: remove after split
             "in_standard_filter": 1,
             "permlevel": PERMISSION_LEVEL.SEVEN.value,
             "no_copy": 1,
         },
         {
             "fieldname": "razorpayx_payout_id_sec",
-            "label": "RazorPayX Payout ID Section",
+            "label": "RazorpayX Payout ID Section",
             "fieldtype": "Section Break",
             "insert_after": "razorpayx_payout_status",
             "hidden": 1,
         },
         {
             "fieldname": "razorpayx_payout_id",
-            "label": "RazorPayX Payout ID",
+            "label": "RazorpayX Payout ID",
             "fieldtype": "Data",
             "insert_after": "razorpayx_payout_id_sec",
             "read_only": 1,
@@ -123,7 +114,7 @@ CUSTOM_FIELDS = {
         },
         {
             "fieldname": "razorpayx_payout_link_id",
-            "label": "RazorPayX Payout Link ID",
+            "label": "RazorpayX Payout Link ID",
             "fieldtype": "Data",
             "insert_after": "razorpayx_id_cb",
             "read_only": 1,

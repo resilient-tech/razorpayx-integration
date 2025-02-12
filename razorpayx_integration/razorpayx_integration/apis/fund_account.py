@@ -1,4 +1,4 @@
-from razorpayx_integration.razorpayx_integration.apis.base import BaseRazorPayXAPI
+from razorpayx_integration.razorpayx_integration.apis.base import BaseRazorpayXAPI
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
     FUND_ACCOUNT_TYPE,
 )
@@ -12,11 +12,11 @@ from razorpayx_integration.razorpayx_integration.utils.validation import (
 # TODO: Add source doctype and docname to IR log
 
 
-class RazorPayXFundAccount(BaseRazorPayXAPI):
+class RazorpayXFundAccount(BaseRazorpayXAPI):
     """
-    Handle APIs for RazorPayX Fund Account.
+    Handle APIs for RazorpayX Fund Account.
 
-    :param account_name: RazorPayX account for which this `Fund Account` is associate.
+    :param account_name: RazorpayX account for which this `Fund Account` is associate.
 
     ---
     Reference: https://razorpay.com/docs/api/x/fund-accounts/
@@ -34,7 +34,7 @@ class RazorPayXFundAccount(BaseRazorPayXAPI):
         self, contact_id: str, contact_name: str, ifsc_code: str, account_number: str
     ):
         """
-        Create RazorPayX `Fund Account` with contact's bank account details.
+        Create RazorpayX `Fund Account` with contact's bank account details.
 
         :param contact_id: The ID of the contact to which the `fund_account` is linked (Eg. `cont_00HjGh1`).
         :param contact_name: The account holder's name.
@@ -58,7 +58,7 @@ class RazorPayXFundAccount(BaseRazorPayXAPI):
 
     def create_with_vpa(self, contact_id: str, vpa: str):
         """
-        Create RazorPayX `Fund Account` with contact's Virtual Payment Address.
+        Create RazorpayX `Fund Account` with contact's Virtual Payment Address.
 
         :param str contact_id: The ID of the contact to which the `fund_account` is linked (Eg. `cont_00HjGh1`).
         :param str vpa: The contact's virtual payment address (VPA) (Eg. `joedoe@exampleupi`)
@@ -89,7 +89,7 @@ class RazorPayXFundAccount(BaseRazorPayXAPI):
         self, filters: dict | None = None, count: int | None = None
     ) -> list[dict]:
         """
-        Get all `Fund Account` associate with given `RazorPayX` account if limit is not given.
+        Get all `Fund Account` associate with given `RazorpayX` account if limit is not given.
 
         :param filters: Result will be filtered as given filters.
         :param count: The number of `Fund Account` to be retrieved.
@@ -97,7 +97,7 @@ class RazorPayXFundAccount(BaseRazorPayXAPI):
         ---
         Example Usage:
         ```
-        fund_account = RazorPayXFundAccount(RAZORPAYX_BANK_ACCOUNT)
+        fund_account = RazorpayXFundAccount(RAZORPAYX_BANK_ACCOUNT)
         filters = {
             "contact_id":"cont_hkj012yuGJ",
             "account_type":"bank_account",

@@ -15,7 +15,6 @@
   "column_break_8tcki",
   "account_id",
   "webhook_secret",
-  "account_tab",
   "account_details_section",
   "bank_account",
   "company_account",
@@ -27,7 +26,6 @@
   "section_break_bsie",
   "last_sync_on",
   "column_break_mken",
-  "configs_tab",
   "pe_config_section",
   "auto_cancel_payout"
  ],
@@ -56,6 +54,7 @@
    "fieldtype": "Column Break"
   },
   {
+   "description": "<a class=\"webhook-url\">Copy webhook URL</a>",
    "fieldname": "webhook_secret",
    "fieldtype": "Password",
    "label": "Webhook Secret",
@@ -141,12 +140,7 @@
    "label": "API"
   },
   {
-   "fieldname": "account_tab",
-   "fieldtype": "Tab Break",
-   "label": "Account"
-  },
-  {
-   "description": " This is a <strong> Business ID </strong>found in RazorPayX settings.\n\nGet it from <strong><a target=\"_blank\" href=\"https://x.razorpay.com/settings/business\">here.</a></strong>",
+   "description": " This is a <strong> Business ID </strong>found in RazorpayX settings.\n\nGet it from <strong><a target=\"_blank\" href=\"https://x.razorpay.com/settings/business\">here.</a></strong>",
    "fieldname": "account_id",
    "fieldtype": "Data",
    "in_list_view": 1,
@@ -165,11 +159,6 @@
   {
    "fieldname": "pe_config_section",
    "fieldtype": "Section Break",
-   "label": "Payment Entry"
-  },
-  {
-   "fieldname": "configs_tab",
-   "fieldtype": "Tab Break",
    "label": "Configurations"
   },
   {
@@ -190,10 +179,10 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-01-24 11:31:22.076310",
+ "modified": "2025-02-01 15:33:12.080853",
  "modified_by": "Administrator",
  "module": "Razorpayx Integration",
- "name": "RazorPayX Integration Setting",
+ "name": "RazorpayX Integration Setting",
  "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [

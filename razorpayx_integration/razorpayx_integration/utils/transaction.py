@@ -3,14 +3,14 @@ from frappe import _
 from frappe.utils import DateTimeLikeObject, getdate
 
 from razorpayx_integration.constants import (
-    RAZORPAYX_INTEGRATION_DOCTYPE as INTEGRATION_DOCTYPE,
+    RAZORPAYX_SETTING as RAZORPAYX_SETTING,
 )
 from razorpayx_integration.payment_utils.utils import (
     get_str_datetime_from_epoch,
     paisa_to_rupees,
 )
 from razorpayx_integration.razorpayx_integration.apis.transaction import (
-    RazorPayXTransaction,
+    RazorpayXTransaction,
 )
 
 
@@ -37,7 +37,7 @@ class RazorpayBankTransaction:
     def set_bank_account(self, bank_account: str | None = None):
         if not bank_account:
             bank_account = frappe.db.get_value(
-                doctype=INTEGRATION_DOCTYPE,
+                doctype=RAZORPAYX_SETTING,
                 filters=self.razorpayx_setting,
                 fieldname="bank_account",
             )
@@ -45,7 +45,7 @@ class RazorpayBankTransaction:
         if not bank_account:
             frappe.throw(
                 msg=_(
-                    "Company Bank Account not found for RazorPayX Integration Setting <strong>{0}</strong>"
+                    "Company Bank Account not found for RazorpayX Integration Setting <strong>{0}</strong>"
                 ).format(self.razorpayx_setting),
                 title=_("Company Bank Account Not Found"),
             )
@@ -68,10 +68,10 @@ class RazorpayBankTransaction:
 
     def fetch_transactions(self) -> list[dict] | None:
         """
-        Fetching Bank Transactions from RazorPayX API.
+        Fetching Bank Transactions from RazorpayX API.
         """
         try:
-            return RazorPayXTransaction(self.razorpayx_setting).get_all(
+            return RazorpayXTransaction(self.razorpayx_setting).get_all(
                 from_date=self.from_date,
                 to_date=self.to_date,
                 source_doctype=self.source_doctype,
@@ -81,10 +81,10 @@ class RazorpayBankTransaction:
         except Exception:
             frappe.log_error(
                 title=(
-                    f"Failed to Fetch RazorPayX Transactions for Setting: {self.razorpayx_setting}"
+                    f"Failed to Fetch RazorpayX Transactions for Setting: {self.razorpayx_setting}"
                 ),
                 message=frappe.get_traceback(),
-                reference_doctype=INTEGRATION_DOCTYPE,
+                reference_doctype=RAZORPAYX_SETTING,
                 reference_name=self.razorpayx_setting,
             )
 
@@ -92,7 +92,7 @@ class RazorpayBankTransaction:
         """
         Get existing bank account transactions from the ERPNext database.
 
-        :param transactions: List of transactions from RazorPayX API.
+        :param transactions: List of transactions from RazorpayX API.
         """
         return set(
             frappe.get_all(
@@ -110,20 +110,32 @@ class RazorpayBankTransaction:
 
     def map(self, transaction: dict):
         """
-        Map RazorPayX transaction to ERPNext's Bank Transaction.
+        Map RazorpayX transaction to ERPNext's Bank Transaction.
 
-        :param transaction: RazorPayX Transaction
+        :param transaction: RazorpayX Transaction
         """
 
-        def format_notes(source):
+        def get_description(source: dict) -> str | None:
             # TODO: Needs description of payout/bank transfer or other transactions
-            notes = source.get("notes")
+            notes = source.get("notes") or {}
 
-            if isinstance(notes, dict):
-                return "\n".join(notes.values())
-            elif isinstance(notes, list | tuple):
-                return "\n".join(notes)
-            return notes
+            if not notes:
+                return
+
+            description = ""
+            source_doctype = notes.get("source_doctype")
+            source_docname = notes.get("source_docname")
+
+            if source_doctype and source_docname:
+                description = f"{source_doctype}: {source_docname}"
+
+            if desc := notes.get("description"):
+                description += f"\nNarration: {desc}"
+
+            if not description:
+                description = "\n".join(notes.values())
+
+            return description
 
         # Some transactions do not have source
         source = transaction.get("source") or {}
@@ -138,7 +150,7 @@ class RazorpayBankTransaction:
             "closing_balance": paisa_to_rupees(transaction["balance"]),
             "currency": transaction["currency"],
             "transaction_type": source.get("mode"),
-            "description": format_notes(source),
+            "description": get_description(source),
             "reference_number": source.get("utr") or source.get("bank_reference"),
         }
 
@@ -163,6 +175,7 @@ class RazorpayBankTransaction:
                 "Payment Entry",
                 {"docstatus": 1, "clearance_date": ["is", "not set"], **filters},
                 fieldname=["name", "paid_amount"],
+                order_by="creation desc",  # to get latest
                 as_dict=True,
             )
 
@@ -194,7 +207,9 @@ class RazorpayBankTransaction:
 
         :param mapped_transaction: Mapped Bank Transaction
         """
-        return frappe.get_doc(mapped_transaction).insert()
+        return (
+            frappe.get_doc(mapped_transaction).insert(ignore_permissions=True).submit()
+        )
 
 
 ######### APIs #########
@@ -203,27 +218,27 @@ def sync_transactions_for_reconcile(
     bank_account: str, razorpayx_setting: str | None = None
 ):
     """
-    Sync RazorPayX bank account transactions.
+    Sync RazorpayX bank account transactions.
 
     Syncs from the last sync date to the current date.
 
     If last sync date is not set, it will sync all transactions.
 
     :param bank_account: Company Bank Account
-    :param razorpayx_setting: RazorPayX Integration Setting
+    :param razorpayx_setting: RazorpayX Integration Setting
     """
     BRT = "Bank Reconciliation Tool"
     frappe.has_permission(BRT, throw=True)
 
     if not razorpayx_setting:
         razorpayx_setting = frappe.db.get_value(
-            INTEGRATION_DOCTYPE, {"bank_account": bank_account, "disabled": 0}
+            RAZORPAYX_SETTING, {"bank_account": bank_account, "disabled": 0}
         )
 
     if not razorpayx_setting:
         frappe.throw(
             _(
-                "RazorPayX Integration Setting not found for Bank Account <strong>{0}</strong>"
+                "RazorpayX Integration Setting not found for Bank Account <strong>{0}</strong>"
             ).format(bank_account)
         )
 
@@ -244,35 +259,35 @@ def sync_razorpayx_transactions(
     bank_account: str | None = None,
 ):
     """
-    Sync RazorPayX bank account transactions.
+    Sync RazorpayX bank account transactions.
 
-    :param razorpayx_setting: RazorPayX Integration Setting which has the bank account.
+    :param razorpayx_setting: RazorpayX Integration Setting which has the bank account.
     :param from_date: Start Date
     :param to_date: End Date
     :param bank_account: Company Bank Account
     """
-    frappe.has_permission(INTEGRATION_DOCTYPE, throw=True)
+    frappe.has_permission(RAZORPAYX_SETTING, throw=True)
 
     RazorpayBankTransaction(
         razorpayx_setting,
         from_date,
         to_date,
         bank_account=bank_account,
-        source_doctype=INTEGRATION_DOCTYPE,
+        source_doctype=RAZORPAYX_SETTING,
         source_docname=razorpayx_setting,
     ).sync()
 
 
 def sync_transactions_periodically():
     """
-    Sync all enabled RazorPayX bank account transactions.
+    Sync all enabled RazorpayX bank account transactions.
 
     Called by scheduler.
     """
     today = getdate()
 
     settings = frappe.get_all(
-        doctype=INTEGRATION_DOCTYPE,
+        doctype=RAZORPAYX_SETTING,
         filters={"disabled": 0},
         fields=["name", "bank_account"],
     )
@@ -285,7 +300,7 @@ def sync_transactions_periodically():
 
     # update last sync date
     frappe.db.set_value(
-        INTEGRATION_DOCTYPE,
+        RAZORPAYX_SETTING,
         {"name": ("in", {setting.name for setting in settings})},
         "last_sync_on",
         today,

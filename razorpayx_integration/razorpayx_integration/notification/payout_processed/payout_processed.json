@@ -1,0 +1,33 @@
+{
+ "attach_print": 1,
+ "channel": "Email",
+ "condition": "doc.razorpayx_payout_status == \"Processed\"",
+ "creation": "2025-01-29 12:26:55.180087",
+ "days_in_advance": 0,
+ "docstatus": 0,
+ "doctype": "Notification",
+ "document_type": "Payment Entry",
+ "enabled": 0,
+ "event": "Value Change",
+ "idx": 0,
+ "is_standard": 1,
+ "message": "<p>M/S {{ doc.party_name }},</p>\n\n<p>A payment of <strong>{{ frappe.utils.fmt_money(doc.paid_amount,currency=\"INR\") }}</strong> has been transferred to you by <strong>{{ doc.company }}<strong>.</p>\n\n<p>For more information, please check the attachment.</p>\n",
+ "message_type": "Markdown",
+ "modified": "2025-02-04 17:40:33.791597",
+ "modified_by": "Administrator",
+ "module": "Razorpayx Integration",
+ "name": "Payout Processed",
+ "owner": "Administrator",
+ "recipients": [
+  {
+   "receiver_by_document_field": "contact_email",
+   "receiver_by_role": ""
+  }
+ ],
+ "send_system_notification": 0,
+ "send_to_all_assignees": 0,
+ "sender": "",
+ "sender_email": "",
+ "subject": "Payment of Rs. {{ frappe.utils.fmt_money(doc.paid_amount,currency=\"INR\") }} Transferred to You",
+ "value_changed": "razorpayx_payout_status"
+}

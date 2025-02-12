@@ -1,47 +1,104 @@
-# RazorpayX Integration
+<div align="center">
 
-Automat Payments By RazorPayX API For Frappe Apps
+<h1>RazorpayX Integration</h1>
 
-## Code Formatting & Linting
+Power your ERPNext payments with RazorpayX – Automate payouts, reconcile transactions, and manage business finances effortlessly.
+<br><br>
 
-This repository uses [pre-commit](https://pre-commit.com) to ensure that basic code style and correctness requirements are met before merging any PRs. While the suite of linting/formatting tools might keep evolving you just need to install `pre-commit` to get started. It will install and configure the required tools.
+</div>
 
-### Installing pre-commit
+## 💡 Motivation
 
-```bash
-cd apps/razorpayx_integration
-pip install pre-commit
+Bank integrations in India are usually costly and complex, mainly available to corporates.
+
+We choose RazorpayX because:
+
+- It is a tech layer over traditional bank accounts.
+- Funds remain secure with a regulated bank.
+- Onboarding process is hassle-free.
+- No upfront cost, minimal charges beyond free limits.
+- It ensures robust security.
+
+## ✨ Features
+
+- Automated bulk payouts for vendors
+- Real-time payment status tracking & transaction reconciliation
+- Support for multiple payment modes (IMPS/NEFT/RTGS/UPI)
+- Pre-built templates for workflows and notifications
+- Configurable to cater to diverse business processes
+
+## 📈 Why Use This Integration?
+
+- <em>Save Time</em>: Eliminate manual bank transactions from netbanking portals
+- <em>Reduce Errors</em>: Auto-sync payment data between ERPNext and Bank
+- <em>Financial Control</em>: Approval workflows before initiating payouts
+- <em>Secure</em>: Role based access with 2FA to authorize manual payouts
+
+## 📦 Installation
+
+Choose one of the following methods to install RazorpayX Integration to your ERPNext site.
+
+<details>
+<summary>☁️ Frappe Cloud</summary><br>
+
+Sign up for a [Frappe Cloud](https://frappecloud.com/dashboard/signup?referrer=99df7a8f) free trial, create a new site with Frappe Version-15 or above, and install ERPNext and RazorpayX-Integration from the Apps.
+
+</details>
+
+<details>
+<summary>🐳 Docker</summary><br>
+
+Use [this guide](https://github.com/frappe/frappe_docker/blob/main/docs/custom-apps.md) to deploy RazorpayX-Integration by building your custom image.
+
+Sample Apps JSON
+
+```shell
+export APPS_JSON='[
+  {
+    "url": "https://github.com/frappe/erpnext",
+    "branch": "version-15"
+  },
+  {
+    "url": "https://github.com/resilient-tech/razorpayx-integration",
+    "branch": "version-15"
+  }
+]'
+
+export APPS_JSON_BASE64=$(echo ${APPS_JSON} | base64 -w 0)
 ```
 
-### Adding pre-commit hook to git
+</details>
 
-```bash
-pre-commit install
+<details>
+<summary>⌨️ Manual</summary><br>
+
+Once you've [set up a Frappe site](https://frappeframework.com/docs/v14/user/en/installation/), install app by executing the following commands:
+
+Using Bench CLI
+
+Download the App using the Bench CLI
+
+```sh
+bench get-app https://github.com/resilient-tech/razorpayx-integration.git --branch version-15
 ```
 
-This will configure a git pre-commit hook which will ensure that your changes pass bare-minimum style/correctness requirements for accepting the changes.
+Install the App on your site
 
-#### Usage
-
-Pre-commit runs automatically while trying to commit changes:
-
-![Pre-Commit Run Image](https://github.com/user-attachments/assets/0ba0aa50-f510-4d6e-ab65-f14d069bfee0)
-
-If there are  changes done by `pre-commit`, you need to add them to the staging area and retry committing.
-
-You can skip running pre-commit by passing the `-n` flag like so:
-
-```bash
-git commit -n
+```sh
+bench --site [site name] install-app razorpayx-integration
 ```
 
-Current checks:
+</details>
 
-* Whitespace trimming (style)
-* ruff - linting, formatting, import sorting for python
-* prettier - formatting JS files
-* eslint - linter for JS files
+## ⚙️ Configuration
+
+## 📚 Documentation
+
+## Contributing
+
+- [Issue Guidelines](https://github.com/frappe/erpnext/wiki/Issue-Guidelines)
+- [Pull Request Requirements](https://github.com/frappe/erpnext/wiki/Contribution-Guidelines)
 
 ## License
 
-MIT
+[GNU General Public License (v3)](https://github.com/resilient-tech/razorpayx-integration/blob/version-15/license.txt)

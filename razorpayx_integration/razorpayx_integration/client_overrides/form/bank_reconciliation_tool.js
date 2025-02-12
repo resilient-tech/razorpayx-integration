@@ -1,6 +1,6 @@
 // Copyright (c) 2025, Resilient Tech and contributors
 // For license information, please see license.txt
-const SYNC_BTN_LABEL = __("Sync via RazorPayX");
+const SYNC_BTN_LABEL = __("Sync via RazorpayX");
 
 frappe.ui.form.on("Bank Reconciliation Tool", {
 	refresh: async function (frm) {
@@ -26,7 +26,7 @@ function sync_transactions(bank_account, razorpayx_setting) {
 		method: "razorpayx_integration.razorpayx_integration.utils.transaction.sync_transactions_for_reconcile",
 		args: { bank_account, razorpayx_setting },
 		freeze: true,
-		freeze_message: __("Syncing Transactions ..."),
+		freeze_message: __("Syncing Transactions. Please wait it may take a while..."),
 	});
 }
 

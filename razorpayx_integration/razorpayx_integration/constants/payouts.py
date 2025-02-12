@@ -1,13 +1,13 @@
 from razorpayx_integration.payment_utils.constants.enums import BaseEnum
 
 ### REGEX ###
-DESCRIPTION_REGEX = r"^[a-zA-Z0-9 ]{1,30}$"
+DESCRIPTION_REGEX = r"^[a-zA-Z0-9\s]{1,30}$"
 
 
 ### ENUMS ###
 class CONTACT_TYPE(BaseEnum):
     """
-    Default Contact Type available in RazorPayX.
+    Default Contact Type available in RazorpayX.
     """
 
     EMPLOYEE = "employee"

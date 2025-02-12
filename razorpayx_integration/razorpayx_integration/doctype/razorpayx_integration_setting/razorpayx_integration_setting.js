@@ -1,7 +1,8 @@
 // Copyright (c) 2024, Resilient Tech and contributors
 // For license information, please see license.txt
+const WEBHOOK_PATH = "razorpayx_integration.razorpayx_integration.utils.webhook.razorpayx_webhook_listener";
 
-frappe.ui.form.on("RazorPayX Integration Setting", {
+frappe.ui.form.on("RazorpayX Integration Setting", {
 	setup: function (frm) {
 		frm.set_query("bank_account", function () {
 			return {
@@ -18,7 +19,7 @@ frappe.ui.form.on("RazorPayX Integration Setting", {
 
 		frm.set_intro(
 			__(
-				`Get RazorPayX API's Key <strong>ID</strong> and <strong>Secret</strong> from
+				`Get RazorpayX API's Key <strong>ID</strong> and <strong>Secret</strong> from
 					<a target="_blank" href="https://x.razorpay.com/settings/developer-controls">
 						here {0}
 					</a>
@@ -29,6 +30,11 @@ frappe.ui.form.on("RazorPayX Integration Setting", {
 	},
 
 	refresh: function (frm) {
+		// listener to copy webhook url
+		frm.$wrapper.find(".webhook-url").on("click", function () {
+			frappe.utils.copy_to_clipboard(`${frappe.urllib.get_base_url()}/api/method/${WEBHOOK_PATH}`);
+		});
+
 		if (frm.doc.__islocal) return;
 
 		frm.add_custom_button(__("Sync Transactions"), () => {
@@ -80,8 +86,8 @@ function prompt_transactions_sync_date(frm) {
 function sync_transactions(razorpayx_setting, bank_account, from_date, to_date) {
 	frappe.show_alert({
 		message: __("Syncing Transactions from <strong>{0}</strong> to <strong>{1}</strong>", [
-			razorpayx.get_date_in_user_fmt(from_date),
-			razorpayx.get_date_in_user_fmt(to_date),
+			payment_utils.get_date_in_user_fmt(from_date),
+			payment_utils.get_date_in_user_fmt(to_date),
 		]),
 		indicator: "blue",
 	});

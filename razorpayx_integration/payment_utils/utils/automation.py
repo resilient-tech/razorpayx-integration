@@ -1,5 +1,5 @@
 # TODO: create PE
-# TODO: Pay via RazorPayX on submit
+# TODO: Pay via RazorpayX on submit
 
 import frappe
 from erpnext.accounts.doctype.payment_entry.payment_entry import get_payment_entry

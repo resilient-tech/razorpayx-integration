@@ -2,16 +2,16 @@
 Module for API testing and validation.
 """
 
-from razorpayx_integration.razorpayx_integration.apis.base import BaseRazorPayXAPI
+from razorpayx_integration.razorpayx_integration.apis.base import BaseRazorpayXAPI
 
 
-class RazorPayXValidation(BaseRazorPayXAPI):
+class RazorpayXValidation(BaseRazorpayXAPI):
     """
-    Validate RazorPayX APIs.
+    Validate RazorpayX APIs.
 
-    :param id: RazorPayX API Key ID
-    :param secret: RazorPayX API Key Secret
-    :param account_number: RazorPayX Account Number
+    :param id: RazorpayX API Key ID
+    :param secret: RazorpayX API Key Secret
+    :param account_number: RazorpayX Account Number
     :param source_doctype: Source Doctype
     :param source_docname: Source Docname
     """
@@ -25,11 +25,11 @@ class RazorPayXValidation(BaseRazorPayXAPI):
         source_docname: str | None = None,
     ):
         """
-        Validate RazorPayX APIs.
+        Validate RazorpayX APIs.
 
-        :param id: RazorPayX API Key ID
-        :param secret: RazorPayX API Key Secret
-        :param account_number: RazorPayX Account Number
+        :param id: RazorpayX API Key ID
+        :param secret: RazorpayX API Key Secret
+        :param account_number: RazorpayX Account Number
         :param source_doctype: Source Doctype
         :param source_docname: Source Docname
         """
@@ -44,7 +44,7 @@ class RazorPayXValidation(BaseRazorPayXAPI):
 
     def validate_credentials(self):
         """
-        Validate RazorPayX API credentials.
+        Validate RazorpayX API credentials.
 
         - Key ID
         - Key Secret
