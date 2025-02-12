@@ -22,6 +22,7 @@ from razorpayx_integration.razorpayx_integration.constants.payouts import (
 from razorpayx_integration.razorpayx_integration.utils import (
     is_already_paid,
     is_auto_cancel_payout_enabled,
+    is_auto_pay_enabled,
     is_payout_via_razorpayx,
 )
 from razorpayx_integration.razorpayx_integration.utils.payout import (
@@ -56,14 +57,12 @@ def validate(doc: PaymentEntry, method=None):
 
 def before_submit(doc: PaymentEntry, method=None):
     # for bulk submission from client side or single submission without payment
-    if (
-        is_payout_via_razorpayx(doc)
-        and not doc.flags._is_already_paid
-        and not frappe.flags.authenticated_by_cron_job
-        and not get_auth_id(doc)
-    ):
-        # PE is not authorized to make payout
+    if should_uncheck_make_bank_online_payment(doc):
+        # PE is not authorized to make payout or auto pay is disabled
         doc.make_bank_online_payment = 0
+
+        if frappe.flags.authenticated_by_cron_job:
+            return
 
         # Show single alert message only
         alert_msg = _("Please make payout manually after Payment Entry submission.")
@@ -80,6 +79,16 @@ def before_submit(doc: PaymentEntry, method=None):
     if not doc.make_bank_online_payment:
         # Reset payout description if not making payout
         doc.razorpayx_payout_desc = ""
+
+
+def should_uncheck_make_bank_online_payment(doc: PaymentEntry) -> bool:
+    should_uncheck_payment_flag = (
+        not is_auto_pay_enabled(doc.integration_docname)
+        if frappe.flags.authenticated_by_cron_job
+        else not doc.flags._is_already_paid and not get_auth_id(doc)
+    )
+
+    return is_payout_via_razorpayx(doc) and should_uncheck_payment_flag
 
 
 def on_submit(doc: PaymentEntry, method=None):

@@ -27,6 +27,8 @@
   "last_sync_on",
   "column_break_mken",
   "pe_config_section",
+  "pay_on_auto_submit",
+  "column_break_oczj",
   "auto_cancel_payout"
  ],
  "fields": [
@@ -175,11 +177,22 @@
   {
    "fieldname": "column_break_mken",
    "fieldtype": "Column Break"
+  },
+  {
+   "default": "1",
+   "description": "If the Payment Entry is submitted via a <strong>cron job</strong> or any <strong>server-side</strong> process, the <strong>Payout</strong> will be made.",
+   "fieldname": "pay_on_auto_submit",
+   "fieldtype": "Check",
+   "label": "Pay on Auto Submit"
+  },
+  {
+   "fieldname": "column_break_oczj",
+   "fieldtype": "Column Break"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-02-01 15:33:12.080853",
+ "modified": "2025-02-12 12:08:45.794823",
  "modified_by": "Administrator",
  "module": "Razorpayx Integration",
  "name": "RazorpayX Integration Setting",
