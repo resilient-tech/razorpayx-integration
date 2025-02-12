@@ -11,7 +11,7 @@
   "bank_account",
   "column_break_pzyt",
   "company",
-  "actions_perm_section",
+  "automations_section",
   "auto_generate_entries",
   "column_break_cmbf",
   "auto_submit_entries",
@@ -54,11 +54,6 @@
    "fieldname": "auto_submit_entries",
    "fieldtype": "Check",
    "label": "Auto Submit Payment Entries"
-  },
-  {
-   "fieldname": "actions_perm_section",
-   "fieldtype": "Section Break",
-   "label": "Actions and Permissions"
   },
   {
    "fieldname": "column_break_cmbf",
@@ -125,8 +120,9 @@
    "label": "Thursday"
   },
   {
+   "default": "0",
    "depends_on": "eval: doc.auto_submit_entries",
-   "description": "Payment entries upto this threshold will be submitted automatically.",
+   "description": "Payment entries upto this threshold will be submitted automatically. Set zero to submit all entries.",
    "fieldname": "payment_threshold",
    "fieldtype": "Currency",
    "label": "Payment Threshold",
@@ -207,7 +203,8 @@
    "default": "1",
    "fieldname": "ignore_blocked_suppliers",
    "fieldtype": "Check",
-   "label": "Ignore Blocked Suppliers"
+   "label": "Ignore Blocked Suppliers",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_eldq",
@@ -237,7 +234,13 @@
    "default": "1",
    "fieldname": "ignore_blocked_invoices",
    "fieldtype": "Check",
-   "label": "Ignore Blocked Invoices"
+   "label": "Ignore Blocked Invoices",
+   "read_only": 1
+  },
+  {
+   "fieldname": "automations_section",
+   "fieldtype": "Section Break",
+   "label": "Automations"
   }
  ],
  "index_web_pages_for_search": 1,
