@@ -80,6 +80,7 @@ CUSTOM_FIELDS = {
             "insert_after": "make_bank_online_payment",
             "options": TRANSFER_METHOD.values_as_string(),
             "default": TRANSFER_METHOD.LINK.value,
+            "in_standard_filter": 1,
             "depends_on": "eval: doc.make_bank_online_payment",
             "mandatory_depends_on": "eval: doc.make_bank_online_payment",
             "permlevel": PERMISSION_LEVEL.SEVEN.value,
