@@ -1,4 +1,4 @@
-const TRANSFER_METHOD = payment_utils.PAYMENT_TRANSFER_METHOD;
+const PAYMENT_TRANSFER_METHOD = payment_utils.PAYMENT_TRANSFER_METHOD;
 
 frappe.ui.form.on("Payment Entry", {
 	refresh: function (frm) {
@@ -18,7 +18,7 @@ frappe.ui.form.on("Payment Entry", {
 
 		if (!frm.doc.make_bank_online_payment) return;
 
-		if (frm.doc.payment_transfer_method === TRANSFER_METHOD.LINK) {
+		if (frm.doc.payment_transfer_method === payment_utils.PAYMENT_TRANSFER_METHOD.LINK) {
 			if (!frm.doc.contact_mobile && !frm.doc.contact_email) {
 				let msg = "";
 
@@ -53,9 +53,9 @@ frappe.ui.form.on("Payment Entry", {
 
 	party_bank_account: function (frm) {
 		if (!frm.doc.party_bank_account) {
-			frm.set_value("payment_transfer_method", TRANSFER_METHOD.LINK);
+			frm.set_value("payment_transfer_method", payment_utils.PAYMENT_TRANSFER_METHOD.LINK);
 		} else {
-			frm.set_value("payment_transfer_method", TRANSFER_METHOD.NEFT);
+			frm.set_value("payment_transfer_method", payment_utils.PAYMENT_TRANSFER_METHOD.NEFT);
 		}
 	},
 
