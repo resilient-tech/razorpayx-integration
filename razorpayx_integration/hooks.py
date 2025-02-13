@@ -34,6 +34,6 @@ doc_events = {
 
 scheduler_events = {
     "daily": [
-        "razorpayx_integration.razorpayx_integration.utils.transaction.sync_transactions_periodically"
+        "razorpayx_integration.razorpayx_integration.utils.bank_transaction.sync_transactions_periodically"
     ]
 }

@@ -79,9 +79,9 @@ function show_pay_and_submit_dialog(list_view, marked_docs, unmarked_docs, ineli
 				label: __("Allow to make online payment"),
 				fieldtype: "Check",
 				default: unmarked_docs.length ? 1 : 0,
-				description: `<p class='text-warning font-weight-bold'>${__(
-					"If unchecked, above payment entries will be skipped!"
-				)}</p>`,
+				description: `<p class='text-warning font-weight-bold'>
+								${__("If unchecked, above payment entries will be skipped!")}
+							</p>`,
 			},
 			{
 				fieldname: "marked_cb_break",

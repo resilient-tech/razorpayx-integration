@@ -6,17 +6,14 @@ from frappe import _
 from frappe.core.doctype.submission_queue.submission_queue import queue_submission
 from frappe.utils import get_link_to_form
 from frappe.utils.scheduler import is_scheduler_inactive
-from payment_integration_utils.payment_integration_utils.auth import (
-    run_before_payment_authentication as has_payment_permissions,
-)
 from payment_integration_utils.payment_integration_utils.constants.payments import (
     TRANSFER_METHOD,
 )
-from payment_integration_utils.payment_integration_utils.server_overrides.payment_entry import (
+from payment_integration_utils.payment_integration_utils.server_overrides.doctype.payment_entry import (
     validate_transfer_methods,
 )
-from payment_integration_utils.payment_integration_utils.utils.validation import (
-    validate_ifsc_code,
+from payment_integration_utils.payment_integration_utils.utils.auth import (
+    run_before_payment_authentication as has_payment_permissions,
 )
 
 from razorpayx_integration.constants import RAZORPAYX_SETTING
@@ -272,8 +269,8 @@ def make_payout_with_razorpayx(
         }
     )
 
-    validate_payout_details(doc)
     validate_transfer_methods(doc)
+    validate_payout_details(doc)
     PayoutWithPaymentEntry(doc).make(auth_id)
 
 

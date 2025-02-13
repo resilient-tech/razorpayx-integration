@@ -7,12 +7,7 @@ from payment_integration_utils.payment_integration_utils.constants.roles import 
     ROLE_PROFILE as PAYMENT_PROFILES,
 )
 
-from razorpayx_integration.constants import (
-    RAZORPAYX_SETTING,
-)
-
-# TODO: one bank account can be used in only one integration at a time
-# TODO: how can we restrict this?
+from razorpayx_integration.constants import RAZORPAYX_SETTING
 
 
 class ROLE_PROFILE(BaseEnum):

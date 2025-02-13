@@ -15,7 +15,7 @@ from razorpayx_integration.razorpayx_integration.apis.transaction import (
 
 
 ######### PROCESSOR #########
-class RazorpayBankTransaction:
+class RazorpayXBankTransaction:
     def __init__(
         self,
         razorpayx_setting: str,
@@ -242,7 +242,7 @@ def sync_transactions_for_reconcile(
             ).format(bank_account)
         )
 
-    RazorpayBankTransaction(
+    RazorpayXBankTransaction(
         razorpayx_setting,
         bank_account=bank_account,
         source_docname=BRT,
@@ -268,7 +268,7 @@ def sync_razorpayx_transactions(
     """
     frappe.has_permission(RAZORPAYX_SETTING, throw=True)
 
-    RazorpayBankTransaction(
+    RazorpayXBankTransaction(
         razorpayx_setting,
         from_date,
         to_date,
@@ -296,7 +296,7 @@ def sync_transactions_periodically():
         return
 
     for setting in settings:
-        RazorpayBankTransaction(setting.name, bank_account=setting.bank_account).sync()
+        RazorpayXBankTransaction(setting.name, bank_account=setting.bank_account).sync()
 
     # update last sync date
     frappe.db.set_value(
