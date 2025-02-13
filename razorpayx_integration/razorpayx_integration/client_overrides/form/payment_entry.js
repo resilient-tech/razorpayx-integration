@@ -163,7 +163,13 @@ function user_has_payout_permissions(frm) {
 
 // ############ HELPERS ############ //
 function update_submit_button_label(frm) {
-	if (frm.doc.docstatus !== 0 || frm.doc.__islocal || !frm.doc.make_bank_online_payment) return;
+	if (
+		frm.doc.docstatus !== 0 ||
+		frm.doc.__islocal ||
+		!frm.doc.make_bank_online_payment ||
+		frm.toolbar._has_workflow
+	)
+		return;
 
 	frm.page.set_primary_action(__("Pay and Submit"), () => {
 		frm.savesubmit();
