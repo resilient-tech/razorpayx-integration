@@ -1,4 +1,4 @@
-from razorpayx_integration.payment_utils.constants.enums import BaseEnum
+from payment_integration_utils.payment_integration_utils.constants.enums import BaseEnum
 
 
 class EVENTS_TYPE(BaseEnum):

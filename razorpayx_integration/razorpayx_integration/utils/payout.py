@@ -1,11 +1,11 @@
 import frappe
 from erpnext.accounts.doctype.payment_entry.payment_entry import PaymentEntry
 from frappe import _
-
-from razorpayx_integration.payment_utils.auth import Authenticate2FA
-from razorpayx_integration.payment_utils.constants.payments import (
+from payment_integration_utils.payment_integration_utils.auth import Authenticate2FA
+from payment_integration_utils.payment_integration_utils.constants.payments import (
     TRANSFER_METHOD as PAYOUT_MODE,
 )
+
 from razorpayx_integration.razorpayx_integration.apis.payout import (
     RazorpayXCompositePayout,
     RazorpayXLinkPayout,

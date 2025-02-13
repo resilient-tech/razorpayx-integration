@@ -1,4 +1,6 @@
-from razorpayx_integration.payment_utils.utils import delete_property_setters
+from payment_integration_utils.payment_integration_utils.utils import (
+    delete_property_setters,
+)
 
 PROPERTY_SETTERS_TO_DELETE = [
     ## Payment Entry ##

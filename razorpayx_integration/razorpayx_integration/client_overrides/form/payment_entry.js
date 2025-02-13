@@ -80,12 +80,12 @@ frappe.ui.form.on("Payment Entry", {
 				frappe.validate = true;
 				frm.__making_payout = true;
 
-				payment_utils.set_onload(frm, "auth_id", auth_id);
+				payment_integration_utils.set_onload(frm, "auth_id", auth_id);
 
 				resolve();
 			};
 
-			return payment_utils.authenticate_payment_entries(frm.docname, continue_submission);
+			return payment_integration_utils.authenticate_payment_entries(frm.docname, continue_submission);
 		});
 	},
 
@@ -105,7 +105,7 @@ frappe.ui.form.on("Payment Entry", {
 			!razorpayx.is_payout_via_razorpayx(frm.doc) ||
 			!can_cancel_payout(frm) ||
 			!user_has_payout_permissions(frm) ||
-			payment_utils.get_onload(frm, "auto_cancel_payout_enabled")
+			payment_integration_utils.get_onload(frm, "auto_cancel_payout_enabled")
 		) {
 			return;
 		}
@@ -148,15 +148,15 @@ async function disable_payout_fields_in_amendment(frm) {
 }
 
 function is_already_paid(frm) {
-	return payment_utils.get_onload(frm, "is_already_paid");
+	return payment_integration_utils.get_onload(frm, "is_already_paid");
 }
 
 function user_has_payout_permissions(frm) {
 	if (frm.doc.__onload) {
-		return payment_utils.get_onload(frm, "has_payment_permission");
+		return payment_integration_utils.get_onload(frm, "has_payment_permission");
 	}
 
-	return payment_utils.can_user_authorize_payment();
+	return payment_integration_utils.can_user_authorize_payment();
 }
 
 // ############ HELPERS ############ //
@@ -242,9 +242,9 @@ async function show_make_payout_dialog(frm) {
 	}
 
 	// depends on conditions
-	const BANK_MODE = `["${payment_utils.PAYMENT_TRANSFER_METHOD.NEFT}", "${payment_utils.PAYMENT_TRANSFER_METHOD.RTGS}", "${payment_utils.PAYMENT_TRANSFER_METHOD.IMPS}"].includes(doc.payment_transfer_method)`;
-	const UPI_MODE = `doc.payment_transfer_method === '${payment_utils.PAYMENT_TRANSFER_METHOD.UPI}'`;
-	const LINK_MODE = `doc.payment_transfer_method === '${payment_utils.PAYMENT_TRANSFER_METHOD.LINK}'`;
+	const BANK_MODE = `["${payment_integration_utils.PAYMENT_TRANSFER_METHOD.NEFT}", "${payment_integration_utils.PAYMENT_TRANSFER_METHOD.RTGS}", "${payment_integration_utils.PAYMENT_TRANSFER_METHOD.IMPS}"].includes(doc.payment_transfer_method)`;
+	const UPI_MODE = `doc.payment_transfer_method === '${payment_integration_utils.PAYMENT_TRANSFER_METHOD.UPI}'`;
+	const LINK_MODE = `doc.payment_transfer_method === '${payment_integration_utils.PAYMENT_TRANSFER_METHOD.LINK}'`;
 
 	const dialog = new frappe.ui.Dialog({
 		title: __("Enter Payout Details"),
@@ -360,7 +360,7 @@ async function show_make_payout_dialog(frm) {
 				fieldname: "payment_transfer_method",
 				label: __("Payout Transfer Method"),
 				fieldtype: "Select",
-				options: Object.values(payment_utils.PAYMENT_TRANSFER_METHOD),
+				options: Object.values(payment_integration_utils.PAYMENT_TRANSFER_METHOD),
 				default: frm.doc.payment_transfer_method,
 				reqd: 1,
 				description: `<div class="d-flex align-items-center justify-content-end">
@@ -379,17 +379,17 @@ async function show_make_payout_dialog(frm) {
 				mandatory_depends_on: `eval: ${LINK_MODE}`,
 			},
 		],
-		primary_action_label: __("{0} Pay", [frappe.utils.icon(payment_utils.PAY_ICON)]),
+		primary_action_label: __("{0} Pay", [frappe.utils.icon(payment_integration_utils.PAY_ICON)]),
 		primary_action: (values) => {
 			razorpayx.validate_payout_description(values.razorpayx_payout_desc);
-			payment_utils.validate_payment_transfer_method(
+			payment_integration_utils.validate_payment_transfer_method(
 				values.payment_transfer_method,
 				frm.doc.paid_amount
 			);
 
 			dialog.hide();
 
-			payment_utils.authenticate_payment_entries(frm.docname, async (auth_id) => {
+			payment_integration_utils.authenticate_payment_entries(frm.docname, async (auth_id) => {
 				await make_payout(auth_id, frm.docname, values);
 
 				frappe.show_alert({
@@ -421,11 +421,11 @@ async function set_party_bank_details(dialog) {
 	const party_bank_account = dialog.get_value("party_bank_account");
 
 	if (!party_bank_account) {
-		dialog.set_value("payment_transfer_method", payment_utils.PAYMENT_TRANSFER_METHOD.LINK);
+		dialog.set_value("payment_transfer_method", payment_integration_utils.PAYMENT_TRANSFER_METHOD.LINK);
 		return;
 	}
 
-	dialog.set_value("payment_transfer_method", payment_utils.PAYMENT_TRANSFER_METHOD.NEFT);
+	dialog.set_value("payment_transfer_method", payment_integration_utils.PAYMENT_TRANSFER_METHOD.NEFT);
 
 	const response = await frappe.db.get_value("Bank Account", party_bank_account, [
 		"branch_code as party_bank_ifsc",

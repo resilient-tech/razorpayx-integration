@@ -11,7 +11,7 @@ frappe.listview_settings["Payment Entry"] = {
 
 	onload: function (list_view) {
 		// Add `Pay and Submit` button to the Payment Entry list view
-		if (!payment_utils.can_user_authorize_payment()) return;
+		if (!payment_integration_utils.can_user_authorize_payment()) return;
 
 		list_view.page.add_actions_menu_item(__("Pay and Submit"), () => {
 			const selected_docs = list_view.get_checked_items();
@@ -55,7 +55,9 @@ function can_make_payout_via_razorpayx(doc) {
 function show_pay_and_submit_dialog(list_view, marked_docs, unmarked_docs, ineligible_docs) {
 	const dialog = new frappe.ui.Dialog({
 		title: __("Confirm Payment Entries"),
-		primary_action_label: __("{0} Pay and Submit", [frappe.utils.icon(payment_utils.PAY_ICON)]),
+		primary_action_label: __("{0} Pay and Submit", [
+			frappe.utils.icon(payment_integration_utils.PAY_ICON),
+		]),
 		fields: [
 			{
 				fieldname: "unmarked_doc_sec_break",
@@ -127,18 +129,21 @@ function show_pay_and_submit_dialog(list_view, marked_docs, unmarked_docs, ineli
 				return;
 			}
 
-			payment_utils.authenticate_payment_entries([...marked_docs, ...unmarked_docs], (auth_id) => {
-				// Reference: https://github.com/frappe/frappe/blob/3eda272bd61b1e73b74d30b1704d885a39c75d0c/frappe/public/js/frappe/list/list_view.js#L1983
-				pay_and_submit(
-					auth_id,
-					marked_docs,
-					unmarked_docs,
-					values.mark_online_payment,
-					values.description
-				);
+			payment_integration_utils.authenticate_payment_entries(
+				[...marked_docs, ...unmarked_docs],
+				(auth_id) => {
+					// Reference: https://github.com/frappe/frappe/blob/3eda272bd61b1e73b74d30b1704d885a39c75d0c/frappe/public/js/frappe/list/list_view.js#L1983
+					pay_and_submit(
+						auth_id,
+						marked_docs,
+						unmarked_docs,
+						values.mark_online_payment,
+						values.description
+					);
 
-				reset_list_view(list_view);
-			});
+					reset_list_view(list_view);
+				}
+			);
 		},
 	});
 
