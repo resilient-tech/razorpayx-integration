@@ -1,5 +1,3 @@
-const PAYMENT_TRANSFER_METHOD = payment_utils.PAYMENT_TRANSFER_METHOD;
-
 frappe.ui.form.on("Payment Entry", {
 	refresh: function (frm) {
 		// update descriptions
@@ -35,7 +33,7 @@ frappe.ui.form.on("Payment Entry", {
 		payment_utils.validate_payment_transfer_method(frm.doc.payment_transfer_method, frm.doc.paid_amount);
 	},
 
-	bank_account: async function (frm) {
+	bank_account: function (frm) {
 		if (!frm.doc.bank_account) {
 			frm.set_value("make_bank_online_payment", 0);
 		}
