@@ -1,19 +1,22 @@
+import frappe
 from frappe import _
 
+from razorpayx_integration.payment_utils.constants.payments import (
+    TRANSFER_METHOD as PAYOUT_MODE,
+)
 from razorpayx_integration.payment_utils.utils import (
     rupees_to_paisa,
     to_hyphenated,
 )
+from razorpayx_integration.payment_utils.utils.validation import validate_payout_mode
 from razorpayx_integration.razorpayx_integration.apis.base import BaseRazorpayXAPI
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
     CONTACT_TYPE,
     CONTACT_TYPE_MAP,
     FUND_ACCOUNT_TYPE,
-    PAYMENT_MODE_LIMIT,
     PAYOUT_CURRENCY,
     PAYOUT_PURPOSE,
     PAYOUT_PURPOSE_MAP,
-    RAZORPAYX_PAYOUT_MODE,
 )
 from razorpayx_integration.razorpayx_integration.utils.validation import (
     validate_razorpayx_payout_description,
@@ -56,29 +59,31 @@ class RazorpayXPayout(BaseRazorpayXAPI):
         self.payout_headers = {}
 
     ### APIs ###
-    def pay_to_bank_account(self, payout_details: dict) -> dict:
+    def pay(self, payout_details: dict) -> dict:
         """
-        Pay to a `Bank Account` using `Fund Account ID`.
+        Pay to a `Bank Account` or `UPI` using contact's `Fund Account ID`.
 
         :param payout_details: Request body for `Payout`.
 
         ---
         Note:
-        - Fund account must associate with the bank account.
+        - Fund account must associate with the bank account to pay to bank account.
             - Refer : https://razorpay.com/docs/api/x/fund-accounts/create/bank-account
+        - Fund account must associate with the UPI ID.
+            - Refer : https://razorpay.com/docs/api/x/fund-accounts/create/vpa
 
         ---
         Params of `payout_details`:
 
         Mandatory:
         - `amount` :float: Amount to be paid. (Must be in `INR`)
+        - `mode` :str: Payment mode for the payout (Options: `NEFT`, `RTGS`, `IMPS`, `UPI`).
         - `fund_account_id` :str: The fund account id to be used for the payout (Ex. `fa_00000000000001`).
         - `source_doctype` :str: The source document type.
         - `source_docname` :str: The source document name.
         - `party_type` :str: The type of party to be paid (Ex. `Customer`, `Supplier`, `Employee`).
 
         Optional:
-        - `pay_instantaneously` :bool: Pay instantaneously if `True`. (Default: `False`)
         - `description` :str: Description of the payout.
            - Maximum length `30` characters. Allowed characters: `a-z`, `A-Z`, `0-9` and `space`.
         - `reference_id` :str: Reference Id of the payout.
@@ -86,47 +91,21 @@ class RazorpayXPayout(BaseRazorpayXAPI):
         - `notes` :dict: Additional notes for the payout.
 
         ---
-        Reference: https://razorpay.com/docs/api/x/payouts/create/bank-account
+        References:
+        - https://razorpay.com/docs/api/x/payouts/create/bank-account
+        - https://razorpay.com/docs/api/x/payouts/create/vpa
+
         """
-        payout_details["mode"] = self._get_bank_payment_mode(payout_details)
-        self._set_service_details_to_ir_log("Make Payout to Bank Account")
+        mode = payout_details["mode"]
+        self._validate_payout_mode(mode)
 
-        return self._make_payout(payout_details)
+        service = (
+            "Make Payout to UPI ID via Fund Account"
+            if mode == PAYOUT_MODE.UPI.value
+            else "Make Payout to Bank Account via Fund Account"
+        )
 
-    def pay_to_upi_id(self, payout_details: dict) -> dict:
-        """
-        Pay to a `UPI ID` using `Fund Account ID`.
-
-        :param payout_details: Request body for `Payout`.
-
-        ---
-        Note:
-        - Fund account must associate with the UPI ID.
-         - Refer : https://razorpay.com/docs/api/x/fund-accounts/create/vpa
-
-        ---
-        Params of `payout_details`:
-
-        Mandatory:
-        - `amount` :float: Amount to be paid. (Must be in `INR`)
-        - `fund_account_id` :str: The fund account id to be used for the payout (Ex. `fa_00000000000001`).
-        - `source_doctype` :str: The source document type.
-        - `source_docname` :str: The source document name.
-        - `party_type` :str: The type of party to be paid (Ex. `Customer`, `Supplier`, `Employee`).
-
-        Optional:
-        - `description` :str: Description of the payout.
-            - Maximum length `30` characters. Allowed characters: `a-z`, `A-Z`, `0-9` and `space`.
-        - `reference_id` :str: Reference Id of the payout.
-        - `purpose` :str: Purpose of the payout. (Default: `Payout` or decided by `party_type`)
-        - `notes` :dict: Additional notes for the payout.
-
-        ---
-        Reference: https://razorpay.com/docs/api/x/payouts/create/vpa
-        """
-        payout_details["mode"] = RAZORPAYX_PAYOUT_MODE.UPI.value
-        self._set_service_details_to_ir_log("Make Payout to UPI ID")
-
+        self._set_service_details_to_ir_log(service)
         return self._make_payout(payout_details)
 
     def get_by_id(
@@ -210,6 +189,7 @@ class RazorpayXPayout(BaseRazorpayXAPI):
 
         self._set_idempotency_key_header(json)
 
+        # validations
         self._validate_description(json)
 
         if not self.ir_service_set:
@@ -218,26 +198,6 @@ class RazorpayXPayout(BaseRazorpayXAPI):
         return self.post(json=json, headers=self.payout_headers)
 
     ### HELPERS ###
-    def _get_bank_payment_mode(self, payout_details: dict) -> str:
-        """
-        Return the payment mode for the payout.
-
-        :param payout_details: Request body for `Payout`.
-
-        Returns: NEFT | RTGS | IMPS
-        """
-
-        if (
-            payout_details.get("pay_instantaneously") is True
-            and payout_details["amount"] <= PAYMENT_MODE_LIMIT.IMPS.value
-        ):
-            return RAZORPAYX_PAYOUT_MODE.IMPS.value
-        else:
-            if payout_details["amount"] > PAYMENT_MODE_LIMIT.NEFT.value:
-                return RAZORPAYX_PAYOUT_MODE.RTGS.value
-            else:
-                return RAZORPAYX_PAYOUT_MODE.NEFT.value
-
     def _set_idempotency_key_header(self, json: dict):
         """
         Generate `Idempotency Key` header for `Payout` creation.
@@ -350,7 +310,7 @@ class RazorpayXPayout(BaseRazorpayXAPI):
         return {
             **self.default_payout_request,
             "amount": rupees_to_paisa(payout_details["amount"]),
-            "mode": payout_details.get("mode", RAZORPAYX_PAYOUT_MODE.NEFT.value),
+            "mode": payout_details["mode"],
             "purpose": get_purpose(),
             "reference_id": get_reference_id(),
             "narration": payout_details.get("description", ""),
@@ -366,7 +326,7 @@ class RazorpayXPayout(BaseRazorpayXAPI):
         ---
         Contact Sample:
         ```
-        # If `razorpayx_party_contact_id` is not provided
+        # If `razorpayx_contact_id` is not provided
         {
             "name": "Gaurav Kumar",
             "email": "gauravemail@gmail.com",
@@ -375,25 +335,21 @@ class RazorpayXPayout(BaseRazorpayXAPI):
             "reference_id": "Customer: Gaurav",
         }
 
-        # If `razorpayx_party_contact_id` is provided
+        # If `razorpayx_contact_id` is provided
         {"id": "cont_00HjGh1"}
         ```
         """
-
-        def get_type() -> str:
-            return CONTACT_TYPE_MAP.get(
-                payout_details["party_type"], CONTACT_TYPE.SELF.value
-            )
-
-        if contact_id := payout_details.get("razorpayx_party_contact_id"):
+        if contact_id := payout_details.get("razorpayx_contact_id"):
             return {"id": contact_id}
 
         return {
             "name": self.sanitize_party_name(payout_details["party_name"]),
             "email": payout_details.get("party_email", ""),
             "contact": payout_details.get("party_mobile", ""),
-            "type": get_type(),
             "reference_id": f"{payout_details['party_type']}: {payout_details.get('party_id', '')}",
+            "type": CONTACT_TYPE_MAP.get(
+                payout_details["party_type"], CONTACT_TYPE.SELF.value
+            ),
         }
 
     ### VALIDATIONS ###
@@ -408,6 +364,15 @@ class RazorpayXPayout(BaseRazorpayXAPI):
         """
         if narration := json.get("narration"):
             validate_razorpayx_payout_description(narration)
+
+    def _validate_payout_mode(self, mode: str):
+        validate_payout_mode(mode, throw=True)
+
+        if mode == PAYOUT_MODE.LINK.value:
+            frappe.throw(
+                msg=_("Link Payout is not supported"),
+                title=_("Invalid Payout Mode"),
+            )
 
 
 class RazorpayXCompositePayout(RazorpayXPayout):
@@ -426,9 +391,9 @@ class RazorpayXCompositePayout(RazorpayXPayout):
     """
 
     ### APIs ###
-    def pay_to_bank_account(self, payout_details: dict) -> dict:
+    def pay(self, payout_details: dict) -> dict:
         """
-        Make a `Payout` to a party's `Bank Account`.
+        Make a `Payout` to a party's `Bank Account` or `UPI ID`.
 
         :param payout_details: Request body for `Payout`.
 
@@ -437,18 +402,22 @@ class RazorpayXCompositePayout(RazorpayXPayout):
 
         Mandatory:
         - `amount` :float: Amount to be paid. (Must be in `INR`)
+        - `mode` :str: Payment mode for the payout (Options: `NEFT`, `RTGS`, `IMPS`, `UPI`).
         - `source_doctype` :str: The source document type.
         - `source_docname` :str: The source document name.
         - `party_name` :str: Name of the party to be paid.
         - `party_type` :str: The type of party to be paid (Ex. `Customer`, `Supplier`, `Employee`).
-        - `party_bank_account_no` :str: Bank account number of the party.
-        - `party_bank_ifsc` :str: IFSC code of the party's bank.
-
+        - `party_payment_details` :dict: Payment details of the party.
+            - If `mode` is `NEFT`, `RTGS`, `IMPS`:
+                - `bank_account_no` :str: Bank account number of the party.
+                - `bank_ifsc` :str: IFSC code of the party's bank.
+            - If `mode` is `UPI`:
+                - `upi_id` :str: UPI ID of the party (Ex. `gauravkumar@exampleupi`).
         Optional:
         - `party_id` :str: Id of the party (Ex. Docname of the party).
-        - `party_mobile` :str: Mobile number of the party.
-        - `party_email` :str: Email of the party.
-        - `pay_instantaneously` :bool: Pay instantaneously if `True`. (Default: `False`)
+        - `party_contact_details` :dict: Contact details of the party.
+            - `party_mobile` :str: Mobile number of the party.
+            - `party_email` :str: Email of the party.
         - `description` :str: Description of the payout.
            - Maximum length `30` characters. Allowed characters: `a-z`, `A-Z`, `0-9` and `space`.
         - `reference_id` :str: Reference Id of the payout.
@@ -456,52 +425,31 @@ class RazorpayXCompositePayout(RazorpayXPayout):
         - `notes` :dict: Additional notes for the payout.
 
         ---
-        Reference: https://razorpay.com/docs/api/x/payout-composite/create/bank-account/
+        References:
+        - https://razorpay.com/docs/api/x/payout-composite/create/bank-account/
+        - https://razorpay.com/docs/api/x/payout-composite/create/vpa/
+
+
         """
-        payout_details["mode"] = self._get_bank_payment_mode(payout_details)
-        payout_details["party_account_type"] = (  # noqa: RUF100
-            FUND_ACCOUNT_TYPE.BANK_ACCOUNT.value
-        )
+        mode = payout_details["mode"]
+        self._validate_payout_mode(mode)
 
-        self._set_service_details_to_ir_log("Make Composite Payout to Bank Account")
+        payment_details = payout_details["party_payment_details"]
+        payout_details.update(**payout_details.pop("party_contact_details"))
 
-        return self._make_payout(payout_details)
+        if mode == PAYOUT_MODE.UPI.value:
+            service = "Make Composite Payout to UPI ID"
 
-    def pay_to_upi_id(self, payout_details: dict) -> dict:
-        """
-        Make a `Payout` to a party's `UPI ID`.
+            payout_details["party_account_type"] = FUND_ACCOUNT_TYPE.VPA.value
+            payout_details["party_upi_id"] = payment_details["upi_id"]
+        else:
+            service = "Make Composite Payout to Bank Account"
 
-        :param payout_details: Request body for `Payout`.
+            payout_details["party_account_type"] = FUND_ACCOUNT_TYPE.BANK_ACCOUNT.value
+            payout_details["party_bank_account_no"] = payment_details["bank_account_no"]
+            payout_details["party_bank_ifsc"] = payment_details["bank_ifsc"]
 
-        ---
-        Params of `payout_details`:
-
-        Mandatory:
-        - `amount` :float: Amount to be paid. (Must be in `INR`)
-        - `source_doctype` :str: The source document type.
-        - `source_docname` :str: The source document name.
-        - `party_name` :str: Name of the party to be paid.
-        - `party_type` :str: The type of party to be paid (Ex. `Customer`, `Supplier`, `Employee`).
-        - `party_upi_id` :str: UPI ID of the party (Ex. `gauravkumar@exampleupi`).
-
-        Optional:
-        - `party_id` :str: Id of the party (Ex. Docname of the party).
-        - `party_mobile` :str: Mobile number of the party.
-        - `party_email` :str: Email of the party.
-        - `description` :str: Description of the payout.
-           - Maximum length `30` characters. Allowed characters: `a-z`, `A-Z`, `0-9` and `space`.
-        - `reference_id` :str: Reference Id of the payout.
-        - `purpose` :str: Purpose of the payout. (Default: `Payout` or decided by `party_type`)
-        - `notes` :dict: Additional notes for the payout.
-
-        ---
-        Reference: https://razorpay.com/docs/api/x/payout-composite/create/vpa/
-        """
-        payout_details["mode"] = RAZORPAYX_PAYOUT_MODE.UPI.value
-        payout_details["party_account_type"] = FUND_ACCOUNT_TYPE.VPA.value
-
-        self._set_service_details_to_ir_log("Make Composite Payout to UPI ID")
-
+        self._set_service_details_to_ir_log(service)
         return self._make_payout(payout_details)
 
     ### HELPERS ###
@@ -604,13 +552,16 @@ class RazorpayXCompositePayout(RazorpayXPayout):
         }
         ```
         """
+        account_type = payout_details["party_account_type"]
 
         def get_account_details() -> dict:
-            match payout_details["party_account_type"]:
+            match account_type:
                 case FUND_ACCOUNT_TYPE.BANK_ACCOUNT.value:
                     return {
                         "bank_account": {
-                            "name": payout_details["party_name"],
+                            "name": self.sanitize_party_name(
+                                payout_details["party_name"]
+                            ),
                             "ifsc": payout_details["party_bank_ifsc"],
                             "account_number": payout_details["party_bank_account_no"],
                         }
@@ -623,7 +574,7 @@ class RazorpayXCompositePayout(RazorpayXPayout):
                     }
 
         return {
-            "account_type": payout_details["party_account_type"],
+            "account_type": account_type,
             "contact": self._get_party_contact_details(payout_details),
             **get_account_details(),
         }
@@ -649,7 +600,7 @@ class RazorpayXLinkPayout(RazorpayXPayout):
     ### APIs ###
     def pay(self, payout_details: dict) -> dict:
         """
-        Create a `Link Payout` with party's contact details.
+        Create a `Link Payout` with party's contact details or `RazorpayX Contact ID`.
 
         :param data: Request body for `Payout`.
 
@@ -660,12 +611,16 @@ class RazorpayXLinkPayout(RazorpayXPayout):
         - `amount` :float: Amount to be paid. (Must be in `INR`)
         - `source_doctype` :str: The source document type.
         - `source_docname` :str: The source document name.
-        - `party_name` :str: Name of the party to be paid.
         - `party_type` :str: The type of party to be paid (Ex. `Customer`, `Supplier`, `Employee`).
-        - `party_mobile` :str: Mobile number of the party.
-        - `party_email` :str: Email of the party.
         - `description` :str: Description of the payout.
            - Maximum length `30` characters. Allowed characters: `a-z`, `A-Z`, `0-9` and `space`.
+        - `party_contact_details` :dict: Contact details of the party.
+            - If pay with  `RazorpayX contact ID`:
+                - `razorpayx_contact_id` :str: The RazorpayX Contact ID of the party (Ex. `cont_00HjGh1`).
+            - If pay with `party's contact details`:
+                - `party_name` :str: Name of the party.
+                - `party_mobile` :str: Mobile number of the party.
+                - `party_email` :str: Email of the party.
 
         Optional:
         - `receipt` :str: Receipt details for the payout.
@@ -675,50 +630,22 @@ class RazorpayXLinkPayout(RazorpayXPayout):
         - `purpose` :str: Purpose of the payout. (Default: `Payout` or decided by `party_type`)
         - `notes` :dict: Additional notes for the payout.
         - `expire_by` :datetime: Expiry date-time of the link.
-            - ⚠️ This parameter can be used only if you have enabled the expiry feature for Payout Links.
-            - Set at least 15 minutes ahead of the current time.
+            - ⚠️ This can be used only if the expiry feature for Payout Links is enabled.
+            - Set at least `15 minutes` ahead of the current time.
 
         ---
         Reference: https://razorpay.com/docs/api/x/payout-links/create/use-contact-details/
+
         """
-        self._set_service_details_to_ir_log("Make Link Payout with Contact Details")
-        return self._make_payout(payout_details)
+        payout_details.update(**payout_details.pop("party_contact_details"))
 
-    def create_with_razorpayx_contact_id(self, payout_details: dict) -> dict:
-        """
-        ⚠️ This method is not maintained and used in the current implementation. ⚠️
+        service = (
+            "Make Link Payout with Contact Details"
+            if "razorpayx_contact_id" not in payout_details
+            else "Make Link Payout with RazorpayX Contact ID"
+        )
 
-        ---
-        Create a `Link Payout` with party's `RazorpayX Contact ID`.
-
-        :param payout_details: Request body for `Payout`.
-
-        ---
-        Params of `payout_details`:
-
-        Mandatory:
-        - `amount` :float: Amount to be paid. (Must be in `INR`)
-        - `source_doctype` :str: The source document type.
-        - `source_docname` :str: The source document name.
-        - `party_type` :str: The type of party to be paid (Ex. `Customer`, `Supplier`, `Employee`).
-        - `razorpayx_party_contact_id` :str: The RazorpayX Contact ID of the party (Ex. `cont_00HjGh1`).
-        - `description` :str: Description of the payout.
-           - Maximum length `30` characters. Allowed characters: `a-z`, `A-Z`, `0-9` and `space`.
-
-        Optional:
-        - `receipt` :str: Receipt details for the payout.
-        - `send_sms` :bool: Send SMS to the party if `True`. (Default: `True`)
-        - `send_email` :bool: Send Email to the party if `True`. (Default: `True`)
-        - `purpose` :str: Purpose of the payout. (Default: `Payout` or decided by `party_type`)
-        - `notes` :dict: Additional notes for the payout.
-        - `expire_by` :datetime: Expiry date-time of the link.
-            - ⚠️ This parameter can be used only if you have enabled the expiry feature for Payout Links.
-            - Set at least 15 minutes ahead of the current time.
-
-        ---
-        Reference: https://razorpay.com/docs/api/x/payout-links/create/use-contact-id
-        """
-        self._set_service_details_to_ir_log("Make Link Payout with Contact ID")
+        self._set_service_details_to_ir_log(service)
         return self._make_payout(payout_details)
 
     def get_by_id(
@@ -847,14 +774,3 @@ class RazorpayXLinkPayout(RazorpayXPayout):
         Note: 🟢 Override this method to customize the validation.
         """
         validate_razorpayx_payout_description(json["description"])
-
-
-#### Wrapper Classes ####
-class RazorpayXBankPayout(RazorpayXCompositePayout):
-    def pay(self, payout_details: dict) -> dict:
-        return self.pay_to_bank_account(payout_details)
-
-
-class RazorpayXUPIPayout(RazorpayXCompositePayout):
-    def pay(self, payout_details: dict) -> dict:
-        return self.pay_to_upi_id(payout_details)

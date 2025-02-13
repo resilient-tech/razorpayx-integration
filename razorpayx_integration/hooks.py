@@ -33,7 +33,10 @@ doc_events = {
             "razorpayx_integration.payment_utils.server_overrides.payment_entry.onload",
             "razorpayx_integration.razorpayx_integration.server_overrides.payment_entry.onload",
         ],
-        "validate": "razorpayx_integration.razorpayx_integration.server_overrides.payment_entry.validate",
+        "validate": [
+            "razorpayx_integration.payment_utils.server_overrides.payment_entry.validate",
+            "razorpayx_integration.razorpayx_integration.server_overrides.payment_entry.validate",
+        ],
         "before_submit": "razorpayx_integration.razorpayx_integration.server_overrides.payment_entry.before_submit",
         "on_submit": "razorpayx_integration.razorpayx_integration.server_overrides.payment_entry.on_submit",
         "before_cancel": "razorpayx_integration.razorpayx_integration.server_overrides.payment_entry.before_cancel",

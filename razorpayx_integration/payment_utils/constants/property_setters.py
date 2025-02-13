@@ -1,5 +1,11 @@
+from razorpayx_integration.payment_utils.constants.payments import (
+    BANK_ACCOUNT_REQD_METHODS,
+    TRANSFER_METHOD,
+)
+
 PROPERTY_SETTERS = [
     ### Payment Entry ###
+    # general
     {
         "doctype": "Payment Entry",
         "fieldname": "reference_date",
@@ -28,12 +34,27 @@ PROPERTY_SETTERS = [
         "property_type": "Data",
         "value": "-",
     },
+    # payout/payment related
+    {
+        "doctype": "Payment Entry",
+        "fieldname": "contact_person",
+        "property": "mandatory_depends_on",
+        "property_type": "Data",
+        "value": f"eval: doc.make_bank_online_payment && doc.payment_transfer_method === '{TRANSFER_METHOD.LINK.value}' && doc.party_type !== 'Employee'",
+    },
     {
         "doctype": "Payment Entry",
         "fieldname": "contact_email",
         "property": "depends_on",
         "property_type": "Data",
         "value": "eval: doc.contact_person || doc.party_type === 'Employee'",
+    },
+    {
+        "doctype": "Payment Entry",
+        "fieldname": "party_bank_account",
+        "property": "mandatory_depends_on",
+        "property_type": "Data",
+        "value": f"eval: doc.make_bank_online_payment && {BANK_ACCOUNT_REQD_METHODS}.includes(doc.payment_transfer_method)",
     },
     ### Bank Account ###
     {
@@ -72,6 +93,3 @@ for doctype, fields in STANDARD_FIELDS_TO_HIDE.items():
                 "value": 1,
             }
         )
-
-
-# TODO:? add bank account fields: is_default,disable permission level?? (Helpful in workflow)

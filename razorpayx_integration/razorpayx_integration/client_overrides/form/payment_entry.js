@@ -1,12 +1,6 @@
 // ############ CONSTANTS ############ //
 const PE_BASE_PATH = "razorpayx_integration.razorpayx_integration.server_overrides.payment_entry";
 
-const PAYOUT_MODES = {
-	BANK: "NEFT/RTGS",
-	UPI: "UPI",
-	LINK: "Link",
-};
-
 const PAYOUT_FIELDS = [
 	// Common
 	"payment_type",
@@ -28,10 +22,9 @@ const PAYOUT_FIELDS = [
 	// Payout
 	"paid_amount",
 	"make_bank_online_payment",
-	"razorpayx_payout_mode",
+	"TRANSFER_METHOD",
 	"razorpayx_payout_desc",
 	"razorpayx_payout_status",
-	"razorpayx_pay_instantaneously",
 	"razorpayx_payout_id",
 	"razorpayx_payout_link_id",
 	"reference_no",
@@ -70,31 +63,7 @@ frappe.ui.form.on("Payment Entry", {
 	validate: function (frm) {
 		if (!razorpayx.is_payout_via_razorpayx(frm.doc)) return;
 
-		if (frm.doc.razorpayx_pay_instantaneously && payment_utils.IMPS_LIMIT < frm.doc.paid_amount) {
-			frm.set_value("razorpayx_pay_instantaneously", 0);
-		}
-
 		validate_payout_description(frm.doc.razorpayx_payout_desc);
-
-		if (frm.doc.razorpayx_payout_mode === PAYOUT_MODES.LINK) {
-			if (!frm.doc.contact_mobile && !frm.doc.contact_email) {
-				let msg = "";
-
-				if (frm.doc.party_type === "Employee") {
-					msg = __("Set Employee's Mobile or Preferred Email to make payout with link.");
-				} else {
-					msg = __("Any one of Party's Mobile or Email is mandatory to make payout with link.");
-				}
-
-				frappe.throw({ message: msg, title: __("Contact Details Missing") });
-			}
-		}
-	},
-
-	party_bank_account: function (frm) {
-		if (!frm.doc.party_bank_account) {
-			frm.set_value("razorpayx_payout_mode", PAYOUT_MODES.LINK);
-		}
 	},
 
 	before_submit: async function (frm) {
@@ -198,10 +167,10 @@ function is_already_paid(frm) {
 
 function user_has_payout_permissions(frm) {
 	if (frm.doc.__onload) {
-		return payment_utils.get_onload(frm, "has_payout_permission");
+		return payment_utils.get_onload(frm, "has_payment_permission");
 	}
 
-	return payment_utils.can_user_authorize_payout();
+	return payment_utils.can_user_authorize_payment();
 }
 
 // ############ HELPERS ############ //
@@ -287,9 +256,9 @@ async function show_make_payout_dialog(frm) {
 	}
 
 	// depends on conditions
-	const BANK_MODE = `doc.razorpayx_payout_mode === '${PAYOUT_MODES.BANK}'`;
-	const UPI_MODE = `doc.razorpayx_payout_mode === '${PAYOUT_MODES.UPI}'`;
-	const LINK_MODE = `doc.razorpayx_payout_mode === '${PAYOUT_MODES.LINK}'`;
+	const BANK_MODE = `["${payment_utils.PAYMENT_TRANSFER_METHOD.NEFT}", "${payment_utils.PAYMENT_TRANSFER_METHOD.RTGS}", "${payment_utils.PAYMENT_TRANSFER_METHOD.IMPS}"].includes(doc.payment_transfer_method)`;
+	const UPI_MODE = `doc.payment_transfer_method === '${payment_utils.PAYMENT_TRANSFER_METHOD.UPI}'`;
+	const LINK_MODE = `doc.payment_transfer_method === '${payment_utils.PAYMENT_TRANSFER_METHOD.LINK}'`;
 
 	const dialog = new frappe.ui.Dialog({
 		title: __("Enter Payout Details"),
@@ -402,23 +371,15 @@ async function show_make_payout_dialog(frm) {
 				fieldtype: "Section Break",
 			},
 			{
-				fieldname: "razorpayx_payout_mode",
-				label: __("Payout Mode"),
+				fieldname: "payment_transfer_method",
+				label: __("Payout Transfer Method"),
 				fieldtype: "Select",
-				options: Object.values(PAYOUT_MODES),
-				default: frm.doc.razorpayx_payout_mode || PAYOUT_MODES.LINK,
-				read_only: 1,
+				options: Object.values(payment_utils.PAYMENT_TRANSFER_METHOD),
+				default: frm.doc.payment_transfer_method,
 				reqd: 1,
 				description: `<div class="d-flex align-items-center justify-content-end">
 								${get_rpx_img_container("via")}
 							</div>`,
-			},
-			{
-				fieldname: "razorpayx_pay_instantaneously",
-				label: "Pay Instantaneously",
-				fieldtype: "Check",
-				description: "Payment will be done with <strong>IMPS</strong> mode.",
-				depends_on: `eval: ${BANK_MODE} && ${frm.doc.paid_amount <= payment_utils.IMPS_LIMIT}`,
 			},
 			{
 				fieldname: "payout_cb",
@@ -435,6 +396,10 @@ async function show_make_payout_dialog(frm) {
 		primary_action_label: __("{0} Pay", [frappe.utils.icon(payment_utils.PAY_ICON)]),
 		primary_action: (values) => {
 			validate_payout_description(values.razorpayx_payout_desc);
+			payment_utils.validate_payment_transfer_method(
+				values.payment_transfer_method,
+				frm.doc.paid_amount
+			);
 
 			dialog.hide();
 
@@ -458,7 +423,7 @@ function make_payout(auth_id, docname, values) {
 		args: {
 			auth_id: auth_id,
 			docname: docname,
-			payout_mode: values.razorpayx_payout_mode,
+			transfer_method: values.payment_transfer_method,
 			...values,
 		},
 		freeze: true,
@@ -470,15 +435,16 @@ async function set_party_bank_details(dialog) {
 	const party_bank_account = dialog.get_value("party_bank_account");
 
 	if (!party_bank_account) {
-		dialog.set_value("razorpayx_payout_mode", PAYOUT_MODES.LINK);
+		dialog.set_value("payment_transfer_method", payment_utils.PAYMENT_TRANSFER_METHOD.LINK);
 		return;
 	}
+
+	dialog.set_value("payment_transfer_method", payment_utils.PAYMENT_TRANSFER_METHOD.NEFT);
 
 	const response = await frappe.db.get_value("Bank Account", party_bank_account, [
 		"branch_code as party_bank_ifsc",
 		"bank_account_no as party_bank_account_no",
 		"upi_id as party_upi_id",
-		"online_payment_mode as razorpayx_payout_mode",
 	]);
 
 	dialog.set_values(response.message);

@@ -9,13 +9,15 @@ from frappe.utils.scheduler import is_scheduler_inactive
 
 from razorpayx_integration.constants import RAZORPAYX_SETTING
 from razorpayx_integration.payment_utils.auth import (
-    run_before_payment_authentication as has_payout_permissions,
+    run_before_payment_authentication as has_payment_permissions,
+)
+from razorpayx_integration.payment_utils.constants.payments import TRANSFER_METHOD
+from razorpayx_integration.payment_utils.server_overrides.payment_entry import (
+    validate_transfer_methods,
 )
 from razorpayx_integration.payment_utils.utils.validation import validate_ifsc_code
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
-    PAYMENT_MODE_LIMIT,
     PAYOUT_CURRENCY,
-    USER_PAYOUT_MODE,
 )
 from razorpayx_integration.razorpayx_integration.utils import (
     is_already_paid,
@@ -27,7 +29,7 @@ from razorpayx_integration.razorpayx_integration.utils.payout import (
 )
 
 #### CONSTANTS ####
-PAYOUT_MODES = Literal["NEFT/RTGS", "UPI", "Link"]
+TRANSFER_METHODS = Literal["NEFT", "RTGS", "IMPS", "UPI", "Link"]
 UTR_PLACEHOLDER = "*** UTR WILL BE SET AUTOMATICALLY ***"
 
 
@@ -147,10 +149,9 @@ def validate_if_already_paid(doc: PaymentEntry):
         # Payout
         "paid_amount",
         "make_bank_online_payment",
-        "razorpayx_payout_mode",
+        "payment_transfer_method",
         "razorpayx_payout_desc",
         "razorpayx_payout_status",
-        "razorpayx_pay_instantaneously",
         "razorpayx_payout_id",
         "razorpayx_payout_link_id",
         "reference_no",
@@ -185,7 +186,7 @@ def validate_if_already_paid(doc: PaymentEntry):
 
 
 def validate_payout_details(doc: PaymentEntry):
-    if not doc.make_bank_online_payment:
+    if not doc.make_bank_online_payment or doc.integration_doctype != RAZORPAYX_SETTING:
         return
 
     if not doc.bank_account:
@@ -195,137 +196,18 @@ def validate_payout_details(doc: PaymentEntry):
             exc=frappe.MandatoryError,
         )
 
-    # other integration support
-    if doc.integration_doctype != RAZORPAYX_SETTING:
-        return
-
     if not doc.reference_no or doc.docstatus == 0:
         doc.reference_no = UTR_PLACEHOLDER
 
-    if doc.razorpayx_payout_mode != USER_PAYOUT_MODE.BANK.value or (
-        doc.razorpayx_pay_instantaneously
-        and doc.paid_amount > PAYMENT_MODE_LIMIT.IMPS.value
+    if (
+        doc.payment_transfer_method == TRANSFER_METHOD.LINK.value
+        and not doc.razorpayx_payout_desc
     ):
-        # why db_set? : if calls from API, then it will not update the value without db_set
-        doc.db_set("razorpayx_pay_instantaneously", 0)
-
-    # validate mode of payout
-    validate_bank_payout_mode(doc)
-    validate_upi_payout_mode(doc)
-    validate_link_payout_mode(doc)
-
-
-def validate_bank_payout_mode(doc: PaymentEntry):
-    if doc.razorpayx_payout_mode != USER_PAYOUT_MODE.BANK.value:
-        return
-
-    if not (
-        doc.party_bank_account and doc.party_bank_account_no and doc.party_bank_ifsc
-    ):
-        frappe.throw(
-            msg=_(
-                "Party's Bank Account Details is mandatory to make payment. Please set valid <strong>Party Bank Account</strong>."
-            ),
-            title=_("Mandatory Fields Missing"),
-            exc=frappe.MandatoryError,
-        )
-
-    validate_ifsc_code(doc.party_bank_ifsc)
-
-
-def validate_upi_payout_mode(doc: PaymentEntry):
-    if doc.razorpayx_payout_mode != USER_PAYOUT_MODE.UPI.value:
-        return
-
-    if not (doc.party_upi_id and doc.party_bank_account):
-        frappe.throw(
-            msg=_(
-                "Party's UPI ID is mandatory to make payment. Please set valid <strong>Party Bank Account</strong>."
-            ),
-            title=_("Mandatory Fields Missing"),
-            exc=frappe.MandatoryError,
-        )
-
-
-def validate_link_payout_mode(doc: PaymentEntry):
-    if doc.razorpayx_payout_mode != USER_PAYOUT_MODE.LINK.value:
-        return
-
-    if not doc.razorpayx_payout_desc:
         frappe.throw(
             msg=_("Payout Description is mandatory to make Payout Link."),
             title=_("Mandatory Fields Missing"),
             exc=frappe.MandatoryError,
         )
-
-    if doc.party_type != "Employee" and not doc.contact_person:
-        frappe.throw(
-            msg=_("Contact Person is mandatory to make payout with link."),
-            title=_("Mandatory Field Missing"),
-            exc=frappe.MandatoryError,
-        )
-
-    # get contact details of party
-    contact_details = get_party_contact_details(doc)
-    party_mobile = contact_details["contact_mobile"]
-    party_email = contact_details["contact_email"]
-
-    if (
-        not doc.contact_email
-        and not doc.contact_mobile
-        and (party_email or party_mobile)
-    ):
-        # why db_set? : if calls from API, then it will not update the value without db_set
-        doc.db_set({"contact_email": party_email, "contact_mobile": party_mobile})
-
-    if not party_email and not party_mobile:
-        if doc.party_type == "Employee":
-            msg = _(
-                "Set Employee's Mobile or Preferred Email to make payout with link."
-            )
-        else:
-            msg = _("Set valid Contact to make payout with link.")
-
-        frappe.throw(
-            msg=msg,
-            title=_("Contact Details Missing"),
-            exc=frappe.MandatoryError,
-        )
-
-    if doc.contact_mobile and doc.contact_mobile != party_mobile:
-        frappe.throw(
-            msg=_("Mobile Number does not match with Party's Mobile Number"),
-            title=_("Invalid Mobile Number"),
-        )
-
-    if doc.contact_email and doc.contact_email != party_email:
-        frappe.throw(
-            msg=_("Email ID does not match with Party's Email ID"),
-            title=_("Invalid Email ID"),
-        )
-
-
-def get_party_contact_details(doc: PaymentEntry) -> dict | None:
-    """
-    Get Party's contact details as Payment Entry's contact fields.
-
-    - Mobile Number
-    - Email ID
-    """
-    if doc.party_type == "Employee":
-        return frappe.get_value(
-            "Employee",
-            doc.party,
-            ["cell_number as contact_mobile", "prefered_email as contact_email"],
-            as_dict=True,
-        )
-
-    return frappe.get_value(
-        "Contact",
-        doc.contact_person,
-        ["mobile_no as contact_mobile", "email_id as contact_email"],
-        as_dict=True,
-    )
 
 
 ### APIs ###
@@ -333,7 +215,7 @@ def get_party_contact_details(doc: PaymentEntry) -> dict | None:
 def make_payout_with_razorpayx(
     auth_id: str,
     docname: str,
-    payout_mode: PAYOUT_MODES = USER_PAYOUT_MODE.LINK.value,
+    transfer_method: TRANSFER_METHODS = TRANSFER_METHOD.LINK.value,
     **kwargs,
 ):
     """
@@ -341,9 +223,10 @@ def make_payout_with_razorpayx(
 
     :param auth_id: Authentication ID (after otp or password verification)
     :param docname: Payment Entry name
-    :param payout_mode: Payout Mode (Bank, UPI, Link)
+    :param transfer_method: Transfer method to make payout with (NEFT, RTGS, IMPS, UPI, Link)
+    :param kwargs: Payout Details
     """
-    has_payout_permissions(docname, throw=True)
+    has_payment_permissions(docname, throw=True)
     doc = frappe.get_doc("Payment Entry", docname)
 
     if doc.make_bank_online_payment:
@@ -360,6 +243,7 @@ def make_payout_with_razorpayx(
     doc.db_set(
         {
             "make_bank_online_payment": 1,
+            "payment_transfer_method": transfer_method,
             # Party
             "party_bank_account": kwargs.get("party_bank_account"),
             "party_bank_account_no": kwargs.get("party_bank_account_no"),
@@ -369,17 +253,14 @@ def make_payout_with_razorpayx(
             "contact_mobile": kwargs.get("contact_mobile"),
             "contact_email": kwargs.get("contact_email"),
             # RazorpayX
-            "razorpayx_payout_mode": payout_mode,
             "razorpayx_payout_desc": kwargs.get("razorpayx_payout_desc"),
-            "razorpayx_pay_instantaneously": int(
-                kwargs.get("razorpayx_pay_instantaneously", 0)
-            ),
             # ERPNext
             "reference_no": UTR_PLACEHOLDER,
         }
     )
 
     validate_payout_details(doc)
+    validate_transfer_methods(doc)
     PayoutWithPaymentEntry(doc).make(auth_id)
 
 
@@ -401,7 +282,7 @@ def bulk_pay_and_submit(
     if isinstance(docnames, str):
         docnames = frappe.parse_json(docnames)
 
-    has_payout_permissions(docnames, throw=True)
+    has_payment_permissions(docnames, throw=True)
 
     if len(docnames) < 20:
         return _bulk_pay_and_submit(auth_id, docnames, task_id)
@@ -478,14 +359,12 @@ def mark_payout_for_cancellation(docname: str, cancel: bool | int):
     :param cancel: Cancel or not.
     """
 
-    def get_mark() -> str:
-        return "True" if cancel else "False"
-
     frappe.has_permission("Payment Entry", "cancel", doc=docname, throw=True)
 
     setting = frappe.db.get_value("Payment Entry", docname, "integration_docname")
     frappe.has_permission(RAZORPAYX_SETTING, doc=setting, throw=True)
 
-    frappe.cache.set(
-        PayoutWithPaymentEntry.get_cancel_payout_key(docname), get_mark(), 100
-    )
+    key = PayoutWithPaymentEntry.get_cancel_payout_key(docname)
+    value = "True" if cancel else "False"
+
+    frappe.cache.set(key, value, 100)
