@@ -33,3 +33,9 @@ def is_auto_cancel_payout_enabled(razorpayx_setting: str) -> bool | int:
     return frappe.db.get_value(
         RAZORPAYX_SETTING, razorpayx_setting, "auto_cancel_payout"
     )
+
+
+def is_auto_pay_enabled(razorpayx_setting: str) -> bool | int:
+    return frappe.db.get_value(
+        RAZORPAYX_SETTING, razorpayx_setting, "pay_on_auto_submit"
+    )

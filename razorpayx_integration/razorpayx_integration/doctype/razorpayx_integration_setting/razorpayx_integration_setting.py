@@ -27,6 +27,7 @@ class RazorpayXIntegrationSetting(Document):
         key_id: DF.Data
         key_secret: DF.Password
         last_sync_on: DF.Date | None
+        pay_on_auto_submit: DF.Check
         webhook_secret: DF.Password | None
     # end: auto-generated types
 
