@@ -3,9 +3,7 @@ from typing import Literal
 import frappe
 from erpnext.accounts.doctype.payment_entry.payment_entry import PaymentEntry
 from frappe import _
-from frappe.core.doctype.submission_queue.submission_queue import queue_submission
 from frappe.utils import get_link_to_form
-from frappe.utils.scheduler import is_scheduler_inactive
 from payment_integration_utils.payment_integration_utils.constants.payments import (
     TRANSFER_METHOD,
 )
@@ -272,137 +270,6 @@ def make_payout_with_razorpayx(
     validate_transfer_methods(doc)
     validate_payout_details(doc)
     PayoutWithPaymentEntry(doc).make(auth_id)
-
-
-@frappe.whitelist()
-def bulk_pay_and_submit(
-    auth_id: str,
-    marked_docnames: list[str] | str,
-    unmarked_docnames: list[str] | str | None = None,
-    mark_online_payment: bool | None = True,
-    description: str | None = None,
-    task_id: str | None = None,
-):
-    """
-    Bulk pay and submit Payment Entries.
-
-    :param auth_id: Authentication ID (after otp or password verification)
-    :param marked_docnames: List of Payment Entry which are marked for payout
-    :param unmarked_docnames: List of Payment Entry which are not marked for payout
-    :param description: Payout Description for unmarked Payment Entries's payout
-    :param mark_online_payment: Check `make_bank_online_payment` field
-    :param task_id: Task ID (realtime or background)
-
-    ---
-    Reference: [Frappe Bulk Submit/Cancel](https://github.com/frappe/frappe/blob/3eda272bd61b1e73b74d30b1704d885a39c75d0c/frappe/desk/doctype/bulk_update/bulk_update.py#L51)
-    """
-
-    if isinstance(marked_docnames, str):
-        marked_docnames = frappe.parse_json(marked_docnames)
-
-    if isinstance(unmarked_docnames, str):
-        unmarked_docnames = frappe.parse_json(unmarked_docnames)
-
-    if not unmarked_docnames or not mark_online_payment:
-        unmarked_docnames = []
-
-    docnames = [*marked_docnames, *unmarked_docnames]
-    has_payment_permissions(docnames, throw=True)
-
-    if len(docnames) < 20:
-        return _bulk_pay_and_submit(
-            auth_id,
-            marked_docnames,
-            unmarked_docnames,
-            mark_online_payment,
-            description,
-            task_id,
-        )
-    elif len(docnames) <= 500:
-        frappe.msgprint(_("Bulk operation is enqueued in background."), alert=True)
-        frappe.enqueue(
-            _bulk_pay_and_submit,
-            auth_id=auth_id,
-            marked_docnames=marked_docnames,
-            unmarked_docnames=unmarked_docnames,
-            mark_online_payment=mark_online_payment,
-            description=description,
-            task_id=task_id,
-            queue="short",
-            timeout=1000,
-        )
-    else:
-        frappe.throw(
-            _("Bulk operations only support up to 500 documents."),
-            title=_("Too Many Documents"),
-        )
-
-
-def _bulk_pay_and_submit(
-    auth_id: str,
-    marked_docnames: list[str],
-    unmarked_docnames: list[str] | None = None,
-    mark_online_payment: bool | None = True,
-    description: str | None = None,
-    task_id: str | None = None,
-):
-    """
-    Bulk pay and submit Payment Entries.
-
-    :param auth_id: Authentication ID (after otp or password verification)
-    :param marked_docnames: List of Payment Entry which are marked for payout
-    :param unmarked_docnames: List of Payment Entry which are not marked for payout
-    :param mark_online_payment: Check `make_bank_online_payment` field
-    :param description: Payout Description for unmarked Payment Entries's payout
-    :param task_id: Task ID (realtime or background)
-
-    ---
-    Reference: [Frappe Bulk Action](https://github.com/frappe/frappe/blob/3eda272bd61b1e73b74d30b1704d885a39c75d0c/frappe/desk/doctype/bulk_update/bulk_update.py#L73)
-    """
-    failed = []
-
-    if not mark_online_payment or not unmarked_docnames:
-        unmarked_docnames = []
-
-    docnames = [*marked_docnames, *unmarked_docnames]
-
-    num_documents = len(docnames)
-
-    for idx, docname in enumerate(docnames, 1):
-        doc = frappe.get_doc("Payment Entry", docname)
-        doc.set_onload("auth_id", auth_id)
-
-        if unmarked_docnames and mark_online_payment and docname in unmarked_docnames:
-            doc.make_bank_online_payment = 1
-
-            if not doc.razorpayx_payout_desc:
-                doc.razorpayx_payout_desc = description
-
-        try:
-            message = ""
-            if doc.docstatus.is_draft():
-                if doc.meta.queue_in_background and not is_scheduler_inactive():
-                    queue_submission(doc, "submit")
-                    message = _("Queuing {0} for Submission").format("Payment Entry")
-                else:
-                    doc.submit()
-                    message = _("Submitting {0}").format("Payment Entry")
-            else:
-                failed.append(docname)
-
-            frappe.db.commit()
-            frappe.publish_progress(
-                percent=idx / num_documents * 100,
-                title=message,
-                description=docname,
-                task_id=task_id,
-            )
-
-        except Exception:
-            failed.append(docname)
-            frappe.db.rollback()
-
-    return failed
 
 
 @frappe.whitelist()

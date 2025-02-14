@@ -18,9 +18,6 @@ doctype_js = {
     "Bank Reconciliation Tool": "razorpayx_integration/client_overrides/form/bank_reconciliation_tool.js",
 }
 
-doctype_list_js = {
-    "Payment Entry": "razorpayx_integration/client_overrides/list/payment_entry_list.js",
-}
 
 doc_events = {
     "Payment Entry": {
