@@ -1,0 +1,4 @@
+[submodule "razorpayx_integration/integration_utils"]
+	path = razorpayx_integration/integration_utils
+	url = git@github.com:resilient-tech/payment-integration-utils.git
+	branch = version-15
