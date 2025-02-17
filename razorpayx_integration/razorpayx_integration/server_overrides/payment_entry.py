@@ -43,8 +43,6 @@ def onload(doc: PaymentEntry, method=None):
 
 
 def validate(doc: PaymentEntry, method=None):
-    validate_if_already_paid(doc)
-
     if doc.flags._is_already_paid:
         return
 
@@ -128,67 +126,6 @@ def set_integration_settings(doc: PaymentEntry):
     ):
         doc.integration_doctype = RAZORPAYX_SETTING
         doc.integration_docname = setting
-
-
-def validate_if_already_paid(doc: PaymentEntry):
-    if not doc.amended_from:
-        return
-
-    payout_fields = [
-        # Common
-        "payment_type",
-        "bank_account",
-        # Party
-        "party",
-        "party_type",
-        "party_name",
-        "party_bank_account",
-        "party_bank_account_no",
-        "party_bank_ifsc",
-        "party_upi_id",
-        "contact_person",
-        "contact_mobile",
-        "contact_email",
-        # Integration
-        "integration_doctype",
-        "integration_docname",
-        # Payout
-        "paid_amount",
-        "make_bank_online_payment",
-        "payment_transfer_method",
-        "razorpayx_payout_desc",
-        "razorpayx_payout_status",
-        "razorpayx_payout_id",
-        "razorpayx_payout_link_id",
-        "reference_no",
-    ]
-
-    original_doc = frappe.db.get_value(
-        "Payment Entry",
-        doc.amended_from,
-        payout_fields,
-        as_dict=True,
-    )
-
-    if not original_doc or not original_doc.make_bank_online_payment:
-        return
-
-    # used in next actions and validations
-    doc.flags._is_already_paid = True
-
-    for field in payout_fields:
-        if doc.get(field) != original_doc.get(field):
-            msg = _("Field <strong>{0}</strong> cannot be changed.<br><br>").format(
-                doc.meta.get_label(field)
-            )
-            msg += _(
-                "The source Payment Entry <strong>{0}</strong> is processed via RazorpayX."
-            ).format(get_link_to_form("Payment Entry", doc.amended_from))
-
-            frappe.throw(
-                title=_("Payout Details Cannot Be Changed"),
-                msg=msg,
-            )
 
 
 def validate_payout_details(doc: PaymentEntry):

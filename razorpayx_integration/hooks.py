@@ -34,3 +34,10 @@ scheduler_events = {
         "razorpayx_integration.razorpayx_integration.utils.bank_transaction.sync_transactions_periodically"
     ]
 }
+
+payment_integration_fields = [
+    "razorpayx_payout_desc",
+    "razorpayx_payout_status",
+    "razorpayx_payout_id",
+    "razorpayx_payout_link_id",
+]
