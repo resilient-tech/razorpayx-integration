@@ -1,35 +1,6 @@
 // ############ CONSTANTS ############ //
 const PE_BASE_PATH = "razorpayx_integration.razorpayx_integration.server_overrides.payment_entry";
 
-const PAYOUT_FIELDS = [
-	// Common
-	"payment_type",
-	"bank_account",
-	// Party
-	"party",
-	"party_type",
-	"party_name",
-	"party_bank_account",
-	"party_bank_account_no",
-	"party_bank_ifsc",
-	"party_upi_id",
-	"contact_person",
-	"contact_mobile",
-	"contact_email",
-	// Integration
-	"integration_doctype",
-	"integration_docname",
-	// Payout
-	"paid_amount",
-	"make_bank_online_payment",
-	"payment_transfer_method",
-	"razorpayx_payout_desc",
-	"razorpayx_payout_status",
-	"razorpayx_payout_id",
-	"razorpayx_payout_link_id",
-	"reference_no",
-];
-
 const TRANSFER_METHOD = payment_integration_utils.PAYMENT_TRANSFER_METHOD;
 
 frappe.ui.form.on("Payment Entry", {
