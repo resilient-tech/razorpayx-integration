@@ -35,8 +35,8 @@ const TRANSFER_METHOD = payment_integration_utils.PAYMENT_TRANSFER_METHOD;
 frappe.ui.form.on("Payment Entry", {
 	refresh: async function (frm) {
 		// permission checks
-		const permission = user_has_payout_permissions(frm);
-		toggle_payout_sections(frm, permission);
+		const permission = has_payout_permissions(frm);
+		frm.toggle_display("razorpayx_payout_section", permission);
 
 		if (frm.doc.integration_doctype !== razorpayx.RPX_DOCTYPE || !frm.doc.integration_docname) return;
 
@@ -67,7 +67,7 @@ frappe.ui.form.on("Payment Entry", {
 		if (
 			!razorpayx.is_payout_via_razorpayx(frm.doc) ||
 			is_already_paid(frm) ||
-			!user_has_payout_permissions(frm)
+			!has_payout_permissions(frm)
 		) {
 			return;
 		}
@@ -103,7 +103,7 @@ frappe.ui.form.on("Payment Entry", {
 		if (
 			!razorpayx.is_payout_via_razorpayx(frm.doc) ||
 			!can_cancel_payout(frm) ||
-			!user_has_payout_permissions(frm) ||
+			!has_payout_permissions(frm) ||
 			payment_integration_utils.get_onload(frm, "auto_cancel_payout_enabled")
 		) {
 			return;
@@ -126,12 +126,8 @@ function is_already_paid(frm) {
 	return payment_integration_utils.is_already_paid(frm);
 }
 
-function user_has_payout_permissions(frm) {
-	if (frm.doc.__onload) {
-		return payment_integration_utils.get_onload(frm, "has_payment_permission");
-	}
-
-	return payment_integration_utils.can_user_authorize_payment();
+function has_payout_permissions(frm) {
+	return payment_integration_utils.user_has_payment_permissions(frm);
 }
 
 // ############ HELPERS ############ //
@@ -147,13 +143,6 @@ function update_submit_button_label(frm) {
 	frm.page.set_primary_action(__("Pay and Submit"), () => {
 		frm.savesubmit();
 	});
-}
-
-function toggle_payout_sections(frm, permission) {
-	const toggle = permission ? 1 : 0;
-
-	frm.toggle_display("online_payment_section", toggle);
-	frm.toggle_display("razorpayx_payout_section", toggle);
 }
 
 function get_indicator(status) {
