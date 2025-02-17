@@ -1,13 +1,13 @@
 import frappe
 from frappe import _
 from frappe.utils import DateTimeLikeObject, getdate
-from payment_integration_utils.payment_integration_utils.utils import (
-    get_str_datetime_from_epoch,
-    paisa_to_rupees,
-)
 
 from razorpayx_integration.constants import (
     RAZORPAYX_SETTING as RAZORPAYX_SETTING,
+)
+from razorpayx_integration.integration_utils.utils import (
+    get_str_datetime_from_epoch,
+    paisa_to_rupees,
 )
 from razorpayx_integration.razorpayx_integration.apis.transaction import (
     RazorpayXTransaction,

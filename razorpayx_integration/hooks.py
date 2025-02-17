@@ -31,15 +31,15 @@ doc_events = {
     "Payment Entry": {
         "onload": [
             "razorpayx_integration.integration_utils.server_overrides.doctype.payment_entry.onload",
-            "razorpayx_integration.razorpayx_integration.server_overrides.payment_entry.onload",
+            "razorpayx_integration.razorpayx_integration.server_overrides.doctype.payment_entry.onload",
         ],
         "validate": [
             "razorpayx_integration.integration_utils.server_overrides.doctype.payment_entry.validate",
-            "razorpayx_integration.razorpayx_integration.server_overrides.payment_entry.validate",
+            "razorpayx_integration.razorpayx_integration.server_overrides.doctype.payment_entry.validate",
         ],
-        "before_submit": "razorpayx_integration.razorpayx_integration.server_overrides.payment_entry.before_submit",
-        "on_submit": "razorpayx_integration.razorpayx_integration.server_overrides.payment_entry.on_submit",
-        "before_cancel": "razorpayx_integration.razorpayx_integration.server_overrides.payment_entry.before_cancel",
+        "before_submit": "razorpayx_integration.razorpayx_integration.server_overrides.doctype.payment_entry.before_submit",
+        "on_submit": "razorpayx_integration.razorpayx_integration.server_overrides.doctype.payment_entry.on_submit",
+        "before_cancel": "razorpayx_integration.razorpayx_integration.server_overrides.doctype.payment_entry.before_cancel",
     },
     "Bank Account": {
         "validate": "razorpayx_integration.integration_utils.server_overrides.doctype.bank_account.validate",

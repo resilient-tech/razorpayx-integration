@@ -5,12 +5,10 @@ import frappe
 from frappe import _
 from frappe.utils import get_link_to_form, get_url_to_form
 from frappe.utils.password import get_decrypted_password
-from payment_integration_utils.payment_integration_utils.constants.enums import BaseEnum
-from payment_integration_utils.payment_integration_utils.utils import (
-    log_integration_request,
-)
 
 from razorpayx_integration.constants import RAZORPAYX_SETTING
+from razorpayx_integration.integration_utils.constants.enums import BaseEnum
+from razorpayx_integration.integration_utils.utils import log_integration_request
 from razorpayx_integration.razorpayx_integration.apis.payout import RazorpayXLinkPayout
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
     PAYOUT_LINK_STATUS,

@@ -1,7 +1,6 @@
 import frappe
-from payment_integration_utils.payment_integration_utils.constants.payments import (
-    TRANSFER_METHOD,
-)
+
+from razorpayx_integration.integration_utils.constants.payments import TRANSFER_METHOD
 
 
 def execute():

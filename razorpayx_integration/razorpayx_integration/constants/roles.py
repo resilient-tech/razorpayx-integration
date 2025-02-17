@@ -1,13 +1,12 @@
-from payment_integration_utils.payment_integration_utils.constants.enums import BaseEnum
-from payment_integration_utils.payment_integration_utils.constants.roles import (
+from razorpayx_integration.constants import RAZORPAYX_SETTING
+from razorpayx_integration.integration_utils.constants.enums import BaseEnum
+from razorpayx_integration.integration_utils.constants.roles import (
     PERMISSION_LEVEL,
     PERMISSIONS,
 )
-from payment_integration_utils.payment_integration_utils.constants.roles import (
+from razorpayx_integration.integration_utils.constants.roles import (
     ROLE_PROFILE as PAYMENT_PROFILES,
 )
-
-from razorpayx_integration.constants import RAZORPAYX_SETTING
 
 
 class ROLE_PROFILE(BaseEnum):
