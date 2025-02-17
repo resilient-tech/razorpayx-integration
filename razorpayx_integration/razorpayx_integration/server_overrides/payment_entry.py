@@ -35,8 +35,6 @@ UTR_PLACEHOLDER = "*** UTR WILL BE SET AUTOMATICALLY ***"
 
 #### DOC EVENTS ####
 def onload(doc: PaymentEntry, method=None):
-    doc.set_onload("is_already_paid", is_already_paid(doc.amended_from))
-
     if doc.docstatus == 1 and is_payout_via_razorpayx(doc):
         doc.set_onload(
             "auto_cancel_payout_enabled",

@@ -4,20 +4,6 @@ from erpnext.accounts.doctype.payment_entry.payment_entry import PaymentEntry
 from razorpayx_integration.constants import RAZORPAYX_SETTING
 
 
-def is_already_paid(amended_from: str | None = None) -> bool | int:
-    """
-    Check if the Payment Entry is already paid via Bank Online Payment.
-
-    :param amended_from: Original Payment Entry name.
-    """
-    if not amended_from:
-        return False
-
-    return frappe.db.get_value(
-        "Payment Entry", amended_from, "make_bank_online_payment"
-    )
-
-
 def is_payout_via_razorpayx(doc: PaymentEntry) -> bool:
     """
     Check if the Payment Entry is paid via RazorpayX.
