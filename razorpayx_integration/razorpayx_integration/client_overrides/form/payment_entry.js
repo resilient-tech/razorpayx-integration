@@ -34,9 +34,6 @@ const TRANSFER_METHOD = payment_integration_utils.PAYMENT_TRANSFER_METHOD;
 
 frappe.ui.form.on("Payment Entry", {
 	refresh: async function (frm) {
-		// Do not allow to edit fields if Payment is processed by RazorpayX in amendment
-		disable_payout_fields_in_amendment(frm);
-
 		// permission checks
 		const permission = user_has_payout_permissions(frm);
 		toggle_payout_sections(frm, permission);
@@ -125,32 +122,8 @@ frappe.ui.form.on("Payment Entry", {
 	},
 });
 
-// ############ UTILITY ############ //
-/**
- * If current Payment Entry is amended from another Payment Entry,
- * and original Payment Entry is processed (not mean by status) by RazorpayX, then disable
- * payout fields in the current Payment Entry.
- */
-async function disable_payout_fields_in_amendment(frm) {
-	if (!frm.doc.amended_from || frm.doc.docstatus == 2) return;
-
-	let is_paid = is_already_paid(frm);
-
-	if (is_paid === undefined) {
-		const response = await frappe.db.get_value(
-			"Payment Entry",
-			frm.doc.amended_from,
-			"make_bank_online_payment"
-		);
-
-		is_paid = response.message?.make_bank_online_payment || 0;
-	}
-
-	frm.toggle_enable(PAYOUT_FIELDS, is_paid ? 0 : 1);
-}
-
 function is_already_paid(frm) {
-	return payment_integration_utils.get_onload(frm, "is_already_paid");
+	return payment_integration_utils.is_already_paid(frm);
 }
 
 function user_has_payout_permissions(frm) {
