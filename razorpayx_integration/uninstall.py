@@ -1,4 +1,7 @@
 import click
+from integration_utils.setup.setup import (
+    delete_customizations as delete_integration_customizations,
+)
 
 from razorpayx_integration.constants import BUG_REPORT_URL
 from razorpayx_integration.hooks import app_title as APP_NAME
@@ -8,6 +11,7 @@ from razorpayx_integration.setup import delete_customizations
 def before_uninstall():
     try:
         delete_customizations()
+        delete_integration_customizations()
     except Exception as e:
         click.secho(
             (

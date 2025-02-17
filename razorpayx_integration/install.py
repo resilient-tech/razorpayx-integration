@@ -1,5 +1,8 @@
 import click
 import frappe
+from integration_utils.setup.setup import (
+    setup_customizations as setup_integration_customizations,
+)
 
 from razorpayx_integration.constants import BUG_REPORT_URL
 from razorpayx_integration.hooks import app_title as APP_NAME
@@ -10,6 +13,7 @@ POST_INSTALL_PATCHES = []
 
 def after_install():
     try:
+        setup_integration_customizations()
         setup_customizations()
         run_post_install_patches()
 
