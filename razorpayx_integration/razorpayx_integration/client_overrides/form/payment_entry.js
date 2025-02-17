@@ -70,7 +70,7 @@ frappe.ui.form.on("Payment Entry", {
 	before_cancel: async function (frm) {
 		if (
 			!razorpayx.is_payout_via_razorpayx(frm.doc) ||
-			!can_cancel_payout(frm) ||
+			!["Not Initiated", "Queued"].includes(frm.doc.razorpayx_payout_status) ||
 			!has_payout_permissions(frm) ||
 			payment_integration_utils.get_onload(frm, "auto_cancel_payout_enabled")
 		) {
@@ -90,6 +90,7 @@ frappe.ui.form.on("Payment Entry", {
 	},
 });
 
+// ############ HELPERS ############ //
 function is_already_paid(frm) {
 	return payment_integration_utils.is_already_paid(frm);
 }
@@ -97,8 +98,6 @@ function is_already_paid(frm) {
 function has_payout_permissions(frm) {
 	return payment_integration_utils.user_has_payment_permissions(frm);
 }
-
-// ############ HELPERS ############ //
 
 function get_indicator(status) {
 	const indicator = {
@@ -384,10 +383,6 @@ async function set_contact_details(dialog) {
 }
 
 // ############ CANCELING PAYOUT HELPERS ############ //
-function can_cancel_payout(frm) {
-	return ["Not Initiated", "Queued"].includes(frm.doc.razorpayx_payout_status);
-}
-
 function show_cancel_payout_dialog(frm, callback) {
 	const dialog = new frappe.ui.Dialog({
 		title: __("Cancel Payout"),
