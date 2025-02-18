@@ -3,7 +3,6 @@ from typing import Literal
 import frappe
 from erpnext.accounts.doctype.payment_entry.payment_entry import PaymentEntry
 from frappe import _
-from frappe.utils import get_link_to_form
 from payment_integration_utils.payment_integration_utils.constants.payments import (
     TRANSFER_METHOD,
 )
@@ -19,7 +18,6 @@ from razorpayx_integration.razorpayx_integration.constants.payouts import (
     PAYOUT_CURRENCY,
 )
 from razorpayx_integration.razorpayx_integration.utils import (
-    is_already_paid,
     is_auto_cancel_payout_enabled,
     is_auto_pay_enabled,
     is_payout_via_razorpayx,
