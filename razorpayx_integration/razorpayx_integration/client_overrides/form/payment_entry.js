@@ -1,43 +1,13 @@
 // ############ CONSTANTS ############ //
-const PE_BASE_PATH = "razorpayx_integration.razorpayx_integration.server_overrides.payment_entry";
+const PE_BASE_PATH = "razorpayx_integration.razorpayx_integration.server_overrides.doctype.payment_entry";
 
-const PAYOUT_FIELDS = [
-	// Common
-	"payment_type",
-	"bank_account",
-	// Party
-	"party",
-	"party_type",
-	"party_name",
-	"party_bank_account",
-	"party_bank_account_no",
-	"party_bank_ifsc",
-	"party_upi_id",
-	"contact_person",
-	"contact_mobile",
-	"contact_email",
-	// Integration
-	"integration_doctype",
-	"integration_docname",
-	// Payout
-	"paid_amount",
-	"make_bank_online_payment",
-	"TRANSFER_METHOD",
-	"razorpayx_payout_desc",
-	"razorpayx_payout_status",
-	"razorpayx_payout_id",
-	"razorpayx_payout_link_id",
-	"reference_no",
-];
+const TRANSFER_METHOD = payment_integration_utils.PAYMENT_TRANSFER_METHOD;
 
 frappe.ui.form.on("Payment Entry", {
 	refresh: async function (frm) {
-		// Do not allow to edit fields if Payment is processed by RazorpayX in amendment
-		disable_payout_fields_in_amendment(frm);
-
 		// permission checks
-		const permission = user_has_payout_permissions(frm);
-		toggle_payout_sections(frm, permission);
+		const permission = has_payout_permissions(frm);
+		frm.toggle_display("razorpayx_payout_section", permission);
 
 		if (frm.doc.integration_doctype !== razorpayx.RPX_DOCTYPE || !frm.doc.integration_docname) return;
 
@@ -48,9 +18,6 @@ frappe.ui.form.on("Payment Entry", {
 		}
 
 		if (!permission || is_already_paid(frm)) return;
-
-		// user can make payout `on submit` or `after submit`
-		update_submit_button_label(frm);
 
 		// making payout manually
 		if (frm.doc.docstatus === 1 && !frm.doc.make_bank_online_payment) {
@@ -68,7 +35,7 @@ frappe.ui.form.on("Payment Entry", {
 		if (
 			!razorpayx.is_payout_via_razorpayx(frm.doc) ||
 			is_already_paid(frm) ||
-			!user_has_payout_permissions(frm)
+			!has_payout_permissions(frm)
 		) {
 			return;
 		}
@@ -80,12 +47,12 @@ frappe.ui.form.on("Payment Entry", {
 				frappe.validate = true;
 				frm.__making_payout = true;
 
-				payment_utils.set_onload(frm, "auth_id", auth_id);
+				payment_integration_utils.set_onload(frm, "auth_id", auth_id);
 
 				resolve();
 			};
 
-			return payment_utils.authenticate_payment_entries(frm.docname, continue_submission);
+			return payment_integration_utils.authenticate_payment_entries(frm.docname, continue_submission);
 		});
 	},
 
@@ -103,9 +70,9 @@ frappe.ui.form.on("Payment Entry", {
 	before_cancel: async function (frm) {
 		if (
 			!razorpayx.is_payout_via_razorpayx(frm.doc) ||
-			!can_cancel_payout(frm) ||
-			!user_has_payout_permissions(frm) ||
-			payment_utils.get_onload(frm, "auto_cancel_payout_enabled")
+			!["Not Initiated", "Queued"].includes(frm.doc.razorpayx_payout_status) ||
+			!has_payout_permissions(frm) ||
+			payment_integration_utils.get_onload(frm, "auto_cancel_payout_enabled")
 		) {
 			return;
 		}
@@ -123,56 +90,13 @@ frappe.ui.form.on("Payment Entry", {
 	},
 });
 
-// ############ UTILITY ############ //
-/**
- * If current Payment Entry is amended from another Payment Entry,
- * and original Payment Entry is processed (not mean by status) by RazorpayX, then disable
- * payout fields in the current Payment Entry.
- */
-async function disable_payout_fields_in_amendment(frm) {
-	if (!frm.doc.amended_from || frm.doc.docstatus == 2) return;
-
-	let is_paid = is_already_paid(frm);
-
-	if (is_paid === undefined) {
-		const response = await frappe.db.get_value(
-			"Payment Entry",
-			frm.doc.amended_from,
-			"make_bank_online_payment"
-		);
-
-		is_paid = response.message?.make_bank_online_payment || 0;
-	}
-
-	frm.toggle_enable(PAYOUT_FIELDS, is_paid ? 0 : 1);
-}
-
-function is_already_paid(frm) {
-	return payment_utils.get_onload(frm, "is_already_paid");
-}
-
-function user_has_payout_permissions(frm) {
-	if (frm.doc.__onload) {
-		return payment_utils.get_onload(frm, "has_payment_permission");
-	}
-
-	return payment_utils.can_user_authorize_payment();
-}
-
 // ############ HELPERS ############ //
-function update_submit_button_label(frm) {
-	if (frm.doc.docstatus !== 0 || frm.doc.__islocal || !frm.doc.make_bank_online_payment) return;
-
-	frm.page.set_primary_action(__("Pay and Submit"), () => {
-		frm.savesubmit();
-	});
+function is_already_paid(frm) {
+	return payment_integration_utils.is_already_paid(frm);
 }
 
-function toggle_payout_sections(frm, permission) {
-	const toggle = permission ? 1 : 0;
-
-	frm.toggle_display("online_payment_section", toggle);
-	frm.toggle_display("razorpayx_payout_section", toggle);
+function has_payout_permissions(frm) {
+	return payment_integration_utils.user_has_payment_permissions(frm);
 }
 
 function get_indicator(status) {
@@ -242,9 +166,9 @@ async function show_make_payout_dialog(frm) {
 	}
 
 	// depends on conditions
-	const BANK_MODE = `["${payment_utils.PAYMENT_TRANSFER_METHOD.NEFT}", "${payment_utils.PAYMENT_TRANSFER_METHOD.RTGS}", "${payment_utils.PAYMENT_TRANSFER_METHOD.IMPS}"].includes(doc.payment_transfer_method)`;
-	const UPI_MODE = `doc.payment_transfer_method === '${payment_utils.PAYMENT_TRANSFER_METHOD.UPI}'`;
-	const LINK_MODE = `doc.payment_transfer_method === '${payment_utils.PAYMENT_TRANSFER_METHOD.LINK}'`;
+	const BANK_MODE = `["${TRANSFER_METHOD.NEFT}", "${TRANSFER_METHOD.RTGS}", "${TRANSFER_METHOD.IMPS}"].includes(doc.payment_transfer_method)`;
+	const UPI_MODE = `doc.payment_transfer_method === '${TRANSFER_METHOD.UPI}'`;
+	const LINK_MODE = `doc.payment_transfer_method === '${TRANSFER_METHOD.LINK}'`;
 
 	const dialog = new frappe.ui.Dialog({
 		title: __("Enter Payout Details"),
@@ -360,7 +284,7 @@ async function show_make_payout_dialog(frm) {
 				fieldname: "payment_transfer_method",
 				label: __("Payout Transfer Method"),
 				fieldtype: "Select",
-				options: Object.values(payment_utils.PAYMENT_TRANSFER_METHOD),
+				options: Object.values(TRANSFER_METHOD),
 				default: frm.doc.payment_transfer_method,
 				reqd: 1,
 				description: `<div class="d-flex align-items-center justify-content-end">
@@ -379,17 +303,17 @@ async function show_make_payout_dialog(frm) {
 				mandatory_depends_on: `eval: ${LINK_MODE}`,
 			},
 		],
-		primary_action_label: __("{0} Pay", [frappe.utils.icon(payment_utils.PAY_ICON)]),
+		primary_action_label: __("{0} Pay", [frappe.utils.icon(payment_integration_utils.PAY_ICON)]),
 		primary_action: (values) => {
 			razorpayx.validate_payout_description(values.razorpayx_payout_desc);
-			payment_utils.validate_payment_transfer_method(
+			payment_integration_utils.validate_payment_transfer_method(
 				values.payment_transfer_method,
 				frm.doc.paid_amount
 			);
 
 			dialog.hide();
 
-			payment_utils.authenticate_payment_entries(frm.docname, async (auth_id) => {
+			payment_integration_utils.authenticate_payment_entries(frm.docname, async (auth_id) => {
 				await make_payout(auth_id, frm.docname, values);
 
 				frappe.show_alert({
@@ -421,11 +345,11 @@ async function set_party_bank_details(dialog) {
 	const party_bank_account = dialog.get_value("party_bank_account");
 
 	if (!party_bank_account) {
-		dialog.set_value("payment_transfer_method", payment_utils.PAYMENT_TRANSFER_METHOD.LINK);
+		dialog.set_value("payment_transfer_method", TRANSFER_METHOD.LINK);
 		return;
 	}
 
-	dialog.set_value("payment_transfer_method", payment_utils.PAYMENT_TRANSFER_METHOD.NEFT);
+	dialog.set_value("payment_transfer_method", TRANSFER_METHOD.NEFT);
 
 	const response = await frappe.db.get_value("Bank Account", party_bank_account, [
 		"branch_code as party_bank_ifsc",
@@ -459,10 +383,6 @@ async function set_contact_details(dialog) {
 }
 
 // ############ CANCELING PAYOUT HELPERS ############ //
-function can_cancel_payout(frm) {
-	return ["Not Initiated", "Queued"].includes(frm.doc.razorpayx_payout_status);
-}
-
 function show_cancel_payout_dialog(frm, callback) {
 	const dialog = new frappe.ui.Dialog({
 		title: __("Cancel Payout"),

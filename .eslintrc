@@ -27,7 +27,7 @@
     "globals": {
       "frappe": true,
       "razorpayx":true,
-      "payment_utils": true,
+      "payment_integration_utils": true,
       "Vue": true,
       "SetVueGlobals": true,
       "erpnext": true,

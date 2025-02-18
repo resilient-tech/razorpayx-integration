@@ -1,14 +1,16 @@
 import frappe
 from frappe import _
-
-from razorpayx_integration.payment_utils.constants.payments import (
+from payment_integration_utils.payment_integration_utils.constants.payments import (
     TRANSFER_METHOD as PAYOUT_MODE,
 )
-from razorpayx_integration.payment_utils.utils import (
+from payment_integration_utils.payment_integration_utils.utils import (
     rupees_to_paisa,
     to_hyphenated,
 )
-from razorpayx_integration.payment_utils.utils.validation import validate_payout_mode
+from payment_integration_utils.payment_integration_utils.utils.validation import (
+    validate_payment_mode as validate_payout_mode,
+)
+
 from razorpayx_integration.razorpayx_integration.apis.base import BaseRazorpayXAPI
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
     CONTACT_TYPE,

@@ -86,14 +86,14 @@ function prompt_transactions_sync_date(frm) {
 function sync_transactions(razorpayx_setting, bank_account, from_date, to_date) {
 	frappe.show_alert({
 		message: __("Syncing Transactions from <strong>{0}</strong> to <strong>{1}</strong>", [
-			payment_utils.get_date_in_user_fmt(from_date),
-			payment_utils.get_date_in_user_fmt(to_date),
+			payment_integration_utils.get_date_in_user_fmt(from_date),
+			payment_integration_utils.get_date_in_user_fmt(to_date),
 		]),
 		indicator: "blue",
 	});
 
 	frappe.call({
-		method: "razorpayx_integration.razorpayx_integration.utils.transaction.sync_razorpayx_transactions",
+		method: "razorpayx_integration.razorpayx_integration.utils.bank_transaction.sync_razorpayx_transactions",
 		args: { razorpayx_setting, bank_account, from_date, to_date },
 		callback: function (r) {
 			//TODO: If it is enqueued, need changes!!

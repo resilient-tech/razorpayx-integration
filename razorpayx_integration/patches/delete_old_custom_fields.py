@@ -1,4 +1,6 @@
-from razorpayx_integration.payment_utils.utils import delete_custom_fields
+from payment_integration_utils.payment_integration_utils.setup import (
+    delete_custom_fields,
+)
 
 FIELDS_TO_DELETE = {
     "Payment Entry": ["razorpayx_payout_mode", "razorpayx_pay_instantaneously"],

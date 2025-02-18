@@ -10,8 +10,11 @@ Note:
         ...
 """
 
+from payment_integration_utils.payment_integration_utils.constants.payments import (
+    TRANSFER_METHOD,
+)
+
 from razorpayx_integration.constants import RAZORPAYX_SETTING
-from razorpayx_integration.payment_utils.constants.payments import TRANSFER_METHOD
 from razorpayx_integration.razorpayx_integration.constants.payouts import PAYOUT_STATUS
 from razorpayx_integration.razorpayx_integration.constants.roles import PERMISSION_LEVEL
 
