@@ -1,7 +1,7 @@
 import click
 import frappe
 from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
-from payment_integration_utils.payment_integration_utils.utils import (
+from payment_integration_utils.payment_integration_utils.setup import (
     delete_custom_fields,
     delete_property_setters,
     delete_roles_and_permissions,
