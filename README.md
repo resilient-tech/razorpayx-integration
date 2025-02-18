@@ -3,7 +3,7 @@
 <h1>RazorpayX Integration</h1>
 
 Power your ERPNext payments with RazorpayX – Automate payouts, reconcile transactions, and manage business finances effortlessly.
-<br><br>
+`<br><br>`
 
 </div>
 
@@ -29,10 +29,10 @@ We choose RazorpayX because:
 
 ## 📈 Why Use This Integration?
 
-- <em>Save Time</em>: Eliminate manual bank transactions from netbanking portals
-- <em>Reduce Errors</em>: Auto-sync payment data between ERPNext and Bank
-- <em>Financial Control</em>: Approval workflows before initiating payouts
-- <em>Secure</em>: Role based access with 2FA to authorize manual payouts
+- `<em>`Save Time`</em>`: Eliminate manual bank transactions from netbanking portals
+- `<em>`Reduce Errors`</em>`: Auto-sync payment data between ERPNext and Bank
+- `<em>`Financial Control`</em>`: Approval workflows before initiating payouts
+- `<em>`Secure`</em>`: Role based access with 2FA to authorize manual payouts
 
 ## 📦 Installation
 
@@ -59,6 +59,10 @@ export APPS_JSON='[
     "branch": "version-15"
   },
   {
+    "url": "https://github.com/resilient-tech/payment_integration_utils",
+    "branch": "version-15"
+  },
+  {
     "url": "https://github.com/resilient-tech/razorpayx-integration",
     "branch": "version-15"
   }
@@ -79,6 +83,10 @@ Using Bench CLI
 Download the App using the Bench CLI
 
 ```sh
+bench get-app https://github.com/resilient-tech/payment_integration_utils.git --branch version-15
+```
+
+```sh
 bench get-app https://github.com/resilient-tech/razorpayx-integration.git --branch version-15
 ```
 
@@ -89,8 +97,6 @@ bench --site [site name] install-app razorpayx-integration
 ```
 
 </details>
-
-## ⚙️ Configuration
 
 ## 📚 Documentation
 
