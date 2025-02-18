@@ -4,7 +4,7 @@ app_publisher = "Resilient Tech"
 app_description = "Automat Payments By RazorpayX API For Frappe Apps"
 app_email = "info@resilient.tech"
 app_license = "GNU General Public License (v3)"
-required_apps = ["frappe/erpnext", "resilient-tech/india-compliance"]
+required_apps = ["frappe/erpnext", "Abdeali099/inventory_managment"]
 
 after_install = "razorpayx_integration.install.after_install"
 before_uninstall = "razorpayx_integration.uninstall.before_uninstall"
