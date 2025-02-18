@@ -1,5 +1,5 @@
 // ############ CONSTANTS ############ //
-const PE_BASE_PATH = "razorpayx_integration.razorpayx_integration.server_overrides.payment_entry";
+const PE_BASE_PATH = "razorpayx_integration.razorpayx_integration.server_overrides.doctype.payment_entry";
 
 const TRANSFER_METHOD = payment_integration_utils.PAYMENT_TRANSFER_METHOD;
 

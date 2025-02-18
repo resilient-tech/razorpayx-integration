@@ -21,11 +21,11 @@ doctype_js = {
 
 doc_events = {
     "Payment Entry": {
-        "onload": "razorpayx_integration.razorpayx_integration.server_overrides.payment_entry.onload",
-        "validate": "razorpayx_integration.razorpayx_integration.server_overrides.payment_entry.validate",
-        "before_submit": "razorpayx_integration.razorpayx_integration.server_overrides.payment_entry.before_submit",
-        "on_submit": "razorpayx_integration.razorpayx_integration.server_overrides.payment_entry.on_submit",
-        "before_cancel": "razorpayx_integration.razorpayx_integration.server_overrides.payment_entry.before_cancel",
+        "onload": "razorpayx_integration.razorpayx_integration.server_overrides.doctype.payment_entry.onload",
+        "validate": "razorpayx_integration.razorpayx_integration.server_overrides.doctype.payment_entry.validate",
+        "before_submit": "razorpayx_integration.razorpayx_integration.server_overrides.doctype.payment_entry.before_submit",
+        "on_submit": "razorpayx_integration.razorpayx_integration.server_overrides.doctype.payment_entry.on_submit",
+        "before_cancel": "razorpayx_integration.razorpayx_integration.server_overrides.doctype.payment_entry.before_cancel",
     },
 }
 
