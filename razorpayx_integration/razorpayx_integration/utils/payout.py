@@ -4,6 +4,7 @@ from frappe import _
 from payment_integration_utils.payment_integration_utils.constants.payments import (
     TRANSFER_METHOD as PAYOUT_MODE,
 )
+from payment_integration_utils.payment_integration_utils.utils import is_already_paid
 from payment_integration_utils.payment_integration_utils.utils.auth import (
     Authenticate2FA,
 )
@@ -17,7 +18,6 @@ from razorpayx_integration.razorpayx_integration.constants.payouts import (
     PAYOUT_STATUS,
 )
 from razorpayx_integration.razorpayx_integration.utils import (
-    is_already_paid,
     is_auto_cancel_payout_enabled,
     is_payout_via_razorpayx,
 )

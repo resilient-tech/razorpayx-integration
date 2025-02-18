@@ -8,7 +8,7 @@ from payment_integration_utils.payment_integration_utils.utils import (
     to_hyphenated,
 )
 from payment_integration_utils.payment_integration_utils.utils.validation import (
-    validate_payout_mode,
+    validate_payment_mode as validate_payout_mode,
 )
 
 from razorpayx_integration.razorpayx_integration.apis.base import BaseRazorpayXAPI

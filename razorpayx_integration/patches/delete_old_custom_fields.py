@@ -1,4 +1,4 @@
-from payment_integration_utils.payment_integration_utils.utils import (
+from payment_integration_utils.payment_integration_utils.setup import (
     delete_custom_fields,
 )
 
