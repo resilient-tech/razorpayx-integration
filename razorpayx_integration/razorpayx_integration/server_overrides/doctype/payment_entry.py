@@ -75,6 +75,8 @@ def before_submit(doc: PaymentEntry, method=None):
 
 
 def should_uncheck_make_bank_online_payment(doc: PaymentEntry) -> bool:
+    # TODO: should we use more generic flag than `authenticated_by_cron_job`? Because what if PE is submitted from API or other background process?
+    # Then `is_auto_pay_enabled` will not even be checked and payout will be made even if it is disabled.
     should_uncheck_payment_flag = (
         not is_auto_pay_enabled(doc.integration_docname)
         if frappe.flags.authenticated_by_cron_job
@@ -112,11 +114,13 @@ def get_auth_id(doc: PaymentEntry) -> str | None:
 
 #### VALIDATIONS ####
 def set_integration_settings(doc: PaymentEntry):
-    if doc.paid_from_account_currency != PAYOUT_CURRENCY.INR.value:
+    def reset_rpx_settings():
         if doc.integration_doctype == RAZORPAYX_SETTING:
             doc.integration_doctype = ""
             doc.integration_docname = ""
 
+    if doc.paid_from_account_currency != PAYOUT_CURRENCY.INR.value:
+        reset_rpx_settings()
         return
 
     if setting := frappe.db.get_value(
@@ -124,6 +128,8 @@ def set_integration_settings(doc: PaymentEntry):
     ):
         doc.integration_doctype = RAZORPAYX_SETTING
         doc.integration_docname = setting
+    else:
+        reset_rpx_settings()
 
 
 def validate_payout_details(doc: PaymentEntry):

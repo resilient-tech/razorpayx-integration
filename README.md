@@ -3,13 +3,14 @@
 <h1>RazorpayX Integration</h1>
 
 Power your ERPNext payments with RazorpayX – Automate payouts, reconcile transactions, and manage business finances effortlessly.
+
 <br><br>
 
 </div>
 
 ## 💡 Motivation
 
-Bank integrations in India are usually costly and complex, mainly available to corporates.
+Bank integrations in India are usually costly and complex, mainly available to corporate.
 
 We choose RazorpayX because:
 
@@ -24,12 +25,14 @@ We choose RazorpayX because:
 - Automated bulk payouts for vendors
 - Real-time payment status tracking & transaction reconciliation
 - Support for multiple payment modes (IMPS/NEFT/RTGS/UPI)
+- Can make payment with Link
+- Daily sync bank transactions
 - Pre-built templates for workflows and notifications
 - Configurable to cater to diverse business processes
 
 ## 📈 Why Use This Integration?
 
-- <em>Save Time</em>: Eliminate manual bank transactions from netbanking portals
+- <em>Save Time</em>: Eliminate manual bank transactions from **Net Banking** portals
 - <em>Reduce Errors</em>: Auto-sync payment data between ERPNext and Bank
 - <em>Financial Control</em>: Approval workflows before initiating payouts
 - <em>Secure</em>: Role based access with 2FA to authorize manual payouts
@@ -59,6 +62,10 @@ export APPS_JSON='[
     "branch": "version-15"
   },
   {
+    "url": "https://github.com/resilient-tech/payment_integration_utils",
+    "branch": "version-15"
+  },
+  {
     "url": "https://github.com/resilient-tech/razorpayx-integration",
     "branch": "version-15"
   }
@@ -79,6 +86,10 @@ Using Bench CLI
 Download the App using the Bench CLI
 
 ```sh
+bench get-app https://github.com/resilient-tech/payment_integration_utils.git --branch version-15
+```
+
+```sh
 bench get-app https://github.com/resilient-tech/razorpayx-integration.git --branch version-15
 ```
 
@@ -90,9 +101,9 @@ bench --site [site name] install-app razorpayx-integration
 
 </details>
 
-## ⚙️ Configuration
-
 ## 📚 Documentation
+
+- [Read Documentation from Here](https://github.com/resilient-tech/razorpayx-integration/tree/version-15/docs)
 
 ## Contributing
 

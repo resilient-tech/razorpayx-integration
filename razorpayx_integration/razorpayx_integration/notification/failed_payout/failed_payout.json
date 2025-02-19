@@ -10,7 +10,7 @@
  "enabled": 0,
  "event": "Value Change",
  "idx": 0,
- "is_standard": 1,
+ "is_standard": 0,
  "message": "<p>Dear {{ frappe.db.get_value(\"User\", {\"email\": doc.payment_authorized_by},\"first_name\") }},</p>\n\n<p>The payout has been <span style=\"color: red\">{{ doc.razorpayx_payout_status }}!</span> for Payment Entry {{ doc.name }}.</p>\n\n<p>For more details, visit your ERPNext site and check the details.</p>\n",
  "message_type": "Markdown",
  "modified": "2025-02-04 17:40:37.687671",

@@ -20,7 +20,7 @@ frappe.ui.form.on("Payment Entry", {
 		if (!permission || is_already_paid(frm)) return;
 
 		// making payout manually
-		if (frm.doc.docstatus === 1 && !frm.doc.make_bank_online_payment) {
+		if (frm.doc.docstatus === 1 && !frm.doc.make_bank_online_payment && frm.doc.bank_account) {
 			frm.add_custom_button(__("Make Payout"), () => show_make_payout_dialog(frm));
 		}
 	},
