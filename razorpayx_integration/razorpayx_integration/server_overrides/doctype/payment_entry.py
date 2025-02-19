@@ -75,6 +75,8 @@ def before_submit(doc: PaymentEntry, method=None):
 
 
 def should_uncheck_make_bank_online_payment(doc: PaymentEntry) -> bool:
+    # TODO: should we use more generic flag than `authenticated_by_cron_job`? Because what if PE is submitted from API or other background process?
+    # Then `is_auto_pay_enabled` will not even be checked and payout will be made even if it is disabled.
     should_uncheck_payment_flag = (
         not is_auto_pay_enabled(doc.integration_docname)
         if frappe.flags.authenticated_by_cron_job
