@@ -32,10 +32,10 @@ We choose RazorpayX because:
 
 ## 📈 Why Use This Integration?
 
-- `<em>`Save Time`</em>`: Eliminate manual bank transactions from **Net Banking** portals
-- `<em>`Reduce Errors`</em>`: Auto-sync payment data between ERPNext and Bank
-- `<em>`Financial Control`</em>`: Approval workflows before initiating payouts
-- `<em>`Secure`</em>`: Role based access with 2FA to authorize manual payouts
+- <em>Save Time</em>: Eliminate manual bank transactions from **Net Banking** portals
+- <em>Reduce Errors</em>: Auto-sync payment data between ERPNext and Bank
+- <em>Financial Control</em>: Approval workflows before initiating payouts
+- <em>Secure</em>: Role based access with 2FA to authorize manual payouts
 
 ## 📦 Installation
 
