@@ -114,11 +114,13 @@ def get_auth_id(doc: PaymentEntry) -> str | None:
 
 #### VALIDATIONS ####
 def set_integration_settings(doc: PaymentEntry):
-    if doc.paid_from_account_currency != PAYOUT_CURRENCY.INR.value:
+    def reset_rpx_settings():
         if doc.integration_doctype == RAZORPAYX_SETTING:
             doc.integration_doctype = ""
             doc.integration_docname = ""
 
+    if doc.paid_from_account_currency != PAYOUT_CURRENCY.INR.value:
+        reset_rpx_settings()
         return
 
     if setting := frappe.db.get_value(
@@ -126,6 +128,8 @@ def set_integration_settings(doc: PaymentEntry):
     ):
         doc.integration_doctype = RAZORPAYX_SETTING
         doc.integration_docname = setting
+    else:
+        reset_rpx_settings()
 
 
 def validate_payout_details(doc: PaymentEntry):
