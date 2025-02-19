@@ -1,65 +1,98 @@
-# Make RazorpayX Payout with Payment Entry
+# 💳 Make RazorpayX Payout with Payment Entry
 
-## Requirements
+## ✅ Requirements
 
-1. At least one `RazorpayX Integration Setting` available
-2. `Company Bank Account must` be set and associated with RazorpayX Setting
-3. User must have
-   1. `Online Payment Authorizer` Role
-   2. Permission to submit `Payment Entry`
-4. `Make Online Payment` should be checked
-   - If not check you can make payout after submit if Integration Setting is set.
+1. **RazorpayX Integration Setting**: At least one integration setting must be available.
+2. **Company Bank Account**: Must be set and associated with the RazorpayX integration.
+3. **User Permissions**:
+   - Role: `Online Payment Authorizer`.
+   - Permission to submit `Payment Entry`.
+4. **Make Online Payment**: Ensure this checkbox is checked.
+   - If unchecked, you can still make a payout after submission if the integration setting is configured.
 
-## Notes
+## 📌 Notes
 
-- Here `Payout` and `Payout Link` consider one entity.
-  - If you want to pay via `Payout Link` choose transfer mode `Link`
-  - Then `Payout` created via `Payout Link` will be managed not `Payout Link`
+- Here **Payout and Payout Link** are considered one entity.
+  - To pay via **Payout Link**, choose the transfer mode as `Link`.
+  - Payouts created via **Payout Link** will be managed as payouts, not as payout links.
     - Example:
-      - Only `Payout` status are maintain as `RazorpayX Payout Status`
-      - Status of RazorpayX will be `Not Initiated` or `Queued` until `Payout` created for this.
-      - If `Payout` is cancelled or failed `Payout Link` will also cancelled
+      - Only **Payout** statuses are maintained as `RazorpayX Payout Status`.
+      - The status will show as `Not Initiated` or `Queued` until the payout is created.
+      - Once the payout is initiated via the payout link, the status will update based on webhook events.
+      - If the payout is canceled or fails, the payout link will also be canceled.
 
-- `Make Online Payment` checkbox appear after saving PE first time if Integration Found.
+- The **Make Online Payment** checkbox appears after saving the Payment Entry (PE) for the first time if the integration is found.
 
-- If RazorpayX configure after the PE creation, reselect `Company Bank Account` and save.
+- If RazorpayX is configured after creating the PE, reselect the **Company Bank Account** and save the PE.
 
-- If `Amended` Payment Entry's original PE is already mark for `Make Online Payment` then Amended PE will not make payout.
-  - Also Payment Details are not allowed to change.
+- If an **Amended Payment Entry** has its original PE marked for `Make Online Payment`, the amended PE will not create a payout.
+  - Payment details cannot be changed in such cases.
 
-- If `Payout` or `Payout Link` cancelled/failed and webhook event captured then Payment Entry will also cancelled!
+- If a **Payout** or **Payout Link** is canceled/failed and the webhook event is captured, the Payment Entry will also be canceled.
 
-- If `Payout` is revered only status will updated and PE will not be cancelled!
+- If a **Payout** is reversed, only the status will be updated, and the PE will not be canceled.
 
-## Method 1: Create Payout with simple workflow
+- **Payment Authorization Methods**:
+  1. User Password
+  2. Authenticator App
+  3. Via Email
+  4. Via SMS
 
-<!-- Video|Gif for simple workflow -->
 
-- If there is any frappe workflow is active for PE than `Pay and Submit` will not be visible and on submit `Make Online Payment` is unchecked if checked.
+## 🛠️ Methods to Create Payouts
+
+### Method 1: Create Payout with Simple Workflow
+
+https://github.com/user-attachments/assets/528a76bf-6c5f-49ab-9b13-e28499eb107d
+
+- If a Frappe workflow is active for the PE, the `Pay and Submit` button will not be visible. On submission, `Make Online Payment` will be unchecked if previously checked.
 
 
-## Method 2: Create Payout with `Make Payout` custom button
+### Method 2: Create Payout with `Make Payout` Custom Button
 
-- After submit if `Make Online Payment` is unchecked and Integration Setting are set than it is visible.
+- After submission, if `Make Online Payment` is unchecked and the integration settings are configured, the `Make Payout` button will be visible.
 
-<!-- Video|Gif for Make Payout workflow -->
+https://github.com/user-attachments/assets/57064570-26cf-48d1-8ac9-35d9918016a2
 
-## Method 3: Bulk Pay and Submit
 
-- Bulk `Pay and Submit` with list view bulk action
+### Method 3: Bulk Pay and Submit
 
-- Ask confirmation for those PE which have Integration Setting set but `Make Online Payment` is unchecked.
+- Use the **Bulk Pay and Submit** option in the list view for bulk actions.
+- A confirmation dialog will appear for PEs with integration settings configured but `Make Online Payment` unchecked.
 
-<!-- Video|Gif for bulk workflow -->
+https://github.com/user-attachments/assets/1fac304e-1de5-4e00-9d80-0fc4cf6c4ce8
 
-<!-- Details tag for different type of dialogs -->
+<details>
+<summary>📂 View Other Dialog Messages</summary>
 
-### Notifications
+1. **All Eligible to Pay**:  
+   ![All Eligible](https://github.com/user-attachments/assets/6acc905a-5857-41c6-95b3-e7551bb6bb18)
 
-- 2 exmaple notification is given.
-  - When Payout Failed/Reversed/Cancelled 
-  - When Payout Processed
+2. **Some Eligible and Some Not Eligible**:  
+   ![Some Eligible](https://github.com/user-attachments/assets/46aee276-4044-410e-9e43-603c054e6772)
 
-- To use enable the notification
+3. **Only Unmarked**:  
+   ![Only Unmarked](https://github.com/user-attachments/assets/532ba1a3-1108-4459-9b46-ea38fad71fe6)
 
-<!-- Image : Notification -->
+4. **Invalid Selection**:  
+   ![Invalid Selection](https://github.com/user-attachments/assets/f1f55dd3-5194-4f4f-9214-d98edc00e9ec)
+
+</details>
+
+## 🔔 Notifications
+
+- Two example notifications are provided:
+  1. When a payout is **Failed/Reversed/Canceled**.
+  2. When a payout is **Processed**.
+
+- Enable these notifications to use them.
+
+![Notification](https://github.com/user-attachments/assets/39ec860b-0307-4c4c-b034-336b15b6f981)
+
+## ❌ Cancellation Workflow
+
+- A **Payout** can only be canceled in the `Not Initiated` or `Queued` state.
+
+https://github.com/user-attachments/assets/ec56e347-b37b-49ef-ba84-d16819e93449
+
+- **Note**: If **Auto Cancellation** is enabled, the dialog box will not be shown.
