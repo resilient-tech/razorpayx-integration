@@ -25,6 +25,8 @@ We choose RazorpayX because:
 - Automated bulk payouts for vendors
 - Real-time payment status tracking & transaction reconciliation
 - Support for multiple payment modes (IMPS/NEFT/RTGS/UPI)
+- Can make payment with Link
+- Daily sync bank transactions
 - Pre-built templates for workflows and notifications
 - Configurable to cater to diverse business processes
 
@@ -100,6 +102,8 @@ bench --site [site name] install-app razorpayx-integration
 </details>
 
 ## 📚 Documentation
+
+- [Read Documentation from Here](https://github.com/resilient-tech/razorpayx-integration/tree/version-15/docs)
 
 ## Contributing
 
