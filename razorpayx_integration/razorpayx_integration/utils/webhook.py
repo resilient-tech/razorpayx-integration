@@ -27,9 +27,7 @@ from razorpayx_integration.razorpayx_integration.constants.webhooks import (
     EVENTS_TYPE,
     SUPPORTED_EVENTS,
 )
-from razorpayx_integration.razorpayx_integration.utils.__init__ import (
-    get_fees_accounting_config,
-)
+from razorpayx_integration.razorpayx_integration.utils import get_fees_accounting_config
 
 
 ###### WEBHOOK PROCESSORS ######
@@ -181,16 +179,28 @@ class RazorpayXWebhook:
         """
         pass
 
+    def get_formlink(self, doctype: str, docname: str, html: bool = False) -> str:
+        return (
+            get_link_to_form(doctype, docname)
+            if html
+            else get_url_to_form(doctype, docname)
+        )
+
     def get_ir_formlink(self, html: bool = False) -> str:
         """
         Get the Integration Request Form Link.
 
         :param html: bool - If True, return the anchor (<a>) tag.
         """
-        if html:
-            return get_link_to_form("Integration Request", self.integration_request)
+        return self.get_formlink("Integration Request", self.integration_request, html)
 
-        return get_url_to_form("Integration Request", self.integration_request)
+    def get_source_formlink(self, html: bool = False) -> str:
+        """
+        Get the Source Doc Form Link.
+
+        :param html: bool - If True, return the anchor (<a>) tag.
+        """
+        return self.get_formlink(self.source_doctype, self.source_docname, html)
 
 
 class PayoutWebhook(RazorpayXWebhook):
@@ -310,37 +320,38 @@ class PayoutWebhook(RazorpayXWebhook):
 
             return today()
 
-        def get_remark(fees: int, tax: int) -> str:
+        def get_remark(fees: int) -> str:
             user_remark = ""
 
             if self.source_doc:
-                user_remark = f"{self.source_doc.doctype}: {self.source_doc.name}\n"
+                user_remark = (
+                    f"{self.source_doc.doctype}: {self.get_source_formlink(True)}\n"
+                )
 
             user_remark += f"Payout ID: {self.id}"
 
             if fee_type := self.payload_entity.get("fee_type"):
                 user_remark += f"\nFee Type: {fee_type}"
 
-            user_remark += f"\nFees: {fmt_inr(fees)} | Tax: {fmt_inr(tax)}"
-            user_remark += f"\n\nIntegration Request: {self.get_ir_formlink(html=True)}"
+            tax = paisa_to_rupees(self.payload_entity.get("tax") or 0)
+            user_remark += f"\nFee: {fmt_inr(fees - tax)} | Tax: {fmt_inr(tax)}"
+            user_remark += f"\n\nIntegration Request: {self.get_ir_formlink(True)}"
 
             return user_remark
 
         if self.status != PAYOUT_STATUS.PROCESSED.value:
             return
 
-        fees = paisa_to_rupees(self.payload_entity.get("fees") or 0)
-        tax = paisa_to_rupees(self.payload_entity.get("tax") or 0)
-        charges = fees + tax
+        fee_config = get_fees_accounting_config(self.razorpayx_setting_name)
 
-        if charges == 0:
+        if not fee_config.automate_fees_accounting:
             return
 
-        expense_account, payable_account = frappe.db.get_value(
-            RAZORPAYX_SETTING,
-            self.razorpayx_setting_name,
-            ["expense_account", "payable_account"],
-        )
+        fee = paisa_to_rupees(self.payload_entity.get("fees") or 0)
+        # !Note: fee is inclusive of tax
+
+        if fee == 0:
+            return
 
         je = frappe.new_doc("Journal Entry")
         je.update(
@@ -349,18 +360,20 @@ class PayoutWebhook(RazorpayXWebhook):
                 "posting_date": get_posting_date(),
                 "accounts": [
                     {
-                        "account": expense_account,
-                        "debit_in_account_currency": charges,
+                        "account": fee_config.creditors_account,
+                        "party_type": "Supplier",
+                        "party": fee_config.creditor_party,
+                        "debit_in_account_currency": fee,
                         "credit_in_account_currency": 0,
                     },
                     {
-                        "account": payable_account,
+                        "account": fee_config.payable_account,
                         "debit_in_account_currency": 0,
-                        "credit_in_account_currency": charges,
+                        "credit_in_account_currency": fee,
                     },
                 ],
                 "cheque_no": self.utr,
-                "user_remark": get_remark(fees, tax),
+                "user_remark": get_remark(fee),
             }
         )
 

@@ -38,6 +38,7 @@ def get_fees_accounting_config(razorpayx_setting: str) -> dict:
                 "creditor_party",
                 "payable_account",
             ],
+            as_dict=True,
         )
         or frappe._dict()
     )
