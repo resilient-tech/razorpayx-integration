@@ -12,6 +12,24 @@ frappe.ui.form.on("RazorpayX Integration Setting", {
 				},
 			};
 		});
+
+		frm.set_query("expense_account", function () {
+			return {
+				filters: {
+					account_type: "Expense Account",
+					freeze_account: "No",
+				},
+			};
+		});
+
+		frm.set_query("payable_account", function () {
+			return {
+				filters: {
+					account_type: "Liability",
+					freeze_account: "No",
+				},
+			};
+		});
 	},
 
 	onload: function (frm) {

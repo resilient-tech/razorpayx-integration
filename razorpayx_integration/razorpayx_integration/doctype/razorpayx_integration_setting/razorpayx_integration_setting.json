@@ -29,7 +29,11 @@
   "pe_config_section",
   "pay_on_auto_submit",
   "column_break_oczj",
-  "auto_cancel_payout"
+  "auto_cancel_payout",
+  "accounting_section",
+  "expense_account",
+  "column_break_vdui",
+  "payable_account"
  ],
  "fields": [
   {
@@ -188,11 +192,34 @@
   {
    "fieldname": "column_break_oczj",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "accounting_section",
+   "fieldtype": "Section Break",
+   "label": "Accounting"
+  },
+  {
+   "fieldname": "expense_account",
+   "fieldtype": "Link",
+   "label": "Expense Account",
+   "options": "Account",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_vdui",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "payable_account",
+   "fieldtype": "Link",
+   "label": "Payable Account",
+   "options": "Account",
+   "reqd": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-02-12 12:08:45.794823",
+ "modified": "2025-02-26 11:37:29.826566",
  "modified_by": "Administrator",
  "module": "Razorpayx Integration",
  "name": "RazorpayX Integration Setting",

@@ -23,11 +23,13 @@ class RazorpayXIntegrationSetting(Document):
         company: DF.Link | None
         company_account: DF.Link | None
         disabled: DF.Check
+        expense_account: DF.Link
         ifsc_code: DF.Data | None
         key_id: DF.Data
         key_secret: DF.Password
         last_sync_on: DF.Date | None
         pay_on_auto_submit: DF.Check
+        payable_account: DF.Link
         webhook_secret: DF.Password | None
     # end: auto-generated types
 
