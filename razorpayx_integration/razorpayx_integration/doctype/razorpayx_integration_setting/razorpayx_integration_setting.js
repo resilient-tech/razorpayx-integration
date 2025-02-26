@@ -12,6 +12,30 @@ frappe.ui.form.on("RazorpayX Integration Setting", {
 				},
 			};
 		});
+
+		const coa_filters = {
+			account_currency: "INR",
+			freeze_account: "No",
+		};
+
+		frm.set_query("creditors_account", function () {
+			return {
+				filters: {
+					...coa_filters,
+					account_type: "Payable",
+					root_type: "Liability",
+				},
+			};
+		});
+
+		frm.set_query("payable_account", function () {
+			return {
+				filters: {
+					...coa_filters,
+					account_type: "Liability",
+				},
+			};
+		});
 	},
 
 	onload: function (frm) {

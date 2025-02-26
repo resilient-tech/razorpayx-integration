@@ -18,16 +18,20 @@ class RazorpayXIntegrationSetting(Document):
         account_id: DF.Data
         account_number: DF.Data | None
         auto_cancel_payout: DF.Check
+        automate_fees_accounting: DF.Check
         bank: DF.Link | None
         bank_account: DF.Link
         company: DF.Link | None
         company_account: DF.Link | None
+        creditors_account: DF.Link | None
         disabled: DF.Check
         ifsc_code: DF.Data | None
         key_id: DF.Data
         key_secret: DF.Password
         last_sync_on: DF.Date | None
         pay_on_auto_submit: DF.Check
+        payable_account: DF.Link | None
+        supplier: DF.Link | None
         webhook_secret: DF.Password | None
     # end: auto-generated types
 

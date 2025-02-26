@@ -29,7 +29,16 @@
   "pe_config_section",
   "pay_on_auto_submit",
   "column_break_oczj",
-  "auto_cancel_payout"
+  "auto_cancel_payout",
+  "accounting_tab",
+  "accounting_section",
+  "automate_fees_accounting",
+  "column_break_rshi",
+  "fees_accounting_section",
+  "creditors_account",
+  "payable_account",
+  "column_break_vdui",
+  "supplier"
  ],
  "fields": [
   {
@@ -188,11 +197,61 @@
   {
    "fieldname": "column_break_oczj",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "accounting_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_vdui",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "payable_account",
+   "fieldtype": "Link",
+   "label": "Payable Account",
+   "mandatory_depends_on": "eval: doc.automate_fees_accounting",
+   "options": "Account"
+  },
+  {
+   "fieldname": "creditors_account",
+   "fieldtype": "Link",
+   "label": "Creditors Account",
+   "mandatory_depends_on": "eval: doc.automate_fees_accounting",
+   "options": "Account"
+  },
+  {
+   "default": "1",
+   "description": "Create a <strong>Journal Entry</strong> for the payout fee and tax",
+   "fieldname": "automate_fees_accounting",
+   "fieldtype": "Check",
+   "label": "Automate Fees Accounting"
+  },
+  {
+   "fieldname": "column_break_rshi",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval: doc.automate_fees_accounting",
+   "fieldname": "fees_accounting_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "accounting_tab",
+   "fieldtype": "Tab Break",
+   "label": "Accounting"
+  },
+  {
+   "fieldname": "supplier",
+   "fieldtype": "Link",
+   "label": "Supplier",
+   "mandatory_depends_on": "eval: doc.automate_fees_accounting",
+   "options": "Supplier"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-02-12 12:08:45.794823",
+ "modified": "2025-02-26 18:46:51.783636",
  "modified_by": "Administrator",
  "module": "Razorpayx Integration",
  "name": "RazorpayX Integration Setting",
