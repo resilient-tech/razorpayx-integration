@@ -158,6 +158,12 @@ def validate_payout_details(doc: PaymentEntry):
 
 
 ### APIs ###
+# TODO: Make API more easy to use and less error-prone
+# 1. Fetch bank account details from the `party_bank_account`
+# 2. Fetch contact details from the `contact_person` or set directly mobile and email
+# 3. If party is `Employee`, fetch contact details from the Employee's contact
+# 4. Also check `Contact Person` and `Party Bank Account` is associated with the `Party`
+# 6. Based on the `transfer_method`, set the fields automatically
 @frappe.whitelist()
 def make_payout_with_razorpayx(
     auth_id: str,
