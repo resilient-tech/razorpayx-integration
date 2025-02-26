@@ -18,11 +18,12 @@ frappe.ui.form.on("RazorpayX Integration Setting", {
 			freeze_account: "No",
 		};
 
-		frm.set_query("expense_account", function () {
+		frm.set_query("creditors_account", function () {
 			return {
 				filters: {
 					...coa_filters,
-					account_type: "Expense Account",
+					account_type: "Payable",
+					root_type: "Liability",
 				},
 			};
 		});

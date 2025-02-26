@@ -30,10 +30,15 @@
   "pay_on_auto_submit",
   "column_break_oczj",
   "auto_cancel_payout",
+  "accounting_tab",
   "accounting_section",
-  "expense_account",
+  "automate_fees_accounting",
+  "column_break_rshi",
+  "fees_accounting_section",
+  "creditors_account",
+  "payable_account",
   "column_break_vdui",
-  "payable_account"
+  "creditor_party"
  ],
  "fields": [
   {
@@ -195,15 +200,7 @@
   },
   {
    "fieldname": "accounting_section",
-   "fieldtype": "Section Break",
-   "label": "Accounting"
-  },
-  {
-   "fieldname": "expense_account",
-   "fieldtype": "Link",
-   "label": "Expense Account",
-   "options": "Account",
-   "reqd": 1
+   "fieldtype": "Section Break"
   },
   {
    "fieldname": "column_break_vdui",
@@ -213,13 +210,48 @@
    "fieldname": "payable_account",
    "fieldtype": "Link",
    "label": "Payable Account",
-   "options": "Account",
-   "reqd": 1
+   "mandatory_depends_on": "eval: doc.automate_fees_accounting",
+   "options": "Account"
+  },
+  {
+   "fieldname": "creditors_account",
+   "fieldtype": "Link",
+   "label": "Creditors Account",
+   "mandatory_depends_on": "eval: doc.automate_fees_accounting",
+   "options": "Account"
+  },
+  {
+   "default": "1",
+   "description": "Create a <strong>Journal Entry</strong> for the payout fee and tax",
+   "fieldname": "automate_fees_accounting",
+   "fieldtype": "Check",
+   "label": "Automate Fees Accounting"
+  },
+  {
+   "fieldname": "column_break_rshi",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval: doc.automate_fees_accounting",
+   "fieldname": "fees_accounting_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "creditor_party",
+   "fieldtype": "Link",
+   "label": "Party",
+   "mandatory_depends_on": "eval: doc.automate_fees_accounting",
+   "options": "Supplier"
+  },
+  {
+   "fieldname": "accounting_tab",
+   "fieldtype": "Tab Break",
+   "label": "Accounting"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-02-26 11:37:29.826566",
+ "modified": "2025-02-26 18:12:23.979839",
  "modified_by": "Administrator",
  "module": "Razorpayx Integration",
  "name": "RazorpayX Integration Setting",
