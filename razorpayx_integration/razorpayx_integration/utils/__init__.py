@@ -25,3 +25,19 @@ def is_auto_pay_enabled(razorpayx_setting: str) -> bool | int:
     return frappe.db.get_value(
         RAZORPAYX_SETTING, razorpayx_setting, "pay_on_auto_submit"
     )
+
+
+def get_fees_accounting_config(razorpayx_setting: str) -> dict:
+    return (
+        frappe.db.get_value(
+            RAZORPAYX_SETTING,
+            razorpayx_setting,
+            [
+                "automate_fees_accounting",
+                "creditors_account",
+                "creditor_party",
+                "payable_account",
+            ],
+        )
+        or frappe._dict()
+    )

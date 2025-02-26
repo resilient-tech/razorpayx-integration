@@ -27,6 +27,9 @@ from razorpayx_integration.razorpayx_integration.constants.webhooks import (
     EVENTS_TYPE,
     SUPPORTED_EVENTS,
 )
+from razorpayx_integration.razorpayx_integration.utils.__init__ import (
+    get_fees_accounting_config,
+)
 
 
 ###### WEBHOOK PROCESSORS ######
