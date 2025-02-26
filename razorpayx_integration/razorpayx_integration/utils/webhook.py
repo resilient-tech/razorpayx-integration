@@ -212,6 +212,7 @@ class PayoutWebhook(RazorpayXWebhook):
         Process RazorpayX Payout Related Webhooks.
         """
         self.update_payment_entry()
+        self.create_journal_entry()
 
     def update_payment_entry(self, update_status: bool = True):
         """
@@ -236,7 +237,7 @@ class PayoutWebhook(RazorpayXWebhook):
         if update_status:
             self.update_payout_status(self.status)
 
-        self.handle_cancellation()
+        self.handle_pe_cancellation()
 
     def update_payout_status(self, status: str | None = None):
         """
@@ -274,7 +275,7 @@ class PayoutWebhook(RazorpayXWebhook):
             "Payment Entry", {"name": ["in", set(self.referenced_docnames)]}, values
         )
 
-    def handle_cancellation(self):
+    def handle_pe_cancellation(self):
         """
         Handle the payment entry cancellation.
 
@@ -467,10 +468,13 @@ class PayoutLinkWebhook(PayoutWebhook):
     """
 
     ### APIs ###
-    def update_payment_entry(self):
-        super().update_payment_entry(update_status=False)
+    def process_webhook(self, *args, **kwargs):
+        """
+        Process RazorpayX Payout Link Related Webhooks.
+        """
+        self.update_payment_entry(update_status=False)
 
-    def handle_cancellation(self):
+    def handle_pe_cancellation(self):
         if self.should_cancel_payment_entry():
             self.update_payout_status(PAYOUT_STATUS.CANCELLED.value)
             self.cancel_payment_entry()
@@ -551,7 +555,7 @@ class TransactionWebhook(PayoutWebhook):
         self.update_payment_entry()
         self.update_bank_transaction()
 
-    def handle_cancellation(self):
+    def handle_pe_cancellation(self):
         pass
 
     def update_bank_transaction(self):
