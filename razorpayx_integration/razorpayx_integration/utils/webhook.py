@@ -8,6 +8,9 @@ from frappe.utils import fmt_money, get_link_to_form, get_url_to_form, today
 from frappe.utils.password import get_decrypted_password
 from payment_integration_utils.payment_integration_utils.constants.enums import BaseEnum
 from payment_integration_utils.payment_integration_utils.utils import (
+    get_str_datetime_from_epoch as get_epoch_date,
+)
+from payment_integration_utils.payment_integration_utils.utils import (
     log_integration_request,
     paisa_to_rupees,
 )
@@ -298,18 +301,37 @@ class PayoutWebhook(RazorpayXWebhook):
         def fmt_inr(amount: int) -> str:
             return fmt_money(amount, currency=PAYOUT_CURRENCY.INR.value)
 
+        def get_posting_date():
+            if created_at := self.payload_entity.get("created_at"):
+                return get_epoch_date(created_at)
+
+            return today()
+
+        def get_remark(fees: int, tax: int) -> str:
+            user_remark = ""
+
+            if self.source_doc:
+                user_remark = f"{self.source_doc.doctype}: {self.source_doc.name}\n"
+
+            user_remark += f"Payout ID: {self.id}"
+
+            if fee_type := self.payload_entity.get("fee_type"):
+                user_remark += f"\nFee Type: {fee_type}"
+
+            user_remark += f"\nFees: {fmt_inr(fees)} | Tax: {fmt_inr(tax)}"
+            user_remark += f"\n\nIntegration Request: {self.get_ir_formlink(html=True)}"
+
+            return user_remark
+
         if self.status != PAYOUT_STATUS.PROCESSED.value:
             return
 
-        fees = self.payload_entity.get("fees") or 0
-        tax = self.payload_entity.get("tax") or 0
+        fees = paisa_to_rupees(self.payload_entity.get("fees") or 0)
+        tax = paisa_to_rupees(self.payload_entity.get("tax") or 0)
         charges = fees + tax
 
         if charges == 0:
             return
-
-        fee_type = self.payload_entity.get("fee_type")
-        charges = paisa_to_rupees(charges)
 
         expense_account, payable_account = frappe.db.get_value(
             RAZORPAYX_SETTING,
@@ -317,21 +339,11 @@ class PayoutWebhook(RazorpayXWebhook):
             ["expense_account", "payable_account"],
         )
 
-        user_remark = (
-            f"{self.source_doc.doctype}: {self.source_doc.name}\n"
-            if self.source_doc
-            else ""
-        )
-        user_remark = f"Payout ID: {self.id}"
-        user_remark += f"\nFee Type: {fee_type}" if fee_type else ""
-        user_remark += f"\nFees: {fmt_inr(fees)} | Tax: {fmt_inr(tax)}"
-        user_remark += f"\nIntegration Request: {self.get_ir_formlink(html=True)}"
-
         je = frappe.new_doc("Journal Entry")
         je.update(
             {
                 "voucher_type": "Journal Entry",
-                "posting_date": self.payload.get("created_at") or today(),
+                "posting_date": get_posting_date(),
                 "accounts": [
                     {
                         "account": expense_account,
@@ -345,10 +357,11 @@ class PayoutWebhook(RazorpayXWebhook):
                     },
                 ],
                 "cheque_no": self.utr,
-                "user_remark": user_remark,
+                "user_remark": get_remark(fees, tax),
             }
         )
 
+        je.flags.skip_remarks_creation = True
         je.submit()
 
     ### UTILITIES ###
