@@ -2,17 +2,20 @@ import json
 from hmac import new as hmac
 
 import frappe
+import frappe.utils
 from frappe import _
-from frappe.utils import get_link_to_form, get_url_to_form
+from frappe.utils import fmt_money, get_link_to_form, get_url_to_form, today
 from frappe.utils.password import get_decrypted_password
 from payment_integration_utils.payment_integration_utils.constants.enums import BaseEnum
 from payment_integration_utils.payment_integration_utils.utils import (
     log_integration_request,
+    paisa_to_rupees,
 )
 
 from razorpayx_integration.constants import RAZORPAYX_SETTING
 from razorpayx_integration.razorpayx_integration.apis.payout import RazorpayXLinkPayout
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
+    PAYOUT_CURRENCY,
     PAYOUT_LINK_STATUS,
     PAYOUT_ORDERS,
     PAYOUT_STATUS,
@@ -59,7 +62,7 @@ class RazorpayXWebhook:
 
         self.source_docname = ""
         self.source_doctype = ""
-        self.source_doc = None  # Set manually in the sub class if needed.
+        self.source_doc = frappe._dict()  # Set manually in the sub class if needed.
         self.referenced_docnames = []
         self.notes = {}
 
@@ -284,6 +287,69 @@ class PayoutWebhook(RazorpayXWebhook):
         """
         if self.should_cancel_payment_entry() and self.cancel_payout_link():
             self.cancel_payment_entry()
+
+    def create_journal_entry(self):
+        """
+        Create a Journal Entry for the Payout Charges (fees + tax).
+
+        Reference: https://razorpay.com/docs/x/manage-teams/billing/
+        """
+
+        def fmt_inr(amount: int) -> str:
+            return fmt_money(amount, currency=PAYOUT_CURRENCY.INR.value)
+
+        if self.status != PAYOUT_STATUS.PROCESSED.value:
+            return
+
+        fees = self.payload_entity.get("fees") or 0
+        tax = self.payload_entity.get("tax") or 0
+        charges = fees + tax
+
+        if charges == 0:
+            return
+
+        fee_type = self.payload_entity.get("fee_type")
+        charges = paisa_to_rupees(charges)
+
+        expense_account, payable_account = frappe.db.get_value(
+            RAZORPAYX_SETTING,
+            self.razorpayx_setting_name,
+            ["expense_account", "payable_account"],
+        )
+
+        user_remark = (
+            f"{self.source_doc.doctype}: {self.source_doc.name}\n"
+            if self.source_doc
+            else ""
+        )
+        user_remark = f"Payout ID: {self.id}"
+        user_remark += f"\nFee Type: {fee_type}" if fee_type else ""
+        user_remark += f"\nFees: {fmt_inr(fees)} | Tax: {fmt_inr(tax)}"
+        user_remark += f"\nIntegration Request: {self.get_ir_formlink(html=True)}"
+
+        je = frappe.new_doc("Journal Entry")
+        je.update(
+            {
+                "voucher_type": "Journal Entry",
+                "posting_date": self.payload.get("created_at") or today(),
+                "accounts": [
+                    {
+                        "account": expense_account,
+                        "debit_in_account_currency": charges,
+                        "credit_in_account_currency": 0,
+                    },
+                    {
+                        "account": payable_account,
+                        "debit_in_account_currency": 0,
+                        "credit_in_account_currency": charges,
+                    },
+                ],
+                "cheque_no": self.utr,
+                "user_remark": user_remark,
+            }
+        )
+
+        je.submit()
 
     ### UTILITIES ###
     def set_id_field(self) -> str:
