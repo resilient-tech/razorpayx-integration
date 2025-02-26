@@ -35,7 +35,7 @@ def get_fees_accounting_config(razorpayx_setting: str) -> dict:
             [
                 "automate_fees_accounting",
                 "creditors_account",
-                "creditor_party",
+                "supplier",
                 "payable_account",
             ],
             as_dict=True,

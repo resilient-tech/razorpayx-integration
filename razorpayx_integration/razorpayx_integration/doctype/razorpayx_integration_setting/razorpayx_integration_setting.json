@@ -38,7 +38,7 @@
   "creditors_account",
   "payable_account",
   "column_break_vdui",
-  "creditor_party"
+  "supplier"
  ],
  "fields": [
   {
@@ -237,21 +237,21 @@
    "fieldtype": "Section Break"
   },
   {
-   "fieldname": "creditor_party",
-   "fieldtype": "Link",
-   "label": "Party",
-   "mandatory_depends_on": "eval: doc.automate_fees_accounting",
-   "options": "Supplier"
-  },
-  {
    "fieldname": "accounting_tab",
    "fieldtype": "Tab Break",
    "label": "Accounting"
+  },
+  {
+   "fieldname": "supplier",
+   "fieldtype": "Link",
+   "label": "Supplier",
+   "mandatory_depends_on": "eval: doc.automate_fees_accounting",
+   "options": "Supplier"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-02-26 18:12:23.979839",
+ "modified": "2025-02-26 18:46:51.783636",
  "modified_by": "Administrator",
  "module": "Razorpayx Integration",
  "name": "RazorpayX Integration Setting",

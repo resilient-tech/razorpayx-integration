@@ -23,7 +23,6 @@ class RazorpayXIntegrationSetting(Document):
         bank_account: DF.Link
         company: DF.Link | None
         company_account: DF.Link | None
-        creditor_party: DF.Link | None
         creditors_account: DF.Link | None
         disabled: DF.Check
         ifsc_code: DF.Data | None
@@ -32,6 +31,7 @@ class RazorpayXIntegrationSetting(Document):
         last_sync_on: DF.Date | None
         pay_on_auto_submit: DF.Check
         payable_account: DF.Link | None
+        supplier: DF.Link | None
         webhook_secret: DF.Password | None
     # end: auto-generated types
 

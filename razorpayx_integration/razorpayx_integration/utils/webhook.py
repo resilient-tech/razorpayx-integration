@@ -357,12 +357,14 @@ class PayoutWebhook(RazorpayXWebhook):
         je.update(
             {
                 "voucher_type": "Journal Entry",
+                "is_system_generated": 1,
+                "company": self.source_doc.company,
                 "posting_date": get_posting_date(),
                 "accounts": [
                     {
                         "account": fee_config.creditors_account,
                         "party_type": "Supplier",
-                        "party": fee_config.creditor_party,
+                        "party": fee_config.supplier,
                         "debit_in_account_currency": fee,
                         "credit_in_account_currency": 0,
                     },
