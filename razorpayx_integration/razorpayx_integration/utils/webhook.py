@@ -334,7 +334,7 @@ class PayoutWebhook(RazorpayXWebhook):
                 user_remark += f"\nFee Type: {fee_type}"
 
             tax = paisa_to_rupees(self.payload_entity.get("tax") or 0)
-            user_remark += f"\nFee: {fmt_inr(fees - tax)} | Tax: {fmt_inr(tax)}"
+            user_remark += f"\nFees: {fmt_inr(fees - tax)} | Tax: {fmt_inr(tax)}"
             user_remark += f"\n\nIntegration Request: {self.get_ir_formlink(True)}"
 
             return user_remark
@@ -347,11 +347,13 @@ class PayoutWebhook(RazorpayXWebhook):
         if not fee_config.automate_fees_accounting:
             return
 
-        fee = paisa_to_rupees(self.payload_entity.get("fees") or 0)
-        # !Note: fee is inclusive of tax
+        fees = self.payload_entity.get("fees") or 0
+        # !Note: fee is inclusive of tax and it is in paisa
 
-        if fee == 0:
+        if not fees:
             return
+
+        fees = paisa_to_rupees(fees)
 
         je = frappe.new_doc("Journal Entry")
         je.update(
@@ -365,17 +367,17 @@ class PayoutWebhook(RazorpayXWebhook):
                         "account": fee_config.creditors_account,
                         "party_type": "Supplier",
                         "party": fee_config.supplier,
-                        "debit_in_account_currency": fee,
+                        "debit_in_account_currency": fees,
                         "credit_in_account_currency": 0,
                     },
                     {
                         "account": fee_config.payable_account,
                         "debit_in_account_currency": 0,
-                        "credit_in_account_currency": fee,
+                        "credit_in_account_currency": fees,
                     },
                 ],
                 "cheque_no": self.utr,
-                "user_remark": get_remark(fee),
+                "user_remark": get_remark(fees),
             }
         )
 
