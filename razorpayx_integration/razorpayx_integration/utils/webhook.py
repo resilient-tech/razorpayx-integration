@@ -342,15 +342,16 @@ class PayoutWebhook(RazorpayXWebhook):
         if self.status != PAYOUT_STATUS.PROCESSED.value:
             return
 
+        fees = self.payload_entity.get("fees") or 0
+        # !Note: fees is inclusive of tax and it is in paisa
+        # Example: fees = 236 (2.36 INR) and tax = 36 (0.36 INR) => Charge = 200 (2 INR) | Tax = 36 (0.36 INR)
+
+        if not fees:
+            return
+
         fee_config = get_fees_accounting_config(self.razorpayx_setting_name)
 
         if not fee_config.automate_fees_accounting:
-            return
-
-        fees = self.payload_entity.get("fees") or 0
-        # !Note: fee is inclusive of tax and it is in paisa
-
-        if not fees:
             return
 
         fees = paisa_to_rupees(fees)
