@@ -17,8 +17,8 @@ We choose RazorpayX because:
 - It is a tech layer over traditional bank accounts.
 - Funds remain secure with a regulated bank.
 - Onboarding process is hassle-free.
-- No upfront cost, minimal charges beyond free limits.
-- It ensures robust security.
+- No upfront cost, minimal charges per transaction.
+- Robust security.
 
 ## ✨ Features
 
@@ -38,6 +38,11 @@ We choose RazorpayX because:
 - <em>Secure</em>: Role based access with 2FA to authorize manual payouts
 
 ## 📦 Installation
+
+**Prerequisites**
+
+- ERPNext Version-15 or above
+- Payment Integration Utils App
 
 Choose one of the following methods to install RazorpayX Integration to your ERPNext site.
 
@@ -96,7 +101,7 @@ bench get-app https://github.com/resilient-tech/razorpayx-integration.git --bran
 Install the App on your site
 
 ```sh
-bench --site [site name] install-app razorpayx-integration
+bench --site [site name] install-app razorpayx_integration
 ```
 
 </details>
