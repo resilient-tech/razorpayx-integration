@@ -787,9 +787,14 @@ def process_webhook(payload: dict, integration_request: str):
 
 ###### UTILITIES ######
 def is_unsupported_event(event: str | None) -> bool:
-        return bool(not event or event not in SUPPORTED_EVENTS)
+    return bool(not event or event not in SUPPORTED_EVENTS)
+
 
 def authenticate_webhook_request():
+    if not frappe.get_request_header("X-Razorpay-Event-Id"):
+        log_webhook_authentication_failure("Event ID Not Found")
+        return
+
     signature = frappe.get_request_header("X-Razorpay-Signature")
     if not signature:
         return
@@ -801,10 +806,12 @@ def authenticate_webhook_request():
 
     setting = get_razorpayx_setting(payload.account_id)
     if not setting:
-        log_webhook_authentication_failure("RazorypayX Configuration Not Found")
+        log_webhook_authentication_failure("RazorpayX Configuration Not Found")
         return
 
-    secret = get_decrypted_password(RAZORPAYX_SETTING, setting, "webhook_secret")
+    secret = get_decrypted_password(
+        RAZORPAYX_SETTING, setting, "webhook_secret", raise_exception=False
+    )
     if not secret:
         log_webhook_authentication_failure("Webhook Secret Not Configured")
         return
@@ -818,10 +825,14 @@ def authenticate_webhook_request():
 
 def log_webhook_authentication_failure(reason: str):
     payload = frappe.local.form_dict
+    payload.pop("cmd")
+
     divider = f"\n\n{'-' * 25}\n\n"
     message = f"Reason: {reason}"
     message += divider
-    message += f"Request Headers:\n{frappe.as_json(dict(frappe.request.headers), indent=2)}"
+    message += (
+        f"Request Headers:\n{frappe.as_json(dict(frappe.request.headers), indent=2)}"
+    )
     message += divider
     message += f"Request Body:\n{frappe.as_json(payload, indent=2) if payload else frappe.request.data}"
 
@@ -829,6 +840,7 @@ def log_webhook_authentication_failure(reason: str):
         title=f"RazorpayX Webhook Authentication Failed: {reason}",
         message=message,
     )
+
 
 def get_expected_signature(secret: str) -> str:
     return hmac(secret.encode(), frappe.request.data, "sha256").hexdigest()
