@@ -11,7 +11,7 @@ class RazorpayXTransaction(BaseRazorpayXAPI):
     """
     Handle APIs for `Transaction`.
 
-    :param razorpayx_setting_name: RazorpayX Integration Setting name
+    :param config: RazorpayX Configuration name
     for which this `Transaction` is associate.
 
     ---
@@ -23,7 +23,7 @@ class RazorpayXTransaction(BaseRazorpayXAPI):
 
     # * override base setup
     def setup(self, *args, **kwargs):
-        self.account_number = self.razorpayx_setting.account_number
+        self.account_number = self.razorpayx_config.account_number
 
     ### APIs ###
     def get_by_id(
@@ -71,7 +71,7 @@ class RazorpayXTransaction(BaseRazorpayXAPI):
         Example Usage:
 
         ```
-        transaction = RazorpayXTransaction(RAZORPAYX_SETTING)
+        transaction = RazorpayXTransaction(RAZORPAYX_CONFIG_NAME)
 
         response = transaction.get_all(
             from_date="2024-01-01", to_date="2024-06-01", count=10
@@ -94,7 +94,7 @@ class RazorpayXTransaction(BaseRazorpayXAPI):
             filters["to"] = to_date
 
         if "from" not in filters:
-            filters["from"] = self.razorpayx_setting.last_sync_on
+            filters["from"] = self.razorpayx_config.last_sync_on
 
         # account number is mandatory
         filters["account_number"] = self.account_number
@@ -116,7 +116,7 @@ class RazorpayXTransaction(BaseRazorpayXAPI):
         source_docname: str | None = None,
     ) -> list[dict] | None:
         """
-        Get all transactions for today associate with given RazorpayX Setting.
+        Get all transactions for today associate with given RazorpayX Config.
 
         :param count: The number of transactions to be retrieved.
         :param source_doctype: The source doctype of the transaction.
@@ -145,7 +145,7 @@ class RazorpayXTransaction(BaseRazorpayXAPI):
         source_docname: str | None = None,
     ) -> list[dict] | None:
         """
-        Get all transactions for specific date associate with given  RazorpayX Setting.
+        Get all transactions for specific date associate with given  RazorpayX Config.
 
         :param date: A date string in "YYYY-MM-DD" format or a (datetime,date) object.
         """

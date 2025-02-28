@@ -44,7 +44,7 @@ def validate(doc: PaymentEntry, method=None):
     if doc.flags._is_already_paid:
         return
 
-    set_integration_settings(doc)
+    set_integration_config(doc)
     validate_payout_details(doc)
 
 
@@ -113,23 +113,23 @@ def get_auth_id(doc: PaymentEntry) -> str | None:
 
 
 #### VALIDATIONS ####
-def set_integration_settings(doc: PaymentEntry):
-    def reset_rpx_settings():
+def set_integration_config(doc: PaymentEntry):
+    def reset_rpx_config():
         if doc.integration_doctype == RAZORPAYX_CONFIG:
             doc.integration_doctype = ""
             doc.integration_docname = ""
 
     if doc.paid_from_account_currency != PAYOUT_CURRENCY.INR.value:
-        reset_rpx_settings()
+        reset_rpx_config()
         return
 
-    if setting := frappe.db.get_value(
+    if config := frappe.db.get_value(
         RAZORPAYX_CONFIG, {"disabled": 0, "bank_account": doc.bank_account}
     ):
         doc.integration_doctype = RAZORPAYX_CONFIG
-        doc.integration_docname = setting
+        doc.integration_docname = config
     else:
-        reset_rpx_settings()
+        reset_rpx_config()
 
 
 def validate_payout_details(doc: PaymentEntry):
@@ -230,8 +230,8 @@ def mark_payout_for_cancellation(docname: str, cancel: bool | int):
 
     frappe.has_permission("Payment Entry", "cancel", doc=docname, throw=True)
 
-    setting = frappe.db.get_value("Payment Entry", docname, "integration_docname")
-    frappe.has_permission(RAZORPAYX_CONFIG, doc=setting, throw=True)
+    config = frappe.db.get_value("Payment Entry", docname, "integration_docname")
+    frappe.has_permission(RAZORPAYX_CONFIG, doc=config, throw=True)
 
     key = PayoutWithPaymentEntry.get_cancel_payout_key(docname)
     value = "True" if cancel else "False"

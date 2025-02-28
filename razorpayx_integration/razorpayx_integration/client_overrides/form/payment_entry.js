@@ -9,7 +9,8 @@ frappe.ui.form.on("Payment Entry", {
 		const permission = has_payout_permissions(frm);
 		frm.toggle_display("razorpayx_payout_section", permission);
 
-		if (frm.doc.integration_doctype !== razorpayx.RPX_DOCTYPE || !frm.doc.integration_docname) return;
+		if (frm.doc.integration_doctype !== razorpayx.RAZORPAYX_CONFIG || !frm.doc.integration_docname)
+			return;
 
 		// payout is/will made via RazorpayX
 		if (frm.doc.make_bank_online_payment) {

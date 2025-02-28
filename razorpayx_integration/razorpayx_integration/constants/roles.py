@@ -15,7 +15,7 @@ class ROLE_PROFILE(BaseEnum):
 
 
 ROLES = [
-    ## RazorpayX Integration Setting ##
+    ## RazorpayX Configuration ##
     {
         "doctype": RAZORPAYX_CONFIG,
         "role_name": ROLE_PROFILE.RAZORPAYX_MANAGER.value,

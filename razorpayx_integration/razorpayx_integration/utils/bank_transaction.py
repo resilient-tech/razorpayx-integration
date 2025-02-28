@@ -18,7 +18,7 @@ from razorpayx_integration.razorpayx_integration.apis.transaction import (
 class RazorpayXBankTransaction:
     def __init__(
         self,
-        razorpayx_setting: str,
+        razorpayx_config: str,
         from_date: DateTimeLikeObject | None = None,
         to_date: DateTimeLikeObject | None = None,
         *,
@@ -26,7 +26,7 @@ class RazorpayXBankTransaction:
         source_doctype: str | None = None,
         source_docname: str | None = None,
     ):
-        self.razorpayx_setting = razorpayx_setting
+        self.razorpayx_config = razorpayx_config
         self.from_date = from_date
         self.to_date = to_date
         self.source_doctype = source_doctype
@@ -38,15 +38,15 @@ class RazorpayXBankTransaction:
         if not bank_account:
             bank_account = frappe.db.get_value(
                 doctype=RAZORPAYX_CONFIG,
-                filters=self.razorpayx_setting,
+                filters=self.razorpayx_config,
                 fieldname="bank_account",
             )
 
         if not bank_account:
             frappe.throw(
                 msg=_(
-                    "Company Bank Account not found for RazorpayX Integration Setting <strong>{0}</strong>"
-                ).format(self.razorpayx_setting),
+                    "Company Bank Account not found for RazorpayX Configuration <strong>{0}</strong>"
+                ).format(self.razorpayx_config),
                 title=_("Company Bank Account Not Found"),
             )
 
@@ -71,7 +71,7 @@ class RazorpayXBankTransaction:
         Fetching Bank Transactions from RazorpayX API.
         """
         try:
-            return RazorpayXTransaction(self.razorpayx_setting).get_all(
+            return RazorpayXTransaction(self.razorpayx_config).get_all(
                 from_date=self.from_date,
                 to_date=self.to_date,
                 source_doctype=self.source_doctype,
@@ -81,11 +81,11 @@ class RazorpayXBankTransaction:
         except Exception:
             frappe.log_error(
                 title=(
-                    f"Failed to Fetch RazorpayX Transactions for Setting: {self.razorpayx_setting}"
+                    f"Failed to Fetch RazorpayX Transactions for Config: {self.razorpayx_config}"
                 ),
                 message=frappe.get_traceback(),
                 reference_doctype=RAZORPAYX_CONFIG,
-                reference_name=self.razorpayx_setting,
+                reference_name=self.razorpayx_config,
             )
 
     def get_existing_transactions(self, transactions: list[str]) -> set[str]:
@@ -215,7 +215,7 @@ class RazorpayXBankTransaction:
 ######### APIs #########
 @frappe.whitelist()
 def sync_transactions_for_reconcile(
-    bank_account: str, razorpayx_setting: str | None = None
+    bank_account: str, razorpayx_config: str | None = None
 ):
     """
     Sync RazorpayX bank account transactions.
@@ -225,25 +225,25 @@ def sync_transactions_for_reconcile(
     If last sync date is not set, it will sync all transactions.
 
     :param bank_account: Company Bank Account
-    :param razorpayx_setting: RazorpayX Integration Setting
+    :param razorpayx_config: RazorpayX Configuration
     """
     BRT = "Bank Reconciliation Tool"
     frappe.has_permission(BRT, throw=True)
 
-    if not razorpayx_setting:
-        razorpayx_setting = frappe.db.get_value(
+    if not razorpayx_config:
+        razorpayx_config = frappe.db.get_value(
             RAZORPAYX_CONFIG, {"bank_account": bank_account, "disabled": 0}
         )
 
-    if not razorpayx_setting:
+    if not razorpayx_config:
         frappe.throw(
             _(
-                "RazorpayX Integration Setting not found for Bank Account <strong>{0}</strong>"
+                "RazorpayX Configuration not found for Bank Account <strong>{0}</strong>"
             ).format(bank_account)
         )
 
     RazorpayXBankTransaction(
-        razorpayx_setting,
+        razorpayx_config,
         bank_account=bank_account,
         source_docname=BRT,
         source_doctype=BRT,
@@ -253,7 +253,7 @@ def sync_transactions_for_reconcile(
 # TODO: we need to enqueue this or not!!
 @frappe.whitelist()
 def sync_razorpayx_transactions(
-    razorpayx_setting: str,
+    razorpayx_config: str,
     from_date: DateTimeLikeObject,
     to_date: DateTimeLikeObject,
     bank_account: str | None = None,
@@ -261,7 +261,7 @@ def sync_razorpayx_transactions(
     """
     Sync RazorpayX bank account transactions.
 
-    :param razorpayx_setting: RazorpayX Integration Setting which has the bank account.
+    :param razorpayx_config: RazorpayX Configuration which has the bank account.
     :param from_date: Start Date
     :param to_date: End Date
     :param bank_account: Company Bank Account
@@ -269,12 +269,12 @@ def sync_razorpayx_transactions(
     frappe.has_permission(RAZORPAYX_CONFIG, throw=True)
 
     RazorpayXBankTransaction(
-        razorpayx_setting,
+        razorpayx_config,
         from_date,
         to_date,
         bank_account=bank_account,
         source_doctype=RAZORPAYX_CONFIG,
-        source_docname=razorpayx_setting,
+        source_docname=razorpayx_config,
     ).sync()
 
 
@@ -286,22 +286,22 @@ def sync_transactions_periodically():
     """
     today = getdate()
 
-    settings = frappe.get_all(
+    configs = frappe.get_all(
         doctype=RAZORPAYX_CONFIG,
         filters={"disabled": 0},
         fields=["name", "bank_account"],
     )
 
-    if not settings:
+    if not configs:
         return
 
-    for setting in settings:
-        RazorpayXBankTransaction(setting.name, bank_account=setting.bank_account).sync()
+    for config in configs:
+        RazorpayXBankTransaction(config.name, bank_account=config.bank_account).sync()
 
     # update last sync date
     frappe.db.set_value(
         RAZORPAYX_CONFIG,
-        {"name": ("in", {setting.name for setting in settings})},
+        {"name": ("in", {config.name for config in configs})},
         "last_sync_on",
         today,
     )

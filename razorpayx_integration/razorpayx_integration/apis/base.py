@@ -16,8 +16,8 @@ from payment_integration_utils.payment_integration_utils.utils import (
 from razorpayx_integration.constants import (
     RAZORPAYX_CONFIG,
 )
-from razorpayx_integration.razorpayx_integration.doctype.razorpayx_integration_setting.razorpayx_integration_setting import (
-    RazorpayXIntegrationSetting,
+from razorpayx_integration.razorpayx_integration.doctype.razorpayx_configuration.razorpayx_configuration import (
+    RazorpayXConfiguration,
 )
 
 RAZORPAYX_BASE_API_URL = "https://api.razorpay.com/v1/"
@@ -37,28 +37,28 @@ class BaseRazorpayXAPI:
 
     Must need `RazorpayX Integration Account` name to initiate API.
 
-    :param razorpayx_setting_name: RazorpayX Integration Setting name.
+    :param config: RazorpayX Configuration name.
     """
 
     ### CLASS ATTRIBUTES ###
     BASE_PATH = ""
 
     ### SETUP ###
-    def __init__(self, razorpayx_setting_name: str, *args, **kwargs):
+    def __init__(self, config: str, *args, **kwargs):
         """
         Initialize the RazorpayX API.
 
-        :param razorpayx_setting_name: RazorpayX Integration Setting name.
+        :param config: RazorpayX Configuration name.
         """
-        self.razorpayx_setting: RazorpayXIntegrationSetting = frappe.get_doc(
-            RAZORPAYX_CONFIG, razorpayx_setting_name
+        self.razorpayx_config: RazorpayXConfiguration = frappe.get_doc(
+            RAZORPAYX_CONFIG, config
         )
 
-        self.authenticate_razorpayx_setting()
+        self.authenticate_razorpayx_config()
 
         self.auth = (
-            self.razorpayx_setting.key_id,
-            self.razorpayx_setting.get_password("key_secret"),
+            self.razorpayx_config.key_id,
+            self.razorpayx_config.get_password("key_secret"),
         )
         self.source_doctype = None  # Source doctype for Integration Request Log
         self.source_docname = None  # Source docname for Integration Request Log
@@ -70,27 +70,27 @@ class BaseRazorpayXAPI:
 
         self.setup(*args, **kwargs)
 
-    def authenticate_razorpayx_setting(self):
+    def authenticate_razorpayx_config(self):
         """
-        Check setting is enabled or not?
+        Check config is enabled or not?
 
         Check RazorpayX API credentials `Id` and `Secret` are set or not?
         """
-        if self.razorpayx_setting.disabled:
+        if self.razorpayx_config.disabled:
             frappe.throw(
-                msg=_("To use {0} setting, please enable it first!").format(
-                    frappe.bold(self.razorpayx_setting.name)
+                msg=_("To use {0} config, please enable it first!").format(
+                    frappe.bold(self.razorpayx_config.name)
                 ),
-                title=_("RazorpayX Integration Setting Is Disable"),
+                title=_("RazorpayX Configuration Is Disable"),
             )
 
-        if not self.razorpayx_setting.key_id or not self.razorpayx_setting.key_secret:
+        if not self.razorpayx_config.key_id or not self.razorpayx_config.key_secret:
             frappe.throw(
                 msg=_("Please set <strong>RazorpayX</strong> API credentials."),
                 title=_("API Credentials Are Missing"),
             )
 
-        if not self.razorpayx_setting.webhook_secret:
+        if not self.razorpayx_config.webhook_secret:
             frappe.msgprint(
                 msg=_(
                     "RazorpayX Webhook Secret is missing! <br> You will not receive any updates!"

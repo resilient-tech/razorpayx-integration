@@ -2,7 +2,7 @@
 
 ## ✅ Requirements
 
-1. **RazorpayX Integration Setting**: At least one integration setting must be available.
+1. **RazorpayX Configuration**: At least one integration setting must be available.
 2. **Company Bank Account**: Must be set and associated with the RazorpayX integration.
 3. **User Permissions**:
    - Role: `Online Payment Authorizer`.

@@ -29,7 +29,7 @@ class RazorpayXPayout(BaseRazorpayXAPI):
     """
     Handle APIs for `Payout`.
 
-    :param razorpayx_setting_name: RazorpayX Integration Setting from which `Payout` will be created.
+    :param config: RazorpayX Configuration from which `Payout` will be created.
 
     ---
     Note:
@@ -52,7 +52,7 @@ class RazorpayXPayout(BaseRazorpayXAPI):
         """
         super().setup(*args, **kwargs)
 
-        self.razorpayx_account_number = self.razorpayx_setting.account_number
+        self.razorpayx_account_number = self.razorpayx_config.account_number
         self.default_payout_request = {
             "account_number": self.razorpayx_account_number,
             "queue_if_low_balance": True,

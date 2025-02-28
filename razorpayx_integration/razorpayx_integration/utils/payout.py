@@ -35,7 +35,7 @@ class PayoutWithPaymentEntry:
 
     def __init__(self, doc: PaymentEntry, *args, **kwargs):
         self.doc = doc
-        self.razorpayx_setting_name = self.doc.integration_docname
+        self.config_name = self.doc.integration_docname
 
     ### Make Payout | Payout Link ###
     def make(self, auth_id: str | None = None) -> dict | None:
@@ -57,13 +57,12 @@ class PayoutWithPaymentEntry:
 
         self._is_authenticated_payout(auth_id)
 
-        setting = self.razorpayx_setting_name
         payout_details = self._get_payout_details()
 
         if self.doc.payment_transfer_method == PAYOUT_MODE.LINK.value:
-            response = RazorpayXLinkPayout(setting).pay(payout_details)
+            response = RazorpayXLinkPayout(self.config_name).pay(payout_details)
         else:
-            response = RazorpayXCompositePayout(setting).pay(payout_details)
+            response = RazorpayXCompositePayout(self.config_name).pay(payout_details)
 
         self._update_after_making(response)
 
@@ -194,9 +193,7 @@ class PayoutWithPaymentEntry:
                 )
             return
 
-        if marked_to_cancel or is_auto_cancel_payout_enabled(
-            self.razorpayx_setting_name
-        ):
+        if marked_to_cancel or is_auto_cancel_payout_enabled(self.config_name):
             self.cancel_payout(cancel_pe=cancel_pe)
             self.cancel_payout_link(cancel_pe=cancel_pe)
 
@@ -213,7 +210,7 @@ class PayoutWithPaymentEntry:
         if not self.doc.razorpayx_payout_id:
             return
 
-        response = RazorpayXCompositePayout(self.razorpayx_setting_name).cancel(
+        response = RazorpayXCompositePayout(self.config_name).cancel(
             self.doc.razorpayx_payout_id,
             source_doctype=self.doc.doctype,
             source_docname=self.doc.name,
@@ -235,7 +232,7 @@ class PayoutWithPaymentEntry:
         if not self.doc.razorpayx_payout_link_id:
             return
 
-        response = RazorpayXLinkPayout(self.razorpayx_setting_name).cancel(
+        response = RazorpayXLinkPayout(self.config_name).cancel(
             self.doc.razorpayx_payout_link_id,
             source_doctype=self.doc.doctype,
             source_docname=self.doc.name,
