@@ -14,7 +14,7 @@ from payment_integration_utils.payment_integration_utils.utils import (
 )
 
 from razorpayx_integration.constants import (
-    RAZORPAYX_SETTING,
+    RAZORPAYX_CONFIG,
 )
 from razorpayx_integration.razorpayx_integration.doctype.razorpayx_integration_setting.razorpayx_integration_setting import (
     RazorpayXIntegrationSetting,
@@ -51,7 +51,7 @@ class BaseRazorpayXAPI:
         :param razorpayx_setting_name: RazorpayX Integration Setting name.
         """
         self.razorpayx_setting: RazorpayXIntegrationSetting = frappe.get_doc(
-            RAZORPAYX_SETTING, razorpayx_setting_name
+            RAZORPAYX_CONFIG, razorpayx_setting_name
         )
 
         self.authenticate_razorpayx_setting()

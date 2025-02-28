@@ -16,7 +16,7 @@ from payment_integration_utils.payment_integration_utils.utils import (
     paisa_to_rupees,
 )
 
-from razorpayx_integration.constants import RAZORPAYX_SETTING
+from razorpayx_integration.constants import RAZORPAYX_CONFIG
 from razorpayx_integration.razorpayx_integration.apis.payout import RazorpayXLinkPayout
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
     PAYOUT_CURRENCY,
@@ -810,7 +810,7 @@ def authenticate_webhook_request():
         return
 
     secret = get_decrypted_password(
-        RAZORPAYX_SETTING, setting, "webhook_secret", raise_exception=False
+        RAZORPAYX_CONFIG, setting, "webhook_secret", raise_exception=False
     )
     if not secret:
         log_webhook_authentication_failure("Webhook Secret Not Configured")
@@ -855,7 +855,7 @@ def get_razorpayx_setting(account_id: str) -> str | None:
     """
 
     return frappe.db.get_value(
-        doctype=RAZORPAYX_SETTING,
+        doctype=RAZORPAYX_CONFIG,
         filters={
             "account_id": account_id.removeprefix("acc_"),
         },

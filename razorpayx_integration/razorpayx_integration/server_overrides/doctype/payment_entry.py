@@ -13,7 +13,7 @@ from payment_integration_utils.payment_integration_utils.utils.auth import (
     run_before_payment_authentication as has_payment_permissions,
 )
 
-from razorpayx_integration.constants import RAZORPAYX_SETTING
+from razorpayx_integration.constants import RAZORPAYX_CONFIG
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
     PAYOUT_CURRENCY,
 )
@@ -115,7 +115,7 @@ def get_auth_id(doc: PaymentEntry) -> str | None:
 #### VALIDATIONS ####
 def set_integration_settings(doc: PaymentEntry):
     def reset_rpx_settings():
-        if doc.integration_doctype == RAZORPAYX_SETTING:
+        if doc.integration_doctype == RAZORPAYX_CONFIG:
             doc.integration_doctype = ""
             doc.integration_docname = ""
 
@@ -124,16 +124,16 @@ def set_integration_settings(doc: PaymentEntry):
         return
 
     if setting := frappe.db.get_value(
-        RAZORPAYX_SETTING, {"disabled": 0, "bank_account": doc.bank_account}
+        RAZORPAYX_CONFIG, {"disabled": 0, "bank_account": doc.bank_account}
     ):
-        doc.integration_doctype = RAZORPAYX_SETTING
+        doc.integration_doctype = RAZORPAYX_CONFIG
         doc.integration_docname = setting
     else:
         reset_rpx_settings()
 
 
 def validate_payout_details(doc: PaymentEntry):
-    if not doc.make_bank_online_payment or doc.integration_doctype != RAZORPAYX_SETTING:
+    if not doc.make_bank_online_payment or doc.integration_doctype != RAZORPAYX_CONFIG:
         return
 
     if not doc.bank_account:
@@ -231,7 +231,7 @@ def mark_payout_for_cancellation(docname: str, cancel: bool | int):
     frappe.has_permission("Payment Entry", "cancel", doc=docname, throw=True)
 
     setting = frappe.db.get_value("Payment Entry", docname, "integration_docname")
-    frappe.has_permission(RAZORPAYX_SETTING, doc=setting, throw=True)
+    frappe.has_permission(RAZORPAYX_CONFIG, doc=setting, throw=True)
 
     key = PayoutWithPaymentEntry.get_cancel_payout_key(docname)
     value = "True" if cancel else "False"
