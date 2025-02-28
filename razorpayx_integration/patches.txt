@@ -7,3 +7,4 @@ execute:from razorpayx_integration.setup import create_property_setters; create_
 razorpayx_integration.patches.set_payment_transfer_method
 razorpayx_integration.patches.delete_old_custom_fields
 razorpayx_integration.patches.delete_old_property_setters
+razorpayx_integration.patches.update_integration_doctype
