@@ -3,7 +3,7 @@ from razorpayx_integration.razorpayx_integration.constants.payouts import (
     FUND_ACCOUNT_TYPE,
 )
 from razorpayx_integration.razorpayx_integration.utils.validation import (
-    validate_razorpayx_fund_account_type,
+    validate_fund_account_type,
 )
 
 # ! IMPORTANT: Currently this API is not maintained.
@@ -150,4 +150,4 @@ class RazorpayXFundAccount(BaseRazorpayXAPI):
     ### Helpers ###
     def _validate_and_process_filters(self, filters: dict) -> dict:
         if account_type := filters.get("account_type"):
-            validate_razorpayx_fund_account_type(account_type)
+            validate_fund_account_type(account_type)

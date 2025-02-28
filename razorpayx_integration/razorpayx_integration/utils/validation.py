@@ -9,7 +9,7 @@ from razorpayx_integration.razorpayx_integration.constants.payouts import (
 )
 
 
-def validate_razorpayx_fund_account_type(type: str):
+def validate_fund_account_type(type: str):
     """
     :raises frappe.ValidationError: If the type is not valid.
     """
@@ -25,7 +25,7 @@ def validate_razorpayx_fund_account_type(type: str):
     )
 
 
-def validate_razorpayx_payout_description(description: str):
+def validate_payout_description(description: str):
     """
     Description/Narration should be of max 30 characters and A-Z, a-z, 0-9, and space only.
 

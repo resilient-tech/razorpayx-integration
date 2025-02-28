@@ -252,7 +252,7 @@ def sync_transactions_for_reconcile(
 
 # TODO: we need to enqueue this or not!!
 @frappe.whitelist()
-def sync_razorpayx_transactions(
+def sync_bank_transactions_with_razorpayx(
     razorpayx_config: str,
     from_date: DateTimeLikeObject,
     to_date: DateTimeLikeObject,
