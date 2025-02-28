@@ -2,7 +2,7 @@
 // For license information, please see license.txt
 const WEBHOOK_PATH = "razorpayx_integration.razorpayx_integration.utils.webhook.webhook_listener";
 
-frappe.ui.form.on("RazorpayX Integration Setting", {
+frappe.ui.form.on("RazorpayX Configuration", {
 	setup: function (frm) {
 		frm.set_query("bank_account", function () {
 			return {
