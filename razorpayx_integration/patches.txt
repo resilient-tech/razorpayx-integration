@@ -4,6 +4,7 @@
 [post_model_sync]
 execute:from razorpayx_integration.setup import create_custom_fields; create_custom_fields() # 1
 execute:from razorpayx_integration.setup import create_property_setters; create_property_setters() # 1
+execute:from razorpayx_integration.setup import create_roles_and_permissions; create_roles_and_permissions()
 razorpayx_integration.patches.set_payment_transfer_method
 razorpayx_integration.patches.delete_old_custom_fields
 razorpayx_integration.patches.delete_old_property_setters
