@@ -1,6 +1,6 @@
 // Copyright (c) 2024, Resilient Tech and contributors
 // For license information, please see license.txt
-const WEBHOOK_PATH = "razorpayx_integration.razorpayx_integration.utils.webhook.razorpayx_webhook_listener";
+const WEBHOOK_PATH = "razorpayx_integration.razorpayx_integration.utils.webhook.webhook_listener";
 
 frappe.ui.form.on("RazorpayX Integration Setting", {
 	setup: function (frm) {
