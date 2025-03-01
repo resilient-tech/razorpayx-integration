@@ -58,6 +58,8 @@ https://github.com/user-attachments/assets/57064570-26cf-48d1-8ac9-35d9918016a2
 
 - Use the **Bulk Pay and Submit** option in the list view for bulk actions.
 - A confirmation dialog will appear for PEs with integration settings configured but `Make Online Payment` unchecked.
+- If `Party Bank Account` is selected payout will be made with `NEFT` by default otherwise made with `Link`.
+- It is recommeded to select valid  `Company Bank Account` and `Party Bank Account` and `Make Bank Online Payment` check to bulk pay.
 
 https://github.com/user-attachments/assets/1fac304e-1de5-4e00-9d80-0fc4cf6c4ce8
 
