@@ -33,7 +33,7 @@ def before_tests():
     create_test_records()
     set_default_company_for_tests()
     create_rpx_config()
-    # create_payment_entries()
+    create_payment_entries()
 
     frappe.db.commit()  # nosemgrep
 
