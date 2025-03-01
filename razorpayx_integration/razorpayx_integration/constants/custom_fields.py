@@ -113,7 +113,7 @@ PROCESSOR_FIELDS = {
             "fieldtype": "Check",
             "insert_after": "auto_cancel_payout",
             "default": "1",
-            "description": "If the Payment Entry is submitted via a <strong>cron job</strong> or any <strong>server-side</strong> process, the <strong>Payout</strong> will be made.",
+            "description": "If the Payment Entry is submitted via the Payments Processor, then the payout will be initiated automatically.",
         },
     ]
 }
