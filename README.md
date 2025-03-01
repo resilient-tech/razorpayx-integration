@@ -14,11 +14,11 @@ Bank integrations in India are usually costly and complex, mainly available to c
 
 We choose RazorpayX because:
 
-- It is a tech layer over traditional bank accounts.
-- Funds remain secure with a regulated bank.
-- Onboarding process is hassle-free.
-- No upfront cost, minimal charges per transaction.
-- Robust security.
+- It is a tech layer over traditional bank accounts
+- Funds remain secure with a regulated bank
+- Onboarding process is hassle-free
+- No upfront cost, minimal charges per transaction, transparent pricing
+- Robust security
 
 ## ✨ Features
 
