@@ -41,8 +41,9 @@ We choose RazorpayX because:
 
 **Prerequisites**
 
-- ERPNext Version-15 or above
-- Payment Integration Utils App
+- [ERPNext](https://github.com/frappe/erpnext) Version-15 or above
+- [Payment Integration Utils](https://github.com/resilient-tech/payment_integration_utils)
+- [Payments Processor](https://github.com/resilient-tech/payments-processor) (optional: to automate workflows) 
 
 Choose one of the following methods to install RazorpayX Integration to your ERPNext site.
 
