@@ -19,7 +19,7 @@
 
 ---
 
-## ⚙️ Step 2: Create a RazorpayX Integration Setting
+## ⚙️ Step 2: Create a RazorpayX Configuration
 
 ![4-rpx-setting](https://github.com/user-attachments/assets/af715709-2348-43cc-8a77-6391661a7a6a)
 
@@ -36,7 +36,7 @@
 
 ### 🌐 Set Up Webhooks
 
-1. **Copy Webhook URL**: Click the `Copy Webhook URL` button in the RazorpayX Integration Setting.
+1. **Copy Webhook URL**: Click the `Copy Webhook URL` button in the RazorpayX Configuration.
 2. **Add Webhook URL to RazorpayX Dashboard**: Paste the URL [here](https://x.razorpay.com/settings/developer-controls).  
    ![7-webhook](https://github.com/user-attachments/assets/72b9657c-00d5-4e84-a829-a74d323eff8a)
 

@@ -2,7 +2,7 @@
 // For license information, please see license.txt
 const WEBHOOK_PATH = "razorpayx_integration.razorpayx_integration.utils.webhook.webhook_listener";
 
-frappe.ui.form.on("RazorpayX Integration Setting", {
+frappe.ui.form.on("RazorpayX Configuration", {
 	setup: function (frm) {
 		frm.set_query("bank_account", function () {
 			return {
@@ -107,7 +107,7 @@ function prompt_transactions_sync_date(frm) {
 	dialog.show();
 }
 
-function sync_transactions(razorpayx_setting, bank_account, from_date, to_date) {
+function sync_transactions(razorpayx_config, bank_account, from_date, to_date) {
 	frappe.show_alert({
 		message: __("Syncing Transactions from <strong>{0}</strong> to <strong>{1}</strong>", [
 			payment_integration_utils.get_date_in_user_fmt(from_date),
@@ -117,15 +117,13 @@ function sync_transactions(razorpayx_setting, bank_account, from_date, to_date) 
 	});
 
 	frappe.call({
-		method: "razorpayx_integration.razorpayx_integration.utils.bank_transaction.sync_razorpayx_transactions",
-		args: { razorpayx_setting, bank_account, from_date, to_date },
+		method: "razorpayx_integration.razorpayx_integration.utils.bank_transaction.sync_bank_transactions_with_razorpayx",
+		args: { razorpayx_config, bank_account, from_date, to_date },
 		callback: function (r) {
 			//TODO: If it is enqueued, need changes!!
 			if (!r.exc) {
 				frappe.show_alert({
-					message: __("<strong>{0}</strong> transactions synced successfully!", [
-						razorpayx_setting,
-					]),
+					message: __("<strong>{0}</strong> transactions synced successfully!", [razorpayx_config]),
 					indicator: "green",
 				});
 			}

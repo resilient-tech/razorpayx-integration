@@ -14,11 +14,11 @@ from payment_integration_utils.payment_integration_utils.constants.payments impo
     TRANSFER_METHOD,
 )
 
-from razorpayx_integration.constants import RAZORPAYX_SETTING
+from razorpayx_integration.constants import RAZORPAYX_CONFIG
 from razorpayx_integration.razorpayx_integration.constants.payouts import PAYOUT_STATUS
 from razorpayx_integration.razorpayx_integration.constants.roles import PERMISSION_LEVEL
 
-PAYOUT_VIA_RAZORPAYX = f"doc.make_bank_online_payment && doc.integration_doctype === '{RAZORPAYX_SETTING}' && doc.integration_docname"
+PAYOUT_VIA_RAZORPAYX = f"doc.make_bank_online_payment && doc.integration_doctype === '{RAZORPAYX_CONFIG}' && doc.integration_docname"
 PAYOUT_BASE_CONDITION = f"doc.payment_type=='Pay' && doc.party && doc.party_type && doc.paid_from_account_currency === 'INR' && {PAYOUT_VIA_RAZORPAYX}"
 
 CUSTOM_FIELDS = {

@@ -254,7 +254,7 @@
  "modified": "2025-02-26 18:46:51.783636",
  "modified_by": "Administrator",
  "module": "Razorpayx Integration",
- "name": "RazorpayX Integration Setting",
+ "name": "RazorpayX Configuration",
  "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [

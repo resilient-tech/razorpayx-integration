@@ -16,7 +16,7 @@ from payment_integration_utils.payment_integration_utils.utils import (
     paisa_to_rupees,
 )
 
-from razorpayx_integration.constants import RAZORPAYX_SETTING
+from razorpayx_integration.constants import RAZORPAYX_CONFIG
 from razorpayx_integration.razorpayx_integration.apis.payout import RazorpayXLinkPayout
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
     PAYOUT_CURRENCY,
@@ -54,7 +54,7 @@ class RazorpayXWebhook:
         self.payload = payload
         self.integration_request = integration_request
         self.account_id = ""
-        self.razorpayx_setting_name = ""
+        self.config_name = ""
 
         self.event = ""
         self.event_type = ""
@@ -71,20 +71,20 @@ class RazorpayXWebhook:
         self.referenced_docnames = []
         self.notes = {}
 
-        self.set_razorpayx_setting_name()  # Mandatory
+        self.set_config_name()  # Mandatory
         self.set_common_payload_attributes()  # Mandatory
         self.setup_respective_webhook_payload()
         self.set_source_doctype_and_docname()
         self.set_id_field()
 
-    def set_razorpayx_setting_name(self):
+    def set_config_name(self):
         """
-        Set the RazorpayX Setting Name using the `account_id`.
+        Set the RazorpayX Configuration Name using the `account_id`.
         """
         if not self.account_id:
             self.account_id = self.payload.get("account_id")
 
-        self.razorpayx_setting_name = get_razorpayx_setting(self.account_id)
+        self.config_name = get_razorpayx_config(self.account_id)
 
     def set_common_payload_attributes(self):
         """
@@ -350,7 +350,7 @@ class PayoutWebhook(RazorpayXWebhook):
         if not fees:
             return
 
-        fee_config = get_fees_accounting_config(self.razorpayx_setting_name)
+        fee_config = get_fees_accounting_config(self.config_name)
 
         if not fee_config.automate_fees_accounting:
             return
@@ -486,7 +486,7 @@ class PayoutWebhook(RazorpayXWebhook):
             return True
 
         try:
-            payout_link = RazorpayXLinkPayout(self.razorpayx_setting_name)
+            payout_link = RazorpayXLinkPayout(self.config_name)
             status = payout_link.get_by_id(link_id, "status")
 
             if self.is_payout_link_cancelled(status):
@@ -804,13 +804,13 @@ def authenticate_webhook_request():
         log_webhook_authentication_failure("Account ID Not Found in Payload")
         return
 
-    setting = get_razorpayx_setting(payload.account_id)
-    if not setting:
+    config = get_razorpayx_config(payload.account_id)
+    if not config:
         log_webhook_authentication_failure("RazorpayX Configuration Not Found")
         return
 
     secret = get_decrypted_password(
-        RAZORPAYX_SETTING, setting, "webhook_secret", raise_exception=False
+        RAZORPAYX_CONFIG, config, "webhook_secret", raise_exception=False
     )
     if not secret:
         log_webhook_authentication_failure("Webhook Secret Not Configured")
@@ -847,15 +847,15 @@ def get_expected_signature(secret: str) -> str:
 
 
 @frappe.request_cache
-def get_razorpayx_setting(account_id: str) -> str | None:
+def get_razorpayx_config(account_id: str) -> str | None:
     """
-    Fetch the RazorpayX Integration Setting name based on the identifier.
+    Fetch the RazorpayX Configuration name based on the identifier.
 
     :param account_id: RazorpayX Account ID (Business ID).
     """
 
     return frappe.db.get_value(
-        doctype=RAZORPAYX_SETTING,
+        doctype=RAZORPAYX_CONFIG,
         filters={
             "account_id": account_id.removeprefix("acc_"),
         },

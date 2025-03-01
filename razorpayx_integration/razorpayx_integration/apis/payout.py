@@ -21,7 +21,7 @@ from razorpayx_integration.razorpayx_integration.constants.payouts import (
     PAYOUT_PURPOSE_MAP,
 )
 from razorpayx_integration.razorpayx_integration.utils.validation import (
-    validate_razorpayx_payout_description,
+    validate_payout_description,
 )
 
 
@@ -29,7 +29,7 @@ class RazorpayXPayout(BaseRazorpayXAPI):
     """
     Handle APIs for `Payout`.
 
-    :param razorpayx_setting_name: RazorpayX Integration Setting from which `Payout` will be created.
+    :param config: RazorpayX Configuration from which `Payout` will be created.
 
     ---
     Note:
@@ -52,7 +52,7 @@ class RazorpayXPayout(BaseRazorpayXAPI):
         """
         super().setup(*args, **kwargs)
 
-        self.razorpayx_account_number = self.razorpayx_setting.account_number
+        self.razorpayx_account_number = self.razorpayx_config.account_number
         self.default_payout_request = {
             "account_number": self.razorpayx_account_number,
             "queue_if_low_balance": True,
@@ -365,7 +365,7 @@ class RazorpayXPayout(BaseRazorpayXAPI):
         Note: 🟢 Override this method to customize the validation.
         """
         if narration := json.get("narration"):
-            validate_razorpayx_payout_description(narration)
+            validate_payout_description(narration)
 
     def _validate_payout_mode(self, mode: str):
         validate_payout_mode(mode, throw=True)
@@ -775,4 +775,4 @@ class RazorpayXLinkPayout(RazorpayXPayout):
         ---
         Note: 🟢 Override this method to customize the validation.
         """
-        validate_razorpayx_payout_description(json["description"])
+        validate_payout_description(json["description"])
