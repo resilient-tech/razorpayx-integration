@@ -1,9 +1,12 @@
 import click
 import frappe
 
-from razorpayx_integration.constants import BUG_REPORT_URL
+from razorpayx_integration.constants import BUG_REPORT_URL, PAYMENTS_PROCESSOR_APP
 from razorpayx_integration.hooks import app_title as APP_NAME
-from razorpayx_integration.setup import setup_customizations
+from razorpayx_integration.setup import (
+    create_payments_processor_custom_fields,
+    setup_customizations,
+)
 
 POST_INSTALL_PATCHES = []
 
@@ -45,3 +48,8 @@ def run_post_install_patches():
 
     finally:
         frappe.flags.in_patch = False
+
+
+def after_app_install(app_name):
+    if app_name == PAYMENTS_PROCESSOR_APP:
+        create_payments_processor_custom_fields()
