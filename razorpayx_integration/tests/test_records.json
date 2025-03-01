@@ -1,0 +1,225 @@
+{
+  "Company": [
+    {
+      "company_name": "Globex Industries",
+      "abbr": "GI",
+      "doctype": "Company",
+      "country": "India",
+      "default_currency": "INR",
+      "domain": "Sales",
+      "chart_of_accounts": "Standard"
+    }
+  ],
+  "Supplier": [
+    {
+      "name": "Organic Base Materials",
+      "supplier_name": "Organic Base Materials",
+      "supplier_type": "Company"
+    },
+    {
+      "name": "Kor Energy",
+      "supplier_name": "Kor Energy",
+      "supplier_type": "Company"
+    },
+    {
+      "name": "Sar Chemicals",
+      "supplier_name": "Sar Chemicals",
+      "supplier_type": "Company"
+    }
+  ],
+  "Employee": [
+    {
+      "company": "Globex Industries",
+      "date_of_birth": "1980-01-01",
+      "date_of_joining": "2010-01-01",
+      "doctype": "Employee",
+      "first_name": "_Test Employee",
+      "gender": "Female",
+      "status": "Active",
+      "naming_series": "_T-Employee-",
+      "personal_email": "test_emp1@gmail.com",
+      "prefered_contact_email": "Personal Email"
+    },
+    {
+      "company": "Globex Industries",
+      "date_of_birth": "1980-01-01",
+      "date_of_joining": "2010-01-01",
+      "doctype": "Employee",
+      "first_name": "_Test Employee 2",
+      "naming_series": "_T-Employee-",
+      "gender": "Male",
+      "status": "Active",
+      "personal_email": "test_emp2@gmail.com",
+      "prefered_contact_email": "Personal Email"
+    },
+    {
+      "company": "Globex Industries",
+      "date_of_birth": "1980-01-01",
+      "date_of_joining": "2010-01-01",
+      "doctype": "Employee",
+      "first_name": "_Test Employee 3",
+      "naming_series": "_T-Employee-",
+      "gender": "Male",
+      "status": "Active",
+      "personal_email": "test_emp2@gmail.com",
+      "prefered_contact_email": "Personal Email"
+    }
+  ],
+  "Bank": [
+    {
+      "bank_name": "HDFC"
+    },
+    {
+      "bank_name": "IDFC"
+    },
+    {
+      "bank_name": "Axis"
+    },
+    {
+      "bank_name": "SBI"
+    },
+    {
+      "bank_name": "RBL"
+    }
+  ],
+  "Bank Account": [
+    {
+      "account_name": "RPX",
+      "is_company_account": 1,
+      "company": "Globex Industries",
+      "bank": "RBL",
+      "account": "Bank Accounts - GI",
+      "bank_account_no": "2323230070611684"
+    },
+    {
+      "account_name": "Organic Base Materials",
+      "bank": "HDFC",
+      "party_type": "Supplier",
+      "party": "Organic Base Materials",
+      "branch_code": "HDFC0002550",
+      "bank_account_no": "2323230070611684",
+      "upi_id": "78956230@hdfc",
+      "is_default": 1
+    },
+    {
+      "account_name": "Kor Energy",
+      "bank": "IDFC",
+      "party_type": "Supplier",
+      "party": "Kor Energy",
+      "branch_code": "IDFB0042381",
+      "bank_account_no": "1234567890123456",
+      "upi_id": "1235987@idfc"
+    },
+    {
+      "account_name": "Sar Chemicals",
+      "bank": "SBI",
+      "party_type": "Supplier",
+      "party": "Sar Chemicals",
+      "branch_code": "SBIN0000324",
+      "bank_account_no": "9876543210987654",
+      "upi_id": "7856241@sbi"
+    },
+    {
+      "account_name": "_Test Employee",
+      "bank": "Axis",
+      "party_type": "Employee",
+      "party": "_T-Employee-00001",
+      "branch_code": "UTIB0000013",
+      "bank_account_no": "1111222233334444",
+      "upi_id": "5657893855@axis",
+      "is_default": 1
+    },
+    {
+      "account_name": "_Test Employee 2",
+      "bank": "Axis",
+      "party_type": "Employee",
+      "party": "_T-Employee-00002",
+      "branch_code": "UTIB0000013",
+      "bank_account_no": "2222333344445555",
+      "upi_id": "565263855@axis"
+    },
+    {
+      "account_name": "_Test Employee 3",
+      "bank": "RBL",
+      "party_type": "Employee",
+      "party": "_T-Employee-00003",
+      "branch_code": "RATN0000143",
+      "bank_account_no": "3333444455556666",
+      "upi_id": "89652304@rbl"
+    }
+  ],
+  "Contact": [
+    {
+      "doctype": "Contact",
+      "salutation": "Mr",
+      "first_name": "Organic Base Materials",
+      "is_primary_contact": 1,
+      "email_ids": [
+        {
+          "email_id": "organic.materials@example.com",
+          "is_primary": 1
+        }
+      ],
+      "phone_nos": [
+        {
+          "phone": "+91 1234567890",
+          "is_primary_mobile_no": 1
+        }
+      ],
+      "links": [
+        {
+          "link_doctype": "Supplier",
+          "link_name": "Organic Base Materials"
+        }
+      ]
+    },
+    {
+      "doctype": "Contact",
+      "salutation": "Mr",
+      "first_name": "Kor Energy",
+      "is_primary_contact": 1,
+      "email_ids": [
+        {
+          "email_id": "kor.energy@example.com",
+          "is_primary": 1
+        }
+      ],
+      "phone_nos": [
+        {
+          "phone": "+91 2345678901",
+          "is_primary_mobile_no": 1
+        }
+      ],
+      "links": [
+        {
+          "link_doctype": "Supplier",
+          "link_name": "Kor Energy"
+        }
+      ]
+    },
+    {
+      "doctype": "Contact",
+      "salutation": "Mr",
+      "first_name": "Sar Chemicals",
+      "is_primary_contact": 1,
+      "email_ids": [
+        {
+          "email_id": "sar.chemicals@example.com",
+          "is_primary": 1
+        }
+      ],
+      "phone_nos": [
+        {
+          "phone": "+91 3456789012",
+          "is_primary_mobile_no": 1
+        }
+      ],
+      "links": [
+        {
+          "link_doctype": "Supplier",
+          "link_name": "Sar Chemicals"
+        }
+      ]
+    }
+  ]
+}
