@@ -104,6 +104,7 @@ CUSTOM_FIELDS = {
     ],
 }
 
+# payments_processor App fields
 PROCESSOR_FIELDS = {
     RAZORPAYX_CONFIG: [
         {
