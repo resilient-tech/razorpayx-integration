@@ -33,6 +33,7 @@ def before_tests():
     create_test_records()
     set_default_company_for_tests()
     create_rpx_config()
+    # create_payment_entries()
 
     frappe.db.commit()  # nosemgrep
 
@@ -70,3 +71,29 @@ def create_rpx_config():
     )
 
     doc.insert(ignore_permissions=True, ignore_links=True)
+
+
+def create_payment_entries():
+    test_records = frappe.get_file_json(
+        frappe.get_app_path("razorpayx_integration", "tests", "test_pe_records.json")
+    )
+
+    defaults = {
+        "company": "Globex Industries",
+        "bank_account": "RPX - RBL",
+        "paid_from": "Bank Accounts - GI",
+        "paid_to": "Creditors - GI",
+    }
+
+    for data in test_records:
+        data.update(defaults)
+
+        doc = frappe.new_doc("Payment Entry")
+        doc.update(data)
+
+        doc.setup_party_account_field()
+        doc.set_missing_values()
+        doc.set_exchange_rate()
+        doc.received_amount = doc.paid_amount / doc.target_exchange_rate
+
+        doc.save()

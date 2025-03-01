@@ -1,0 +1,174 @@
+[
+  {
+    "payment_type": "Pay",
+    "party_type": "Supplier",
+    "party": "Organic Base Materials",
+    "paid_amount": 1000,
+    "party_bank_account": "Organic Base Materials - HDFC",
+    "make_bank_online_payment": 1,
+    "payment_transfer_method": "NEFT",
+    "razorpayx_payout_desc": "Payment for Materials"
+  },
+  {
+    "payment_type": "Pay",
+    "party_type": "Supplier",
+    "party": "Organic Base Materials",
+    "paid_amount": 1500,
+    "party_bank_account": "Organic Base Materials - HDFC",
+    "make_bank_online_payment": 1,
+    "payment_transfer_method": "UPI",
+    "razorpayx_payout_desc": "Payment for Materials UPI"
+  },
+  {
+    "payment_type": "Pay",
+    "party_type": "Supplier",
+    "party": "Kor Energy",
+    "paid_amount": 2000,
+    "party_bank_account": "Kor Energy - IDFC",
+    "make_bank_online_payment": 1,
+    "payment_transfer_method": "NEFT",
+    "razorpayx_payout_desc": "Payment for Energy"
+  },
+  {
+    "payment_type": "Pay",
+    "party_type": "Supplier",
+    "party": "Kor Energy",
+    "paid_amount": 2500,
+    "party_bank_account": "Kor Energy - IDFC",
+    "make_bank_online_payment": 1,
+    "payment_transfer_method": "UPI",
+    "razorpayx_payout_desc": "Payment for Energy UPI"
+  },
+  {
+    "payment_type": "Pay",
+    "party_type": "Supplier",
+    "party": "Sar Chemicals",
+    "paid_amount": 3000,
+    "party_bank_account": "Sar Chemicals - SBI",
+    "make_bank_online_payment": 1,
+    "payment_transfer_method": "NEFT",
+    "razorpayx_payout_desc": "Payment for Chemicals"
+  },
+  {
+    "payment_type": "Pay",
+    "party_type": "Supplier",
+    "party": "Sar Chemicals",
+    "paid_amount": 3500,
+    "party_bank_account": "Sar Chemicals - SBI",
+    "make_bank_online_payment": 1,
+    "payment_transfer_method": "UPI",
+    "razorpayx_payout_desc": "Payment for Chemicals UPI"
+  },
+  {
+    "payment_type": "Pay",
+    "party_type": "Employee",
+    "party": "_T-Employee-00001",
+    "paid_amount": 4000,
+    "party_bank_account": "_Test Employee - Axis",
+    "make_bank_online_payment": 1,
+    "payment_transfer_method": "NEFT",
+    "razorpayx_payout_desc": "Salary NEFT"
+  },
+  {
+    "payment_type": "Pay",
+    "party_type": "Employee",
+    "party": "_T-Employee-00001",
+    "paid_amount": 4500,
+    "party_bank_account": "_Test Employee - Axis",
+    "make_bank_online_payment": 1,
+    "payment_transfer_method": "UPI",
+    "razorpayx_payout_desc": "Salary UPI"
+  },
+  {
+    "payment_type": "Pay",
+    "party_type": "Supplier",
+    "party": "Organic Base Materials",
+    "paid_amount": 1000,
+    "party_bank_account": "Organic Base Materials - HDFC"
+  },
+  {
+    "payment_type": "Pay",
+    "party_type": "Supplier",
+    "party": "Kor Energy",
+    "paid_amount": 2000,
+    "party_bank_account": "Kor Energy - IDFC"
+  },
+  {
+    "payment_type": "Pay",
+    "party_type": "Supplier",
+    "party": "Sar Chemicals",
+    "paid_amount": 3000,
+    "party_bank_account": "Sar Chemicals - SBI"
+  },
+  {
+    "payment_type": "Pay",
+    "party_type": "Employee",
+    "party": "_T-Employee-00001",
+    "paid_amount": 4500,
+    "party_bank_account": "_Test Employee - Axis"
+  },
+  {
+    "payment_type": "Receive",
+    "party_type": "Supplier",
+    "party": "Organic Base Materials",
+    "paid_amount": 1000,
+    "party_bank_account": "Organic Base Materials - HDFC"
+  },
+  {
+    "payment_type": "Receive",
+    "party_type": "Supplier",
+    "party": "Kor Energy",
+    "paid_amount": 2000,
+    "party_bank_account": "Kor Energy - IDFC"
+  },
+  {
+    "payment_type": "Receive",
+    "party_type": "Supplier",
+    "party": "Sar Chemicals",
+    "paid_amount": 3000,
+    "party_bank_account": "Sar Chemicals - SBI"
+  },
+  {
+    "payment_type": "Receive",
+    "party_type": "Employee",
+    "party": "_T-Employee-00001",
+    "paid_amount": 4500,
+    "party_bank_account": "_Test Employee - Axis"
+  },
+  {
+    "payment_type": "Pay",
+    "integration_doctype": "",
+    "integration_docname": "",
+    "party_type": "Supplier",
+    "party": "Organic Base Materials",
+    "paid_amount": 1000,
+    "party_bank_account": "Organic Base Materials - HDFC"
+  },
+  {
+    "payment_type": "Pay",
+    "integration_doctype": "",
+    "integration_docname": "",
+    "party_type": "Supplier",
+    "party": "Kor Energy",
+    "paid_amount": 2000,
+    "party_bank_account": "Kor Energy - IDFC"
+  },
+  {
+    "payment_type": "Pay",
+    "integration_doctype": "",
+    "integration_docname": "",
+    "party_type": "Supplier",
+    "party": "Sar Chemicals",
+    "paid_amount": 3000,
+    "party_bank_account": "Sar Chemicals - SBI"
+  },
+  {
+    "payment_type": "Pay",
+    "integration_doctype": "",
+    "integration_docname": "",
+    "party_type": "Employee",
+    "party": "_T-Employee-00001",
+    "paid_amount": 4500,
+    "party_bank_account": "_Test Employee - Axis"
+  }
+]
