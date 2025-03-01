@@ -1,8 +1,11 @@
 import click
 
-from razorpayx_integration.constants import BUG_REPORT_URL
+from razorpayx_integration.constants import BUG_REPORT_URL, PAYMENTS_PROCESSOR_APP
 from razorpayx_integration.hooks import app_title as APP_NAME
-from razorpayx_integration.setup import delete_customizations
+from razorpayx_integration.setup import (
+    delete_customizations,
+    delete_payments_processor_custom_fields,
+)
 
 
 def before_uninstall():
@@ -20,3 +23,8 @@ def before_uninstall():
         raise e
 
     click.secho(f"Thank you for using {APP_NAME}!", fg="green")
+
+
+def before_app_uninstall(app_name):
+    if app_name == PAYMENTS_PROCESSOR_APP:
+        delete_payments_processor_custom_fields()

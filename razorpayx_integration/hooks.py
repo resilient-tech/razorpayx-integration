@@ -9,6 +9,9 @@ required_apps = ["frappe/erpnext", "resilient-tech/payment_integration_utils"]
 after_install = "razorpayx_integration.install.after_install"
 before_uninstall = "razorpayx_integration.uninstall.before_uninstall"
 
+after_app_install = "razorpayx_integration.install.after_app_install"
+before_app_uninstall = "razorpayx_integration.uninstall.before_app_uninstall"
+
 app_include_js = "razorpayx_integration.bundle.js"
 
 export_python_type_annotations = True
