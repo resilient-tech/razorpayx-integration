@@ -37,12 +37,14 @@
 ### 🌐 Set Up Webhooks
 
 1. **Copy Webhook URL**: Click the `Copy Webhook URL` button in the RazorpayX Configuration.
-2. **Add Webhook URL to RazorpayX Dashboard**: Paste the URL [here](https://x.razorpay.com/settings/developer-controls).  
+   ![image](https://github.com/user-attachments/assets/a72f619e-bbbe-40e2-a7e4-d527c66baa66)
+
+3. **Add Webhook URL to RazorpayX Dashboard**: Paste the URL [here](https://x.razorpay.com/settings/developer-controls).  
    ![7-webhook](https://github.com/user-attachments/assets/72b9657c-00d5-4e84-a829-a74d323eff8a)
 
    **For Local Testing**: Refer to [this guide](https://discuss.frappe.io/t/guide-for-using-ngrok-for-webhook-testing/141902).
 
-3. **Supported Webhooks (12 Events)**:
+4. **Supported Webhooks (12 Events)**:
 
    ```shell
    # Payout
@@ -64,7 +66,7 @@
 
    For more details, visit [RazorpayX Webhook Events](https://razorpay.com/docs/x/apis/subscribe/#webhook-events-and-descriptions).
 
-4. **Add Webhook Secret**: Ensure you add the webhook secret; otherwise, ERPNext won’t receive updates.
+5. **Add Webhook Secret**: Ensure you add the webhook secret; otherwise, ERPNext won’t receive updates.
 
 ---
 
