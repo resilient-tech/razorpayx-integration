@@ -32,8 +32,9 @@
 
 - If a **Payout** is reversed, only the status will be updated, and the PE will not be canceled.
 
-- **Payment Authentication Method**:
-  1. Authenticator App
+- **Payment Authentication Method**: OTP App (See `System Settings` Login tab)
+  
+  ![image](https://github.com/user-attachments/assets/b9daa82a-e7dd-469f-8008-f84aa7a79305)
 
 
 ## 🛠️ Methods to Create Payouts
@@ -42,8 +43,7 @@
 
 https://github.com/user-attachments/assets/528a76bf-6c5f-49ab-9b13-e28499eb107d
 
-- If a Frappe workflow is active for the PE, the `Pay and Submit` button will not be visible. On submission, `Make Online Payment` will be unchecked if previously checked.
-
+- If a Frappe workflow is active for the PE, the `Pay and Submit` button will not be visible and on submission, `Make Online Payment` will be unchecked if previously checked.
 
 ### Method 2: Create Payout with `Make Payout` Custom Button
 
