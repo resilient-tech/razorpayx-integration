@@ -23,7 +23,7 @@
 
 - The **Make Online Payment** checkbox appears after saving the Payment Entry (PE) for the first time if the integration is found.
 
-- If RazorpayX is configured after creating the PE, reselect the **Company Bank Account** and save the PE.
+- If RazorpayX is configured after creating the PE, reselect the **Company Bank Account** and save the PE to set integartion.
 
 - If an **Amended Payment Entry** has its original PE marked for `Make Online Payment`, the amended PE will not create a payout.
   - Payment details cannot be changed in such cases.
@@ -32,11 +32,8 @@
 
 - If a **Payout** is reversed, only the status will be updated, and the PE will not be canceled.
 
-- **Payment Authorization Methods**:
-  1. User Password
-  2. Authenticator App
-  3. Via Email
-  4. Via SMS
+- **Payment Authentication Method**:
+  1. Authenticator App
 
 
 ## 🛠️ Methods to Create Payouts
