@@ -103,3 +103,16 @@ CUSTOM_FIELDS = {
         #### PAYMENT SECTION END ####
     ],
 }
+
+PROCESSOR_FIELDS = {
+    RAZORPAYX_CONFIG: [
+        {
+            "fieldname": "pay_on_auto_submit",
+            "label": "Pay on Auto Submit",
+            "fieldtype": "Check",
+            "insert_after": "auto_cancel_payout",
+            "default": "1",
+            "description": "If the Payment Entry is submitted via a <strong>cron job</strong> or any <strong>server-side</strong> process, the <strong>Payout</strong> will be made.",
+        },
+    ]
+}
