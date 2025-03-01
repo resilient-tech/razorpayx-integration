@@ -24,7 +24,8 @@
 
 ## ⚙️ Step 2: Create a RazorpayX Configuration
 
-![4-rpx-setting](https://github.com/user-attachments/assets/af715709-2348-43cc-8a77-6391661a7a6a)
+![image](https://github.com/user-attachments/assets/c19b2c10-7245-4149-ba9b-f03a5eb72326)
+
 
 ### Get API Credentials
 
