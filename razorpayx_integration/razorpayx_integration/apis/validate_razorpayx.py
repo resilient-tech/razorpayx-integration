@@ -2,6 +2,8 @@
 Module for API testing and validation.
 """
 
+import frappe
+
 from razorpayx_integration.razorpayx_integration.apis.base import BaseRazorpayXAPI
 
 
@@ -49,6 +51,9 @@ class RazorpayXValidation(BaseRazorpayXAPI):
         - Key ID
         - Key Secret
         """
+        if frappe.flags.in_test:
+            return
+
         self._set_service_details_to_ir_log("Validate API Credentials")
         self.set_base_path("transactions")
 

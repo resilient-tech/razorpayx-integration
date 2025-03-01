@@ -32,6 +32,7 @@ def before_tests():
 
     create_test_records()
     set_default_company_for_tests()
+    create_rpx_config()
 
     frappe.db.commit()  # nosemgrep
 
@@ -52,3 +53,20 @@ def set_default_company_for_tests():
     global_defaults = frappe.get_single("Global Defaults")
     global_defaults.default_company = "Globex Industries"
     global_defaults.save()
+
+
+def create_rpx_config():
+    doc = frappe.new_doc("RazorpayX Configuration")
+    doc.update(
+        {
+            "key_id": "rzp_test_key_id",
+            "key_secret": "rzp_test_key_secret",
+            "webhook_secret": "razopayx@webhook",
+            "account_id": "565632desh",
+            "bank_account": "RPX - RBL",
+            "account_number": "2323230070611684",
+            "company": "Globex Industries",
+        }
+    )
+
+    doc.insert(ignore_permissions=True, ignore_links=True)
