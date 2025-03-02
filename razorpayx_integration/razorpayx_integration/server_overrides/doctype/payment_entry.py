@@ -233,6 +233,7 @@ def make_payout_with_razorpayx(
             "razorpayx_payout_desc": kwargs.get("razorpayx_payout_desc"),
             # ERPNext
             "reference_no": UTR_PLACEHOLDER,
+            "remarks": doc.remarks.replace(doc.reference_no, UTR_PLACEHOLDER),
         }
     )
 
