@@ -81,7 +81,7 @@ def create_payment_entries():
     defaults = {
         "company": "Globex Industries",
         "bank_account": "RPX - RBL",
-        "paid_from": "Bank Accounts - GI",
+        "paid_from": "Cash - GI",
         "paid_to": "Creditors - GI",
     }
 
