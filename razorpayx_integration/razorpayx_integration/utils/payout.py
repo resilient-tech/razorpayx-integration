@@ -75,9 +75,9 @@ class PayoutWithPaymentEntry:
         :param auth_id: Authentication ID
 
         ---
-        Note: when `frappe.flags.authenticated_by_cron_job` is set, it will bypass the authentication.
+        Note: when `frappe.flags.initiated_by_payment_processor` is set, it will bypass the authentication.
         """
-        if frappe.flags.authenticated_by_cron_job:
+        if frappe.flags.initiated_by_payment_processor:
             return True
 
         if not auth_id:

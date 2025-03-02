@@ -2,12 +2,14 @@
 
 ## ✅ Requirements
 
-1. **RazorpayX Configuration**: At least one integration setting must be available.
-2. **Company Bank Account**: Must be set and associated with the RazorpayX integration.
-3. **User Permissions**:
+1. **RazorpayX Configuration**: At least one configuration must be available.
+2. **Company Bank Account**: Must be set and associated with the RazorpayX Configuartion.
+3. **Payment Type**: `Pay`
+4. **Paid from Account Currency**: `INR`
+5. **User Permissions**:
    - Role: `Online Payment Authorizer`.
    - Permission to submit `Payment Entry`.
-4. **Make Online Payment**: Ensure this checkbox is checked.
+6. **Make Online Payment**: Ensure this checkbox is checked.
    - If unchecked, you can still make a payout after submission if the integration setting is configured.
 
 ## 📌 Notes
@@ -23,7 +25,7 @@
 
 - The **Make Online Payment** checkbox appears after saving the Payment Entry (PE) for the first time if the integration is found.
 
-- If RazorpayX is configured after creating the PE, reselect the **Company Bank Account** and save the PE.
+- If RazorpayX is configured after creating the PE, reselect the **Company Bank Account** and save the PE to set integartion.
 
 - If an **Amended Payment Entry** has its original PE marked for `Make Online Payment`, the amended PE will not create a payout.
   - Payment details cannot be changed in such cases.
@@ -32,11 +34,9 @@
 
 - If a **Payout** is reversed, only the status will be updated, and the PE will not be canceled.
 
-- **Payment Authorization Methods**:
-  1. User Password
-  2. Authenticator App
-  3. Via Email
-  4. Via SMS
+- **Payment Authentication Method**: OTP App (See `System Settings` Login tab)
+  
+  ![image](https://github.com/user-attachments/assets/b9daa82a-e7dd-469f-8008-f84aa7a79305)
 
 
 ## 🛠️ Methods to Create Payouts
@@ -45,8 +45,7 @@
 
 https://github.com/user-attachments/assets/528a76bf-6c5f-49ab-9b13-e28499eb107d
 
-- If a Frappe workflow is active for the PE, the `Pay and Submit` button will not be visible. On submission, `Make Online Payment` will be unchecked if previously checked.
-
+- If a Frappe workflow is active for the PE, the `Pay and Submit` button will not be visible and on submission, `Make Online Payment` will be unchecked if previously checked.
 
 ### Method 2: Create Payout with `Make Payout` Custom Button
 
@@ -59,6 +58,8 @@ https://github.com/user-attachments/assets/57064570-26cf-48d1-8ac9-35d9918016a2
 
 - Use the **Bulk Pay and Submit** option in the list view for bulk actions.
 - A confirmation dialog will appear for PEs with integration settings configured but `Make Online Payment` unchecked.
+- If `Party Bank Account` is selected payout will be made with `NEFT` by default otherwise made with `Link`.
+- It is recommeded to select valid  `Company Bank Account` and `Party Bank Account` and `Make Bank Online Payment` check to bulk pay.
 
 https://github.com/user-attachments/assets/1fac304e-1de5-4e00-9d80-0fc4cf6c4ce8
 

@@ -11,6 +11,8 @@ before_uninstall = "razorpayx_integration.uninstall.before_uninstall"
 
 before_tests = "razorpayx_integration.tests.before_tests"
 
+after_app_install = "razorpayx_integration.install.after_app_install"
+before_app_uninstall = "razorpayx_integration.uninstall.before_app_uninstall"
 
 app_include_js = "razorpayx_integration.bundle.js"
 

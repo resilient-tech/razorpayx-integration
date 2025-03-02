@@ -103,3 +103,17 @@ CUSTOM_FIELDS = {
         #### PAYMENT SECTION END ####
     ],
 }
+
+# payments_processor App fields
+PROCESSOR_FIELDS = {
+    RAZORPAYX_CONFIG: [
+        {
+            "fieldname": "pay_on_auto_submit",
+            "label": "Pay on Auto Submit",
+            "fieldtype": "Check",
+            "insert_after": "auto_cancel_payout",
+            "default": "1",
+            "description": "If the Payment Entry is submitted via the Payments Processor, then the payout will be initiated automatically.",
+        },
+    ]
+}

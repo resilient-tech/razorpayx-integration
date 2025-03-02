@@ -45,6 +45,7 @@ def validate(doc: PaymentEntry, method=None):
         return
 
     set_integration_config(doc)
+    set_for_payments_processor(doc)
     validate_payout_details(doc)
 
 
@@ -54,7 +55,7 @@ def before_submit(doc: PaymentEntry, method=None):
         # PE is not authorized to make payout or auto pay is disabled
         doc.make_bank_online_payment = 0
 
-        if frappe.flags.authenticated_by_cron_job:
+        if frappe.flags.initiated_by_payment_processor:
             return
 
         # Show single alert message only
@@ -75,15 +76,18 @@ def before_submit(doc: PaymentEntry, method=None):
 
 
 def should_uncheck_make_bank_online_payment(doc: PaymentEntry) -> bool:
-    # TODO: should we use more generic flag than `authenticated_by_cron_job`? Because what if PE is submitted from API or other background process?
+    # TODO: should we use more generic flag than `initiated_by_payment_processor`? Because what if PE is submitted from API or other background process?
     # Then `is_auto_pay_enabled` will not even be checked and payout will be made even if it is disabled.
+    if not is_payout_via_razorpayx(doc):
+        return False
+
     should_uncheck_payment_flag = (
         not is_auto_pay_enabled(doc.integration_docname)
-        if frappe.flags.authenticated_by_cron_job
+        if frappe.flags.initiated_by_payment_processor
         else not doc.flags._is_already_paid and not get_auth_id(doc)
     )
 
-    return is_payout_via_razorpayx(doc) and should_uncheck_payment_flag
+    return should_uncheck_payment_flag
 
 
 def on_submit(doc: PaymentEntry, method=None):
@@ -130,6 +134,26 @@ def set_integration_config(doc: PaymentEntry):
         doc.integration_docname = config
     else:
         reset_rpx_config()
+
+
+def set_for_payments_processor(doc: PaymentEntry):
+    if not frappe.flags.initiated_by_payment_processor:
+        return
+
+    if doc.integration_doctype != RAZORPAYX_CONFIG:
+        return
+
+    if not is_auto_pay_enabled(doc.integration_docname):
+        return
+
+    def get_payout_desc() -> str:
+        invoice = doc.flags.invoice_list[0]
+        desc = invoice.bill_no or invoice.name
+        desc = "".join(e for e in desc if e.isalnum())
+        return desc[:30]
+
+    doc.make_bank_online_payment = 1
+    doc.razorpayx_payout_desc = get_payout_desc()
 
 
 def validate_payout_details(doc: PaymentEntry):
