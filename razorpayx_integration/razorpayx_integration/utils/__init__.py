@@ -1,7 +1,7 @@
 import frappe
 from erpnext.accounts.doctype.payment_entry.payment_entry import PaymentEntry
 
-from razorpayx_integration.constants import RAZORPAYX_CONFIG
+from razorpayx_integration.constants import PAYMENTS_PROCESSOR_APP, RAZORPAYX_CONFIG
 
 
 def is_payout_via_razorpayx(doc: PaymentEntry) -> bool:
@@ -20,6 +20,9 @@ def is_auto_cancel_payout_enabled(razorpayx_config: str) -> bool | int:
 
 
 def is_auto_pay_enabled(razorpayx_config: str) -> bool | int:
+    if PAYMENTS_PROCESSOR_APP not in frappe.get_installed_apps():
+        return False
+
     return frappe.db.get_value(RAZORPAYX_CONFIG, razorpayx_config, "pay_on_auto_submit")
 
 
