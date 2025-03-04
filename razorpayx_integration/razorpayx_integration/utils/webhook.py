@@ -233,7 +233,7 @@ class PayoutWebhook(RazorpayXWebhook):
         Process RazorpayX Payout Related Webhooks.
         """
         self.update_payment_entry()
-        self.create_journal_entry()
+        self.create_journal_entry_for_fees()
 
     def update_payment_entry(self, update_status: bool = True):
         """
@@ -306,7 +306,7 @@ class PayoutWebhook(RazorpayXWebhook):
         if self.should_cancel_payment_entry() and self.cancel_payout_link():
             self.cancel_payment_entry()
 
-    def create_journal_entry(self):
+    def create_journal_entry_for_fees(self):
         """
         Create a Journal Entry for the Payout Charges (fees + tax).
 
