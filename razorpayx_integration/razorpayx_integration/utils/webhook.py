@@ -323,6 +323,7 @@ class PayoutWebhook(RazorpayXWebhook):
 
             return today()
 
+        # TODO: commonify for reversal JE
         def get_remark(fees: int) -> str:
             user_remark = ""
 
@@ -375,6 +376,7 @@ class PayoutWebhook(RazorpayXWebhook):
 
         fees = paisa_to_rupees(fees)
 
+        # TODO: commonify for reversal JE
         je = frappe.new_doc("Journal Entry")
         je.update(
             {
