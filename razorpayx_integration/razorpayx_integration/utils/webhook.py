@@ -20,6 +20,7 @@ from razorpayx_integration.constants import RAZORPAYX_CONFIG
 from razorpayx_integration.razorpayx_integration.apis.payout import RazorpayXLinkPayout
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
     PAYOUT_CURRENCY,
+    PAYOUT_FROM,
     PAYOUT_LINK_STATUS,
     PAYOUT_ORDERS,
     PAYOUT_STATUS,
@@ -340,7 +341,12 @@ class PayoutWebhook(RazorpayXWebhook):
 
             return user_remark
 
-        if self.status != PAYOUT_STATUS.PROCESSED.value:
+        def get_payable_account() -> str:
+            return frappe.db.get_value(
+                "Bank Account", self.source_doc.bank_account, "account"
+            )
+
+        if not self.source_doc or self.status != PAYOUT_STATUS.PROCESSED.value:
             return
 
         fees = self.payload_entity.get("fees") or 0
@@ -350,9 +356,12 @@ class PayoutWebhook(RazorpayXWebhook):
         if not fees:
             return
 
-        fee_config = get_fees_accounting_config(self.config_name)
+        fees_config = get_fees_accounting_config(self.config_name)
 
-        if not fee_config.automate_fees_accounting:
+        if (
+            not fees_config.automate_fees_accounting
+            or fees_config.payouts_from != PAYOUT_FROM.RAZORPAYX_LITE.value
+        ):
             return
 
         fees = paisa_to_rupees(fees)
@@ -366,14 +375,14 @@ class PayoutWebhook(RazorpayXWebhook):
                 "posting_date": get_posting_date(),
                 "accounts": [
                     {
-                        "account": fee_config.creditors_account,
+                        "account": fees_config.creditors_account,
                         "party_type": "Supplier",
-                        "party": fee_config.supplier,
+                        "party": fees_config.supplier,
                         "debit_in_account_currency": fees,
                         "credit_in_account_currency": 0,
                     },
                     {
-                        "account": fee_config.payable_account,
+                        "account": get_payable_account(),
                         "debit_in_account_currency": 0,
                         "credit_in_account_currency": fees,
                     },
