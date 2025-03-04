@@ -600,6 +600,17 @@ class PayoutLinkWebhook(PayoutWebhook):
         )
 
 
+# TODO: Handle Fees and Tax deduction at the end of the day
+"""
+1. Create JE
+2. Debit: Creditors Account
+3. Credit: Payable Account
+3. Amount: Fees + Tax
+4. Cheque No: UTR ?
+5. User Remark: Fees: 200 | Tax: 36 | Integration Request: IR-00001 (Example)
+"""
+
+
 class TransactionWebhook(PayoutWebhook):
     """
     Processor for RazorpayX Transaction Webhook.
