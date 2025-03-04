@@ -156,6 +156,7 @@ class RazorpayXBankTransaction:
 
         # auto reconciliation
         self.set_matching_payment_entry(mapped, source)
+        self.set_matching_journal_entry(mapped, source)
 
         return mapped
 
@@ -199,6 +200,38 @@ class RazorpayXBankTransaction:
                 "allocated_amount": payment_entry.paid_amount,
             }
         ]
+
+    def set_matching_journal_entry(self, mapped: dict, source: dict | None = None):
+        """
+        Setting matching Journal Entry for the Bank Reconciliation.
+
+        :param mapped: Mapped Bank Transaction
+        :param source: Source of the transaction (In transaction response)
+
+        ---
+        Note: JE created only when payout processed.
+        """
+        if not source or not source.get("utr"):
+            return
+
+        journal_entry = frappe.db.get_value(
+            "Journal Entry",
+            {"docstatus": 1, "difference": 0, "cheque_no": source.get("utr")},
+            fieldname=["name", "total_debit"],
+            order_by="creation desc",  # to get latest
+            as_dict=True,
+        )
+
+        if not journal_entry:
+            return
+
+        mapped.setdefault("payment_entries", []).append(
+            {
+                "payment_document": "Journal Entry",
+                "payment_entry": journal_entry.name,
+                "allocated_amount": journal_entry.total_debit,
+            }
+        )
 
     # TODO: can use bulk insert?
     def create(self, mapped_transaction: dict):
