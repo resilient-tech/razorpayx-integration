@@ -648,25 +648,27 @@ class TransactionWebhook(PayoutWebhook):
         Sample Payloads:
         - https://razorpay.com/docs/webhooks/payloads/x/transactions/#transaction-created
         """
+        self.transaction_id = self.payload_entity["id"]
 
-        def get_payout_id() -> str:
-            match self.transaction_type:
-                case TRANSACTION_TYPE.PAYOUT.value:
-                    return self.transaction_source.get("id")
-                case TRANSACTION_TYPE.REVERSAL.value:
-                    return self.transaction_source.get("payout_id")
+        if not self.payload_entity:
+            return
 
-        self.transaction_id = self.payload_entity.get("id")
+        self.transaction_source = self.payload_entity.get("source") or {}
 
-        if self.payload_entity:
-            self.transaction_source = self.payload_entity.get("source") or {}
+        if not self.transaction_source:
+            return
 
-        if self.transaction_source:
-            self.transaction_type = self.transaction_source.get("entity")
-            self.utr = self.transaction_source.get("utr")
+        self.transaction_type = self.transaction_source.get("entity")
+        self.utr = self.transaction_source.get("utr")
+        self.status = self.transaction_source.get("status")
+        self.notes = self.transaction_source.get("notes") or {}
+
+        if self.transaction_type == TRANSACTION_TYPE.PAYOUT.value:
+            self.id = self.transaction_source.get("id")
             self.status = self.transaction_source.get("status")
-            self.id = get_payout_id()
-            self.notes = self.transaction_source.get("notes") or {}
+        elif self.transaction_type == TRANSACTION_TYPE.REVERSAL.value:
+            self.id = self.transaction_source.get("payout_id")
+            self.status = PAYOUT_STATUS.REVERSED.value
 
     ### APIs ###
     def process_webhook(self, *args, **kwargs):
