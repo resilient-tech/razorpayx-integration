@@ -346,7 +346,11 @@ class PayoutWebhook(RazorpayXWebhook):
                 "Bank Account", self.source_doc.bank_account, "account"
             )
 
-        if not self.source_doc or self.status != PAYOUT_STATUS.PROCESSED.value:
+        if (
+            not self.source_doc
+            or self.status != PAYOUT_STATUS.PROCESSED.value
+            or not self.utr
+        ):
             return
 
         fees = self.payload_entity.get("fees") or 0
@@ -354,6 +358,10 @@ class PayoutWebhook(RazorpayXWebhook):
         # Example: fees = 236 (2.36 INR) and tax = 36 (0.36 INR) => Charge = 200 (2 INR) | Tax = 36 (0.36 INR)
 
         if not fees:
+            return
+
+        # already je exists
+        if frappe.db.exists("Journal Entry", {"cheque_no": self.utr}):
             return
 
         fees_config = get_fees_accounting_config(self.config_name)
