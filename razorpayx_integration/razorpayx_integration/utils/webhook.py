@@ -234,6 +234,7 @@ class PayoutWebhook(RazorpayXWebhook):
         """
         self.update_payment_entry()
         self.create_journal_entry_for_fees()
+        self.handle_payout_reversal()
 
     def update_payment_entry(self, update_status: bool = True):
         """
@@ -403,6 +404,20 @@ class PayoutWebhook(RazorpayXWebhook):
         je.flags.skip_remarks_creation = True
         je.submit()
 
+    def handle_payout_reversal(self):
+        if (
+            not self.source_doc
+            or self.status != PAYOUT_STATUS.REVERSED.value
+            or not self.utr
+        ):
+            # Cancel the Payout Link if the Payout is made from the Payout Link.
+            self.cancel_payout_link()
+
+            # TODO: Should cancel JE which was made for the fees and tax deduction?
+            # Create reversal JE for source doc
+            # Un-reconcile the PE
+            # Remove PE from the Bank Reconciliation if available and add JE in BT
+
     ### UTILITIES ###
     def set_id_field(self) -> str:
         field_mapper = {
@@ -518,6 +533,7 @@ class PayoutWebhook(RazorpayXWebhook):
 
                 return True
 
+        # TODO: should update IR status to `Failed`
         except Exception:
             frappe.log_error(
                 title="RazorpayX Payout Link Cancellation Failed",
