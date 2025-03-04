@@ -26,6 +26,7 @@ class RazorpayXConfiguration(Document):
         creditors_account: DF.Link | None
         disabled: DF.Check
         ifsc_code: DF.Data | None
+        je_on_reversal: DF.Check
         key_id: DF.Data
         key_secret: DF.Password
         last_sync_on: DF.Date | None

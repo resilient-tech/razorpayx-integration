@@ -29,10 +29,13 @@
   "pe_config_section",
   "auto_cancel_payout",
   "accounting_tab",
-  "accounting_section",
+  "fees_section",
   "automate_fees_accounting",
   "column_break_rshi",
   "payouts_from",
+  "payout_reversal_section",
+  "je_on_reversal",
+  "column_break_ntie",
   "fees_accounting_section",
   "creditors_account",
   "payable_account",
@@ -187,10 +190,6 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "accounting_section",
-   "fieldtype": "Section Break"
-  },
-  {
    "fieldname": "column_break_vdui",
    "fieldtype": "Column Break"
   },
@@ -203,10 +202,11 @@
    "options": "Account"
   },
   {
+   "depends_on": "eval: doc.automate_fees_accounting || doc.je_on_reversal",
    "fieldname": "creditors_account",
    "fieldtype": "Link",
    "label": "Creditors Account",
-   "mandatory_depends_on": "eval: doc.automate_fees_accounting",
+   "mandatory_depends_on": "eval: doc.automate_fees_accounting || doc.je_on_reversal",
    "options": "Account"
   },
   {
@@ -221,7 +221,6 @@
    "fieldtype": "Column Break"
   },
   {
-   "depends_on": "eval: doc.automate_fees_accounting",
    "fieldname": "fees_accounting_section",
    "fieldtype": "Section Break"
   },
@@ -231,10 +230,11 @@
    "label": "Accounting"
   },
   {
+   "depends_on": "eval: doc.automate_fees_accounting || doc.je_on_reversal",
    "fieldname": "supplier",
    "fieldtype": "Link",
    "label": "Supplier",
-   "mandatory_depends_on": "eval: doc.automate_fees_accounting",
+   "mandatory_depends_on": "eval: doc.automate_fees_accounting || doc.je_on_reversal",
    "options": "Supplier"
   },
   {
@@ -246,11 +246,31 @@
    "label": "Payouts from",
    "mandatory_depends_on": "eval: doc.automate_fees_accounting",
    "options": "Current Account\nRazorpayX Lite"
+  },
+  {
+   "fieldname": "fees_section",
+   "fieldtype": "Section Break",
+   "label": "Fees and Tax"
+  },
+  {
+   "fieldname": "payout_reversal_section",
+   "fieldtype": "Section Break",
+   "label": "Payout Reversal"
+  },
+  {
+   "default": "1",
+   "fieldname": "je_on_reversal",
+   "fieldtype": "Check",
+   "label": "Create JE on Payout Reversal"
+  },
+  {
+   "fieldname": "column_break_ntie",
+   "fieldtype": "Column Break"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-03-04 11:34:10.553006",
+ "modified": "2025-03-04 17:10:52.954612",
  "modified_by": "Administrator",
  "module": "Razorpayx Integration",
  "name": "RazorpayX Configuration",
