@@ -30,6 +30,7 @@ class RazorpayXConfiguration(Document):
         key_secret: DF.Password
         last_sync_on: DF.Date | None
         payable_account: DF.Link | None
+        payouts_from: DF.Literal["Current Account", "RazorpayX Lite"]
         supplier: DF.Link | None
         webhook_secret: DF.Password | None
     # end: auto-generated types
