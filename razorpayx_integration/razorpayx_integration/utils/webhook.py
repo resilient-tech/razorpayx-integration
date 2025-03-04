@@ -745,6 +745,8 @@ def webhook_listener():
         return
 
     payload = frappe.local.form_dict
+    payload.pop("cmd")
+
     event = payload.get("event")
     if is_unsupported_event(event):
         return
