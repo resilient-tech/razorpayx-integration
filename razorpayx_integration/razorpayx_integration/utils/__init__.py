@@ -33,6 +33,7 @@ def get_fees_accounting_config(razorpayx_config: str) -> dict:
             razorpayx_config,
             [
                 "automate_fees_accounting",
+                "payouts_from",
                 "creditors_account",
                 "supplier",
                 "payable_account",
