@@ -866,7 +866,7 @@ def get_referenced_docnames(doctype: str, docname: str) -> list[str] | None:
     """
     Get the referenced docnames based.
 
-    - Order by creation date.
+    - Descending order by creation date.
 
     :param doctype: Source Doctype.
     :param docname: Source Docname.
