@@ -1,8 +1,15 @@
 import json
 from hmac import new as hmac
+from typing import Literal
 
 import frappe
 import frappe.utils
+from erpnext.accounts.doctype.journal_entry.journal_entry import (
+    make_reverse_journal_entry,
+)
+from erpnext.accounts.doctype.unreconcile_payment.unreconcile_payment import (
+    create_unreconcile_doc_for_selection,
+)
 from frappe import _
 from frappe.rate_limiter import rate_limit
 from frappe.utils import fmt_money, get_link_to_form, get_url_to_form, today
@@ -196,13 +203,16 @@ class RazorpayXWebhook:
         """
         return self.get_formlink("Integration Request", self.integration_request, html)
 
-    def get_source_formlink(self, html: bool = False) -> str:
+    def get_source_formlink(self, html: bool = False) -> str | None:
         """
         Get the Source Doc Form Link.
 
         :param html: bool - If True, return the anchor (<a>) tag.
         """
-        return self.get_formlink(self.source_doctype, self.source_docname, html)
+        if not self.source_doc:
+            return
+
+        return self.get_formlink(self.source_doc.doctype, self.source_doc.name, html)
 
 
 class PayoutWebhook(RazorpayXWebhook):
@@ -312,56 +322,14 @@ class PayoutWebhook(RazorpayXWebhook):
 
         Reference: https://razorpay.com/docs/x/manage-teams/billing/
         """
-
-        def fmt_inr(amount: int) -> str:
-            return fmt_money(amount, currency=PAYOUT_CURRENCY.INR.value)
-
-        def get_posting_date():
-            if created_at := self.payload_entity.get("created_at"):
-                return get_epoch_date(created_at)
-
-            return today()
-
-        def get_remark(fees: int) -> str:
-            user_remark = ""
-
-            if self.source_doc:
-                user_remark = (
-                    f"{self.source_doc.doctype}: {self.get_source_formlink(True)}\n"
-                )
-
-            user_remark += f"Payout ID: {self.id}"
-
-            if fee_type := self.payload_entity.get("fee_type"):
-                user_remark += f"\nFee Type: {fee_type}"
-
-            tax = paisa_to_rupees(self.payload_entity.get("tax") or 0)
-            user_remark += f"\nFees: {fmt_inr(fees - tax)} | Tax: {fmt_inr(tax)}"
-            user_remark += f"\n\nIntegration Request: {self.get_ir_formlink(True)}"
-
-            return user_remark
-
-        def get_payable_account() -> str:
-            return frappe.db.get_value(
-                "Bank Account", self.source_doc.bank_account, "account"
-            )
-
-        if (
-            not self.source_doc
-            or self.status != PAYOUT_STATUS.PROCESSED.value
-            or not self.utr
-        ):
+        if not self.source_doc or self.status != PAYOUT_STATUS.PROCESSED.value:
             return
 
         fees = self.payload_entity.get("fees") or 0
         # !Note: fees is inclusive of tax and it is in paisa
         # Example: fees = 236 (2.36 INR) and tax = 36 (0.36 INR) => Charge = 200 (2 INR) | Tax = 36 (0.36 INR)
 
-        if not fees:
-            return
-
-        # already je exists
-        if frappe.db.exists("Journal Entry", {"cheque_no": self.utr}):
+        if not fees or self.je_exists(self.id):
             return
 
         fees_config = get_fees_accounting_config(self.config_name)
@@ -374,36 +342,75 @@ class PayoutWebhook(RazorpayXWebhook):
 
         fees = paisa_to_rupees(fees)
 
-        je = frappe.new_doc("Journal Entry")
-        je.update(
-            {
-                "voucher_type": "Journal Entry",
-                "is_system_generated": 1,
-                "company": self.source_doc.company,
-                "posting_date": get_posting_date(),
-                "accounts": [
-                    {
-                        "account": fees_config.creditors_account,
-                        "party_type": "Supplier",
-                        "party": fees_config.supplier,
-                        "debit_in_account_currency": fees,
-                        "credit_in_account_currency": 0,
-                    },
-                    {
-                        "account": get_payable_account(),
-                        "debit_in_account_currency": 0,
-                        "credit_in_account_currency": fees,
-                    },
-                ],
-                "cheque_no": self.utr,
-                "user_remark": get_remark(fees),
-            }
+        self.create_je(
+            accounts=[
+                {
+                    "account": fees_config.creditors_account,
+                    "party_type": "Supplier",
+                    "party": fees_config.supplier,
+                    "debit_in_account_currency": fees,
+                    "credit_in_account_currency": 0,
+                },
+                {
+                    "account": self.get_company_payable_account(),
+                    "debit_in_account_currency": 0,
+                    "credit_in_account_currency": fees,
+                },
+            ],
+            user_remark=self.get_je_remark(fees),
+            cheque_no=self.id,
         )
 
-        je.flags.skip_remarks_creation = True
-        je.submit()
-
     ### UTILITIES ###
+    def fmt_inr(amount: int) -> str:
+        return fmt_money(amount, currency=PAYOUT_CURRENCY.INR.value)
+
+    def get_posting_date(self):
+        if created_at := self.payload_entity.get("created_at"):
+            return get_epoch_date(created_at)
+
+        return today()
+
+    def get_company_payable_account(self) -> str:
+        return frappe.db.get_value(
+            "Bank Account", self.source_doc.bank_account, "account"
+        )
+
+    def je_exists(self, cheque_no: str) -> str | None:
+        return frappe.db.exists(
+            "Journal Entry",
+            {
+                "cheque_no": cheque_no,
+            },
+        )
+
+    def get_je_remark(self, fees: int | None = None, reversal: bool = False) -> str:
+        user_remark = ""
+
+        if self.source_doc:
+            user_remark = (
+                f"{self.source_doc.doctype}: {self.get_source_formlink(True)}\n"
+            )
+
+        if reversal:
+            user_remark += f"Reversal ID: {self.reversal_id}"
+        else:
+            user_remark += f"Payout ID: {self.id}"
+
+        if self.status:
+            user_remark += f"\nPayout Status: {self.status.title()}"
+
+        if fees:
+            if fee_type := self.payload_entity.get("fee_type"):
+                user_remark += f"\nFee Type: {fee_type}"
+
+            tax = paisa_to_rupees(self.payload_entity.get("tax") or 0)
+            user_remark += f"\nFees: {PayoutWebhook.fmt_inr(fees - tax)} | Tax: {PayoutWebhook.fmt_inr(tax)}"
+
+        user_remark += f"\n\nIntegration Request: {self.get_ir_formlink(True)}"
+
+        return user_remark
+
     def set_id_field(self) -> str:
         field_mapper = {
             EVENTS_TYPE.PAYOUT.value: "razorpayx_payout_id",
@@ -412,6 +419,23 @@ class PayoutWebhook(RazorpayXWebhook):
         }
 
         self.id_field = field_mapper.get(self.event_type) or "razorpayx_payout_id"
+
+    def create_je(self, **kwargs):
+        je = frappe.new_doc("Journal Entry")
+        je.update(
+            {
+                "voucher_type": "Journal Entry",
+                "is_system_generated": 1,
+                "company": self.source_doc.company,
+                "posting_date": self.get_posting_date(),
+                **kwargs,
+            }
+        )
+
+        je.flags.skip_remarks_creation = True
+        je.submit()
+
+        return je
 
     def get_source_doc(self):
         """
@@ -518,6 +542,7 @@ class PayoutWebhook(RazorpayXWebhook):
 
                 return True
 
+        # TODO: should update IR status to `Failed`
         except Exception:
             frappe.log_error(
                 title="RazorpayX Payout Link Cancellation Failed",
@@ -656,6 +681,7 @@ class TransactionWebhook(PayoutWebhook):
         Sample Payloads:
         - https://razorpay.com/docs/webhooks/payloads/x/transactions/#transaction-created
         """
+        self.reversal_id = ""
         self.transaction_id = self.payload_entity["id"]
 
         if not self.payload_entity:
@@ -675,6 +701,7 @@ class TransactionWebhook(PayoutWebhook):
             self.id = self.transaction_source.get("id")
             self.status = self.transaction_source.get("status")
         elif self.transaction_type == TRANSACTION_TYPE.REVERSAL.value:
+            self.reversal_id = self.transaction_source.get("id")
             self.id = self.transaction_source.get("payout_id")
             self.status = PAYOUT_STATUS.REVERSED.value
 
@@ -685,6 +712,7 @@ class TransactionWebhook(PayoutWebhook):
         """
         self.update_payment_entry()
         self.update_bank_transaction()
+        self.handle_payout_reversal()
 
     def handle_pe_cancellation(self):
         pass
@@ -714,7 +742,112 @@ class TransactionWebhook(PayoutWebhook):
             self.utr,
         )
 
+    def handle_payout_reversal(self):
+        if not self.source_doc or self.status != PAYOUT_STATUS.REVERSED.value:
+            return
+
+        # TODO: Should cancel JE which was made for the fees and tax deduction?
+        self.cancel_payout_link()
+
+        self.create_payout_reversal_je()
+        self.unreconcile_payment_entry()
+        self.reverse_fees_and_tax_je()
+
+    def unreconcile_payment_entry(self):
+        vouchers = []
+
+        source = {
+            "company": self.source_doc.company,
+            "voucher_type": self.source_doc.doctype,
+            "voucher_no": self.source_doc.name,
+        }
+
+        for d in self.source_doc.references:
+            vouchers.append(
+                {
+                    **source,
+                    "against_voucher_type": d.reference_doctype,
+                    "against_voucher_no": d.reference_name,
+                }
+            )
+
+        if not vouchers:
+            return
+
+        create_unreconcile_doc_for_selection(json.dumps(vouchers))
+
+    def create_payout_reversal_je(self):
+        if self.je_exists(self.reversal_id):
+            return
+
+        reference = {
+            "reference_type": self.source_doc.doctype,
+            "reference_name": self.source_doc.name,
+        }
+
+        accounts = [
+            {
+                "account": self.source_doc.paid_to,
+                "party_type": self.source_doc.party_type,
+                "party": self.source_doc.party,
+                "credit_in_account_currency": self.source_doc.total_allocated_amount,
+                "debit_in_account_currency": 0,
+                **reference,
+            },
+            {
+                "account": self.source_doc.paid_from,
+                "debit_in_account_currency": self.source_doc.paid_amount,
+                "credit_in_account_currency": 0,
+                **reference,
+            },
+        ]
+
+        for d in self.source_doc.deductions:
+            accounts.append(
+                {
+                    "account": d.account,
+                    "cost_center": d.cost_center,
+                    "credit_in_account_currency": d.amount,
+                    "debit_in_account_currency": 0,
+                    **reference,
+                }
+            )
+
+        self.create_je(
+            accounts=accounts,
+            user_remark=self.get_je_remark(),
+            cheque_no=self.reversal_id,
+        )
+
+    def reverse_fees_and_tax_je(self):
+        fees_je = frappe.db.get_value(
+            "Journal Entry",
+            {
+                "cheque_no": self.id,
+                "reversal_of": ["is", "not set"],
+            },
+            ["name", "cheque_no"],
+            as_dict=True,
+        )
+
+        if not fees_je:
+            return
+
+        reversal_je = make_reverse_journal_entry(fees_je.name)
+        reversal_je.is_system_generated = 1
+        reversal_je.posting_date = self.get_posting_date()
+        reversal_je.user_remark = f"Integration Request: {self.get_ir_formlink(True)}"
+        reversal_je.submit()
+
     ### UTILITIES ###
+    def should_update_payment_entry(self) -> bool:
+        """
+        Check if the Payment Entry should be updated or not.
+
+        Note: Source doc (Payment Entry) is set here.
+        """
+        return bool(self.get_source_doc() and self.is_order_maintained())
+
     def is_order_maintained(self):
         """
         Check if the order is maintained or not.
