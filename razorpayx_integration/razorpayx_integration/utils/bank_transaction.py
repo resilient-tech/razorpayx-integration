@@ -12,6 +12,7 @@ from razorpayx_integration.constants import (
 from razorpayx_integration.razorpayx_integration.apis.transaction import (
     RazorpayXTransaction,
 )
+from razorpayx_integration.razorpayx_integration.constants.payouts import PAYOUT_STATUS
 
 
 ######### PROCESSOR #########
@@ -166,6 +167,9 @@ class RazorpayXBankTransaction:
 
         :param mapped: Mapped Bank Transaction
         :param source: Source of the transaction (In transaction response)
+
+        ---
+        Note: Payment Entry will be find by `Payout ID` or `UTR`.
         """
         if not source:
             return
@@ -186,7 +190,7 @@ class RazorpayXBankTransaction:
         if source.get("entity") == "payout":
             payment_entry = get_payment_entry(razorpayx_payout_id=source["id"])
 
-        # reconciliation with reference number
+        # reconciliation with reference number (UTR)
         if not payment_entry and source.get("utr"):
             payment_entry = get_payment_entry(reference_no=mapped["reference_number"])
 
@@ -210,14 +214,36 @@ class RazorpayXBankTransaction:
         :param source: Source of the transaction (In transaction response)
 
         ---
-        Note: JE created only when payout processed.
+        Note:
+            - For reversal, two transactions will be created.
+                - simple transaction with reversal id
+                - payout reversal transaction with payout id
+            - JE created only when payout processed or reversed
+            - JE will be find by  `Payout ID` or `Reversal ID` or `UTR` or `Bank Reference`.
         """
-        if not source or not source.get("utr"):
+        if not source:
+            return
+
+        entity = source.get("entity")
+
+        if entity == "payout" and source.get("status") == PAYOUT_STATUS.REVERSED.value:
+            return
+
+        cheque_no = ""
+
+        if entity in ["payout", "reversal"]:
+            cheque_no = source.get("id")
+        elif entity == "bank_transfer":
+            cheque_no = source.get("bank_reference")
+        else:
+            cheque_no = source.get("utr")
+
+        if not cheque_no:
             return
 
         journal_entry = frappe.db.get_value(
             "Journal Entry",
-            {"docstatus": 1, "difference": 0, "cheque_no": source.get("utr")},
+            {"docstatus": 1, "difference": 0, "cheque_no": cheque_no},
             fieldname=["name", "total_debit"],
             order_by="creation desc",  # to get latest
             as_dict=True,
