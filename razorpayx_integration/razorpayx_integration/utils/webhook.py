@@ -238,7 +238,6 @@ class PayoutWebhook(RazorpayXWebhook):
         """
         self.update_payment_entry()
         self.create_journal_entry_for_fees()
-        self.handle_payout_reversal()
 
     def update_payment_entry(self, update_status: bool = True):
         """
@@ -317,18 +316,14 @@ class PayoutWebhook(RazorpayXWebhook):
 
         Reference: https://razorpay.com/docs/x/manage-teams/billing/
         """
-        if (
-            not self.source_doc
-            or self.status != PAYOUT_STATUS.PROCESSED.value
-            or not self.utr
-        ):
+        if not self.source_doc or self.status != PAYOUT_STATUS.PROCESSED.value:
             return
 
         fees = self.payload_entity.get("fees") or 0
         # !Note: fees is inclusive of tax and it is in paisa
         # Example: fees = 236 (2.36 INR) and tax = 36 (0.36 INR) => Charge = 200 (2 INR) | Tax = 36 (0.36 INR)
 
-        if not fees or self.je_exists("Processed"):
+        if not fees or self.je_exists(self.id):
             return
 
         fees_config = get_fees_accounting_config(self.config_name)
@@ -357,81 +352,8 @@ class PayoutWebhook(RazorpayXWebhook):
                 },
             ],
             user_remark=self.get_je_remark(fees),
+            cheque_no=self.id,
         )
-
-    def handle_payout_reversal(self):
-        if (
-            not self.source_doc
-            or self.status != PAYOUT_STATUS.REVERSED.value
-            or not self.utr
-        ):
-            return
-
-        # TODO: Should cancel JE which was made for the fees and tax deduction?
-        self.cancel_payout_link()
-
-        self.unreconcile_payment_entry()
-
-        self.create_payout_reversal_je()
-
-    def unreconcile_payment_entry(self):
-        vouchers = []
-
-        source = {
-            "company": self.source_doc.company,
-            "voucher_type": self.source_doc.doctype,
-            "voucher_no": self.source_doc.name,
-        }
-
-        for d in self.source_doc.references:
-            vouchers.append(
-                {
-                    **source,
-                    "against_voucher_type": d.reference_doctype,
-                    "against_voucher": d.reference_name,
-                }
-            )
-
-        if not vouchers:
-            return
-
-        create_unreconcile_doc_for_selection(json.dumps(vouchers))
-
-    def create_payout_reversal_je(self):
-        reference = {
-            "reference_type": self.source_doc.doctype,
-            "reference_name": self.source_doc.name,
-        }
-
-        accounts = [
-            {
-                "account": self.source_doc.paid_to,
-                "party_type": self.source_doc.party_type,
-                "party": self.source_doc.party,
-                "credit_in_account_currency": self.source_doc.total_allocated_amount,
-                "debit_in_account_currency": 0,
-                **reference,
-            },
-            {
-                "account": self.source_doc.paid_from,
-                "debit_in_account_currency": self.source_doc.paid_amount,
-                "credit_in_account_currency": 0,
-                **reference,
-            },
-        ]
-
-        for d in self.source_doc.deductions:
-            accounts.append(
-                {
-                    "account": d.account,
-                    "cost_center": d.cost_center,
-                    "credit_in_account_currency": d.amount,
-                    "debit_in_account_currency": 0,
-                    **reference,
-                }
-            )
-
-        self.create_je(accounts=accounts, user_remark=self.get_je_remark())
 
     ### UTILITIES ###
     def fmt_inr(amount: int) -> str:
@@ -448,16 +370,15 @@ class PayoutWebhook(RazorpayXWebhook):
             "Bank Account", self.source_doc.bank_account, "account"
         )
 
-    def je_exists(self, status: Literal["Processed", "Reversed"]) -> bool:
+    def je_exists(self, cheque_no: str) -> str | None:
         return frappe.db.exists(
             "Journal Entry",
             {
-                "cheque_no": self.utr,
-                "user_remark": ["like", f"%Payout Status: {status}%"],
+                "cheque_no": cheque_no,
             },
         )
 
-    def get_je_remark(self, fees: int | None = None) -> str:
+    def get_je_remark(self, fees: int | None = None, reversal: bool = False) -> str:
         user_remark = ""
 
         if self.source_doc:
@@ -465,7 +386,10 @@ class PayoutWebhook(RazorpayXWebhook):
                 f"{self.source_doc.doctype}: {self.get_source_formlink(True)}\n"
             )
 
-        user_remark += f"Payout ID: {self.id}"
+        if reversal:
+            user_remark += f"Reversal ID: {self.reversal_id}"
+        else:
+            user_remark += f"Payout ID: {self.id}"
 
         if self.status:
             user_remark += f"\nPayout Status: {self.status.title()}"
@@ -498,7 +422,6 @@ class PayoutWebhook(RazorpayXWebhook):
                 "is_system_generated": 1,
                 "company": self.source_doc.company,
                 "posting_date": self.get_posting_date(),
-                "cheque_no": self.utr,
                 **kwargs,
             }
         )
@@ -781,6 +704,7 @@ class TransactionWebhook(PayoutWebhook):
         """
         self.update_payment_entry()
         self.update_bank_transaction()
+        self.handle_payout_reversal()
 
     def handle_pe_cancellation(self):
         pass
@@ -809,6 +733,80 @@ class TransactionWebhook(PayoutWebhook):
             "reference_number",
             self.utr,
         )
+
+    def handle_payout_reversal(self):
+        if (
+            not self.source_doc
+            or self.status != PAYOUT_STATUS.REVERSED.value
+            or not self.utr
+        ):
+            return
+
+        # TODO: Should cancel JE which was made for the fees and tax deduction?
+        self.cancel_payout_link()
+
+        self.unreconcile_payment_entry()
+
+        self.create_payout_reversal_je()
+
+    def unreconcile_payment_entry(self):
+        vouchers = []
+
+        source = {
+            "company": self.source_doc.company,
+            "voucher_type": self.source_doc.doctype,
+            "voucher_no": self.source_doc.name,
+        }
+
+        for d in self.source_doc.references:
+            vouchers.append(
+                {
+                    **source,
+                    "against_voucher_type": d.reference_doctype,
+                    "against_voucher": d.reference_name,
+                }
+            )
+
+        if not vouchers:
+            return
+
+        create_unreconcile_doc_for_selection(json.dumps(vouchers))
+
+    def create_payout_reversal_je(self):
+        reference = {
+            "reference_type": self.source_doc.doctype,
+            "reference_name": self.source_doc.name,
+        }
+
+        accounts = [
+            {
+                "account": self.source_doc.paid_to,
+                "party_type": self.source_doc.party_type,
+                "party": self.source_doc.party,
+                "credit_in_account_currency": self.source_doc.total_allocated_amount,
+                "debit_in_account_currency": 0,
+                **reference,
+            },
+            {
+                "account": self.source_doc.paid_from,
+                "debit_in_account_currency": self.source_doc.paid_amount,
+                "credit_in_account_currency": 0,
+                **reference,
+            },
+        ]
+
+        for d in self.source_doc.deductions:
+            accounts.append(
+                {
+                    "account": d.account,
+                    "cost_center": d.cost_center,
+                    "credit_in_account_currency": d.amount,
+                    "debit_in_account_currency": 0,
+                    **reference,
+                }
+            )
+
+        self.create_je(accounts=accounts, user_remark=self.get_je_remark())
 
     ### UTILITIES ###
     def is_order_maintained(self):
