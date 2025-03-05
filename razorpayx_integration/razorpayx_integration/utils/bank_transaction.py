@@ -155,6 +155,13 @@ class RazorpayXBankTransaction:
             "reference_number": source.get("utr") or source.get("bank_reference"),
         }
 
+        # Skip reversed payout transactions (handle via reversal entity)
+        if (
+            source.get("entity") == "payout"
+            and source.get("status") == PAYOUT_STATUS.REVERSED.value
+        ):
+            return mapped
+
         # auto reconciliation
         self.set_matching_payment_entry(mapped, source)
         self.set_matching_journal_entry(mapped, source)
@@ -178,7 +185,12 @@ class RazorpayXBankTransaction:
             # TODO: confirm company or bank account
             return frappe.db.get_value(
                 "Payment Entry",
-                {"docstatus": 1, "clearance_date": ["is", "not set"], **filters},
+                {
+                    "docstatus": 1,
+                    "clearance_date": ["is", "not set"],
+                    "razorpayx_payout_status": ["!=", PAYOUT_STATUS.REVERSED.value],
+                    **filters,
+                },
                 fieldname=["name", "paid_amount"],
                 order_by="creation desc",  # to get latest
                 as_dict=True,
@@ -205,7 +217,6 @@ class RazorpayXBankTransaction:
             }
         ]
 
-    # TODO: search via `payout_id` or `reversal_id` for matching
     def set_matching_journal_entry(self, mapped: dict, source: dict | None = None):
         """
         Setting matching Journal Entry for the Bank Reconciliation.
@@ -225,10 +236,6 @@ class RazorpayXBankTransaction:
             return
 
         entity = source.get("entity")
-
-        if entity == "payout" and source.get("status") == PAYOUT_STATUS.REVERSED.value:
-            return
-
         cheque_no = ""
 
         if entity in ["payout", "reversal"]:

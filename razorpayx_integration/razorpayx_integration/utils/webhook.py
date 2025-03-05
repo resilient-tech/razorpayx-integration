@@ -761,7 +761,7 @@ class TransactionWebhook(PayoutWebhook):
                 {
                     **source,
                     "against_voucher_type": d.reference_doctype,
-                    "against_voucher": d.reference_name,
+                    "against_voucher_no": d.reference_name,
                 }
             )
 
@@ -814,6 +814,14 @@ class TransactionWebhook(PayoutWebhook):
         )
 
     ### UTILITIES ###
+    def should_update_payment_entry(self) -> bool:
+        """
+        Check if the Payment Entry should be updated or not.
+
+        Note: Source doc (Payment Entry) is set here.
+        """
+        return bool(self.get_source_doc() and self.is_order_maintained())
+
     def is_order_maintained(self):
         """
         Check if the order is maintained or not.
