@@ -231,6 +231,8 @@ class RazorpayXBankTransaction:
             return
 
         entity = source.get("entity")
+
+        # get cheque no to fetch JE
         cheque_no = ""
 
         if entity in ["payout", "reversal"]:
@@ -243,6 +245,7 @@ class RazorpayXBankTransaction:
         if not cheque_no:
             return
 
+        # get fees JE or payout reversal JE
         journal_entry = frappe.db.get_value(
             "Journal Entry",
             {
@@ -269,13 +272,19 @@ class RazorpayXBankTransaction:
             return
 
         # get fees reversal JE
+        fees_je = frappe.db.exists(
+            "Journal Entry", {"cheque_no": source.get("payout_id")}
+        )
+
+        if not fees_je:
+            return
+
         reversal_je = frappe.db.get_value(
             "Journal Entry",
             {
                 "docstatus": 1,
                 "difference": 0,
-                "reversal_of": ["is", "set"],
-                "cheque_no": source.get("payout_id"),
+                "reversal_of": fees_je,
             },
             fieldname=["name", "total_debit"],
             order_by="creation desc",  # to get latest
