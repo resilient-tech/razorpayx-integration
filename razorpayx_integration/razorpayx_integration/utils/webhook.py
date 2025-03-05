@@ -365,13 +365,14 @@ class PayoutWebhook(RazorpayXWebhook):
             or self.status != PAYOUT_STATUS.REVERSED.value
             or not self.utr
         ):
-            # TODO: Should cancel JE which was made for the fees and tax deduction?
-            self.cancel_payout_link()
+            return
 
-            self.unreconcile_payment_entry()
+        # TODO: Should cancel JE which was made for the fees and tax deduction?
+        self.cancel_payout_link()
 
-            je = self.create_payout_reversal_je()
-            self.remove_pe_from_bank_transaction(je.name)
+        self.unreconcile_payment_entry()
+
+        self.create_payout_reversal_je()
 
     def unreconcile_payment_entry(self):
         vouchers = []
@@ -430,31 +431,7 @@ class PayoutWebhook(RazorpayXWebhook):
                 }
             )
 
-        return self.create_je(accounts, user_remark=self.get_je_remark())
-
-    def remove_pe_from_bank_transaction(self, journal_entry: str):
-        bank_transaction = frappe.db.get_value(
-            "Bank Transaction Payments",
-            {
-                "parenttype": "Bank Transaction",
-                "payment_entry": self.source_doc.name,
-                "payment_document": self.source_doc.doctype,
-            },
-            "parent",
-        )
-
-        if not bank_transaction:
-            return
-
-        doc = frappe.get_doc("Bank Transaction", bank_transaction)
-
-        for d in doc.payment_entries:
-            if d.payment_entry == self.source_doc.name:
-                d.payment_entry = journal_entry
-                d.payment_document = "Journal Entry"
-                break
-
-        doc.submit()
+        self.create_je(accounts=accounts, user_remark=self.get_je_remark())
 
     ### UTILITIES ###
     def fmt_inr(amount: int) -> str:
@@ -527,7 +504,7 @@ class PayoutWebhook(RazorpayXWebhook):
         )
 
         je.flags.skip_remarks_creation = True
-        je.submit(ignore_permissions=True)
+        je.submit()
 
         return je
 
