@@ -675,6 +675,7 @@ class TransactionWebhook(PayoutWebhook):
         Sample Payloads:
         - https://razorpay.com/docs/webhooks/payloads/x/transactions/#transaction-created
         """
+        self.reversal_id = ""
         self.transaction_id = self.payload_entity["id"]
 
         if not self.payload_entity:
@@ -694,6 +695,7 @@ class TransactionWebhook(PayoutWebhook):
             self.id = self.transaction_source.get("id")
             self.status = self.transaction_source.get("status")
         elif self.transaction_type == TRANSACTION_TYPE.REVERSAL.value:
+            self.reversal_id = self.transaction_source.get("id")
             self.id = self.transaction_source.get("payout_id")
             self.status = PAYOUT_STATUS.REVERSED.value
 
@@ -735,11 +737,7 @@ class TransactionWebhook(PayoutWebhook):
         )
 
     def handle_payout_reversal(self):
-        if (
-            not self.source_doc
-            or self.status != PAYOUT_STATUS.REVERSED.value
-            or not self.utr
-        ):
+        if not self.source_doc or self.status != PAYOUT_STATUS.REVERSED.value:
             return
 
         # TODO: Should cancel JE which was made for the fees and tax deduction?
@@ -773,6 +771,9 @@ class TransactionWebhook(PayoutWebhook):
         create_unreconcile_doc_for_selection(json.dumps(vouchers))
 
     def create_payout_reversal_je(self):
+        if self.je_exists(self.reversal_id):
+            return
+
         reference = {
             "reference_type": self.source_doc.doctype,
             "reference_name": self.source_doc.name,
@@ -806,7 +807,11 @@ class TransactionWebhook(PayoutWebhook):
                 }
             )
 
-        self.create_je(accounts=accounts, user_remark=self.get_je_remark())
+        self.create_je(
+            accounts=accounts,
+            user_remark=self.get_je_remark(),
+            cheque_no=self.reversal_id,
+        )
 
     ### UTILITIES ###
     def is_order_maintained(self):
