@@ -203,13 +203,16 @@ class RazorpayXWebhook:
         """
         return self.get_formlink("Integration Request", self.integration_request, html)
 
-    def get_source_formlink(self, html: bool = False) -> str:
+    def get_source_formlink(self, html: bool = False) -> str | None:
         """
         Get the Source Doc Form Link.
 
         :param html: bool - If True, return the anchor (<a>) tag.
         """
-        return self.get_formlink(self.source_doctype, self.source_docname, html)
+        if not self.source_doc:
+            return
+
+        return self.get_formlink(self.source_doc.doctype, self.source_doc.name, html)
 
 
 class PayoutWebhook(RazorpayXWebhook):
@@ -746,10 +749,8 @@ class TransactionWebhook(PayoutWebhook):
         # TODO: Should cancel JE which was made for the fees and tax deduction?
         self.cancel_payout_link()
 
-        self.unreconcile_payment_entry()
-
         self.create_payout_reversal_je()
-
+        self.unreconcile_payment_entry()
         self.reverse_fees_and_tax_je()
 
     def unreconcile_payment_entry(self):
