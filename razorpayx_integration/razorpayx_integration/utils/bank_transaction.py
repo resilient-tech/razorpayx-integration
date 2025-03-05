@@ -188,7 +188,6 @@ class RazorpayXBankTransaction:
                 {
                     "docstatus": 1,
                     "clearance_date": ["is", "not set"],
-                    "razorpayx_payout_status": ["!=", PAYOUT_STATUS.REVERSED.value],
                     **filters,
                 },
                 fieldname=["name", "paid_amount"],
