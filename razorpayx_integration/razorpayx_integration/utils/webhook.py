@@ -833,8 +833,9 @@ class TransactionWebhook(PayoutWebhook):
             return
 
         reversal_je = make_reverse_journal_entry(fees_je.name)
+        reversal_je.is_system_generated = 1
         reversal_je.posting_date = self.get_posting_date()
-        reversal_je.remarks = f"Integration Request: {self.get_ir_formlink(True)}"
+        reversal_je.user_remark = f"Integration Request: {self.get_ir_formlink(True)}"
         reversal_je.submit()
 
     ### UTILITIES ###
