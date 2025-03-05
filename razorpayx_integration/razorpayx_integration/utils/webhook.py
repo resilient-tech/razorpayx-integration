@@ -4,6 +4,9 @@ from typing import Literal
 
 import frappe
 import frappe.utils
+from erpnext.accounts.doctype.unreconcile_payment.unreconcile_payment import (
+    create_unreconcile_doc_for_selection,
+)
 from frappe import _
 from frappe.rate_limiter import rate_limit
 from frappe.utils import fmt_money, get_link_to_form, get_url_to_form, today
@@ -362,13 +365,96 @@ class PayoutWebhook(RazorpayXWebhook):
             or self.status != PAYOUT_STATUS.REVERSED.value
             or not self.utr
         ):
-            # Cancel the Payout Link if the Payout is made from the Payout Link.
+            # TODO: Should cancel JE which was made for the fees and tax deduction?
             self.cancel_payout_link()
 
-            # TODO: Should cancel JE which was made for the fees and tax deduction?
-            # Create reversal JE for source doc
-            # Un-reconcile the PE
-            # Remove PE from the Bank Reconciliation if available and add JE in BT
+            self.unreconcile_payment_entry()
+
+            je = self.create_payout_reversal_je()
+            self.remove_pe_from_bank_transaction(je.name)
+
+    def unreconcile_payment_entry(self):
+        vouchers = []
+
+        source = {
+            "company": self.source_doc.company,
+            "voucher_type": self.source_doc.doctype,
+            "voucher_no": self.source_doc.name,
+        }
+
+        for d in self.source_doc.references:
+            vouchers.append(
+                {
+                    **source,
+                    "against_voucher_type": d.reference_doctype,
+                    "against_voucher": d.reference_name,
+                }
+            )
+
+        if not vouchers:
+            return
+
+        create_unreconcile_doc_for_selection(json.dumps(vouchers))
+
+    def create_payout_reversal_je(self):
+        reference = {
+            "reference_type": self.source_doc.doctype,
+            "reference_name": self.source_doc.name,
+        }
+
+        accounts = [
+            {
+                "account": self.source_doc.paid_to,
+                "party_type": self.source_doc.party_type,
+                "party": self.source_doc.party,
+                "credit_in_account_currency": self.source_doc.total_allocated_amount,
+                "debit_in_account_currency": 0,
+                **reference,
+            },
+            {
+                "account": self.source_doc.paid_from,
+                "debit_in_account_currency": self.source_doc.paid_amount,
+                "credit_in_account_currency": 0,
+                **reference,
+            },
+        ]
+
+        for d in self.source_doc.deductions:
+            accounts.append(
+                {
+                    "account": d.account,
+                    "cost_center": d.cost_center,
+                    "credit_in_account_currency": d.amount,
+                    "debit_in_account_currency": 0,
+                    **reference,
+                }
+            )
+
+        return self.create_je(accounts, user_remark=self.get_je_remark())
+
+    def remove_pe_from_bank_transaction(self, journal_entry: str):
+        bank_transaction = frappe.db.get_value(
+            "Bank Transaction Payments",
+            {
+                "parenttype": "Bank Transaction",
+                "payment_entry": self.source_doc.name,
+                "payment_document": self.source_doc.doctype,
+            },
+            "parent",
+        )
+
+        if not bank_transaction:
+            return
+
+        doc = frappe.get_doc("Bank Transaction", bank_transaction)
+
+        for d in doc.payment_entries:
+            if d.payment_entry == self.source_doc.name:
+                d.payment_entry = journal_entry
+                d.payment_document = "Journal Entry"
+                break
+
+        doc.submit()
 
     ### UTILITIES ###
     def fmt_inr(amount: int) -> str:
@@ -442,6 +528,8 @@ class PayoutWebhook(RazorpayXWebhook):
 
         je.flags.skip_remarks_creation = True
         je.submit(ignore_permissions=True)
+
+        return je
 
     def get_source_doc(self):
         """
