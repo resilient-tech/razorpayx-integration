@@ -4,6 +4,9 @@ from typing import Literal
 
 import frappe
 import frappe.utils
+from erpnext.accounts.doctype.journal_entry.journal_entry import (
+    make_reverse_journal_entry,
+)
 from erpnext.accounts.doctype.unreconcile_payment.unreconcile_payment import (
     create_unreconcile_doc_for_selection,
 )
@@ -747,6 +750,8 @@ class TransactionWebhook(PayoutWebhook):
 
         self.create_payout_reversal_je()
 
+        self.reverse_fees_and_tax_je()
+
     def unreconcile_payment_entry(self):
         vouchers = []
 
@@ -812,6 +817,25 @@ class TransactionWebhook(PayoutWebhook):
             user_remark=self.get_je_remark(),
             cheque_no=self.reversal_id,
         )
+
+    def reverse_fees_and_tax_je(self):
+        fees_je = frappe.db.get_value(
+            "Journal Entry",
+            {
+                "cheque_no": self.id,
+                "reversal_of": ["is", "not set"],
+            },
+            ["name", "cheque_no"],
+            as_dict=True,
+        )
+
+        if not fees_je:
+            return
+
+        reversal_je = make_reverse_journal_entry(fees_je.name)
+        reversal_je.posting_date = self.get_posting_date()
+        reversal_je.remarks = f"Integration Request: {self.get_ir_formlink(True)}"
+        reversal_je.submit()
 
     ### UTILITIES ###
     def should_update_payment_entry(self) -> bool:
