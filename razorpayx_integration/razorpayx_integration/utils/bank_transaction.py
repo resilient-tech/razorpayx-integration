@@ -155,14 +155,8 @@ class RazorpayXBankTransaction:
             "reference_number": source.get("utr") or source.get("bank_reference"),
         }
 
-        # Skip reversed payout transactions (handle via reversal entity)
-        if (
-            source.get("entity") == "payout"
-            and source.get("status") == PAYOUT_STATUS.REVERSED.value
-        ):
-            return mapped
-
         # auto reconciliation
+        mapped["payment_entries"] = []
         self.set_matching_payment_entry(mapped, source)
         self.set_matching_journal_entry(mapped, source)
 
@@ -176,9 +170,11 @@ class RazorpayXBankTransaction:
         :param source: Source of the transaction (In transaction response)
 
         ---
-        Note: Payment Entry will be find by `Payout ID` or `UTR`.
+        Note:
+        - Payment Entry will be find by `Payout ID` or `UTR`.
+        - For `reversal` entity it returns without finding PE.
         """
-        if not source:
+        if not source or source.get("entity") == "reversal":
             return
 
         def get_payment_entry(**filters):
@@ -208,13 +204,13 @@ class RazorpayXBankTransaction:
         if not payment_entry:
             return
 
-        mapped["payment_entries"] = [
+        mapped["payment_entries"].append(
             {
                 "payment_document": "Payment Entry",
                 "payment_entry": payment_entry.name,
                 "allocated_amount": payment_entry.paid_amount,
             }
-        ]
+        )
 
     def set_matching_journal_entry(self, mapped: dict, source: dict | None = None):
         """
@@ -249,22 +245,51 @@ class RazorpayXBankTransaction:
 
         journal_entry = frappe.db.get_value(
             "Journal Entry",
-            {"docstatus": 1, "difference": 0, "cheque_no": cheque_no},
+            {
+                "docstatus": 1,
+                "difference": 0,
+                "cheque_no": cheque_no,
+                "reversal_of": ["is", "not set"],
+            },
             fieldname=["name", "total_debit"],
             order_by="creation desc",  # to get latest
             as_dict=True,
         )
 
-        if not journal_entry:
+        if journal_entry:
+            mapped["payment_entries"].append(
+                {
+                    "payment_document": "Journal Entry",
+                    "payment_entry": journal_entry.name,
+                    "allocated_amount": journal_entry.total_debit,
+                }
+            )
+
+        if entity != "reversal":
             return
 
-        mapped.setdefault("payment_entries", []).append(
+        # get fees reversal JE
+        reversal_je = frappe.db.get_value(
+            "Journal Entry",
             {
-                "payment_document": "Journal Entry",
-                "payment_entry": journal_entry.name,
-                "allocated_amount": journal_entry.total_debit,
-            }
+                "docstatus": 1,
+                "difference": 0,
+                "reversal_of": ["is", "set"],
+                "cheque_no": source.get("payout_id"),
+            },
+            fieldname=["name", "total_debit"],
+            order_by="creation desc",  # to get latest
+            as_dict=True,
         )
+
+        if reversal_je:
+            mapped["payment_entries"].append(
+                {
+                    "payment_document": "Journal Entry",
+                    "payment_entry": reversal_je.name,
+                    "allocated_amount": reversal_je.total_debit,
+                }
+            )
 
     # TODO: can use bulk insert?
     def create(self, mapped_transaction: dict):
