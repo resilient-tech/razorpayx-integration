@@ -1,5 +1,6 @@
 import json
 from hmac import new as hmac
+from typing import Literal
 
 import frappe
 import frappe.utils
@@ -313,41 +314,6 @@ class PayoutWebhook(RazorpayXWebhook):
 
         Reference: https://razorpay.com/docs/x/manage-teams/billing/
         """
-
-        def fmt_inr(amount: int) -> str:
-            return fmt_money(amount, currency=PAYOUT_CURRENCY.INR.value)
-
-        def get_posting_date():
-            if created_at := self.payload_entity.get("created_at"):
-                return get_epoch_date(created_at)
-
-            return today()
-
-        # TODO: commonify for reversal JE
-        def get_remark(fees: int) -> str:
-            user_remark = ""
-
-            if self.source_doc:
-                user_remark = (
-                    f"{self.source_doc.doctype}: {self.get_source_formlink(True)}\n"
-                )
-
-            user_remark += f"Payout ID: {self.id}"
-
-            if fee_type := self.payload_entity.get("fee_type"):
-                user_remark += f"\nFee Type: {fee_type}"
-
-            tax = paisa_to_rupees(self.payload_entity.get("tax") or 0)
-            user_remark += f"\nFees: {fmt_inr(fees - tax)} | Tax: {fmt_inr(tax)}"
-            user_remark += f"\n\nIntegration Request: {self.get_ir_formlink(True)}"
-
-            return user_remark
-
-        def get_payable_account() -> str:
-            return frappe.db.get_value(
-                "Bank Account", self.source_doc.bank_account, "account"
-            )
-
         if (
             not self.source_doc
             or self.status != PAYOUT_STATUS.PROCESSED.value
@@ -359,11 +325,7 @@ class PayoutWebhook(RazorpayXWebhook):
         # !Note: fees is inclusive of tax and it is in paisa
         # Example: fees = 236 (2.36 INR) and tax = 36 (0.36 INR) => Charge = 200 (2 INR) | Tax = 36 (0.36 INR)
 
-        if not fees:
-            return
-
-        # already je exists
-        if frappe.db.exists("Journal Entry", {"cheque_no": self.utr}):
+        if not fees or self.je_exists("Processed"):
             return
 
         fees_config = get_fees_accounting_config(self.config_name)
@@ -376,35 +338,23 @@ class PayoutWebhook(RazorpayXWebhook):
 
         fees = paisa_to_rupees(fees)
 
-        # TODO: commonify for reversal JE
-        je = frappe.new_doc("Journal Entry")
-        je.update(
-            {
-                "voucher_type": "Journal Entry",
-                "is_system_generated": 1,
-                "company": self.source_doc.company,
-                "posting_date": get_posting_date(),
-                "accounts": [
-                    {
-                        "account": fees_config.creditors_account,
-                        "party_type": "Supplier",
-                        "party": fees_config.supplier,
-                        "debit_in_account_currency": fees,
-                        "credit_in_account_currency": 0,
-                    },
-                    {
-                        "account": get_payable_account(),
-                        "debit_in_account_currency": 0,
-                        "credit_in_account_currency": fees,
-                    },
-                ],
-                "cheque_no": self.utr,
-                "user_remark": get_remark(fees),
-            }
+        self.create_je(
+            accounts=[
+                {
+                    "account": fees_config.creditors_account,
+                    "party_type": "Supplier",
+                    "party": fees_config.supplier,
+                    "debit_in_account_currency": fees,
+                    "credit_in_account_currency": 0,
+                },
+                {
+                    "account": self.get_company_payable_account(),
+                    "debit_in_account_currency": 0,
+                    "credit_in_account_currency": fees,
+                },
+            ],
+            user_remark=self.get_je_remark(fees),
         )
-
-        je.flags.skip_remarks_creation = True
-        je.submit()
 
     def handle_payout_reversal(self):
         if (
@@ -421,6 +371,53 @@ class PayoutWebhook(RazorpayXWebhook):
             # Remove PE from the Bank Reconciliation if available and add JE in BT
 
     ### UTILITIES ###
+    def fmt_inr(amount: int) -> str:
+        return fmt_money(amount, currency=PAYOUT_CURRENCY.INR.value)
+
+    def get_posting_date(self):
+        if created_at := self.payload_entity.get("created_at"):
+            return get_epoch_date(created_at)
+
+        return today()
+
+    def get_company_payable_account(self) -> str:
+        return frappe.db.get_value(
+            "Bank Account", self.source_doc.bank_account, "account"
+        )
+
+    def je_exists(self, status: Literal["Processed", "Reversed"]) -> bool:
+        return frappe.db.exists(
+            "Journal Entry",
+            {
+                "cheque_no": self.utr,
+                "user_remark": ["like", f"%Payout Status: {status}%"],
+            },
+        )
+
+    def get_je_remark(self, fees: int | None = None) -> str:
+        user_remark = ""
+
+        if self.source_doc:
+            user_remark = (
+                f"{self.source_doc.doctype}: {self.get_source_formlink(True)}\n"
+            )
+
+        user_remark += f"Payout ID: {self.id}"
+
+        if self.status:
+            user_remark += f"\nPayout Status: {self.status.title()}"
+
+        if fees:
+            if fee_type := self.payload_entity.get("fee_type"):
+                user_remark += f"\nFee Type: {fee_type}"
+
+            tax = paisa_to_rupees(self.payload_entity.get("tax") or 0)
+            user_remark += f"\nFees: {PayoutWebhook.fmt_inr(fees - tax)} | Tax: {PayoutWebhook.fmt_inr(tax)}"
+
+        user_remark += f"\n\nIntegration Request: {self.get_ir_formlink(True)}"
+
+        return user_remark
+
     def set_id_field(self) -> str:
         field_mapper = {
             EVENTS_TYPE.PAYOUT.value: "razorpayx_payout_id",
@@ -429,6 +426,22 @@ class PayoutWebhook(RazorpayXWebhook):
         }
 
         self.id_field = field_mapper.get(self.event_type) or "razorpayx_payout_id"
+
+    def create_je(self, **kwargs):
+        je = frappe.new_doc("Journal Entry")
+        je.update(
+            {
+                "voucher_type": "Journal Entry",
+                "is_system_generated": 1,
+                "company": self.source_doc.company,
+                "posting_date": self.get_posting_date(),
+                "cheque_no": self.utr,
+                **kwargs,
+            }
+        )
+
+        je.flags.skip_remarks_creation = True
+        je.submit(ignore_permissions=True)
 
     def get_source_doc(self):
         """
