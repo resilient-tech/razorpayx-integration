@@ -201,6 +201,7 @@ class RazorpayXBankTransaction:
             }
         ]
 
+    # TODO: search via `payout_id` or `reversal_id` for matching
     def set_matching_journal_entry(self, mapped: dict, source: dict | None = None):
         """
         Setting matching Journal Entry for the Bank Reconciliation.
