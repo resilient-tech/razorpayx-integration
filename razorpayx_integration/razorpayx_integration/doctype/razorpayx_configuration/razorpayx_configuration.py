@@ -23,10 +23,10 @@ class RazorpayXConfiguration(Document):
         bank_account: DF.Link
         company: DF.Link | None
         company_account: DF.Link | None
+        create_je_on_reversal: DF.Check
         creditors_account: DF.Link | None
         disabled: DF.Check
         ifsc_code: DF.Data | None
-        je_on_reversal: DF.Check
         key_id: DF.Data
         key_secret: DF.Password
         last_sync_on: DF.Date | None

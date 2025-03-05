@@ -34,7 +34,7 @@
   "column_break_rshi",
   "payouts_from",
   "payout_reversal_section",
-  "je_on_reversal",
+  "create_je_on_reversal",
   "column_break_ntie",
   "fees_accounting_section",
   "creditors_account",
@@ -258,19 +258,19 @@
    "label": "Payout Reversal"
   },
   {
-   "default": "1",
-   "fieldname": "je_on_reversal",
-   "fieldtype": "Check",
-   "label": "Create JE on Payout Reversal"
-  },
-  {
    "fieldname": "column_break_ntie",
    "fieldtype": "Column Break"
+  },
+  {
+   "default": "1",
+   "fieldname": "create_je_on_reversal",
+   "fieldtype": "Check",
+   "label": "Create JE on Payout Reversal"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-03-04 17:10:52.954612",
+ "modified": "2025-03-05 10:30:03.332037",
  "modified_by": "Administrator",
  "module": "Razorpayx Integration",
  "name": "RazorpayX Configuration",
