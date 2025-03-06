@@ -33,14 +33,14 @@
   "automate_fees_accounting",
   "column_break_rshi",
   "payouts_from",
-  "payout_reversal_section",
-  "create_je_on_reversal",
-  "column_break_ntie",
   "fees_accounting_section",
   "creditors_account",
   "payable_account",
   "column_break_vdui",
-  "supplier"
+  "supplier",
+  "payout_reversal_section",
+  "create_je_on_reversal",
+  "column_break_ntie"
  ],
  "fields": [
   {
@@ -202,16 +202,15 @@
    "options": "Account"
   },
   {
-   "depends_on": "eval: doc.automate_fees_accounting || doc.je_on_reversal",
    "fieldname": "creditors_account",
    "fieldtype": "Link",
    "label": "Creditors Account",
-   "mandatory_depends_on": "eval: doc.automate_fees_accounting || doc.je_on_reversal",
+   "mandatory_depends_on": "eval: doc.automate_fees_accounting",
    "options": "Account"
   },
   {
    "default": "1",
-   "description": "Create a <strong>Journal Entry</strong> for the payout fee and tax",
+   "description": "Create a <strong>Journal Entry</strong> for the Payout fees and tax.",
    "fieldname": "automate_fees_accounting",
    "fieldtype": "Check",
    "label": "Automate Fees Accounting"
@@ -221,6 +220,7 @@
    "fieldtype": "Column Break"
   },
   {
+   "depends_on": "eval: doc.automate_fees_accounting",
    "fieldname": "fees_accounting_section",
    "fieldtype": "Section Break"
   },
@@ -230,17 +230,16 @@
    "label": "Accounting"
   },
   {
-   "depends_on": "eval: doc.automate_fees_accounting || doc.je_on_reversal",
    "fieldname": "supplier",
    "fieldtype": "Link",
    "label": "Supplier",
-   "mandatory_depends_on": "eval: doc.automate_fees_accounting || doc.je_on_reversal",
+   "mandatory_depends_on": "eval: doc.automate_fees_accounting",
    "options": "Supplier"
   },
   {
    "default": "Current Account",
    "depends_on": "eval: doc.automate_fees_accounting",
-   "description": "See RazorpayX\n<strong>\n    <a href=\"https://razorpay.com/docs/x/manage-teams/billing/\">\n        Fees and Taxes\n        <svg class=\"icon  icon-sm\" style=\"\">\n            <use class=\"\" href=\"#icon-link-url\"></use>\n        </svg>\n    </a>\n</strong> \nfor details on charges and deductions.",
+   "description": "See RazorpayX\n<strong>\n    <a href=\"https://razorpay.com/docs/x/manage-teams/billing/\">\n        Fees and Tax\n        <svg class=\"icon  icon-sm\" style=\"\">\n            <use class=\"\" href=\"#icon-link-url\"></use>\n        </svg>\n    </a>\n</strong> \nfor details on charges and deductions.",
    "fieldname": "payouts_from",
    "fieldtype": "Select",
    "label": "Payouts from",
@@ -263,6 +262,7 @@
   },
   {
    "default": "1",
+   "description": "Automatically create a <strong>Journal Entry</strong> on <i>Reversal</i> of Payout and <i>Unreconcile</i>  the Payment Entry.",
    "fieldname": "create_je_on_reversal",
    "fieldtype": "Check",
    "label": "Create JE on Payout Reversal"
@@ -270,7 +270,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-03-05 10:30:03.332037",
+ "modified": "2025-03-06 10:57:49.132509",
  "modified_by": "Administrator",
  "module": "Razorpayx Integration",
  "name": "RazorpayX Configuration",
