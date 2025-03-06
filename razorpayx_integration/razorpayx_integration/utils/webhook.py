@@ -667,17 +667,6 @@ class PayoutLinkWebhook(PayoutWebhook):
         return self.__is_order_maintained
 
 
-# TODO: Handle Fees and Tax deduction at the end of the day
-"""
-1. Create JE
-2. Debit: Creditors Account
-3. Credit: Payable Account
-3. Amount: Fees + Tax
-4. Cheque No: UTR ?
-5. User Remark: Fees: 200 | Tax: 36 | Integration Request: IR-00001 (Example)
-"""
-
-
 class TransactionWebhook(PayoutWebhook):
     """
     Processor for RazorpayX Transaction Webhook.
@@ -1124,3 +1113,14 @@ def is_payout_link_failed(status: str) -> bool:
         PAYOUT_LINK_STATUS.EXPIRED.value,
         PAYOUT_LINK_STATUS.REJECTED.value,
     ]
+
+
+# TODO: Handle Fees and Tax deduction at the end of the day
+"""
+1. Create JE
+2. Debit: Creditors Account
+3. Credit: Payable Account
+3. Amount: Fees + Tax
+4. Cheque No: UTR ?
+5. User Remark: Fees: 200 | Tax: 36 | Integration Request: IR-00001 (Example)
+"""
