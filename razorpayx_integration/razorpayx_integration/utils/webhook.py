@@ -83,6 +83,8 @@ class RazorpayXWebhook:
         self.referenced_docnames = []
         self.notes = {}
 
+        self.__is_order_maintained = False
+
         self.set_config_name()  # Mandatory
         self.set_common_payload_attributes()  # Mandatory
         self.setup_respective_webhook_payload()
@@ -248,6 +250,10 @@ class PayoutWebhook(RazorpayXWebhook):
         Process RazorpayX Payout Related Webhooks.
         """
         self.update_payment_entry()
+
+        if not self.__is_order_maintained:
+            return
+
         self.create_journal_entry_for_fees()
 
     def update_payment_entry(self, update_status: bool = True):
@@ -539,9 +545,18 @@ class PayoutWebhook(RazorpayXWebhook):
 
         Note: 🟢 Override this method in the sub class for custom order maintenance.
         """
-        pe_status = self.source_doc.razorpayx_payout_status.lower()
+        self.__is_order_maintained = bool(
+            self.status
+            and PAYOUT_ORDERS[self.status] > PAYOUT_ORDERS[self.get_pe_rpx_status()]
+        )
 
-        return self.status and PAYOUT_ORDERS[self.status] > PAYOUT_ORDERS[pe_status]
+        return self.__is_order_maintained
+
+    def get_pe_rpx_status(self) -> str:
+        """
+        Get the Payment Entry's RazorpayX Payout Status.
+        """
+        return self.source_doc.razorpayx_payout_status.lower()
 
     def get_updated_reference(self) -> dict:
         """
@@ -647,7 +662,9 @@ class PayoutLinkWebhook(PayoutWebhook):
 
         Caution: ⚠️ Payout link status is not maintained in the Payment Entry.
         """
-        return bool(self.status)
+        self.__is_order_maintained = bool(self.status)
+
+        return self.__is_order_maintained
 
 
 # TODO: Handle Fees and Tax deduction at the end of the day
@@ -718,6 +735,10 @@ class TransactionWebhook(PayoutWebhook):
         Process RazorpayX Payout Related Webhooks.
         """
         self.update_payment_entry()
+
+        if not self.__is_order_maintained:
+            return
+
         self.set_utr_in_bank_transaction()
         self.handle_payout_reversal()
 
@@ -859,11 +880,14 @@ class TransactionWebhook(PayoutWebhook):
 
         # if status not available, depend on the type
         if not self.status or not is_valid_transaction:
-            return is_valid_transaction
+            self.__is_order_maintained = is_valid_transaction
+        else:
+            # if status available, compare with the source doc payout status
+            self.__is_order_maintained = (
+                PAYOUT_ORDERS[self.status] > PAYOUT_ORDERS[self.get_pe_rpx_status()]
+            )
 
-        # if status available, compare with the source doc payout status
-        pe_status = self.source_doc.razorpayx_payout_status.lower()
-        return PAYOUT_ORDERS[self.status] > PAYOUT_ORDERS[pe_status]
+        return self.__is_order_maintained
 
 
 ###### CONSTANTS ######
