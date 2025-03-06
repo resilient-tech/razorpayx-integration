@@ -36,7 +36,10 @@ from razorpayx_integration.razorpayx_integration.constants.webhooks import (
     EVENTS_TYPE,
     SUPPORTED_EVENTS,
 )
-from razorpayx_integration.razorpayx_integration.utils import get_fees_accounting_config
+from razorpayx_integration.razorpayx_integration.utils import (
+    get_fees_accounting_config,
+    is_je_on_reversal_enabled,
+)
 
 
 ###### WEBHOOK PROCESSORS ######
@@ -748,6 +751,9 @@ class TransactionWebhook(PayoutWebhook):
 
         # TODO: Should cancel JE which was made for the fees and tax deduction?
         self.cancel_payout_link()
+
+        if not is_je_on_reversal_enabled(self.config_name):
+            return
 
         self.create_payout_reversal_je()
         self.unreconcile_payment_entry()

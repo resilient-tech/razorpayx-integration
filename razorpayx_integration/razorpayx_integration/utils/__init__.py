@@ -42,3 +42,9 @@ def get_fees_accounting_config(razorpayx_config: str) -> dict:
         )
         or frappe._dict()
     )
+
+
+def is_je_on_reversal_enabled(razorpayx_config: str) -> bool | int:
+    return frappe.db.get_value(
+        RAZORPAYX_CONFIG, razorpayx_config, "create_je_on_reversal"
+    )
