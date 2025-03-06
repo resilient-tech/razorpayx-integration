@@ -718,20 +718,13 @@ class TransactionWebhook(PayoutWebhook):
         Process RazorpayX Payout Related Webhooks.
         """
         self.update_payment_entry()
-        self.update_bank_transaction()
+        self.set_utr_in_bank_transaction()
         self.handle_payout_reversal()
 
     def handle_failure(self):
         pass
 
-    def update_bank_transaction(self):
-        """
-        Update Bank Transaction based on the webhook entity.
-
-        When Bank Transaction already created without `UTR` in `Processing` State.
-
-        So, when `Processed` or `Reversed`, update the Bank Transaction with `UTR`.
-        """
+    def set_utr_in_bank_transaction(self):
         if not self.utr or not self.transaction_id:
             return
 
