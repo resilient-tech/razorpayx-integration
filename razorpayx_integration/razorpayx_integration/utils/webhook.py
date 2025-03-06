@@ -899,6 +899,7 @@ WEBHOOK_PROCESSORS_MAP = {
 }
 
 
+###### APIs ######
 def get_webhook_rate_limit():
     """
     Get the rate limit for the RazorpayX Webhook.
@@ -912,7 +913,6 @@ def get_webhook_rate_limit():
     return 10
 
 
-###### APIs ######
 @frappe.whitelist(allow_guest=True)
 @rate_limit(limit=get_webhook_rate_limit, seconds=60 * 60)
 def webhook_listener():
