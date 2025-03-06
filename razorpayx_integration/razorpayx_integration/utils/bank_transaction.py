@@ -1,18 +1,24 @@
 import frappe
 from frappe import _
 from frappe.utils import DateTimeLikeObject, getdate
+from payment_integration_utils.payment_integration_utils.constants.enums import BaseEnum
 from payment_integration_utils.payment_integration_utils.utils import (
     get_str_datetime_from_epoch,
     paisa_to_rupees,
 )
 
-from razorpayx_integration.constants import (
-    RAZORPAYX_CONFIG as RAZORPAYX_CONFIG,
-)
+from razorpayx_integration.constants import RAZORPAYX_CONFIG
 from razorpayx_integration.razorpayx_integration.apis.transaction import (
     RazorpayXTransaction,
 )
-from razorpayx_integration.razorpayx_integration.constants.payouts import PAYOUT_STATUS
+from razorpayx_integration.razorpayx_integration.constants.payouts import PAYOUT_FROM
+from razorpayx_integration.razorpayx_integration.utils import get_payouts_made_from
+
+
+class ENTITY(BaseEnum):
+    PAYOUT = "payout"
+    BANK_TRANSFER = "bank_transfer"
+    REVERSAL = "reversal"
 
 
 ######### PROCESSOR #########
@@ -175,7 +181,7 @@ class RazorpayXBankTransaction:
         - Payment Entry will be find by `Payout ID` or `UTR`.
         - For `reversal` entity it returns without finding PE.
         """
-        if not source or source.get("entity") == "reversal":
+        if not source or source.get("entity") == ENTITY.REVERSAL.value:
             return
 
         def get_payment_entry(**filters):
@@ -195,9 +201,9 @@ class RazorpayXBankTransaction:
         payment_entry = None
 
         # reconciliation with payout_id or bank_reference
-        if source.get("entity") == "payout":
+        if source.get("entity") == ENTITY.PAYOUT.value:
             payment_entry = get_payment_entry(razorpayx_payout_id=source["id"])
-        elif source.get("entity") == "bank_transfer":
+        elif source.get("entity") == ENTITY.BANK_TRANSFER.value:
             payment_entry = get_payment_entry(reference_no=source["bank_reference"])
 
         # reconciliation with reference number (UTR)
@@ -233,14 +239,35 @@ class RazorpayXBankTransaction:
         if not source:
             return
 
+        payouts_from = get_payouts_made_from(self.razorpayx_config)
+
+        def get_journal_entry(**filters) -> dict | None:
+            return frappe.db.get_value(
+                "Journal Entry",
+                {
+                    "docstatus": 1,
+                    "difference": 0,
+                    **filters,
+                },
+                fieldname=["name", "total_debit"],
+                as_dict=True,
+            )
+
+        def is_current_account_payout() -> bool:
+            return payouts_from == PAYOUT_FROM.CURRENT_ACCOUNT.value
+
         entity = source.get("entity")
+
+        # for current account payouts, fees will not be deducted immediately but JE will be created
+        if entity == ENTITY.PAYOUT.value and is_current_account_payout():
+            return
 
         # get cheque no to fetch JE
         cheque_no = ""
 
-        if entity in ["payout", "reversal"]:
+        if entity in [ENTITY.PAYOUT.value, ENTITY.REVERSAL.value]:
             cheque_no = source.get("id")
-        elif entity == "bank_transfer":
+        elif entity == ENTITY.BANK_TRANSFER.value:
             cheque_no = source.get("bank_reference")
         else:
             cheque_no = source.get("utr")
@@ -248,18 +275,10 @@ class RazorpayXBankTransaction:
         if not cheque_no:
             return
 
-        # get fees JE or payout reversal JE
-        journal_entry = frappe.db.get_value(
-            "Journal Entry",
-            {
-                "docstatus": 1,
-                "difference": 0,
-                "cheque_no": cheque_no,
-                "reversal_of": ["is", "not set"],
-            },
-            fieldname=["name", "total_debit"],
-            order_by="creation desc",  # to get latest
-            as_dict=True,
+        # finding Fees JE or Payout Reversal JE with `cheque_no`
+        # Note: for fees `check_no` is payout_id and for reversal `check_no` is reversal_id
+        journal_entry = get_journal_entry(
+            cheque_no=cheque_no, reversal_of=["is", "not set"]
         )
 
         if journal_entry:
@@ -271,28 +290,19 @@ class RazorpayXBankTransaction:
                 }
             )
 
-        if entity != "reversal":
+        if entity != "reversal" or is_current_account_payout():
             return
 
-        # get fees reversal JE
-        fees_je = frappe.db.exists(
-            "Journal Entry", {"cheque_no": source.get("payout_id")}
+        # get fees reversal JE (Only for RazorpayX Lite)
+        fees_je = get_journal_entry(
+            cheque_no=source.get("payout_id"),
+            reversal_of=["is", "not set"],
         )
 
         if not fees_je:
             return
 
-        reversal_je = frappe.db.get_value(
-            "Journal Entry",
-            {
-                "docstatus": 1,
-                "difference": 0,
-                "reversal_of": fees_je,
-            },
-            fieldname=["name", "total_debit"],
-            order_by="creation desc",  # to get latest
-            as_dict=True,
-        )
+        reversal_je = get_journal_entry(reversal_of=fees_je.name)
 
         if reversal_je:
             mapped["payment_entries"].append(

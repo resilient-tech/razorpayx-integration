@@ -48,3 +48,7 @@ def is_create_je_on_reversal_enabled(razorpayx_config: str) -> bool | int:
     return frappe.db.get_value(
         RAZORPAYX_CONFIG, razorpayx_config, "create_je_on_reversal"
     )
+
+
+def get_payouts_made_from(razorpayx_config: str) -> str:
+    return frappe.db.get_value(RAZORPAYX_CONFIG, razorpayx_config, "payouts_from")
