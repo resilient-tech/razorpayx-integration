@@ -83,7 +83,7 @@ class RazorpayXWebhook:
         self.referenced_docnames = []
         self.notes = {}
 
-        self.__is_order_maintained = False
+        self.order_maintained = False
 
         self.set_config_name()  # Mandatory
         self.set_common_payload_attributes()  # Mandatory
@@ -251,7 +251,7 @@ class PayoutWebhook(RazorpayXWebhook):
         """
         self.update_payment_entry()
 
-        if not self.__is_order_maintained:
+        if not self.source_doc or not self.order_maintained:
             return
 
         self.create_journal_entry_for_fees()
@@ -550,12 +550,13 @@ class PayoutWebhook(RazorpayXWebhook):
 
         Note: 🟢 Override this method in the sub class for custom order maintenance.
         """
-        self.__is_order_maintained = bool(
+
+        self.order_maintained = bool(
             self.status
             and PAYOUT_ORDERS[self.status] > PAYOUT_ORDERS[self.get_pe_rpx_status()]
         )
 
-        return self.__is_order_maintained
+        return self.order_maintained
 
     def get_pe_rpx_status(self) -> str:
         """
@@ -667,9 +668,9 @@ class PayoutLinkWebhook(PayoutWebhook):
 
         Caution: ⚠️ Payout link status is not maintained in the Payment Entry.
         """
-        self.__is_order_maintained = bool(self.status)
+        self.order_maintained = bool(self.status)
 
-        return self.__is_order_maintained
+        return self.order_maintained
 
 
 class TransactionWebhook(PayoutWebhook):
@@ -730,7 +731,7 @@ class TransactionWebhook(PayoutWebhook):
         """
         self.update_payment_entry()
 
-        if not self.__is_order_maintained:
+        if not self.order_maintained:
             return
 
         self.set_utr_in_bank_transaction()
@@ -868,14 +869,14 @@ class TransactionWebhook(PayoutWebhook):
 
         # if status not available, depend on the type
         if not self.status or not is_valid_transaction:
-            self.__is_order_maintained = is_valid_transaction
+            self.order_maintained = is_valid_transaction
         else:
             # if status available, compare with the source doc payout status
-            self.__is_order_maintained = (
+            self.order_maintained = (
                 PAYOUT_ORDERS[self.status] > PAYOUT_ORDERS[self.get_pe_rpx_status()]
             )
 
-        return self.__is_order_maintained
+        return self.order_maintained
 
 
 ###### CONSTANTS ######
@@ -942,11 +943,13 @@ def webhook_listener():
     ir = log_integration_request(**ir_log)
 
     # Process the webhook ##
-    frappe.enqueue(
-        process_webhook,
-        payload=payload,
-        integration_request=ir.name,
-    )
+    # frappe.enqueue(
+    #     process_webhook,
+    #     payload=payload,
+    #     integration_request=ir.name,
+    # )
+
+    process_webhook(payload, ir.name)
 
 
 def process_webhook(payload: dict, integration_request: str):
