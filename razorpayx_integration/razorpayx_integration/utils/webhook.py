@@ -75,6 +75,7 @@ class RazorpayXWebhook:
         self.status = ""
         self.utr = ""
         self.id = ""
+        self.reversal_id = ""
 
         self.source_docname = ""
         self.source_doctype = ""
@@ -688,7 +689,6 @@ class TransactionWebhook(PayoutWebhook):
         Sample Payloads:
         - https://razorpay.com/docs/webhooks/payloads/x/transactions/#transaction-created
         """
-        self.reversal_id = ""
         self.transaction_id = self.payload_entity["id"]
 
         if not self.payload_entity:
