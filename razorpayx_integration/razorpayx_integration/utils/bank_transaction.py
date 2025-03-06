@@ -156,6 +156,7 @@ class RazorpayXBankTransaction:
         }
 
         # auto reconciliation
+        # TODO: fees deduction at the end of the day is not handled
         mapped["payment_entries"] = []
         self.set_matching_payment_entry(mapped, source)
         self.set_matching_journal_entry(mapped, source)
@@ -193,9 +194,11 @@ class RazorpayXBankTransaction:
 
         payment_entry = None
 
-        # reconciliation with payout_id
+        # reconciliation with payout_id or bank_reference
         if source.get("entity") == "payout":
             payment_entry = get_payment_entry(razorpayx_payout_id=source["id"])
+        elif source.get("entity") == "bank_transfer":
+            payment_entry = get_payment_entry(reference_no=source["bank_reference"])
 
         # reconciliation with reference number (UTR)
         if not payment_entry and source.get("utr"):
