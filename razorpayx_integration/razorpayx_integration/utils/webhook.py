@@ -130,11 +130,12 @@ class RazorpayXWebhook:
         - Transaction: https://razorpay.com/docs/webhooks/payloads/x/transactions/#transaction-created
         - Account Validation: https://razorpay.com/docs/webhooks/payloads/x/account-validation/#fund-accountvalidationcompleted
         """
-        if self.payload_entity:
-            self.status = self.payload_entity.get("status")
-            self.utr = self.payload_entity.get("utr")
-            self.id = self.payload_entity.get("id")
+        if not self.payload_entity or not isinstance(self.payload_entity, dict):
+            return
 
+        self.status = self.payload_entity.get("status")
+        self.utr = self.payload_entity.get("utr")
+        self.id = self.payload_entity.get("id")
         self.notes = self.payload_entity.get("notes") or {}
 
     def set_source_doctype_and_docname(self):
@@ -271,7 +272,7 @@ class PayoutWebhook(RazorpayXWebhook):
         if update_status:
             self.update_payout_status(self.status)
 
-        self.handle_pe_cancellation()
+        self.handle_failure()
 
     def update_payout_status(self, status: str | None = None):
         """
@@ -309,15 +310,18 @@ class PayoutWebhook(RazorpayXWebhook):
             "Payment Entry", {"name": ["in", set(self.referenced_docnames)]}, values
         )
 
-    def handle_pe_cancellation(self):
+    def handle_failure(self):
         """
-        Handle the payment entry cancellation.
+        Handle the Payout Failure.
 
-        - Cancel the Payment Entry if the payout is failed.
+        - Cancel the Payment Entry.
+        - Cancel Fees and Tax JE if available.
         - Cancel the Payout Link if the payout is made from the Payout Link.
         """
-        if self.should_cancel_payment_entry() and self.cancel_payout_link():
+        if self.should_cancel_payment_entry():
             self.cancel_payment_entry()
+            self.cancel_payout_link()
+            self.cancel_fees_and_tax_je()
 
     def create_journal_entry_for_fees(self):
         """
@@ -390,6 +394,18 @@ class PayoutWebhook(RazorpayXWebhook):
             user_remark=self.get_je_remark(fees),
             cheque_no=self.id,
         )
+
+    def cancel_fees_and_tax_je(self):
+        if not self.id:
+            return
+
+        je = frappe.get_doc(
+            "Journal Entry",
+            {"cheque_no": self.id, "reversal_of": ["is", "not set"], "docstatus": 1},
+        )
+
+        if je:
+            je.cancel()
 
     ### UTILITIES ###
     def fmt_inr(amount: int) -> str:
@@ -543,20 +559,19 @@ class PayoutWebhook(RazorpayXWebhook):
     def cancel_payout_link(self) -> bool:
         """
         Cancel the Payout Link if the Payout is made from the Payout Link.
-
-        :returns: bool - `True` if the Payout Link is cancelled successfully.
         """
+        # TODO: Need to check what is exact behaviour of the Payout Link on the failure of payout!
         link_id = self.source_doc.razorpayx_payout_link_id
 
         if not link_id:
-            return True
+            return
 
         try:
             payout_link = RazorpayXLinkPayout(self.config_name)
             status = payout_link.get_by_id(link_id, "status")
 
             if self.is_payout_link_cancelled(status):
-                return True
+                return
 
             if status == PAYOUT_LINK_STATUS.ISSUED.value:
                 payout_link.cancel(
@@ -564,8 +579,6 @@ class PayoutWebhook(RazorpayXWebhook):
                     source_doctype=self.source_doctype,
                     source_docname=self.source_docname,
                 )
-
-                return True
 
         # TODO: should update IR status to `Failed`
         except Exception:
@@ -642,7 +655,13 @@ class PayoutLinkWebhook(PayoutWebhook):
         """
         self.update_payment_entry(update_status=False)
 
-    def handle_pe_cancellation(self):
+    def handle_failure(self):
+        """
+        Handle the Payout Link Failure.
+
+        - Update thr Payout Status to `Cancelled`.
+        - Cancel the Payment Entry.
+        """
         if self.should_cancel_payment_entry():
             self.update_payout_status(PAYOUT_STATUS.CANCELLED.value)
             self.cancel_payment_entry()
@@ -739,7 +758,7 @@ class TransactionWebhook(PayoutWebhook):
         self.update_bank_transaction()
         self.handle_payout_reversal()
 
-    def handle_pe_cancellation(self):
+    def handle_failure(self):
         pass
 
     def update_bank_transaction(self):
