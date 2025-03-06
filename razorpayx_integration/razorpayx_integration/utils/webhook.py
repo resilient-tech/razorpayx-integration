@@ -318,10 +318,12 @@ class PayoutWebhook(RazorpayXWebhook):
         - Cancel Fees and Tax JE if available.
         - Cancel the Payout Link if the payout is made from the Payout Link.
         """
-        if self.should_cancel_payment_entry():
-            self.cancel_payment_entry()
-            self.cancel_payout_link()
-            self.cancel_fees_and_tax_je()
+        if not self.status or not is_payout_failed(self.status):
+            return
+
+        self.cancel_payment_entry()
+        self.cancel_fees_and_tax_je()
+        self.cancel_payout_link()
 
     def create_journal_entry_for_fees(self):
         """
@@ -570,7 +572,7 @@ class PayoutWebhook(RazorpayXWebhook):
             payout_link = RazorpayXLinkPayout(self.config_name)
             status = payout_link.get_by_id(link_id, "status")
 
-            if self.is_payout_link_cancelled(status):
+            if is_payout_link_failed(status):
                 return
 
             if status == PAYOUT_LINK_STATUS.ISSUED.value:
@@ -593,42 +595,11 @@ class PayoutWebhook(RazorpayXWebhook):
 
         Set flags `__canceled_by_rpx` and cancel the Payment Entry.
         """
+        if self.source_doc.docstatus != 1:
+            return
+
         self.source_doc.flags.__canceled_by_rpx = True
         self.source_doc.cancel()
-
-    def should_cancel_payment_entry(self) -> bool:
-        """
-        Check if the Payment Entry should be cancelled or not.
-        """
-        return (
-            self.status
-            and self.source_doc.docstatus == 1
-            and self.is_payout_cancelled(self.status)
-        )
-
-    def is_payout_cancelled(self, status: str) -> bool:
-        """
-        Check if the Payout cancelled (cancelled, failed, rejected) or not.
-
-        :param status: Payout Webhook Status.
-        """
-        return status in [
-            PAYOUT_STATUS.CANCELLED.value,
-            PAYOUT_STATUS.FAILED.value,
-            PAYOUT_STATUS.REJECTED.value,
-        ]
-
-    def is_payout_link_cancelled(self, status: str) -> bool:
-        """
-        Check if the Payout Link cancelled (expired, rejected, cancelled) or not.
-
-        :param status: Payout Link Webhook Status.
-        """
-        return status in [
-            PAYOUT_LINK_STATUS.CANCELLED.value,
-            PAYOUT_LINK_STATUS.EXPIRED.value,
-            PAYOUT_LINK_STATUS.REJECTED.value,
-        ]
 
 
 class PayoutLinkWebhook(PayoutWebhook):
@@ -662,9 +633,11 @@ class PayoutLinkWebhook(PayoutWebhook):
         - Update thr Payout Status to `Cancelled`.
         - Cancel the Payment Entry.
         """
-        if self.should_cancel_payment_entry():
-            self.update_payout_status(PAYOUT_STATUS.CANCELLED.value)
-            self.cancel_payment_entry()
+        if not self.status or not is_payout_link_failed(self.status):
+            return
+
+        self.update_payout_status(PAYOUT_STATUS.CANCELLED.value)
+        self.cancel_payment_entry()
 
     ### UTILITIES ###
     def is_order_maintained(self) -> bool:
@@ -674,16 +647,6 @@ class PayoutLinkWebhook(PayoutWebhook):
         Caution: ⚠️ Payout link status is not maintained in the Payment Entry.
         """
         return bool(self.status)
-
-    def should_cancel_payment_entry(self) -> bool:
-        """
-        Check if the Payment Entry should be cancelled or not.
-        """
-        return (
-            self.status
-            and self.source_doc.docstatus == 1
-            and self.is_payout_link_cancelled()
-        )
 
 
 # TODO: Handle Fees and Tax deduction at the end of the day
@@ -1118,3 +1081,29 @@ def get_referenced_docnames(doctype: str, docname: str) -> list[str] | None:
         docnames.insert(0, docname)
 
     return docnames
+
+
+def is_payout_failed(status: str) -> bool:
+    """
+    Check if the Payout failed (cancelled, failed, rejected) or not.
+
+    :param status: Payout Webhook Status.
+    """
+    return status in [
+        PAYOUT_STATUS.CANCELLED.value,
+        PAYOUT_STATUS.FAILED.value,
+        PAYOUT_STATUS.REJECTED.value,
+    ]
+
+
+def is_payout_link_failed(status: str) -> bool:
+    """
+    Check if the Payout Link failed (expired, rejected, cancelled) or not.
+
+    :param status: Payout Link Webhook Status.
+    """
+    return status in [
+        PAYOUT_LINK_STATUS.CANCELLED.value,
+        PAYOUT_LINK_STATUS.EXPIRED.value,
+        PAYOUT_LINK_STATUS.REJECTED.value,
+    ]
