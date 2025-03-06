@@ -38,7 +38,7 @@ from razorpayx_integration.razorpayx_integration.constants.webhooks import (
 )
 from razorpayx_integration.razorpayx_integration.utils import (
     get_fees_accounting_config,
-    is_je_on_reversal_enabled,
+    is_create_je_on_reversal_enabled,
 )
 
 
@@ -72,9 +72,9 @@ class RazorpayXWebhook:
         self.id_field = ""
 
         self.payload_entity = {}
-        self.status = ""
+        self.status = ""  # Payout Status
         self.utr = ""
-        self.id = ""
+        self.id = ""  # Payout ID
         self.reversal_id = ""
 
         self.source_docname = ""
@@ -363,7 +363,7 @@ class PayoutWebhook(RazorpayXWebhook):
         # Example: fees = 236 (2.36 INR) and tax = 36 (0.36 INR) => Charge = 200 (2 INR) | Tax = 36 (0.36 INR)
 
         # conditions to create JE
-        if not fees or self.je_exists(self.id):
+        if not fees or PayoutWebhook.je_exists(self.id):
             return
 
         fees_config = get_fees_accounting_config(self.config_name)
@@ -417,22 +417,27 @@ class PayoutWebhook(RazorpayXWebhook):
             je.cancel()
 
     ### UTILITIES ###
+    # static methods
     def fmt_inr(amount: int) -> str:
         return fmt_money(amount, currency=PAYOUT_CURRENCY.INR.value)
 
+    def je_exists(
+        cheque_no: str, reversal_of: Literal["set", "not set"] = "not set"
+    ) -> str | None:
+        return frappe.db.exists(
+            "Journal Entry",
+            {
+                "cheque_no": cheque_no,
+                "reversal_of": ["is", reversal_of],
+            },
+        )
+
+    # instance methods
     def get_posting_date(self):
         if created_at := self.payload_entity.get("created_at"):
             return get_epoch_date(created_at)
 
         return today()
-
-    def je_exists(self, cheque_no: str) -> str | None:
-        return frappe.db.exists(
-            "Journal Entry",
-            {
-                "cheque_no": cheque_no,
-            },
-        )
 
     def get_je_remark(self, fees: int | None = None, reversal: bool = False) -> str:
         user_remark = ""
@@ -756,14 +761,13 @@ class TransactionWebhook(PayoutWebhook):
         if not self.source_doc or self.status != PAYOUT_STATUS.REVERSED.value:
             return
 
-        # TODO: Should cancel JE which was made for the fees and tax deduction?
         self.cancel_payout_link()
 
-        if not is_je_on_reversal_enabled(self.config_name):
+        if not is_create_je_on_reversal_enabled(self.config_name):
             return
 
-        self.create_payout_reversal_je()
         self.unreconcile_payment_entry()
+        self.create_payout_reversal_je()
         self.reverse_fees_and_tax_je()
 
     def unreconcile_payment_entry(self):
@@ -790,28 +794,27 @@ class TransactionWebhook(PayoutWebhook):
         create_unreconcile_doc_for_selection(json.dumps(vouchers))
 
     def create_payout_reversal_je(self):
-        if self.je_exists(self.reversal_id):
+        if PayoutWebhook.je_exists(self.reversal_id):
             return
 
-        reference = {
-            "reference_type": self.source_doc.doctype,
-            "reference_name": self.source_doc.name,
-        }
+        def get_creditor_amount():
+            deduction = sum([d.amount for d in self.source_doc.deductions])
+            return self.source_doc.paid_amount - deduction
 
         accounts = [
             {
                 "account": self.source_doc.paid_to,
                 "party_type": self.source_doc.party_type,
                 "party": self.source_doc.party,
-                "credit_in_account_currency": self.source_doc.total_allocated_amount,
+                "credit_in_account_currency": get_creditor_amount(),
                 "debit_in_account_currency": 0,
-                **reference,
+                "reference_type": self.source_doc.doctype,
+                "reference_name": self.source_doc.name,
             },
             {
                 "account": self.source_doc.paid_from,
                 "debit_in_account_currency": self.source_doc.paid_amount,
                 "credit_in_account_currency": 0,
-                **reference,
             },
         ]
 
@@ -822,7 +825,6 @@ class TransactionWebhook(PayoutWebhook):
                     "cost_center": d.cost_center,
                     "credit_in_account_currency": d.amount,
                     "debit_in_account_currency": 0,
-                    **reference,
                 }
             )
 
@@ -833,23 +835,20 @@ class TransactionWebhook(PayoutWebhook):
         )
 
     def reverse_fees_and_tax_je(self):
-        fees_je = frappe.db.get_value(
-            "Journal Entry",
-            {
-                "cheque_no": self.id,
-                "reversal_of": ["is", "not set"],
-            },
-            ["name", "cheque_no"],
-            as_dict=True,
-        )
+        fees_je = PayoutWebhook.je_exists(self.id)
 
         if not fees_je:
             return
 
-        reversal_je = make_reverse_journal_entry(fees_je.name)
-        reversal_je.is_system_generated = 1
-        reversal_je.posting_date = self.get_posting_date()
-        reversal_je.user_remark = f"Integration Request: {self.get_ir_formlink(True)}"
+        reversal_je = make_reverse_journal_entry(fees_je)
+        reversal_je.update(
+            {
+                "is_system_generated": 1,
+                "posting_date": self.get_posting_date(),
+                "cheque_no": self.reversal_id,
+                "user_remark": f"Integration Request: {self.get_ir_formlink(True)}",
+            }
+        )
         reversal_je.submit()
 
     ### UTILITIES ###
