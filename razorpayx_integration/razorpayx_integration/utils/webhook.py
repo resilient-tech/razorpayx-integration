@@ -295,6 +295,8 @@ class PayoutWebhook(RazorpayXWebhook):
 
         value = {"razorpayx_payout_status": status.title()}
 
+        print("Updating Payout Status:", value)
+
         if self.source_doc.docstatus == 2:
             self.source_doc.db_set(value, notify=True)
         else:
@@ -942,14 +944,14 @@ def webhook_listener():
 
     ir = log_integration_request(**ir_log)
 
-    # Process the webhook ##
-    # frappe.enqueue(
-    #     process_webhook,
-    #     payload=payload,
-    #     integration_request=ir.name,
-    # )
+    ## Process the webhook ##
+    frappe.enqueue(
+        process_webhook,
+        payload=payload,
+        integration_request=ir.name,
+    )
 
-    process_webhook(payload, ir.name)
+    # process_webhook(payload, ir.name)
 
 
 def process_webhook(payload: dict, integration_request: str):
