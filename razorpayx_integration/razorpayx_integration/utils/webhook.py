@@ -325,21 +325,48 @@ class PayoutWebhook(RazorpayXWebhook):
 
         Reference: https://razorpay.com/docs/x/manage-teams/billing/
         """
-        if not self.source_doc or self.status != PAYOUT_STATUS.PROCESSED.value:
+
+        def get_credit_account(fees_config: dict) -> str:
+            if fees_config.payouts_from == PAYOUT_FROM.RAZORPAYX_LITE.value:
+                return frappe.db.get_value(
+                    "Bank Account", self.source_doc.bank_account, "account"
+                )
+
+            return fees_config.payable_account
+
+        if (
+            not self.source_doc
+            or not self.id
+            or self.status
+            not in [
+                PAYOUT_STATUS.PROCESSED.value,
+                PAYOUT_STATUS.PROCESSING.value,
+            ]
+        ):
             return
 
         fees = self.payload_entity.get("fees") or 0
         # !Note: fees is inclusive of tax and it is in paisa
         # Example: fees = 236 (2.36 INR) and tax = 36 (0.36 INR) => Charge = 200 (2 INR) | Tax = 36 (0.36 INR)
 
+        # conditions to create JE
         if not fees or self.je_exists(self.id):
             return
 
         fees_config = get_fees_accounting_config(self.config_name)
 
+        if not fees_config.automate_fees_accounting:
+            return
+
         if (
-            not fees_config.automate_fees_accounting
-            or fees_config.payouts_from != PAYOUT_FROM.RAZORPAYX_LITE.value
+            fees_config.payouts_from == PAYOUT_FROM.RAZORPAYX_LITE.value
+            and self.status != PAYOUT_STATUS.PROCESSING.value
+        ):
+            return
+
+        if (
+            fees_config.payouts_from == PAYOUT_FROM.CURRENT_ACCOUNT.value
+            and self.status != PAYOUT_STATUS.PROCESSED.value
         ):
             return
 
@@ -355,7 +382,7 @@ class PayoutWebhook(RazorpayXWebhook):
                     "credit_in_account_currency": 0,
                 },
                 {
-                    "account": self.get_company_payable_account(),
+                    "account": get_credit_account(fees_config),
                     "debit_in_account_currency": 0,
                     "credit_in_account_currency": fees,
                 },
@@ -373,11 +400,6 @@ class PayoutWebhook(RazorpayXWebhook):
             return get_epoch_date(created_at)
 
         return today()
-
-    def get_company_payable_account(self) -> str:
-        return frappe.db.get_value(
-            "Bank Account", self.source_doc.bank_account, "account"
-        )
 
     def je_exists(self, cheque_no: str) -> str | None:
         return frappe.db.exists(
