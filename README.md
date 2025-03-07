@@ -114,6 +114,8 @@ bench --site [site name] install-app razorpayx_integration
 3. [Reconcile Bank Transactions via RazorpayX API](https://github.com/resilient-tech/razorpayx-integration/blob/version-15/docs/3_bank_reconciliation_tool.md)
 4. [FAQs](https://github.com/resilient-tech/razorpayx-integration/blob/version-15/docs/4_faqs.md)
 
+🔗 **Google Form for Discount Pricing on RazorpayX Payout Fees**: [Apply Here](http://bit.ly/3FhJOaA)  
+
 ## 🤝 Contributing
 
 - [Issue Guidelines](https://github.com/frappe/erpnext/wiki/Issue-Guidelines)

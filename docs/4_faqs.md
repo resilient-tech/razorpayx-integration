@@ -32,7 +32,10 @@ RazorpayX currently supports accounts with **RBL Bank, Yes Bank, IDFC First Bank
 - **Transaction fees** start at **₹1 per payout** (varies by transaction type and volume).  
 - **No hidden bank charges** for covered transaction categories (e.g., standard NEFT/IMPS/UPI payouts).  
 
-**Note:** You could fill in the google form *(coming-soon)* to get the special pricing.
+**Note:**
+
+- Fill out the [Google Form for Discount Pricing](http://bit.ly/3FhJOaA) to get special pricing.
+  - A **RazorpayX** representative will contact you with the discounted pricing details.
 
 ---
 
