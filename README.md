@@ -107,6 +107,8 @@ bench --site [site name] install-app razorpayx_integration
 
 </details>
 
+🔗 **Google Form for Discount Pricing on RazorpayX Payout Fees**: [Apply Here](http://bit.ly/3FhJOaA)  
+
 ## 📚 Documentation
 
 1. [Connect ERPNext with RazorpayX](https://github.com/resilient-tech/razorpayx-integration/blob/version-15/docs/1_connect_with_razorpayx.md)

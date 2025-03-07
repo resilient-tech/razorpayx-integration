@@ -32,11 +32,23 @@ RazorpayX currently supports accounts with **RBL Bank, Yes Bank, IDFC First Bank
 - **Transaction fees** start at **₹1 per payout** (varies by transaction type and volume).  
 - **No hidden bank charges** for covered transaction categories (e.g., standard NEFT/IMPS/UPI payouts).  
 
-**Note:** You could fill in the google form *(coming-soon)* to get the special pricing.
+**Note:** Fill out the [Google Form for Discount Pricing](http://bit.ly/3FhJOaA) to get special pricing.  
 
 ---
 
-### 4. How do I switch between Test Mode and Live Mode?  
+### 4. How do I apply for discount pricing?  
+
+**Steps to Apply:**  
+
+1. Visit the [Google Form for Discount Pricing](http://bit.ly/3FhJOaA).  
+2. Fill in your details, including your business name, contact information, and RazorpayX account details.  
+3. Submit the form, and a representative will contact you with the discounted pricing details.  
+
+**Note:** Discounts are subject to eligibility and may vary based on transaction volume and business type.  
+
+---
+
+### 5. How do I switch between Test Mode and Live Mode?  
 
 **Steps:**  
 
@@ -53,7 +65,7 @@ RazorpayX currently supports accounts with **RBL Bank, Yes Bank, IDFC First Bank
 
 ---
 
-### 5. Can I use multiple RazorpayX accounts?  
+### 6. Can I use multiple RazorpayX accounts?  
 
 **Yes!** Follow these steps:  
 
