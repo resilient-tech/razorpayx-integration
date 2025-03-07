@@ -5,6 +5,11 @@ DESCRIPTION_REGEX = r"^[a-zA-Z0-9\s]{1,30}$"
 
 
 ### ENUMS ###
+class PAYOUT_FROM(BaseEnum):
+    CURRENT_ACCOUNT = "Current Account"
+    RAZORPAYX_LITE = "RazorpayX Lite"
+
+
 class CONTACT_TYPE(BaseEnum):
     """
     Default Contact Type available in RazorpayX.
