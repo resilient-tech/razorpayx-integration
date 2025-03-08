@@ -45,3 +45,5 @@ https://github.com/user-attachments/assets/53b18844-88aa-403d-aad3-c07478a76a51
 - If a **Party Bank Account** is selected, the payout will be made via **NEFT** by default. Otherwise, it will be made via **Link**.  
 
 https://github.com/user-attachments/assets/5cf6cb2d-3e06-4042-8295-68caae710050
+
+**Note:** A maximum of 500 Payment Entries are supported for bulk payouts.
