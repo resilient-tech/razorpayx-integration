@@ -30,6 +30,8 @@ We choose RazorpayX because:
 - Pre-built templates for workflows and notifications
 - Configurable to cater to diverse business processes
 
+**📝 Note:** This integration is designed for **domestic transactions within India 🇮🇳**. Foreign currency transactions are not supported.
+
 ## 📈 Why Use This Integration?
 
 - <em>Save Time</em>: Eliminate manual bank transactions from **Net Banking** portals
