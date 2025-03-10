@@ -36,7 +36,7 @@
 - **Payout Reversed**:  
   - If a **Payout** is Reversed, only the payout status is updated, and the PE is not canceled.  
   - Reversal Journal Entries (JE) for the Payment Entry and Fees Reversal JE will be created if configured.  
-  - For more details on Reversal Accounting, read [here](URL).  
+  - For more details on Reversal Accounting, read [here](https://github.com/resilient-tech/razorpayx-integration/blob/version-15/docs/accounting/2_payout_reversal.md).  
 
 - **Payout Description**:  
   - Maximum length: 30 characters.  

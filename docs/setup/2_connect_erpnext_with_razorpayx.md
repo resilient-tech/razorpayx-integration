@@ -83,7 +83,7 @@ Webhooks are used for real-time payout status updates.
 **Note**:  
 
 - Test and Live modes require different **API Keys** and **Webhook URLs**.  
-- For more details on Test and Live modes, [visit here](URL).  
+- For more details on Test and Live modes, [visit here](https://github.com/resilient-tech/razorpayx-integration/blob/version-15/docs/setup/1_setup_test_and_live_mode.md).  
 
 ### 🏦 Set Company Bank Account
 
@@ -94,7 +94,7 @@ Webhooks are used for real-time payout status updates.
 1. **Automatically Cancel Payout on Payment Entry Cancellation**
    - If checked, the payout and payout link will be canceled automatically upon Payment Entry cancellation (helpful for bulk cancellations).  
    - If unchecked, a confirmation dialog will appear for single Payment Entry cancellations if the payout or payout link is cancellable.  
-   - See [Cancellation Workflow](URL) for more details.  
+   - See [Cancellation Workflow](https://github.com/resilient-tech/razorpayx-integration/blob/version-15/docs/payout/5_cancel_payout.md) for more details.  
 
 2. **Pay on Auto Submit**
    - This feature is only available if the [Payments Processor](https://github.com/resilient-tech/payments-processor) app is installed.  
@@ -105,7 +105,7 @@ Webhooks are used for real-time payout status updates.
 
 ### 🤖  Accounting
 
-- For detailed information, see [Accounting with RazorpayX Integration](URL).
+- For detailed information, see [Accounting with RazorpayX Integration](https://github.com/resilient-tech/razorpayx-integration/blob/version-15/docs/accounting).
 
 ---
 

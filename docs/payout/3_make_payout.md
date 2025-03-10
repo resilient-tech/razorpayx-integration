@@ -2,8 +2,8 @@
 
 ## 📋 Prerequisites
 
-- Ensure all [Payout Requirements](URL) are met.  
-- Complete the [Authentication Setup](URL) for secure transactions.  
+- Ensure all [Payout Requirements](https://github.com/resilient-tech/razorpayx-integration/blob/version-15/docs/payout/1_requirements.md) are met.  
+- Complete the [Authentication Setup](https://github.com/resilient-tech/razorpayx-integration/blob/version-15/docs/payout/2_Authentication.md) for secure transactions.  
 
 ## 🚀 Make Payout on Payment Entry Submission
 
@@ -40,7 +40,7 @@ https://github.com/user-attachments/assets/53b18844-88aa-403d-aad3-c07478a76a51
   - **Company Bank Account**  
   - **Party Bank Account**  
   - **Payment Transfer Method**  
-  - **Contact Details** (if using **Link** for payment). 
+  - **Contact Details** (if using **Link** for payment).
 
 - If a **Party Bank Account** is selected, the payout will be made via **NEFT** by default. Otherwise, it will be made via **Link**.  
 

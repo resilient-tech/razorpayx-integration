@@ -13,7 +13,7 @@
 
 ## 🔒 Authentication Setup
 
-- For detailed steps on setting up authentication, refer to the [Authentication Guide](URL).  
+- For detailed steps on setting up authentication, refer to the [Authentication Guide](https://github.com/resilient-tech/razorpayx-integration/blob/version-15/docs/payout/2_Authentication.md).  
 
 ## 💳 Payment Entry Requirements
 
