@@ -54,6 +54,8 @@ RazorpayX currently supports accounts with **RBL Bank, Yes Bank, IDFC First Bank
 - Test mode requires sandbox credentials (provided by RazorpayX).  
 - Never use live credentials in test mode, or vice versa.  
 
+- For more details read [Setup Test and Live Mode](https://github.com/resilient-tech/razorpayx-integration/blob/version-15/docs/setup/1_setup_test_and_live_mode.md)
+
 ---
 
 ### 5. Can I use multiple RazorpayX accounts?  
