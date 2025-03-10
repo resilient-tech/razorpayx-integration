@@ -16,6 +16,7 @@ frappe.ui.form.on("RazorpayX Configuration", {
 		const coa_filters = {
 			account_currency: "INR",
 			freeze_account: "No",
+			root_type: "Liability",
 		};
 
 		frm.set_query("creditors_account", function () {
@@ -23,17 +24,13 @@ frappe.ui.form.on("RazorpayX Configuration", {
 				filters: {
 					...coa_filters,
 					account_type: "Payable",
-					root_type: "Liability",
 				},
 			};
 		});
 
 		frm.set_query("payable_account", function () {
 			return {
-				filters: {
-					...coa_filters,
-					account_type: "Liability",
-				},
+				filters: coa_filters,
 			};
 		});
 	},

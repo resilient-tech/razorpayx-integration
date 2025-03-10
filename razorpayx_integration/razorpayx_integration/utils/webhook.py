@@ -1,8 +1,15 @@
 import json
 from hmac import new as hmac
+from typing import Literal
 
 import frappe
 import frappe.utils
+from erpnext.accounts.doctype.journal_entry.journal_entry import (
+    make_reverse_journal_entry,
+)
+from erpnext.accounts.doctype.unreconcile_payment.unreconcile_payment import (
+    create_unreconcile_doc_for_selection,
+)
 from frappe import _
 from frappe.rate_limiter import rate_limit
 from frappe.utils import fmt_money, get_link_to_form, get_url_to_form, today
@@ -20,6 +27,7 @@ from razorpayx_integration.constants import RAZORPAYX_CONFIG
 from razorpayx_integration.razorpayx_integration.apis.payout import RazorpayXLinkPayout
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
     PAYOUT_CURRENCY,
+    PAYOUT_FROM,
     PAYOUT_LINK_STATUS,
     PAYOUT_ORDERS,
     PAYOUT_STATUS,
@@ -28,7 +36,10 @@ from razorpayx_integration.razorpayx_integration.constants.webhooks import (
     EVENTS_TYPE,
     SUPPORTED_EVENTS,
 )
-from razorpayx_integration.razorpayx_integration.utils import get_fees_accounting_config
+from razorpayx_integration.razorpayx_integration.utils import (
+    get_fees_accounting_config,
+    is_create_je_on_reversal_enabled,
+)
 
 
 ###### WEBHOOK PROCESSORS ######
@@ -61,15 +72,18 @@ class RazorpayXWebhook:
         self.id_field = ""
 
         self.payload_entity = {}
-        self.status = ""
+        self.status = ""  # Payout Status
         self.utr = ""
-        self.id = ""
+        self.id = ""  # Payout ID
+        self.reversal_id = ""
 
         self.source_docname = ""
         self.source_doctype = ""
         self.source_doc = frappe._dict()  # Set manually in the sub class if needed.
         self.referenced_docnames = []
         self.notes = {}
+
+        self.order_maintained = False
 
         self.set_config_name()  # Mandatory
         self.set_common_payload_attributes()  # Mandatory
@@ -119,11 +133,12 @@ class RazorpayXWebhook:
         - Transaction: https://razorpay.com/docs/webhooks/payloads/x/transactions/#transaction-created
         - Account Validation: https://razorpay.com/docs/webhooks/payloads/x/account-validation/#fund-accountvalidationcompleted
         """
-        if self.payload_entity:
-            self.status = self.payload_entity.get("status")
-            self.utr = self.payload_entity.get("utr")
-            self.id = self.payload_entity.get("id")
+        if not self.payload_entity or not isinstance(self.payload_entity, dict):
+            return
 
+        self.status = self.payload_entity.get("status")
+        self.utr = self.payload_entity.get("utr")
+        self.id = self.payload_entity.get("id")
         self.notes = self.payload_entity.get("notes") or {}
 
     def set_source_doctype_and_docname(self):
@@ -195,13 +210,16 @@ class RazorpayXWebhook:
         """
         return self.get_formlink("Integration Request", self.integration_request, html)
 
-    def get_source_formlink(self, html: bool = False) -> str:
+    def get_source_formlink(self, html: bool = False) -> str | None:
         """
         Get the Source Doc Form Link.
 
         :param html: bool - If True, return the anchor (<a>) tag.
         """
-        return self.get_formlink(self.source_doctype, self.source_docname, html)
+        if not self.source_doc:
+            return
+
+        return self.get_formlink(self.source_doc.doctype, self.source_doc.name, html)
 
 
 class PayoutWebhook(RazorpayXWebhook):
@@ -232,7 +250,11 @@ class PayoutWebhook(RazorpayXWebhook):
         Process RazorpayX Payout Related Webhooks.
         """
         self.update_payment_entry()
-        self.create_journal_entry()
+
+        if not self.source_doc or not self.order_maintained:
+            return
+
+        self.create_journal_entry_for_fees()
 
     def update_payment_entry(self, update_status: bool = True):
         """
@@ -257,7 +279,7 @@ class PayoutWebhook(RazorpayXWebhook):
         if update_status:
             self.update_payout_status(self.status)
 
-        self.handle_pe_cancellation()
+        self.handle_failure()
 
     def update_payout_status(self, status: str | None = None):
         """
@@ -269,6 +291,9 @@ class PayoutWebhook(RazorpayXWebhook):
         """
 
         if not status or status not in PAYOUT_STATUS.values():
+            return
+
+        if status == self.get_pe_rpx_status():
             return
 
         value = {"razorpayx_payout_status": status.title()}
@@ -295,98 +320,155 @@ class PayoutWebhook(RazorpayXWebhook):
             "Payment Entry", {"name": ["in", set(self.referenced_docnames)]}, values
         )
 
-    def handle_pe_cancellation(self):
+    def handle_failure(self):
         """
-        Handle the payment entry cancellation.
+        Handle the Payout Failure.
 
-        - Cancel the Payment Entry if the payout is failed.
+        - Cancel the Payment Entry.
+        - Cancel Fees and Tax JE if available.
         - Cancel the Payout Link if the payout is made from the Payout Link.
         """
-        if self.should_cancel_payment_entry() and self.cancel_payout_link():
-            self.cancel_payment_entry()
+        if not self.status or not is_payout_failed(self.status):
+            return
 
-    def create_journal_entry(self):
+        self.cancel_payment_entry()
+        self.cancel_fees_and_tax_je()
+        self.cancel_payout_link()
+
+    def create_journal_entry_for_fees(self):
         """
         Create a Journal Entry for the Payout Charges (fees + tax).
 
         Reference: https://razorpay.com/docs/x/manage-teams/billing/
         """
 
-        def fmt_inr(amount: int) -> str:
-            return fmt_money(amount, currency=PAYOUT_CURRENCY.INR.value)
-
-        def get_posting_date():
-            if created_at := self.payload_entity.get("created_at"):
-                return get_epoch_date(created_at)
-
-            return today()
-
-        def get_remark(fees: int) -> str:
-            user_remark = ""
-
-            if self.source_doc:
-                user_remark = (
-                    f"{self.source_doc.doctype}: {self.get_source_formlink(True)}\n"
+        def get_credit_account(fees_config: dict) -> str:
+            if fees_config.payouts_from == PAYOUT_FROM.RAZORPAYX_LITE.value:
+                return frappe.db.get_value(
+                    "Bank Account", self.source_doc.bank_account, "account"
                 )
 
-            user_remark += f"Payout ID: {self.id}"
+            return fees_config.payable_account
 
-            if fee_type := self.payload_entity.get("fee_type"):
-                user_remark += f"\nFee Type: {fee_type}"
-
-            tax = paisa_to_rupees(self.payload_entity.get("tax") or 0)
-            user_remark += f"\nFees: {fmt_inr(fees - tax)} | Tax: {fmt_inr(tax)}"
-            user_remark += f"\n\nIntegration Request: {self.get_ir_formlink(True)}"
-
-            return user_remark
-
-        if self.status != PAYOUT_STATUS.PROCESSED.value:
+        if (
+            not self.source_doc
+            or not self.id
+            or self.status
+            not in [
+                PAYOUT_STATUS.PROCESSED.value,
+                PAYOUT_STATUS.PROCESSING.value,
+            ]
+        ):
             return
 
         fees = self.payload_entity.get("fees") or 0
         # !Note: fees is inclusive of tax and it is in paisa
         # Example: fees = 236 (2.36 INR) and tax = 36 (0.36 INR) => Charge = 200 (2 INR) | Tax = 36 (0.36 INR)
 
-        if not fees:
+        # conditions to create JE
+        if not fees or PayoutWebhook.je_exists(self.id):
             return
 
-        fee_config = get_fees_accounting_config(self.config_name)
+        fees_config = get_fees_accounting_config(self.config_name)
 
-        if not fee_config.automate_fees_accounting:
+        if not fees_config.automate_fees_accounting:
+            return
+
+        if (
+            fees_config.payouts_from == PAYOUT_FROM.RAZORPAYX_LITE.value
+            and self.status != PAYOUT_STATUS.PROCESSING.value
+        ):
+            return
+
+        if (
+            fees_config.payouts_from == PAYOUT_FROM.CURRENT_ACCOUNT.value
+            and self.status != PAYOUT_STATUS.PROCESSED.value
+        ):
             return
 
         fees = paisa_to_rupees(fees)
 
-        je = frappe.new_doc("Journal Entry")
-        je.update(
-            {
-                "voucher_type": "Journal Entry",
-                "is_system_generated": 1,
-                "company": self.source_doc.company,
-                "posting_date": get_posting_date(),
-                "accounts": [
-                    {
-                        "account": fee_config.creditors_account,
-                        "party_type": "Supplier",
-                        "party": fee_config.supplier,
-                        "debit_in_account_currency": fees,
-                        "credit_in_account_currency": 0,
-                    },
-                    {
-                        "account": fee_config.payable_account,
-                        "debit_in_account_currency": 0,
-                        "credit_in_account_currency": fees,
-                    },
-                ],
-                "cheque_no": self.utr,
-                "user_remark": get_remark(fees),
-            }
+        self.create_je(
+            accounts=[
+                {
+                    "account": fees_config.creditors_account,
+                    "party_type": "Supplier",
+                    "party": fees_config.supplier,
+                    "debit_in_account_currency": fees,
+                    "credit_in_account_currency": 0,
+                },
+                {
+                    "account": get_credit_account(fees_config),
+                    "debit_in_account_currency": 0,
+                    "credit_in_account_currency": fees,
+                },
+            ],
+            user_remark=self.get_je_remark(fees),
+            cheque_no=self.id,
         )
 
-        je.flags.skip_remarks_creation = True
-        je.submit()
+    def cancel_fees_and_tax_je(self):
+        if not self.id:
+            return
+
+        je = frappe.get_doc(
+            "Journal Entry",
+            {"cheque_no": self.id, "reversal_of": ["is", "not set"], "docstatus": 1},
+        )
+
+        if je:
+            je.cancel()
 
     ### UTILITIES ###
+    # static methods
+    def fmt_inr(amount: int) -> str:
+        return fmt_money(amount, currency=PAYOUT_CURRENCY.INR.value)
+
+    def je_exists(
+        cheque_no: str, reversal_of: Literal["set", "not set"] = "not set"
+    ) -> str | None:
+        return frappe.db.exists(
+            "Journal Entry",
+            {
+                "cheque_no": cheque_no,
+                "reversal_of": ["is", reversal_of],
+            },
+        )
+
+    # instance methods
+    def get_posting_date(self):
+        if created_at := self.payload_entity.get("created_at"):
+            return get_epoch_date(created_at)
+
+        return today()
+
+    def get_je_remark(self, fees: int | None = None, reversal: bool = False) -> str:
+        user_remark = ""
+
+        if self.source_doc:
+            user_remark = (
+                f"{self.source_doc.doctype}: {self.get_source_formlink(True)}\n"
+            )
+
+        if reversal:
+            user_remark += f"Reversal ID: {self.reversal_id}"
+        else:
+            user_remark += f"Payout ID: {self.id}"
+
+        if self.status:
+            user_remark += f"\nPayout Status: {self.status.title()}"
+
+        if fees:
+            if fee_type := self.payload_entity.get("fee_type"):
+                user_remark += f"\nFee Type: {fee_type}"
+
+            tax = paisa_to_rupees(self.payload_entity.get("tax") or 0)
+            user_remark += f"\nFees: {PayoutWebhook.fmt_inr(fees - tax)} | Tax: {PayoutWebhook.fmt_inr(tax)}"
+
+        user_remark += f"\n\nIntegration Request: {self.get_ir_formlink(True)}"
+
+        return user_remark
+
     def set_id_field(self) -> str:
         field_mapper = {
             EVENTS_TYPE.PAYOUT.value: "razorpayx_payout_id",
@@ -395,6 +477,23 @@ class PayoutWebhook(RazorpayXWebhook):
         }
 
         self.id_field = field_mapper.get(self.event_type) or "razorpayx_payout_id"
+
+    def create_je(self, **kwargs):
+        je = frappe.new_doc("Journal Entry")
+        je.update(
+            {
+                "voucher_type": "Journal Entry",
+                "is_system_generated": 1,
+                "company": self.source_doc.company,
+                "posting_date": self.get_posting_date(),
+                **kwargs,
+            }
+        )
+
+        je.flags.skip_remarks_creation = True
+        je.submit()
+
+        return je
 
     def get_source_doc(self):
         """
@@ -454,9 +553,19 @@ class PayoutWebhook(RazorpayXWebhook):
 
         Note: 🟢 Override this method in the sub class for custom order maintenance.
         """
-        pe_status = self.source_doc.razorpayx_payout_status.lower()
 
-        return self.status and PAYOUT_ORDERS[self.status] > PAYOUT_ORDERS[pe_status]
+        self.order_maintained = bool(
+            self.status
+            and PAYOUT_ORDERS[self.status] > PAYOUT_ORDERS[self.get_pe_rpx_status()]
+        )
+
+        return self.order_maintained
+
+    def get_pe_rpx_status(self) -> str:
+        """
+        Get the Payment Entry's RazorpayX Payout Status.
+        """
+        return self.source_doc.razorpayx_payout_status.lower()
 
     def get_updated_reference(self) -> dict:
         """
@@ -477,20 +586,19 @@ class PayoutWebhook(RazorpayXWebhook):
     def cancel_payout_link(self) -> bool:
         """
         Cancel the Payout Link if the Payout is made from the Payout Link.
-
-        :returns: bool - `True` if the Payout Link is cancelled successfully.
         """
+        # TODO: Need to check what is exact behaviour of the Payout Link on the failure of payout!
         link_id = self.source_doc.razorpayx_payout_link_id
 
         if not link_id:
-            return True
+            return
 
         try:
             payout_link = RazorpayXLinkPayout(self.config_name)
             status = payout_link.get_by_id(link_id, "status")
 
-            if self.is_payout_link_cancelled(status):
-                return True
+            if is_payout_link_failed(status):
+                return
 
             if status == PAYOUT_LINK_STATUS.ISSUED.value:
                 payout_link.cancel(
@@ -499,8 +607,7 @@ class PayoutWebhook(RazorpayXWebhook):
                     source_docname=self.source_docname,
                 )
 
-                return True
-
+        # TODO: should update IR status to `Failed`
         except Exception:
             frappe.log_error(
                 title="RazorpayX Payout Link Cancellation Failed",
@@ -513,42 +620,11 @@ class PayoutWebhook(RazorpayXWebhook):
 
         Set flags `__canceled_by_rpx` and cancel the Payment Entry.
         """
+        if self.source_doc.docstatus != 1:
+            return
+
         self.source_doc.flags.__canceled_by_rpx = True
         self.source_doc.cancel()
-
-    def should_cancel_payment_entry(self) -> bool:
-        """
-        Check if the Payment Entry should be cancelled or not.
-        """
-        return (
-            self.status
-            and self.source_doc.docstatus == 1
-            and self.is_payout_cancelled(self.status)
-        )
-
-    def is_payout_cancelled(self, status: str) -> bool:
-        """
-        Check if the Payout cancelled (cancelled, failed, rejected) or not.
-
-        :param status: Payout Webhook Status.
-        """
-        return status in [
-            PAYOUT_STATUS.CANCELLED.value,
-            PAYOUT_STATUS.FAILED.value,
-            PAYOUT_STATUS.REJECTED.value,
-        ]
-
-    def is_payout_link_cancelled(self, status: str) -> bool:
-        """
-        Check if the Payout Link cancelled (expired, rejected, cancelled) or not.
-
-        :param status: Payout Link Webhook Status.
-        """
-        return status in [
-            PAYOUT_LINK_STATUS.CANCELLED.value,
-            PAYOUT_LINK_STATUS.EXPIRED.value,
-            PAYOUT_LINK_STATUS.REJECTED.value,
-        ]
 
 
 class PayoutLinkWebhook(PayoutWebhook):
@@ -575,10 +651,18 @@ class PayoutLinkWebhook(PayoutWebhook):
         """
         self.update_payment_entry(update_status=False)
 
-    def handle_pe_cancellation(self):
-        if self.should_cancel_payment_entry():
-            self.update_payout_status(PAYOUT_STATUS.CANCELLED.value)
-            self.cancel_payment_entry()
+    def handle_failure(self):
+        """
+        Handle the Payout Link Failure.
+
+        - Update thr Payout Status to `Cancelled`.
+        - Cancel the Payment Entry.
+        """
+        if not self.status or not is_payout_link_failed(self.status):
+            return
+
+        self.update_payout_status(PAYOUT_STATUS.CANCELLED.value)
+        self.cancel_payment_entry()
 
     ### UTILITIES ###
     def is_order_maintained(self) -> bool:
@@ -587,17 +671,9 @@ class PayoutLinkWebhook(PayoutWebhook):
 
         Caution: ⚠️ Payout link status is not maintained in the Payment Entry.
         """
-        return bool(self.status)
+        self.order_maintained = bool(self.status)
 
-    def should_cancel_payment_entry(self) -> bool:
-        """
-        Check if the Payment Entry should be cancelled or not.
-        """
-        return (
-            self.status
-            and self.source_doc.docstatus == 1
-            and self.is_payout_link_cancelled()
-        )
+        return self.order_maintained
 
 
 class TransactionWebhook(PayoutWebhook):
@@ -628,25 +704,28 @@ class TransactionWebhook(PayoutWebhook):
         Sample Payloads:
         - https://razorpay.com/docs/webhooks/payloads/x/transactions/#transaction-created
         """
+        self.transaction_id = self.payload_entity["id"]
 
-        def get_payout_id() -> str:
-            match self.transaction_type:
-                case TRANSACTION_TYPE.PAYOUT.value:
-                    return self.transaction_source.get("id")
-                case TRANSACTION_TYPE.REVERSAL.value:
-                    return self.transaction_source.get("payout_id")
+        if not self.payload_entity:
+            return
 
-        self.transaction_id = self.payload_entity.get("id")
+        self.transaction_source = self.payload_entity.get("source") or {}
 
-        if self.payload_entity:
-            self.transaction_source = self.payload_entity.get("source") or {}
+        if not self.transaction_source:
+            return
 
-        if self.transaction_source:
-            self.transaction_type = self.transaction_source.get("entity")
-            self.utr = self.transaction_source.get("utr")
+        self.transaction_type = self.transaction_source.get("entity")
+        self.utr = self.transaction_source.get("utr")
+        self.status = self.transaction_source.get("status")
+        self.notes = self.transaction_source.get("notes") or {}
+
+        if self.transaction_type == TRANSACTION_TYPE.PAYOUT.value:
+            self.id = self.transaction_source.get("id")
             self.status = self.transaction_source.get("status")
-            self.id = get_payout_id()
-            self.notes = self.transaction_source.get("notes") or {}
+        elif self.transaction_type == TRANSACTION_TYPE.REVERSAL.value:
+            self.reversal_id = self.transaction_source.get("id")
+            self.id = self.transaction_source.get("payout_id")
+            self.status = PAYOUT_STATUS.REVERSED.value
 
     ### APIs ###
     def process_webhook(self, *args, **kwargs):
@@ -654,19 +733,17 @@ class TransactionWebhook(PayoutWebhook):
         Process RazorpayX Payout Related Webhooks.
         """
         self.update_payment_entry()
-        self.update_bank_transaction()
 
-    def handle_pe_cancellation(self):
+        if not self.order_maintained:
+            return
+
+        self.set_utr_in_bank_transaction()
+        self.handle_payout_reversal()
+
+    def handle_failure(self):
         pass
 
-    def update_bank_transaction(self):
-        """
-        Update Bank Transaction based on the webhook entity.
-
-        When Bank Transaction already created without `UTR` in `Processing` State.
-
-        So, when `Processed` or `Reversed`, update the Bank Transaction with `UTR`.
-        """
+    def set_utr_in_bank_transaction(self):
         if not self.utr or not self.transaction_id:
             return
 
@@ -684,20 +761,129 @@ class TransactionWebhook(PayoutWebhook):
             self.utr,
         )
 
+    def handle_payout_reversal(self):
+        if not self.source_doc or self.status != PAYOUT_STATUS.REVERSED.value:
+            return
+
+        self.cancel_payout_link()
+
+        if not is_create_je_on_reversal_enabled(self.config_name):
+            return
+
+        self.unreconcile_payment_entry()
+        self.create_payout_reversal_je()
+        self.reverse_fees_and_tax_je()
+
+    def unreconcile_payment_entry(self):
+        vouchers = []
+
+        source = {
+            "company": self.source_doc.company,
+            "voucher_type": self.source_doc.doctype,
+            "voucher_no": self.source_doc.name,
+        }
+
+        for d in self.source_doc.references:
+            vouchers.append(
+                {
+                    **source,
+                    "against_voucher_type": d.reference_doctype,
+                    "against_voucher_no": d.reference_name,
+                }
+            )
+
+        if not vouchers:
+            return
+
+        create_unreconcile_doc_for_selection(json.dumps(vouchers))
+
+    def create_payout_reversal_je(self):
+        if PayoutWebhook.je_exists(self.reversal_id):
+            return
+
+        def get_creditor_amount():
+            deduction = sum([d.amount for d in self.source_doc.deductions])
+            return self.source_doc.paid_amount - deduction
+
+        accounts = [
+            {
+                "account": self.source_doc.paid_to,
+                "party_type": self.source_doc.party_type,
+                "party": self.source_doc.party,
+                "credit_in_account_currency": get_creditor_amount(),
+                "debit_in_account_currency": 0,
+                "reference_type": self.source_doc.doctype,
+                "reference_name": self.source_doc.name,
+            },
+            {
+                "account": self.source_doc.paid_from,
+                "debit_in_account_currency": self.source_doc.paid_amount,
+                "credit_in_account_currency": 0,
+            },
+        ]
+
+        for d in self.source_doc.deductions:
+            accounts.append(
+                {
+                    "account": d.account,
+                    "cost_center": d.cost_center,
+                    "credit_in_account_currency": d.amount,
+                    "debit_in_account_currency": 0,
+                }
+            )
+
+        self.create_je(
+            accounts=accounts,
+            user_remark=self.get_je_remark(),
+            cheque_no=self.reversal_id,
+        )
+
+    def reverse_fees_and_tax_je(self):
+        fees_je = PayoutWebhook.je_exists(self.id)
+
+        if not fees_je:
+            return
+
+        reversal_je = make_reverse_journal_entry(fees_je)
+        reversal_je.update(
+            {
+                "is_system_generated": 1,
+                "posting_date": self.get_posting_date(),
+                "cheque_no": self.reversal_id,
+                "user_remark": f"Integration Request: {self.get_ir_formlink(True)}",
+            }
+        )
+        reversal_je.flags.skip_remarks_creation = True
+        reversal_je.submit()
+
     ### UTILITIES ###
+    def should_update_payment_entry(self) -> bool:
+        """
+        Check if the Payment Entry should be updated or not.
+
+        Note: Source doc (Payment Entry) is set here.
+        """
+        return bool(self.get_source_doc() and self.is_order_maintained())
+
     def is_order_maintained(self):
         """
         Check if the order is maintained or not.
         """
-        is_valid_transaction = self.transaction_type in TRANSACTION_TYPE.values()
 
         # if status not available, depend on the type
-        if not self.status or not is_valid_transaction:
-            return is_valid_transaction
+        if not self.status:
+            self.order_maintained = self.transaction_type in TRANSACTION_TYPE.values()
+        else:
+            # if status available, compare with the source doc payout status
+            if self.status == PAYOUT_STATUS.REVERSED.value:
+                # if status is update via payout's reversed webhook than in transaction webhook reversal will not handled
+                self.order_maintained = True
+            else:
+                self.order_maintained = (
+                    PAYOUT_ORDERS[self.status] > PAYOUT_ORDERS[self.get_pe_rpx_status()]
+                )
 
-        # if status available, compare with the source doc payout status
-        pe_status = self.source_doc.razorpayx_payout_status.lower()
-        return PAYOUT_ORDERS[self.status] > PAYOUT_ORDERS[pe_status]
+        return self.order_maintained
 
 
 ###### CONSTANTS ######
@@ -720,6 +906,7 @@ WEBHOOK_PROCESSORS_MAP = {
 }
 
 
+###### APIs ######
 def get_webhook_rate_limit():
     """
     Get the rate limit for the RazorpayX Webhook.
@@ -733,7 +920,6 @@ def get_webhook_rate_limit():
     return 10
 
 
-###### APIs ######
 @frappe.whitelist(allow_guest=True)
 @rate_limit(limit=get_webhook_rate_limit, seconds=60 * 60)
 def webhook_listener():
@@ -745,6 +931,8 @@ def webhook_listener():
         return
 
     payload = frappe.local.form_dict
+    payload.pop("cmd")
+
     event = payload.get("event")
     if is_unsupported_event(event):
         return
@@ -761,12 +949,14 @@ def webhook_listener():
 
     ir = log_integration_request(**ir_log)
 
-    # Process the webhook ##
+    ## Process the webhook ##
     frappe.enqueue(
         process_webhook,
         payload=payload,
         integration_request=ir.name,
     )
+
+    # process_webhook(payload, ir.name)
 
 
 def process_webhook(payload: dict, integration_request: str):
@@ -866,7 +1056,7 @@ def get_referenced_docnames(doctype: str, docname: str) -> list[str] | None:
     """
     Get the referenced docnames based.
 
-    - Order by creation date.
+    - Descending order by creation date.
 
     :param doctype: Source Doctype.
     :param docname: Source Docname.
@@ -906,3 +1096,40 @@ def get_referenced_docnames(doctype: str, docname: str) -> list[str] | None:
         docnames.insert(0, docname)
 
     return docnames
+
+
+def is_payout_failed(status: str) -> bool:
+    """
+    Check if the Payout failed (cancelled, failed, rejected) or not.
+
+    :param status: Payout Webhook Status.
+    """
+    return status in [
+        PAYOUT_STATUS.CANCELLED.value,
+        PAYOUT_STATUS.FAILED.value,
+        PAYOUT_STATUS.REJECTED.value,
+    ]
+
+
+def is_payout_link_failed(status: str) -> bool:
+    """
+    Check if the Payout Link failed (expired, rejected, cancelled) or not.
+
+    :param status: Payout Link Webhook Status.
+    """
+    return status in [
+        PAYOUT_LINK_STATUS.CANCELLED.value,
+        PAYOUT_LINK_STATUS.EXPIRED.value,
+        PAYOUT_LINK_STATUS.REJECTED.value,
+    ]
+
+
+# TODO: Handle Fees and Tax deduction at the end of the day
+"""
+1. Create JE
+2. Debit: Creditors Account
+3. Credit: Payable Account
+3. Amount: Fees + Tax
+4. Cheque No: UTR ?
+5. User Remark: Fees: 200 | Tax: 36 | Integration Request: IR-00001 (Example)
+"""
