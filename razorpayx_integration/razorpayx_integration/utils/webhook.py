@@ -293,9 +293,10 @@ class PayoutWebhook(RazorpayXWebhook):
         if not status or status not in PAYOUT_STATUS.values():
             return
 
-        value = {"razorpayx_payout_status": status.title()}
+        if status == self.get_pe_rpx_status():
+            return
 
-        print("Updating Payout Status:", value)
+        value = {"razorpayx_payout_status": status.title()}
 
         if self.source_doc.docstatus == 2:
             self.source_doc.db_set(value, notify=True)
@@ -852,6 +853,7 @@ class TransactionWebhook(PayoutWebhook):
                 "user_remark": f"Integration Request: {self.get_ir_formlink(True)}",
             }
         )
+        reversal_je.flags.skip_remarks_creation = True
         reversal_je.submit()
 
     ### UTILITIES ###
@@ -867,16 +869,19 @@ class TransactionWebhook(PayoutWebhook):
         """
         Check if the order is maintained or not.
         """
-        is_valid_transaction = self.transaction_type in TRANSACTION_TYPE.values()
 
         # if status not available, depend on the type
-        if not self.status or not is_valid_transaction:
-            self.order_maintained = is_valid_transaction
+        if not self.status:
+            self.order_maintained = self.transaction_type in TRANSACTION_TYPE.values()
         else:
             # if status available, compare with the source doc payout status
-            self.order_maintained = (
-                PAYOUT_ORDERS[self.status] > PAYOUT_ORDERS[self.get_pe_rpx_status()]
-            )
+            if self.status == PAYOUT_STATUS.REVERSED.value:
+                # if status is update via payout's reversed webhook than in transaction webhook reversal will not handled
+                self.order_maintained = True
+            else:
+                self.order_maintained = (
+                    PAYOUT_ORDERS[self.status] > PAYOUT_ORDERS[self.get_pe_rpx_status()]
+                )
 
         return self.order_maintained
 
