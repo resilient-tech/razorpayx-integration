@@ -770,6 +770,10 @@ class TransactionWebhook(PayoutWebhook):
         if not is_create_je_on_reversal_enabled(self.config_name):
             return
 
+        # to create JE
+        self.total_allocated_amount = self.source_doc.total_allocated_amount or 0
+        self.unallocated_amount = self.source_doc.unallocated_amount or 0
+
         self.unreconcile_payment_entry()
         self.create_payout_reversal_je()
         self.reverse_fees_and_tax_je()
@@ -801,16 +805,14 @@ class TransactionWebhook(PayoutWebhook):
         if PayoutWebhook.je_exists(self.reversal_id):
             return
 
-        def get_creditor_amount():
-            deduction = sum([d.amount for d in self.source_doc.deductions])
-            return self.source_doc.paid_amount - deduction
-
         accounts = [
             {
                 "account": self.source_doc.paid_to,
                 "party_type": self.source_doc.party_type,
                 "party": self.source_doc.party,
-                "credit_in_account_currency": get_creditor_amount(),
+                "credit_in_account_currency": (
+                    self.total_allocated_amount + self.unallocated_amount
+                ),
                 "debit_in_account_currency": 0,
                 "reference_type": self.source_doc.doctype,
                 "reference_name": self.source_doc.name,
@@ -822,15 +824,18 @@ class TransactionWebhook(PayoutWebhook):
             },
         ]
 
-        for d in self.source_doc.deductions:
-            accounts.append(
-                {
-                    "account": d.account,
-                    "cost_center": d.cost_center,
-                    "credit_in_account_currency": d.amount,
-                    "debit_in_account_currency": 0,
-                }
-            )
+        for deduction in self.source_doc.deductions:
+            amount = abs(deduction.amount)
+            is_debit = deduction.amount < 0
+
+            account_entry = {
+                "account": deduction.account,
+                "cost_center": deduction.cost_center,
+                "debit_in_account_currency": amount if is_debit else 0,
+                "credit_in_account_currency": 0 if is_debit else amount,
+            }
+
+            accounts.append(account_entry)
 
         self.create_je(
             accounts=accounts,
@@ -955,8 +960,6 @@ def webhook_listener():
         payload=payload,
         integration_request=ir.name,
     )
-
-    # process_webhook(payload, ir.name)
 
 
 def process_webhook(payload: dict, integration_request: str):
