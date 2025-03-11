@@ -30,6 +30,8 @@ We choose RazorpayX because:
 - Pre-built templates for workflows and notifications
 - Configurable to cater to diverse business processes
 
+**📝 Note:** This integration is designed for **domestic transactions within India 🇮🇳**. Foreign currency transactions are not supported.
+
 ## 📈 Why Use This Integration?
 
 - <em>Save Time</em>: Eliminate manual bank transactions from **Net Banking** portals
@@ -109,10 +111,14 @@ bench --site [site name] install-app razorpayx_integration
 
 ## 📚 Documentation
 
-1. [Connect ERPNext with RazorpayX](https://github.com/resilient-tech/razorpayx-integration/blob/version-15/docs/1_connect_with_razorpayx.md)
-2. [Make payout via RazorpayX within ERPNext](https://github.com/resilient-tech/razorpayx-integration/blob/version-15/docs/2_make_payout.md)
-3. [Reconcile Bank Transactions via RazorpayX API](https://github.com/resilient-tech/razorpayx-integration/blob/version-15/docs/3_bank_reconciliation_tool.md)
-4. [FAQs](https://github.com/resilient-tech/razorpayx-integration/blob/version-15/docs/4_faqs.md)
+1. [Connect ERPNext with RazorpayX](https://github.com/resilient-tech/razorpayx-integration/blob/version-15/docs/setup/2_connect_erpnext_with_razorpayx.md)
+2. [Make payout via RazorpayX within ERPNext](https://github.com/resilient-tech/razorpayx-integration/blob/version-15/docs/payout/3_make_payout.md)
+3. [Reconcile Bank Transactions via RazorpayX API](https://github.com/resilient-tech/razorpayx-integration/blob/version-15/docs/reconcile/1_sync_and_reconcile_transactions.md)
+4. [FAQs](https://github.com/resilient-tech/razorpayx-integration/blob/version-15/docs/FAQS.md)
+
+- Read full documentation [here](https://github.com/resilient-tech/razorpayx-integration/blob/version-15/docs)
+
+🔗 **Google Form for Discount Pricing on RazorpayX Payout Fees**: [Apply Here](http://bit.ly/3FhJOaA)  
 
 ## 🤝 Contributing
 
