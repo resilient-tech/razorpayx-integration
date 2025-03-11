@@ -51,28 +51,26 @@ def validate(doc: PaymentEntry, method=None):
 
 def before_submit(doc: PaymentEntry, method=None):
     # for bulk submission from client side or single submission without payment
-    if should_uncheck_make_bank_online_payment(doc):
-        # PE is not authorized to make payout or auto pay is disabled
-        doc.make_bank_online_payment = 0
+    if not should_uncheck_make_bank_online_payment(doc):
+        return
 
-        if frappe.flags.initiated_by_payment_processor:
-            return
+    # PE is not authorized to make payout or auto pay is disabled
+    doc.make_bank_online_payment = 0
 
-        # Show single alert message only
-        alert_msg = _("Please make payout manually after Payment Entry submission.")
-        alert_sent = False
+    if frappe.flags.initiated_by_payment_processor:
+        return
 
-        for message in frappe.message_log:
-            if alert_msg in message.get("message"):
-                alert_sent = True
-                break
+    # Show single alert message only
+    alert_msg = _("Please make payout manually after Payment Entry submission.")
+    alert_sent = False
 
-        if not alert_sent:
-            frappe.msgprint(msg=alert_msg, alert=True)
+    for message in frappe.message_log:
+        if alert_msg in message.get("message"):
+            alert_sent = True
+            break
 
-    if not doc.make_bank_online_payment:
-        # Reset payout description if not making payout
-        doc.razorpayx_payout_desc = ""
+    if not alert_sent:
+        frappe.msgprint(msg=alert_msg, alert=True)
 
 
 def should_uncheck_make_bank_online_payment(doc: PaymentEntry) -> bool:
