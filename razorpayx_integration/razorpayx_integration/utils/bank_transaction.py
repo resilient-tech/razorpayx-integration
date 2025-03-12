@@ -1,17 +1,26 @@
+from typing import Literal
+
 import frappe
 from frappe import _
 from frappe.utils import DateTimeLikeObject, getdate
+from payment_integration_utils.payment_integration_utils.constants.enums import BaseEnum
 from payment_integration_utils.payment_integration_utils.utils import (
     get_str_datetime_from_epoch,
     paisa_to_rupees,
 )
 
-from razorpayx_integration.constants import (
-    RAZORPAYX_CONFIG as RAZORPAYX_CONFIG,
-)
+from razorpayx_integration.constants import RAZORPAYX_CONFIG
 from razorpayx_integration.razorpayx_integration.apis.transaction import (
     RazorpayXTransaction,
 )
+from razorpayx_integration.razorpayx_integration.constants.payouts import PAYOUT_FROM
+from razorpayx_integration.razorpayx_integration.utils import get_payouts_made_from
+
+
+class ENTITY(BaseEnum):
+    PAYOUT = "payout"
+    BANK_TRANSFER = "bank_transfer"
+    REVERSAL = "reversal"
 
 
 ######### PROCESSOR #########
@@ -155,7 +164,10 @@ class RazorpayXBankTransaction:
         }
 
         # auto reconciliation
+        # TODO: fees deduction at the end of the day is not handled
+        mapped["payment_entries"] = []
         self.set_matching_payment_entry(mapped, source)
+        self.set_matching_journal_entry(mapped, source)
 
         return mapped
 
@@ -165,15 +177,24 @@ class RazorpayXBankTransaction:
 
         :param mapped: Mapped Bank Transaction
         :param source: Source of the transaction (In transaction response)
+
+        ---
+        Note:
+        - Payment Entry will be find by `Payout ID` or `UTR`.
+        - For `reversal` entity it returns without finding PE.
         """
-        if not source:
+        if not source or source.get("entity") == ENTITY.REVERSAL.value:
             return
 
         def get_payment_entry(**filters):
             # TODO: confirm company or bank account
             return frappe.db.get_value(
                 "Payment Entry",
-                {"docstatus": 1, "clearance_date": ["is", "not set"], **filters},
+                {
+                    "docstatus": 1,
+                    "clearance_date": ["is", "not set"],
+                    **filters,
+                },
                 fieldname=["name", "paid_amount"],
                 order_by="creation desc",  # to get latest
                 as_dict=True,
@@ -181,24 +202,115 @@ class RazorpayXBankTransaction:
 
         payment_entry = None
 
-        # reconciliation with payout_id
-        if source.get("entity") == "payout":
+        # reconciliation with payout_id or bank_reference
+        if source.get("entity") == ENTITY.PAYOUT.value:
             payment_entry = get_payment_entry(razorpayx_payout_id=source["id"])
+        elif source.get("entity") == ENTITY.BANK_TRANSFER.value:
+            payment_entry = get_payment_entry(reference_no=source["bank_reference"])
 
-        # reconciliation with reference number
+        # reconciliation with reference number (UTR)
         if not payment_entry and source.get("utr"):
             payment_entry = get_payment_entry(reference_no=mapped["reference_number"])
 
         if not payment_entry:
             return
 
-        mapped["payment_entries"] = [
+        mapped["payment_entries"].append(
             {
                 "payment_document": "Payment Entry",
                 "payment_entry": payment_entry.name,
                 "allocated_amount": payment_entry.paid_amount,
             }
-        ]
+        )
+
+    def set_matching_journal_entry(self, mapped: dict, source: dict | None = None):
+        """
+        Setting matching Journal Entry for the Bank Reconciliation.
+
+        :param mapped: Mapped Bank Transaction
+        :param source: Source of the transaction (In transaction response)
+
+        ---
+        Note:
+            - For reversal, two transactions will be created.
+                - simple transaction with reversal id
+                - payout reversal transaction with payout id
+            - JE created only when payout processed or reversed
+            - JE will be find by  `Payout ID` or `Reversal ID` or `UTR` or `Bank Reference`.
+        """
+        if not source:
+            return
+
+        payouts_from = get_payouts_made_from(self.razorpayx_config)
+
+        def get_journal_entry(
+            check_no: str,
+            reversal_of: Literal["set", "not set"],
+        ) -> dict | None:
+            return frappe.db.get_value(
+                "Journal Entry",
+                {
+                    "is_system_generated": 1,
+                    "docstatus": 1,
+                    "difference": 0,
+                    "cheque_no": check_no,
+                    "reversal_of": ["is", reversal_of],
+                },
+                fieldname=["name", "total_debit"],
+                as_dict=True,
+            )
+
+        def is_current_account_payout() -> bool:
+            return payouts_from == PAYOUT_FROM.CURRENT_ACCOUNT.value
+
+        entity = source.get("entity")
+
+        # for current account payouts, fees will not be deducted immediately but JE will be created
+        if entity == ENTITY.PAYOUT.value and is_current_account_payout():
+            return
+
+        # get cheque no to fetch JE
+        cheque_no = ""
+
+        if entity in [ENTITY.PAYOUT.value, ENTITY.REVERSAL.value]:
+            cheque_no = source.get("id")
+        elif entity == ENTITY.BANK_TRANSFER.value:
+            cheque_no = source.get("bank_reference")
+        else:
+            cheque_no = source.get("utr")
+
+        if not cheque_no:
+            return
+
+        # finding Fees JE or Payout Reversal JE with `cheque_no`
+        # Note: for fees `check_no` is payout_id and for reversal `check_no` is reversal_id
+        journal_entry = get_journal_entry(cheque_no, "not set")
+
+        if journal_entry:
+            mapped["payment_entries"].append(
+                {
+                    "payment_document": "Journal Entry",
+                    "payment_entry": journal_entry.name,
+                    "allocated_amount": journal_entry.total_debit,
+                }
+            )
+
+        if entity != "reversal" or is_current_account_payout():
+            return
+
+        # get fees reversal JE (Only for RazorpayX Lite)
+        fees_reversal_je = get_journal_entry(cheque_no, "set")
+
+        if not fees_reversal_je:
+            return
+
+        mapped["payment_entries"].append(
+            {
+                "payment_document": "Journal Entry",
+                "payment_entry": fees_reversal_je.name,
+                "allocated_amount": fees_reversal_je.total_debit,
+            }
+        )
 
     # TODO: can use bulk insert?
     def create(self, mapped_transaction: dict):
