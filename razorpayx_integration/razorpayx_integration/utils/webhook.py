@@ -344,9 +344,7 @@ class PayoutWebhook(RazorpayXWebhook):
 
         def get_credit_account(fees_config: dict) -> str:
             if fees_config.payouts_from == PAYOUT_FROM.RAZORPAYX_LITE.value:
-                return frappe.db.get_value(
-                    "Bank Account", self.source_doc.bank_account, "account"
-                )
+                return self.source_doc.paid_from
 
             return fees_config.payable_account
 
