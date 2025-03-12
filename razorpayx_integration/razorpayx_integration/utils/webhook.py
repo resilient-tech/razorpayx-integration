@@ -448,10 +448,10 @@ class PayoutWebhook(RazorpayXWebhook):
                 f"{self.source_doc.doctype}: {self.get_source_formlink(True)}\n"
             )
 
+        user_remark += f"Payout ID: {self.id}"
+
         if reversal:
-            user_remark += f"Reversal ID: {self.reversal_id}"
-        else:
-            user_remark += f"Payout ID: {self.id}"
+            user_remark += f"\nReversal ID: {self.reversal_id}"
 
         if self.status:
             user_remark += f"\nPayout Status: {self.status.title()}"
