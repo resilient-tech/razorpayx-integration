@@ -405,31 +405,23 @@ class PayoutWebhook(RazorpayXWebhook):
             cheque_no=self.id,
         )
 
-    def cancel_fees_and_tax_je(self):
-        if not self.id:
-            return
-
-        je = frappe.get_doc(
-            "Journal Entry",
-            {"cheque_no": self.id, "reversal_of": ["is", "not set"], "docstatus": 1},
-        )
-
-        if je:
-            je.cancel()
-
     ### UTILITIES ###
     # static methods
     def fmt_inr(amount: int) -> str:
         return fmt_money(amount, currency=PAYOUT_CURRENCY.INR.value)
 
-    def je_exists(
-        cheque_no: str, reversal_of: Literal["set", "not set"] = "not set"
-    ) -> str | None:
+    def je_exists(cheque_no: str, reversal_of: str | None = None) -> str | None:
+        if not reversal_of:
+            reversal_of = ["is", "not set"]
+
         return frappe.db.exists(
             "Journal Entry",
             {
+                "docstatus": 1,
+                "is_system_generated": 1,
+                "reversal_of": reversal_of,
+                # required because maybe JE exist for reversal
                 "cheque_no": cheque_no,
-                "reversal_of": ["is", reversal_of],
             },
         )
 
@@ -581,6 +573,34 @@ class PayoutWebhook(RazorpayXWebhook):
         }
 
     ### CANCELLATION ###
+    def cancel_payment_entry(self):
+        """
+        Cancel the Payment Entry.
+
+        Set flags `__canceled_by_rpx` and cancel the Payment Entry.
+        """
+        if self.source_doc.docstatus != 1:
+            return
+
+        self.source_doc.flags.__canceled_by_rpx = True
+        self.source_doc.cancel()
+
+    def cancel_fees_and_tax_je(self):
+        if not self.id:
+            return
+
+        fees_je = frappe.get_doc(
+            "Journal Entry",
+            {
+                "is_system_generated": 1,
+                "docstatus": 1,
+                "cheque_no": self.id,
+            },
+        )
+
+        if fees_je:
+            fees_je.cancel()
+
     def cancel_payout_link(self) -> bool:
         """
         Cancel the Payout Link if the Payout is made from the Payout Link.
@@ -611,18 +631,6 @@ class PayoutWebhook(RazorpayXWebhook):
                 title="RazorpayX Payout Link Cancellation Failed",
                 message=f"Source: {self.get_ir_formlink()}\n\n{frappe.get_traceback()}",
             )
-
-    def cancel_payment_entry(self):
-        """
-        Cancel the Payment Entry.
-
-        Set flags `__canceled_by_rpx` and cancel the Payment Entry.
-        """
-        if self.source_doc.docstatus != 1:
-            return
-
-        self.source_doc.flags.__canceled_by_rpx = True
-        self.source_doc.cancel()
 
 
 class PayoutLinkWebhook(PayoutWebhook):
@@ -845,6 +853,10 @@ class TransactionWebhook(PayoutWebhook):
         fees_je = PayoutWebhook.je_exists(self.id)
 
         if not fees_je:
+            return
+
+        # already reversed
+        if PayoutWebhook.je_exists(self.reversal_id, reversal_of=fees_je):
             return
 
         reversal_je = make_reverse_journal_entry(fees_je)
