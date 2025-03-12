@@ -1,10 +1,14 @@
 import frappe
 from erpnext.accounts.doctype.payment_entry.payment_entry import PaymentEntry
 from frappe import _
+from frappe.utils import fmt_money, get_link_to_form, today
 from payment_integration_utils.payment_integration_utils.constants.payments import (
     TRANSFER_METHOD as PAYOUT_MODE,
 )
-from payment_integration_utils.payment_integration_utils.utils import is_already_paid
+from payment_integration_utils.payment_integration_utils.utils import (
+    is_already_paid,
+    paisa_to_rupees,
+)
 from payment_integration_utils.payment_integration_utils.utils.auth import (
     Authenticate2FA,
 )
@@ -15,9 +19,11 @@ from razorpayx_integration.razorpayx_integration.apis.payout import (
 )
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
     PAYOUT_CURRENCY,
+    PAYOUT_FROM,
     PAYOUT_STATUS,
 )
 from razorpayx_integration.razorpayx_integration.utils import (
+    get_fees_accounting_config,
     is_auto_cancel_payout_enabled,
     is_payout_via_razorpayx,
 )
@@ -137,6 +143,8 @@ class PayoutWithPaymentEntry:
         }
 
     def _update_after_making(self, response: dict | None = None):
+        notify = not frappe.flags.initiated_by_payment_processor
+
         user = (
             frappe.get_cached_value("User", "Administrator", "email")
             if frappe.session.user == "Administrator"
@@ -144,7 +152,7 @@ class PayoutWithPaymentEntry:
         )
 
         if user:
-            self.doc.db_set("payment_authorized_by", user, notify=True)
+            self.doc.db_set("payment_authorized_by", user, notify=notify)
 
         if not response:
             return
@@ -163,7 +171,119 @@ class PayoutWithPaymentEntry:
             values["razorpayx_payout_link_id"] = id
 
         if values:
-            self.doc.db_set(values, notify=True)
+            self.doc.db_set(values, notify=notify)
+
+        # updating status for better UX instead of waiting for webhook
+        if entity == "payout_link":
+            return
+
+        if status := response.get("status"):
+            self.doc.update({"razorpayx_payout_status": status.title()}).save()
+
+        # creating fees JE if possible
+        self.create_fees_je(response)
+
+    def create_fees_je(self, response):
+        # TODO: commonify with webhook's fees JE creation
+
+        def get_credit_account(fees_config: dict) -> str:
+            if fees_config.payouts_from == PAYOUT_FROM.RAZORPAYX_LITE.value:
+                return self.source_doc.paid_from
+
+            return fees_config.payable_account
+
+        def fmt_inr(amount: int) -> str:
+            return fmt_money(amount, currency=PAYOUT_CURRENCY.INR.value)
+
+        def get_remark(
+            payout_id: str,
+            status: str,
+            fees: int,
+            tax: int = 0,
+            fee_type: str | None = None,
+        ) -> str:
+            remarks = ""
+
+            remarks += f"{self.doc.doctype}: {get_link_to_form(self.doc.doctype, self.doc.name)}\n"
+
+            remarks += f"Payout ID: {payout_id}\n"
+
+            remarks += f"Payout Status: {status.title()}\n"
+
+            if fee_type:
+                remarks += f"Fee Type: {frappe.unscrub(fee_type)}\n"
+
+            remarks += f"Fees: {fmt_inr(fees)} | Tax: {fmt_inr(tax)}"
+
+            return remarks
+
+        status = response.get("status")
+
+        if status not in [
+            PAYOUT_STATUS.PROCESSING.value,
+            PAYOUT_STATUS.PROCESSED.value,
+        ]:
+            return
+
+        fees = response.get("fees") or 0
+        # !Note: fees is inclusive of tax and it is in paisa
+        # Example: fees = 236 (2.36 INR) and tax = 36 (0.36 INR) => Charge = 200 (2 INR) | Tax = 36 (0.36 INR)
+
+        tax = response.get("tax") or 0
+        fee_type = response.get("fee_type")
+
+        if not fees:
+            return
+
+        fees_config = get_fees_accounting_config(self.config_name)
+
+        if not fees_config.automate_fees_accounting:
+            return
+
+        if (
+            fees_config.payouts_from == PAYOUT_FROM.RAZORPAYX_LITE.value
+            and status != PAYOUT_STATUS.PROCESSING.value
+        ):
+            return
+
+        if (
+            fees_config.payouts_from == PAYOUT_FROM.CURRENT_ACCOUNT.value
+            and status != PAYOUT_STATUS.PROCESSED.value
+        ):
+            return
+
+        fees = paisa_to_rupees(fees)
+        tax = paisa_to_rupees(tax)
+        payout_id = response.get("id")
+
+        je = frappe.new_doc("Journal Entry")
+        je.update(
+            {
+                "voucher_type": "Journal Entry",
+                "is_system_generated": 1,
+                "company": self.doc.company,
+                "posting_date": today(),
+                "cheque_no": payout_id,
+                "user_remark": get_remark(payout_id, status, fees, tax, fee_type),
+                "accounts": [
+                    {
+                        "account": fees_config.creditors_account,
+                        "party_type": "Supplier",
+                        "party": fees_config.supplier,
+                        "debit_in_account_currency": fees,
+                        "credit_in_account_currency": 0,
+                    },
+                    {
+                        "account": get_credit_account(fees_config),
+                        "debit_in_account_currency": 0,
+                        "credit_in_account_currency": fees,
+                    },
+                ],
+            }
+        )
+
+        je.flags.skip_remarks_creation = True
+        je.submit()
 
     #### Cancel Payout | Payout Link ####
     def cancel(self, cancel_pe: bool = False):
