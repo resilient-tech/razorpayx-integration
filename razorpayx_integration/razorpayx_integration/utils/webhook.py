@@ -1000,6 +1000,7 @@ def authenticate_webhook_request():
 
     signature = frappe.get_request_header("X-Razorpay-Signature")
     if not signature:
+        log_webhook_authentication_failure("Signature Not Found")
         return
 
     payload = frappe.local.form_dict
