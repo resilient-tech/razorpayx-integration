@@ -1,3 +1,5 @@
+from typing import Literal
+
 import frappe
 from frappe import _
 from frappe.utils import DateTimeLikeObject, getdate
@@ -241,13 +243,18 @@ class RazorpayXBankTransaction:
 
         payouts_from = get_payouts_made_from(self.razorpayx_config)
 
-        def get_journal_entry(**filters) -> dict | None:
+        def get_journal_entry(
+            check_no: str,
+            reversal_of: Literal["set", "not set"],
+        ) -> dict | None:
             return frappe.db.get_value(
                 "Journal Entry",
                 {
+                    "is_system_generated": 1,
                     "docstatus": 1,
                     "difference": 0,
-                    **filters,
+                    "cheque_no": check_no,
+                    "reversal_of": ["is", reversal_of],
                 },
                 fieldname=["name", "total_debit"],
                 as_dict=True,
@@ -277,9 +284,7 @@ class RazorpayXBankTransaction:
 
         # finding Fees JE or Payout Reversal JE with `cheque_no`
         # Note: for fees `check_no` is payout_id and for reversal `check_no` is reversal_id
-        journal_entry = get_journal_entry(
-            cheque_no=cheque_no, reversal_of=["is", "not set"]
-        )
+        journal_entry = get_journal_entry(cheque_no, "not set")
 
         if journal_entry:
             mapped["payment_entries"].append(
@@ -294,24 +299,18 @@ class RazorpayXBankTransaction:
             return
 
         # get fees reversal JE (Only for RazorpayX Lite)
-        fees_je = get_journal_entry(
-            cheque_no=source.get("payout_id"),
-            reversal_of=["is", "not set"],
-        )
+        fees_reversal_je = get_journal_entry(cheque_no, "set")
 
-        if not fees_je:
+        if not fees_reversal_je:
             return
 
-        reversal_je = get_journal_entry(reversal_of=fees_je.name)
-
-        if reversal_je:
-            mapped["payment_entries"].append(
-                {
-                    "payment_document": "Journal Entry",
-                    "payment_entry": reversal_je.name,
-                    "allocated_amount": reversal_je.total_debit,
-                }
-            )
+        mapped["payment_entries"].append(
+            {
+                "payment_document": "Journal Entry",
+                "payment_entry": fees_reversal_je.name,
+                "allocated_amount": fees_reversal_je.total_debit,
+            }
+        )
 
     # TODO: can use bulk insert?
     def create(self, mapped_transaction: dict):
