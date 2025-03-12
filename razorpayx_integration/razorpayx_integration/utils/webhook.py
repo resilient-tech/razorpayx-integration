@@ -450,7 +450,7 @@ class PayoutWebhook(RazorpayXWebhook):
 
         if fees:
             if fee_type := self.payload_entity.get("fee_type"):
-                user_remark += f"\nFee Type: {fee_type}"
+                user_remark += f"\nFee Type: {frappe.unscrub(fee_type)}"
 
             tax = paisa_to_rupees(self.payload_entity.get("tax") or 0)
             user_remark += f"\nFees: {PayoutWebhook.fmt_inr(fees - tax)} | Tax: {PayoutWebhook.fmt_inr(tax)}"
