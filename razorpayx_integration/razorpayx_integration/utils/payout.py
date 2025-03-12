@@ -188,7 +188,7 @@ class PayoutWithPaymentEntry:
 
         def get_credit_account(fees_config: dict) -> str:
             if fees_config.payouts_from == PAYOUT_FROM.RAZORPAYX_LITE.value:
-                return self.source_doc.paid_from
+                return self.doc.paid_from
 
             return fees_config.payable_account
 
@@ -213,7 +213,7 @@ class PayoutWithPaymentEntry:
             if fee_type:
                 remarks += f"Fee Type: {frappe.unscrub(fee_type)}\n"
 
-            remarks += f"Fees: {fmt_inr(fees)} | Tax: {fmt_inr(tax)}"
+            remarks += f"Fees: {fmt_inr(fees - tax)} | Tax: {fmt_inr(tax)}"
 
             return remarks
 
