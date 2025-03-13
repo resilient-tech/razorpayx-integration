@@ -15,6 +15,8 @@ const TIMESPANS = [
 	"Select Date Range",
 ];
 
+const UTR_PLACEHOLDER = "*** UTR WILL BE SET AUTOMATICALLY ***";
+
 frappe.query_reports["RazorpayX Payout Report"] = {
 	filters: [
 		{
@@ -92,12 +94,40 @@ frappe.query_reports["RazorpayX Payout Report"] = {
 		},
 	],
 
-	onload: (report) => {
+	onload: function (report) {
 		const docstatus = report.get_filter("docstatus");
 
 		if (docstatus && (!docstatus.get_value() || docstatus.get_value().length === 0)) {
 			docstatus.set_value("Submitted");
 		}
+	},
+
+	formatter: function (value, row, column, data, default_formatter) {
+		if (column.fieldname === "docstatus") {
+			value = this.get_formatted_docstatus(value);
+		} else if (column.fieldname === "payout_status") {
+			value = this.get_formatted_payout_status(value);
+		} else if (column.fieldname === "utr") {
+			if (value === UTR_PLACEHOLDER) {
+				value = `<span class="text-muted">-</span>`;
+			}
+		}
+
+		return default_formatter(value, row, column, data);
+	},
+
+	get_formatted_docstatus: function (value) {
+		return `<div class="text-center">
+					<span class="indicator-pill ${DOC_STATUS[value]} no-indicator-dot ellipsis">
+						<span class="ellipsis">${value}</span>
+					</span>
+				</div>`;
+	},
+
+	get_formatted_payout_status: function (value) {
+		return `<div class="indicator ${razorpayx.PAYOUT_STATUS[value]}">
+					<strong>${value}</strong>
+				</div>`;
 	},
 };
 
