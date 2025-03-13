@@ -1,4 +1,4 @@
-# 📊 RazorpayX Payout Report
+# 📊 RazorpayX Payout Status Report
 
 This report provides a quick overview of:  
 
@@ -17,10 +17,11 @@ This report provides a quick overview of:
 
 ## 🔎 Accessing the Report
 
-- In the **Search Bar (Awesome Bar)**, type `RazorpayX Payout Report` to view the report.  
+- In the **Search Bar (Awesome Bar)**, type `RazorpayX Payout Status` to view the report.  
 
-**Example**:  
-![Report Image](https://github.com/user-attachments/assets/cc340e00-3a0a-487e-966e-1ce3b095392e)
+**Example**:
+
+![Payout Status Report](https://github.com/user-attachments/assets/2f47dfaa-e6d1-4dae-8203-fbe83b8f4fc7)
 
 ## 💡 Tips
 
