@@ -2,9 +2,23 @@ frappe.provide("razorpayx");
 
 const RAZORPAYX_CONFIG = "RazorpayX Configuration";
 const DESCRIPTION_REGEX = /^[a-zA-Z0-9 ]{1,30}$/;
+const PAYOUT_STATUS = {
+	"Not Initiated": "cyan",
+	Queued: "yellow",
+	Pending: "yellow",
+	Scheduled: "purple",
+	Processing: "blue",
+	Processed: "green",
+	Failed: "red",
+	Cancelled: "red",
+	Rejected: "red",
+	Reversed: "red",
+};
 
 Object.assign(razorpayx, {
 	RAZORPAYX_CONFIG,
+
+	PAYOUT_STATUS,
 
 	async get_razorpayx_config(bank_account, fields = "name") {
 		const response = await frappe.db.get_value(
