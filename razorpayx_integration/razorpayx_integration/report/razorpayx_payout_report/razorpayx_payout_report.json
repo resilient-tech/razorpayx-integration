@@ -1,8 +1,8 @@
 {
- "add_total_row": 0,
+ "add_total_row": 1,
  "add_translate_data": 0,
  "columns": [],
- "creation": "2025-03-12 16:42:27.586605",
+ "creation": "2025-03-13 14:13:46.221126",
  "disabled": 0,
  "docstatus": 0,
  "doctype": "Report",
@@ -10,14 +10,14 @@
  "idx": 0,
  "is_standard": "Yes",
  "letterhead": null,
- "modified": "2025-03-12 16:42:47.768344",
+ "modified": "2025-03-13 14:13:46.221126",
  "modified_by": "Administrator",
  "module": "Razorpayx Integration",
- "name": "RazorpayX Payout Status",
+ "name": "RazorpayX Payout Report",
  "owner": "Administrator",
  "prepared_report": 0,
  "ref_doctype": "Payment Entry",
- "report_name": "RazorpayX Payout Status",
+ "report_name": "RazorpayX Payout Report",
  "report_type": "Script Report",
  "roles": [
   {

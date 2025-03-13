@@ -28,7 +28,7 @@ const TIMESPANS = [
 	"Select Date Range",
 ];
 
-frappe.query_reports["RazorpayX Payout Status"] = {
+frappe.query_reports["RazorpayX Payout Report"] = {
 	filters: [
 		{
 			fieldname: "company",
