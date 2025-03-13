@@ -17,7 +17,7 @@ const TIMESPANS = [
 
 const UTR_PLACEHOLDER = "*** UTR WILL BE SET AUTOMATICALLY ***";
 
-frappe.query_reports["RazorpayX Payout Report"] = {
+frappe.query_reports["RazorpayX Payout Status"] = {
 	filters: [
 		{
 			fieldname: "company",
