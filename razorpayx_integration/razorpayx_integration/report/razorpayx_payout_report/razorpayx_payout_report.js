@@ -103,6 +103,8 @@ frappe.query_reports["RazorpayX Payout Report"] = {
 	},
 
 	formatter: function (value, row, column, data, default_formatter) {
+		value = default_formatter(value, row, column, data);
+
 		if (column.fieldname === "docstatus") {
 			value = this.get_formatted_docstatus(value);
 		} else if (column.fieldname === "payout_status") {
@@ -113,7 +115,7 @@ frappe.query_reports["RazorpayX Payout Report"] = {
 			}
 		}
 
-		return default_formatter(value, row, column, data);
+		return value;
 	},
 
 	get_formatted_docstatus: function (value) {
