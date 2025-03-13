@@ -99,19 +99,29 @@ def get_columns() -> list[dict]:
             "fieldtype": "Date",
         },
         {
-            "label": _("RazorpayX Configuration"),
-            "fieldname": "razorpayx_config",
-            "fieldtype": "Link",
-            "options": "RazorpayX Configuration",
+            "label": _("Paid Amount"),
+            "fieldname": "paid_amount",
+            "fieldtype": "Currency",
+            "options": "INR",
         },
         {
-            "label": _("Docstatus"),
-            "fieldname": "docstatus",
+            "label": _("Payout Status"),
+            "fieldname": "payout_status",
+            "fieldtype": "Data",
+        },
+        {
+            "label": _("UTR"),
+            "fieldname": "utr",
             "fieldtype": "Data",
         },
         {
             "label": _("Payout Mode"),
             "fieldname": "payout_mode",
+            "fieldtype": "Data",
+        },
+        {
+            "label": _("Payout Description"),
+            "fieldname": "payout_description",
             "fieldtype": "Data",
         },
         {
@@ -125,31 +135,21 @@ def get_columns() -> list[dict]:
             "fieldtype": "Data",
         },
         {
-            "label": _("Payout Description"),
-            "fieldname": "payout_description",
-            "fieldtype": "Data",
-        },
-        {
-            "label": _("Payout Status"),
-            "fieldname": "payout_status",
-            "fieldtype": "Data",
-        },
-        {
-            "label": _("Paid Amount"),
-            "fieldname": "paid_amount",
-            "fieldtype": "Currency",
-            "options": "INR",
-        },
-        {
-            "label": _("UTR"),
-            "fieldname": "utr",
-            "fieldtype": "Data",
+            "label": _("RazorpayX Configuration"),
+            "fieldname": "razorpayx_config",
+            "fieldtype": "Link",
+            "options": "RazorpayX Configuration",
         },
         {
             "label": _("Payout Made By"),
             "fieldname": "payout_made_by",
             "fieldtype": "Link",
             "options": "User",
+        },
+        {
+            "label": _("Docstatus"),
+            "fieldname": "docstatus",
+            "fieldtype": "Data",
         },
         # TODO: add column for payout which are initiated in the original PE for amended PEs?
     ]
