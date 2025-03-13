@@ -1,19 +1,6 @@
 // Copyright (c) 2025, Resilient Tech and contributors
 // For license information, please see license.txt
 
-const PAYOUT_STATUS = {
-	"Not Initiated": "cyan",
-	Queued: "yellow",
-	Pending: "yellow",
-	Scheduled: "purple",
-	Processing: "blue",
-	Processed: "green",
-	Failed: "red",
-	Cancelled: "red",
-	Rejected: "red",
-	Reversed: "red",
-};
-
 const DOC_STATUS = { Draft: "grey", Submitted: "blue", Cancelled: "red" };
 
 const TIMESPANS = [
@@ -72,7 +59,7 @@ frappe.query_reports["RazorpayX Payout Report"] = {
 			fieldname: "payout_status",
 			label: __("Payout Status"),
 			fieldtype: "MultiSelectList",
-			get_data: () => get_multiselect_options(Object.keys(PAYOUT_STATUS)),
+			get_data: () => get_multiselect_options(Object.keys(razorpayx.PAYOUT_STATUS)),
 		},
 		{
 			fieldname: "payout_mode",
