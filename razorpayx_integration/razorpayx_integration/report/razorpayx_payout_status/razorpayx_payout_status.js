@@ -14,7 +14,7 @@ const PAYOUT_STATUS = {
 	Reversed: "red",
 };
 
-const DOC_STATUS = { Draft: "grey", Submit: "blue", Cancel: "red" };
+const DOC_STATUS = { Draft: "grey", Submitted: "blue", Cancelled: "red" };
 
 const TIMESPANS = [
 	"This Week",
@@ -39,8 +39,8 @@ frappe.query_reports["RazorpayX Payout Status"] = {
 			reqd: 1,
 		},
 		{
-			fieldname: "time_span",
-			label: __("Time Span"),
+			fieldname: "date_time_span",
+			label: __("Posting Date"),
 			fieldtype: "Select",
 			options: TIMESPANS,
 			default: "This Month",
@@ -50,14 +50,15 @@ frappe.query_reports["RazorpayX Payout Status"] = {
 					const date_range = report.get_filter("date_range");
 					date_range.df.reqd = 1;
 					date_range.set_required(1);
-					date_range.refresh();
 				}
+
+				report.refresh();
 			},
 		},
 		{
 			fieldname: "date_range",
 			fieldtype: "DateRange",
-			label: __("Date Range"),
+			label: __("Posting Date Range"),
 			depends_on: "eval: doc.time_span === 'Select Date Range'",
 			default: [frappe.datetime.month_start(), frappe.datetime.now_date()],
 		},
@@ -108,7 +109,7 @@ frappe.query_reports["RazorpayX Payout Status"] = {
 		const docstatus = report.get_filter("docstatus");
 
 		if (docstatus && (!docstatus.get_value() || docstatus.get_value().length === 0)) {
-			docstatus.set_value("Submit");
+			docstatus.set_value("Submitted");
 		}
 	},
 };
