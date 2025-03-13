@@ -16,6 +16,18 @@ const PAYOUT_STATUS = {
 
 const DOC_STATUS = ["Draft", "Submit", "Cancel"];
 
+const TIMESPANS = [
+	"This Week",
+	"This Month",
+	"This Quarter",
+	"This Year",
+	"Last Week",
+	"Last Month",
+	"Last Quarter",
+	"Last Year",
+	"Select Date Range",
+];
+
 frappe.query_reports["RazorpayX Payout Status"] = {
 	filters: [
 		{
@@ -27,52 +39,83 @@ frappe.query_reports["RazorpayX Payout Status"] = {
 			reqd: 1,
 		},
 		{
+			fieldname: "time_span",
+			label: __("Time Span"),
+			fieldtype: "Select",
+			options: TIMESPANS,
+			default: "This Month",
+			reqd: 1,
+			on_change: (report) => {
+				if (report.get_filter_value("time_span") === "Select Date Range") {
+					const date_range = report.get_filter("date_range");
+					date_range.df.reqd = 1;
+					date_range.set_required(1);
+					date_range.refresh();
+				}
+			},
+		},
+		{
+			fieldname: "date_range",
+			fieldtype: "DateRange",
+			label: __("Date Range"),
+			depends_on: "eval: doc.time_span === 'Select Date Range'",
+			default: [frappe.datetime.month_start(), frappe.datetime.now_date()],
+		},
+		{
 			fieldname: "docstatus",
 			label: __("Document Status"),
 			fieldtype: "MultiSelectList",
-			options: DOC_STATUS,
-			default: "Submit",
-			get_data: function () {
-				let options = [];
-				for (const status of DOC_STATUS) {
-					options.push({
-						value: status,
-						label: status,
-						description: "",
-					});
-				}
-				return options;
-			},
+			get_data: () => get_multiselect_options(DOC_STATUS),
 		},
 		{
 			fieldname: "payout_status",
 			label: __("Payout Status"),
 			fieldtype: "MultiSelectList",
-			options: Object.keys(PAYOUT_STATUS),
-			get_data: function () {
-				let options = [];
-				for (const status of Object.keys(PAYOUT_STATUS)) {
-					options.push({
-						value: status,
-						label: status,
-						description: "",
-					});
-				}
-				return options;
+			get_data: () => get_multiselect_options(Object.keys(PAYOUT_STATUS)),
+		},
+		{
+			fieldname: "transfer_method",
+			label: __("Payout Transfer Method"),
+			fieldtype: "MultiSelectList",
+			get_data: () =>
+				get_multiselect_options(Object.values(payment_integration_utils.PAYMENT_TRANSFER_METHOD)),
+		},
+		{
+			fieldname: "razorpayx_config",
+			label: __("RazorpayX Configuration"),
+			fieldtype: "Link",
+			options: "RazorpayX Configuration",
+			get_query: function () {
+				return {
+					filters: { company: frappe.query_report.get_filter_value("company") },
+				};
 			},
 		},
 		{
-			fieldname: "payout_via_link",
-			label: __("Payout Via Link"),
-			fieldtype: "Check",
-			default: 0,
-		},
-		{
-			fieldname: "authorized_by",
-			label: __("Authorized By"),
+			fieldname: "payout_made_by",
+			label: __("Payout Made By"),
 			fieldtype: "Link",
 			options: "User",
 		},
-		// TODO: Add filters for date range
 	],
+
+	onload: (report) => {
+		const docstatus = report.get_filter("docstatus");
+
+		if (docstatus && (!docstatus.get_value() || docstatus.get_value().length === 0)) {
+			docstatus.set_value("Submit");
+		}
+	},
 };
+
+function get_multiselect_options(values) {
+	const options = [];
+	for (const option of values) {
+		options.push({
+			value: option,
+			label: option,
+			description: "",
+		});
+	}
+	return options;
+}
