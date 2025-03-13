@@ -14,7 +14,7 @@ const PAYOUT_STATUS = {
 	Reversed: "red",
 };
 
-const DOC_STATUS = ["Draft", "Submit", "Cancel"];
+const DOC_STATUS = { Draft: "grey", Submit: "blue", Cancel: "red" };
 
 const TIMESPANS = [
 	"This Week",
@@ -65,7 +65,7 @@ frappe.query_reports["RazorpayX Payout Status"] = {
 			fieldname: "docstatus",
 			label: __("Document Status"),
 			fieldtype: "MultiSelectList",
-			get_data: () => get_multiselect_options(DOC_STATUS),
+			get_data: () => get_multiselect_options(Object.keys(DOC_STATUS)),
 		},
 		{
 			fieldname: "payout_status",
@@ -74,8 +74,8 @@ frappe.query_reports["RazorpayX Payout Status"] = {
 			get_data: () => get_multiselect_options(Object.keys(PAYOUT_STATUS)),
 		},
 		{
-			fieldname: "transfer_method",
-			label: __("Payout Transfer Method"),
+			fieldname: "payout_mode",
+			label: __("Payout Mode"),
 			fieldtype: "MultiSelectList",
 			get_data: () =>
 				get_multiselect_options(Object.values(payment_integration_utils.PAYMENT_TRANSFER_METHOD)),
