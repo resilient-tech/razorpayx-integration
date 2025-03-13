@@ -101,20 +101,7 @@ function has_payout_permissions(frm) {
 }
 
 function get_indicator(status) {
-	const indicator = {
-		"Not Initiated": "cyan",
-		Queued: "yellow",
-		Pending: "yellow",
-		Scheduled: "purple",
-		Processing: "blue",
-		Processed: "green",
-		Failed: "red",
-		Cancelled: "red",
-		Rejected: "red",
-		Reversed: "red",
-	};
-
-	return indicator[status] || "grey";
+	return razorpayx.PAYOUT_STATUS[status] || "grey";
 }
 
 function get_rpx_img_container(txt, styles = "", classes = "") {
