@@ -347,7 +347,7 @@ class PayoutWebhook(RazorpayXWebhook):
         self.update_payment_entry()
         self.create_journal_entry_for_fees()
 
-    def update_payment_entry(self, update_status: bool = True):
+    def update_payment_entry(self):
         """
         Update Payment Entry based on the webhook status.
 
@@ -367,10 +367,9 @@ class PayoutWebhook(RazorpayXWebhook):
             self.source_doc.db_set(values, notify=True)
             self.update_amended_pes(values, self.status)
 
-        if update_status:
-            self.update_payout_status(self.status)
+        self.update_payout_status(self.status)
 
-        self.handle_failure()
+        self.handle_payout_failure()
 
     def update_payout_status(self, status: str | None = None):
         """
@@ -414,7 +413,7 @@ class PayoutWebhook(RazorpayXWebhook):
             "Payment Entry", {"name": ["in", set(self.amended_docnames)]}, values
         )
 
-    def handle_failure(self):
+    def handle_payout_failure(self):
         """
         Handle the Payout Failure.
 
@@ -618,9 +617,9 @@ class PayoutLinkWebhook(PayoutWebhook):
         """
         Process RazorpayX Payout Link Related Webhooks.
         """
-        self.handle_failure()
+        self.handle_payout_link_failure()
 
-    def handle_failure(self):
+    def handle_payout_link_failure(self):
         """
         Handle the Payout Link Failure.
 
