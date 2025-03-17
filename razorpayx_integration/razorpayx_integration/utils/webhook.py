@@ -597,7 +597,6 @@ class PayoutWebhook(RazorpayXWebhook):
         """
         Cancel the Payout Link if the Payout is made from the Payout Link.
         """
-        # TODO: Need to check what is exact behaviour of the Payout Link on the failure of payout!
         link_id = self.source_doc.razorpayx_payout_link_id
 
         if not link_id:
@@ -622,11 +621,11 @@ class PayoutWebhook(RazorpayXWebhook):
                     source_docname=self.source_docname,
                 )
 
-        # TODO: should update IR status to `Failed`
         except Exception:
             frappe.log_error(
                 title="RazorpayX Payout Link Cancellation Failed",
-                message=f"Source: {self.get_ir_formlink()}\n\n{frappe.get_traceback()}",
+                reference_doctype="Integration Request",
+                reference_name=self.integration_request,
             )
 
 
@@ -664,7 +663,7 @@ class PayoutLinkWebhook(PayoutWebhook):
         if not self.status or not is_payout_link_failed(self.status):
             return
 
-        self.update_payout_status(PAYOUT_STATUS.CANCELLED.value)
+        self.update_payout_status(PAYOUT_STATUS.FAILED.value)
         self.cancel_payment_entry()
 
     ### UTILITIES ###
