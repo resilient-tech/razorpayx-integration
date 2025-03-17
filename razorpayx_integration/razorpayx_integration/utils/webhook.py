@@ -4,6 +4,7 @@ from hmac import new as hmac
 import frappe
 import frappe.utils
 from erpnext.accounts.doctype.journal_entry.journal_entry import (
+    JournalEntry,
     make_reverse_journal_entry,
 )
 from erpnext.accounts.doctype.unreconcile_payment.unreconcile_payment import (
@@ -48,13 +49,7 @@ class RazorpayXWebhook:
     """
 
     ### SETUP ###
-    def __init__(
-        self,
-        payload: dict,
-        integration_request: str,
-        *args,
-        **kwargs,
-    ):
+    def __init__(self, payload: dict, integration_request: str):
         """
         Initialize the attributes and setup the webhook payload.
 
@@ -73,20 +68,18 @@ class RazorpayXWebhook:
         self.payload_entity = {}
         self.status = ""  # Payout Status
         self.utr = ""
-        self.id = ""  # Payout ID
+        self.id = ""  # Payout ID / Payout Link ID
         self.reversal_id = ""
 
-        self.source_docname = ""
-        self.source_doctype = ""
-        self.source_doc = frappe._dict()  # Set manually in the sub class if needed.
-        self.referenced_docnames = []
+        self.source_doc = frappe._dict()
+        self.amended_docnames = []
         self.notes = {}
 
-        self.set_config_name()  # Mandatory
-        self.set_common_payload_attributes()  # Mandatory
+        self.set_config_name()
+        self.set_common_payload_attributes()
         self.setup_respective_webhook_payload()
-        self.set_source_doctype_and_docname()
-        self.set_id_field()
+        self.set_id_field_name()
+        self.set_source_doc()
 
     def set_config_name(self):
         """
@@ -138,31 +131,64 @@ class RazorpayXWebhook:
         self.id = self.payload_entity.get("id")
         self.notes = self.payload_entity.get("notes") or {}
 
-    def set_source_doctype_and_docname(self):
+    def set_id_field_name(self):
         """
-        Set the source doctype and docname.
+        set the integration payout related ID field.
 
-        Fetching from `notes`.
+        Helpful for fetching reference docs and updating the data.
         """
-        if self.notes and isinstance(self.notes, dict):
-            self.source_doctype = self.notes.get("source_doctype", "")
-            self.source_docname = self.notes.get("source_docname", "")
+        if not self.event_type:
+            self.id_field = "razorpayx_payout_id"
 
-    def get_source_doc(self):
+        field_mapper = {
+            EVENTS_TYPE.PAYOUT.value: "razorpayx_payout_id",
+            EVENTS_TYPE.TRANSACTION.value: "razorpayx_payout_id",
+            EVENTS_TYPE.PAYOUT_LINK.value: "razorpayx_payout_link_id",
+        }
+
+        self.id_field = field_mapper[self.event_type]
+
+    def set_source_doc(self):
         """
-        Get the source doc.
+        Set the source doc.
 
-        Also set the source doc if not set.
-
-        Note: Call this manually in the sub class if needed, because the source doc
-        is not set in the `setup_respective_webhook_payload` method.
+        - Fetch last created Doc based on the id fields.
+        - If not fetched by ID, find by source doctype and docname.
+        - Set Other referenced docnames.
         """
-        if not self.source_doctype or not self.source_docname:
+        if not self.id or not self.event_type:
             return
 
-        self.source_doc = frappe.get_doc(self.source_doctype, self.source_docname)
+        source_doctype = ""
+        source_docname = ""
 
-        return self.source_doc
+        if self.notes and isinstance(self.notes, dict):
+            source_doctype = self.notes.get("source_doctype")
+            source_docname = self.notes.get("source_docname")
+
+        if not source_doctype or not source_docname:
+            return
+
+        docnames = []
+
+        if self.id_field:
+            docnames = frappe.db.get_all(
+                doctype=source_doctype,
+                filters={self.id_field: self.id},
+                pluck="name",
+                order_by="creation desc",
+            )
+
+        # Payout made from Payout Link and `Payout ID` is not available in doc
+        if not docnames:
+            docnames = get_amended_docnames(source_doctype, source_docname)
+
+        # references are not available
+        if not docnames:
+            return
+
+        self.source_doc = frappe.get_doc(source_doctype, docnames[0], for_update=True)
+        self.amended_docnames = docnames[1:]  # to avoid updating the same doc
 
     ### APIs ###
     def process_webhook(self, *args, **kwargs):
@@ -175,29 +201,97 @@ class RazorpayXWebhook:
         """
         pass
 
-    ### UTILITIES ###
-    def is_order_maintained(self) -> bool:
-        """
-        Check if the order maintained or not.
+    ### STATIC ###
+    @staticmethod
+    def fmt_inr(amount: int) -> str:
+        return fmt_money(amount, currency=PAYOUT_CURRENCY.INR.value)
 
-        Note: ⚠️ This method should be overridden in the sub class.
-        """
-        return True
+    @staticmethod
+    def je_exists(cheque_no: str, reversal_of: str | None = None) -> str | None:
+        if not reversal_of:
+            reversal_of = ["is", "not set"]
 
-    def set_id_field(self):
-        """
-        set the integration payout related ID field.
+        return frappe.db.exists(
+            "Journal Entry",
+            {
+                "docstatus": 1,
+                "is_system_generated": 1,
+                "reversal_of": reversal_of,
+                # required because maybe JE exist for reversal
+                "cheque_no": cheque_no,
+            },
+        )
 
-        Helpful for fetching reference docs and updating the data.
-        """
-        pass
+    @staticmethod
+    def get_je(cheque_no: str, **filters) -> JournalEntry:
+        return frappe.get_doc(
+            "Journal Entry",
+            {
+                "is_system_generated": 1,
+                "docstatus": 1,
+                "cheque_no": cheque_no,
+                **filters,
+            },
+        )
 
-    def get_formlink(self, doctype: str, docname: str, html: bool = False) -> str:
+    @staticmethod
+    def get_formlink(doctype: str, docname: str, html: bool = False) -> str:
         return (
             get_link_to_form(doctype, docname)
             if html
             else get_url_to_form(doctype, docname)
         )
+
+    ### UTILITIES ###
+    def create_je(self, **kwargs):
+        je = frappe.new_doc("Journal Entry")
+        je.update(
+            {
+                "voucher_type": "Journal Entry",
+                "is_system_generated": 1,
+                "company": self.source_doc.company,
+                "posting_date": self.get_posting_date(),
+                **kwargs,
+            }
+        )
+
+        je.flags.skip_remarks_creation = True
+        je.submit()
+
+        return je
+
+    def get_posting_date(self):
+        if created_at := self.payload_entity.get("created_at"):
+            return get_epoch_date(created_at)
+
+        return today()
+
+    def get_je_remark(self, fees: int | None = None, reversal: bool = False) -> str:
+        user_remark = ""
+
+        if self.source_doc:
+            user_remark = (
+                f"{self.source_doc.doctype}: {self.get_source_formlink(True)}\n"
+            )
+
+        user_remark += f"Payout ID: {self.id}"
+
+        if reversal:
+            user_remark += f"\nReversal ID: {self.reversal_id}"
+
+        if self.status:
+            user_remark += f"\nPayout Status: {self.status.title()}"
+
+        if fees:
+            if fee_type := self.payload_entity.get("fee_type"):
+                user_remark += f"\nFee Type: {frappe.unscrub(fee_type)}"
+
+            tax = paisa_to_rupees(self.payload_entity.get("tax") or 0)
+            user_remark += f"\nFees: {PayoutWebhook.fmt_inr(fees - tax)} | Tax: {PayoutWebhook.fmt_inr(tax)}"
+
+        user_remark += f"\n\nIntegration Request: {self.get_ir_formlink(True)}"
+
+        return user_remark
 
     def get_ir_formlink(self, html: bool = False) -> str:
         """
@@ -205,7 +299,9 @@ class RazorpayXWebhook:
 
         :param html: bool - If True, return the anchor (<a>) tag.
         """
-        return self.get_formlink("Integration Request", self.integration_request, html)
+        return RazorpayXWebhook.get_formlink(
+            "Integration Request", self.integration_request, html
+        )
 
     def get_source_formlink(self, html: bool = False) -> str | None:
         """
@@ -216,7 +312,9 @@ class RazorpayXWebhook:
         if not self.source_doc:
             return
 
-        return self.get_formlink(self.source_doc.doctype, self.source_doc.name, html)
+        return RazorpayXWebhook.get_formlink(
+            self.source_doc.doctype, self.source_doc.name, html
+        )
 
 
 class PayoutWebhook(RazorpayXWebhook):
@@ -260,14 +358,14 @@ class PayoutWebhook(RazorpayXWebhook):
         if not self.should_update_payment_entry():
             return
 
-        values = self.get_updated_reference()
+        values = self.get_utr_based_reference()
 
         if self.id:
             values[self.id_field] = self.id
 
         if values:
             self.source_doc.db_set(values, notify=True)
-            self.update_referenced_pes(values, self.status)
+            self.update_amended_pes(values, self.status)
 
         if update_status:
             self.update_payout_status(self.status)
@@ -296,21 +394,24 @@ class PayoutWebhook(RazorpayXWebhook):
         else:
             self.source_doc.update(value).save()
 
-    def update_referenced_pes(self, values: dict, status: str | None = None):
+    def update_amended_pes(self, values: dict, status: str | None = None):
         """
-        Update the referenced payment entries.
+        Update the amended payment entries.
+
+        - If source doc was canceled and amended, then last amended will become
+        the source doc and other amended docs will be updated.
 
         :param values: dict - Values to be updated.
         :param status: str - Webhook Payout Status.
         """
-        if not self.referenced_docnames:
+        if not self.amended_docnames:
             return
 
         if status:
             values["razorpayx_payout_status"] = status.title()
 
         frappe.db.set_value(
-            "Payment Entry", {"name": ["in", set(self.referenced_docnames)]}, values
+            "Payment Entry", {"name": ["in", set(self.amended_docnames)]}, values
         )
 
     def handle_failure(self):
@@ -325,7 +426,7 @@ class PayoutWebhook(RazorpayXWebhook):
             return
 
         self.cancel_payment_entry()
-        self.cancel_fees_and_tax_je()
+        self.cancel_fees_je()
         self.cancel_payout_link()
 
     def create_journal_entry_for_fees(self):
@@ -399,123 +500,6 @@ class PayoutWebhook(RazorpayXWebhook):
         )
 
     ### UTILITIES ###
-    # static methods
-    def fmt_inr(amount: int) -> str:
-        return fmt_money(amount, currency=PAYOUT_CURRENCY.INR.value)
-
-    def je_exists(cheque_no: str, reversal_of: str | None = None) -> str | None:
-        if not reversal_of:
-            reversal_of = ["is", "not set"]
-
-        return frappe.db.exists(
-            "Journal Entry",
-            {
-                "docstatus": 1,
-                "is_system_generated": 1,
-                "reversal_of": reversal_of,
-                # required because maybe JE exist for reversal
-                "cheque_no": cheque_no,
-            },
-        )
-
-    # instance methods
-    def get_posting_date(self):
-        if created_at := self.payload_entity.get("created_at"):
-            return get_epoch_date(created_at)
-
-        return today()
-
-    def get_je_remark(self, fees: int | None = None, reversal: bool = False) -> str:
-        user_remark = ""
-
-        if self.source_doc:
-            user_remark = (
-                f"{self.source_doc.doctype}: {self.get_source_formlink(True)}\n"
-            )
-
-        user_remark += f"Payout ID: {self.id}"
-
-        if reversal:
-            user_remark += f"\nReversal ID: {self.reversal_id}"
-
-        if self.status:
-            user_remark += f"\nPayout Status: {self.status.title()}"
-
-        if fees:
-            if fee_type := self.payload_entity.get("fee_type"):
-                user_remark += f"\nFee Type: {frappe.unscrub(fee_type)}"
-
-            tax = paisa_to_rupees(self.payload_entity.get("tax") or 0)
-            user_remark += f"\nFees: {PayoutWebhook.fmt_inr(fees - tax)} | Tax: {PayoutWebhook.fmt_inr(tax)}"
-
-        user_remark += f"\n\nIntegration Request: {self.get_ir_formlink(True)}"
-
-        return user_remark
-
-    def set_id_field(self) -> str:
-        field_mapper = {
-            EVENTS_TYPE.PAYOUT.value: "razorpayx_payout_id",
-            EVENTS_TYPE.TRANSACTION.value: "razorpayx_payout_id",
-            EVENTS_TYPE.PAYOUT_LINK.value: "razorpayx_payout_link_id",
-        }
-
-        self.id_field = field_mapper.get(self.event_type) or "razorpayx_payout_id"
-
-    def create_je(self, **kwargs):
-        je = frappe.new_doc("Journal Entry")
-        je.update(
-            {
-                "voucher_type": "Journal Entry",
-                "is_system_generated": 1,
-                "company": self.source_doc.company,
-                "posting_date": self.get_posting_date(),
-                **kwargs,
-            }
-        )
-
-        je.flags.skip_remarks_creation = True
-        je.submit()
-
-        return je
-
-    def get_source_doc(self):
-        """
-        Get and Set the source doc.
-
-        - Fetch last created Doc based on the id fields.
-        - If not fetched by ID, find by source doctype and docname.
-        - Set Other referenced docnames.
-        """
-        if not self.id or not self.event_type:
-            return
-
-        doctype = self.source_doctype or "Payment Entry"
-        docnames = []
-
-        if self.id_field:
-            docnames = frappe.db.get_all(
-                doctype=doctype,
-                filters={self.id_field: self.id},
-                pluck="name",
-                order_by="creation desc",
-            )
-
-        if not docnames:
-            # payout maybe made from the Payout Link so find the doc by source docname and doctype
-            if not self.source_doctype or not self.source_docname:
-                return
-
-            docnames = get_referenced_docnames(self.source_doctype, self.source_docname)
-
-        # references are not available
-        if not docnames:
-            return
-
-        self.source_doc = frappe.get_doc(doctype, docnames[0], for_update=True)
-        self.referenced_docnames = docnames[1:]  # to avoid updating the same doc
-
-        return self.source_doc
-
     def should_update_payment_entry(self) -> bool:
         """
         Check if the Payment Entry should be updated or not.
@@ -523,8 +507,8 @@ class PayoutWebhook(RazorpayXWebhook):
         Note: Source doc (Payment Entry) is set here.
         """
         return bool(
-            self.source_doctype == "Payment Entry"
-            and self.get_source_doc()
+            self.source_doc
+            and self.source_doc.doctype == "Payment Entry"
             and self.is_order_maintained()
         )
 
@@ -548,7 +532,7 @@ class PayoutWebhook(RazorpayXWebhook):
         """
         return self.source_doc.razorpayx_payout_status.lower()
 
-    def get_updated_reference(self) -> dict:
+    def get_utr_based_reference(self) -> dict:
         """
         Get PE's `reference_no` and `remarks` based on the UTR.
         """
@@ -576,23 +560,14 @@ class PayoutWebhook(RazorpayXWebhook):
         self.source_doc.flags.__canceled_by_rpx = True
         self.source_doc.cancel()
 
-    def cancel_fees_and_tax_je(self):
+    def cancel_fees_je(self):
         if not self.id:
             return
 
-        fees_je = frappe.get_doc(
-            "Journal Entry",
-            {
-                "is_system_generated": 1,
-                "docstatus": 1,
-                "cheque_no": self.id,
-            },
-        )
-
-        if fees_je:
+        if fees_je := RazorpayXWebhook.get_je(self.id):
             fees_je.cancel()
 
-    def cancel_payout_link(self) -> bool:
+    def cancel_payout_link(self):
         """
         Cancel the Payout Link if the Payout is made from the Payout Link.
         """
@@ -602,29 +577,22 @@ class PayoutWebhook(RazorpayXWebhook):
             return
 
         try:
-            payout_link = RazorpayXLinkPayout(self.config_name)
-            status = payout_link.get_by_id(
-                link_id,
-                data="status",
-                source_doctype=self.source_doctype,
-                source_docname=self.source_docname,
-            )
+            source = {
+                "source_doctype": "Integration Request",
+                "source_docname": self.integration_request,
+            }
 
-            if is_payout_link_failed(status):
-                return
+            payout_link = RazorpayXLinkPayout(self.config_name)
+            status = payout_link.get_by_id(link_id, data="status", **source)
 
             if status == PAYOUT_LINK_STATUS.ISSUED.value:
-                payout_link.cancel(
-                    link_id,
-                    source_doctype=self.source_doctype,
-                    source_docname=self.source_docname,
-                )
+                payout_link.cancel(link_id, **source)
 
         except Exception:
             frappe.log_error(
                 title="RazorpayX Payout Link Cancellation Failed",
-                reference_doctype="Integration Request",
-                reference_name=self.integration_request,
+                reference_doctype=source["source_doctype"],
+                reference_name=source["source_docname"],
             )
 
 
@@ -632,7 +600,7 @@ class PayoutLinkWebhook(PayoutWebhook):
     """
     Processor for RazorpayX Payout Link Webhook.
 
-    - Update the Payment Entry based on the webhook status.
+    - Cancel the Payment Entry if the Payout Link is failed.
 
     ---
     Supported webhook events(3):
@@ -650,7 +618,7 @@ class PayoutLinkWebhook(PayoutWebhook):
         """
         Process RazorpayX Payout Link Related Webhooks.
         """
-        self.update_payment_entry(update_status=False)
+        self.handle_failure()
 
     def handle_failure(self):
         """
@@ -664,15 +632,6 @@ class PayoutLinkWebhook(PayoutWebhook):
 
         self.update_payout_status(PAYOUT_STATUS.FAILED.value)
         self.cancel_payment_entry()
-
-    ### UTILITIES ###
-    def is_order_maintained(self) -> bool:
-        """
-        Check if the order maintained or not.
-
-        Caution: ⚠️ Payout link status is not maintained in the Payment Entry.
-        """
-        return bool(self.status)
 
 
 class TransactionWebhook(PayoutWebhook):
@@ -867,7 +826,7 @@ class TransactionWebhook(PayoutWebhook):
 
         Note: Source doc (Payment Entry) is set here.
         """
-        return bool(self.get_source_doc() and self.is_order_maintained())
+        return bool(self.set_source_doc() and self.is_order_maintained())
 
     def is_order_maintained(self):
         """
@@ -1054,9 +1013,9 @@ def get_razorpayx_config(account_id: str) -> str | None:
     )
 
 
-def get_referenced_docnames(doctype: str, docname: str) -> list[str] | None:
+def get_amended_docnames(doctype: str, docname: str) -> list[str] | None:
     """
-    Get the referenced docnames based.
+    Fetch those docnames which are amended from the source.
 
     - Descending order by creation date.
 
