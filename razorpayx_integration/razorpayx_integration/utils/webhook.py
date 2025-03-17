@@ -289,7 +289,7 @@ class RazorpayXWebhook:
                 user_remark += f"\nFee Type: {frappe.unscrub(fee_type)}"
 
             tax = paisa_to_rupees(self.payload_entity.get("tax") or 0)
-            user_remark += f"\nFees: {PayoutWebhook.fmt_inr(fees - tax)} | Tax: {PayoutWebhook.fmt_inr(tax)}"
+            user_remark += f"\nFees: {RazorpayXWebhook.fmt_inr(fees - tax)} | Tax: {RazorpayXWebhook.fmt_inr(tax)}"
 
         user_remark += f"\n\nIntegration Request: {self.get_ir_formlink(True)}"
 
@@ -459,7 +459,7 @@ class PayoutWebhook(RazorpayXWebhook):
         # Example: fees = 236 (2.36 INR) and tax = 36 (0.36 INR) => Charge = 200 (2 INR) | Tax = 36 (0.36 INR)
 
         # conditions to create JE
-        if not fees or PayoutWebhook.je_exists(self.id):
+        if not fees or RazorpayXWebhook.je_exists(self.id):
             return
 
         fees_config = get_fees_accounting_config(self.config_name)
