@@ -83,8 +83,6 @@ class RazorpayXWebhook:
         self.referenced_docnames = []
         self.notes = {}
 
-        self.order_maintained = False
-
         self.set_config_name()  # Mandatory
         self.set_common_payload_attributes()  # Mandatory
         self.setup_respective_webhook_payload()
@@ -250,10 +248,6 @@ class PayoutWebhook(RazorpayXWebhook):
         Process RazorpayX Payout Related Webhooks.
         """
         self.update_payment_entry()
-
-        if not self.source_doc or not self.order_maintained:
-            return
-
         self.create_journal_entry_for_fees()
 
     def update_payment_entry(self, update_status: bool = True):
@@ -544,12 +538,10 @@ class PayoutWebhook(RazorpayXWebhook):
         Note: 🟢 Override this method in the sub class for custom order maintenance.
         """
 
-        self.order_maintained = bool(
+        return bool(
             self.status
             and PAYOUT_ORDERS[self.status] > PAYOUT_ORDERS[self.get_pe_rpx_status()]
         )
-
-        return self.order_maintained
 
     def get_pe_rpx_status(self) -> str:
         """
@@ -666,7 +658,7 @@ class PayoutLinkWebhook(PayoutWebhook):
         """
         Handle the Payout Link Failure.
 
-        - Update thr Payout Status to `Cancelled`.
+        - Update thr Payout Status to `Failed`.
         - Cancel the Payment Entry.
         """
         if not self.status or not is_payout_link_failed(self.status):
@@ -682,9 +674,7 @@ class PayoutLinkWebhook(PayoutWebhook):
 
         Caution: ⚠️ Payout link status is not maintained in the Payment Entry.
         """
-        self.order_maintained = bool(self.status)
-
-        return self.order_maintained
+        return bool(self.status)
 
 
 class TransactionWebhook(PayoutWebhook):
@@ -744,10 +734,6 @@ class TransactionWebhook(PayoutWebhook):
         Process RazorpayX Payout Related Webhooks.
         """
         self.update_payment_entry()
-
-        if not self.order_maintained:
-            return
-
         self.set_utr_in_bank_transaction()
         self.handle_payout_reversal()
 
