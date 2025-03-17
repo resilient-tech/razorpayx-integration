@@ -55,7 +55,7 @@ Webhooks are used for real-time payout status updates.
 
    - **Note**: Only enable supported webhooks.  
 
-3. **Supported Webhooks (12 Events)**:
+3. **Supported Webhooks (11 Events)**:
 
    ```shell
    # Payout
@@ -66,7 +66,6 @@ Webhooks are used for real-time payout status updates.
    - payout.processed
    - payout.reversed
    - payout.failed
-   - payout.updated
    # Payout Link
    - payout_link.cancelled
    - payout_link.rejected

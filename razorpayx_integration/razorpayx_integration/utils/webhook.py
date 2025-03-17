@@ -326,7 +326,7 @@ class PayoutWebhook(RazorpayXWebhook):
     - Update the Payment Entry based on the webhook status.
 
     ---
-    Supported webhook events(8):
+    Supported webhook events(7):
 
     - payout.pending
     - payout.processing
@@ -335,7 +335,6 @@ class PayoutWebhook(RazorpayXWebhook):
     - payout.processed
     - payout.reversed
     - payout.failed
-    - payout.updated
 
     ---
     Reference: https://razorpay.com/docs/webhooks/payloads/x/payouts/
