@@ -613,7 +613,12 @@ class PayoutWebhook(RazorpayXWebhook):
 
         try:
             payout_link = RazorpayXLinkPayout(self.config_name)
-            status = payout_link.get_by_id(link_id, "status")
+            status = payout_link.get_by_id(
+                link_id,
+                data="status",
+                source_doctype=self.source_doctype,
+                source_docname=self.source_docname,
+            )
 
             if is_payout_link_failed(status):
                 return
