@@ -1,6 +1,5 @@
 import json
 from hmac import new as hmac
-from typing import Literal
 
 import frappe
 import frappe.utils
@@ -907,7 +906,6 @@ WEBHOOK_PROCESSORS_MAP = {
     EVENTS_TYPE.PAYOUT.value: PayoutWebhook,
     EVENTS_TYPE.PAYOUT_LINK.value: PayoutLinkWebhook,
     EVENTS_TYPE.TRANSACTION.value: TransactionWebhook,
-    # EVENTS_TYPE.ACCOUNT.value: AccountWebhook,
 }
 
 
