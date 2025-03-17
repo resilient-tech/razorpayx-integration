@@ -207,7 +207,9 @@ class RazorpayXWebhook:
         return fmt_money(amount, currency=PAYOUT_CURRENCY.INR.value)
 
     @staticmethod
-    def je_exists(cheque_no: str, reversal_of: str | None = None) -> str | None:
+    def je_exists(
+        cheque_no: str, reversal_of: str | list[str] | None = None
+    ) -> str | None:
         if not reversal_of:
             reversal_of = ["is", "not set"]
 
@@ -637,15 +639,15 @@ class TransactionWebhook(PayoutWebhook):
     """
     Processor for RazorpayX Transaction Webhook.
 
-    - Update the Payment Entry based on the webhook entity.
-        - Update PE status
-        - Update UTR Number
-        - Cancel the PE if failed.
+    - Handle Payout Reversal:
+        - Cancel the Payout Link.
+        - Unreconcile the Payment Entry.
+        - Create Journal Entry for Payout Reversal.
+        - Reverse the Fees JE.
 
     ---
     - Supported webhook events(1):
         - transaction.created
-            - payout created
             - payout reversed
 
     ---
@@ -661,8 +663,6 @@ class TransactionWebhook(PayoutWebhook):
         Sample Payloads:
         - https://razorpay.com/docs/webhooks/payloads/x/transactions/#transaction-created
         """
-        self.transaction_id = self.payload_entity["id"]
-
         if not self.payload_entity:
             return
 
@@ -676,43 +676,43 @@ class TransactionWebhook(PayoutWebhook):
         self.status = self.transaction_source.get("status")
         self.notes = self.transaction_source.get("notes") or {}
 
-        if self.transaction_type == TRANSACTION_TYPE.PAYOUT.value:
-            self.id = self.transaction_source.get("id")
-            self.status = self.transaction_source.get("status")
-        elif self.transaction_type == TRANSACTION_TYPE.REVERSAL.value:
+        if self.transaction_type == "reversal":
             self.reversal_id = self.transaction_source.get("id")
             self.id = self.transaction_source.get("payout_id")
             self.status = PAYOUT_STATUS.REVERSED.value
+
+    def set_source_doc(self):
+        """
+        In transaction webhook `source_doctype` and `source_docname` are not available.
+        """
+        if not self.id or not self.event_type:
+            return
+
+        source_doctype = "Payment Entry"
+        docnames = []
+
+        if self.id_field:
+            docnames = frappe.db.get_all(
+                doctype=source_doctype,
+                filters={self.id_field: self.id},
+                pluck="name",
+                order_by="creation desc",
+            )
+
+        if not docnames:
+            return
+
+        self.source_doc = frappe.get_doc(source_doctype, docnames[0], for_update=True)
 
     ### APIs ###
     def process_webhook(self, *args, **kwargs):
         """
         Process RazorpayX Payout Related Webhooks.
         """
-        self.update_payment_entry()
-        self.set_utr_in_bank_transaction()
+        if self.transaction_type != "reversal":
+            return
+
         self.handle_payout_reversal()
-
-    def handle_failure(self):
-        pass
-
-    def set_utr_in_bank_transaction(self):
-        if not self.utr or not self.transaction_id:
-            return
-
-        bank_transaction = frappe.db.exists(
-            "Bank Transaction", {"transaction_id": self.transaction_id}
-        )
-
-        if not bank_transaction:
-            return
-
-        frappe.db.set_value(
-            "Bank Transaction",
-            bank_transaction,
-            "reference_number",
-            self.utr,
-        )
 
     def handle_payout_reversal(self):
         if not self.source_doc or self.status != PAYOUT_STATUS.REVERSED.value:
@@ -723,13 +723,15 @@ class TransactionWebhook(PayoutWebhook):
         if not is_create_je_on_reversal_enabled(self.config_name):
             return
 
-        # to create JE
+        # to create payout reversal JE
         self.total_allocated_amount = self.source_doc.total_allocated_amount or 0
         self.unallocated_amount = self.source_doc.unallocated_amount or 0
 
-        self.unreconcile_payment_entry()
-        self.create_payout_reversal_je()
-        self.reverse_fees_and_tax_je()
+        if self.source_doc.docstatus == 1:
+            self.unreconcile_payment_entry()
+            self.create_payout_reversal_je()
+
+        self.reverse_fees_je()
 
     def unreconcile_payment_entry(self):
         vouchers = []
@@ -755,7 +757,7 @@ class TransactionWebhook(PayoutWebhook):
         create_unreconcile_doc_for_selection(json.dumps(vouchers))
 
     def create_payout_reversal_je(self):
-        if PayoutWebhook.je_exists(self.reversal_id):
+        if RazorpayXWebhook.je_exists(self.reversal_id):
             return
 
         accounts = [
@@ -796,17 +798,18 @@ class TransactionWebhook(PayoutWebhook):
             cheque_no=self.reversal_id,
         )
 
-    def reverse_fees_and_tax_je(self):
-        fees_je = PayoutWebhook.je_exists(self.id)
+    def reverse_fees_je(self):
+        # self.id is payout_id
+        fees_je = RazorpayXWebhook.je_exists(self.id)
 
         if not fees_je:
             return
 
         # already reversed
-        if PayoutWebhook.je_exists(self.reversal_id, reversal_of=fees_je):
+        if RazorpayXWebhook.je_exists(self.reversal_id, reversal_of=fees_je):
             return
 
-        reversal_je = make_reverse_journal_entry(fees_je)
+        reversal_je: JournalEntry = make_reverse_journal_entry(fees_je)
         reversal_je.update(
             {
                 "is_system_generated": 1,
@@ -818,48 +821,8 @@ class TransactionWebhook(PayoutWebhook):
         reversal_je.flags.skip_remarks_creation = True
         reversal_je.submit()
 
-    ### UTILITIES ###
-    def should_update_payment_entry(self) -> bool:
-        """
-        Check if the Payment Entry should be updated or not.
-
-        Note: Source doc (Payment Entry) is set here.
-        """
-        return bool(self.set_source_doc() and self.is_order_maintained())
-
-    def is_order_maintained(self):
-        """
-        Check if the order is maintained or not.
-        """
-
-        # if status not available, depend on the type
-        if not self.status:
-            self.order_maintained = self.transaction_type in TRANSACTION_TYPE.values()
-        else:
-            # if status available, compare with the source doc payout status
-            if self.status == PAYOUT_STATUS.REVERSED.value:
-                # if status is update via payout's reversed webhook than in transaction webhook reversal will not handled
-                self.order_maintained = True
-            else:
-                self.order_maintained = (
-                    PAYOUT_ORDERS[self.status] > PAYOUT_ORDERS[self.get_pe_rpx_status()]
-                )
-
-        return self.order_maintained
-
 
 ###### CONSTANTS ######
-class TRANSACTION_TYPE(BaseEnum):
-    """
-    Available in transaction webhook Payload.
-
-    - webhook data > payload > transaction > entity > source > entity
-    """
-
-    PAYOUT = "payout"  # when payout is created
-    REVERSAL = "reversal"  # when payout is reversed
-
-
 WEBHOOK_PROCESSORS_MAP = {
     EVENTS_TYPE.PAYOUT.value: PayoutWebhook,
     EVENTS_TYPE.PAYOUT_LINK.value: PayoutLinkWebhook,
