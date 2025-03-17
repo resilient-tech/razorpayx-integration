@@ -19,4 +19,5 @@ https://github.com/user-attachments/assets/0ea12c0f-6a5e-40c2-bbf5-eb829ba9ea76
 
 ## 📌 Notes
 
-- If **Auto Cancellation** is enabled in the `RazorpayX Configuration`, the dialog box will not be shown, and the payout will be **canceled automatically**
+- If **Auto Cancellation** is enabled in the `RazorpayX Configuration`, the dialog box will not be shown, and the payout will be **canceled automatically**.
+- You can cancel a `Payment Entry` regardless of the  `RazorpayX Payout Status`.
