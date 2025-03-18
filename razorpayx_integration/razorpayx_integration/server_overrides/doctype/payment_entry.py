@@ -7,6 +7,7 @@ from payment_integration_utils.payment_integration_utils.constants.payments impo
     TRANSFER_METHOD,
 )
 from payment_integration_utils.payment_integration_utils.server_overrides.doctype.payment_entry import (
+    set_party_bank_details,
     validate_transfer_methods,
 )
 from payment_integration_utils.payment_integration_utils.utils.auth import (
@@ -219,9 +220,6 @@ def make_payout_with_razorpayx(
             "payment_transfer_method": transfer_method,
             # Party
             "party_bank_account": kwargs.get("party_bank_account"),
-            "party_bank_account_no": kwargs.get("party_bank_account_no"),
-            "party_bank_ifsc": kwargs.get("party_bank_ifsc"),
-            "party_upi_id": kwargs.get("party_upi_id"),
             "contact_person": kwargs.get("contact_person"),
             "contact_mobile": kwargs.get("contact_mobile"),
             "contact_email": kwargs.get("contact_email"),
@@ -233,8 +231,10 @@ def make_payout_with_razorpayx(
         }
     )
 
+    set_party_bank_details(doc)
     validate_transfer_methods(doc)
     validate_payout_details(doc)
+
     PayoutWithPaymentEntry(doc).make(auth_id)
 
 
