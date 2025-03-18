@@ -112,7 +112,7 @@ class RazorpayXPayout(BaseRazorpayXAPI):
 
     def get_by_id(
         self,
-        payout_id: str,
+        id: str,
         *,
         data: str | None,
         source_doctype: str | None = None,
@@ -121,7 +121,7 @@ class RazorpayXPayout(BaseRazorpayXAPI):
         """
         Fetch the details of a specific `Payout` by Id.
 
-        :param id: `Id` of fund account to fetch (Ex.`payout_jkHgLM02`).
+        :param id: `Id` of Payout to fetch (Ex.`payout_jkHgLM02`).
         :param data: Specific data to be fetched (Ex. `status`, `utr`, etc.).
         :param source_doctype: The source document type.
         :param source_docname: The source document name.
@@ -138,11 +138,11 @@ class RazorpayXPayout(BaseRazorpayXAPI):
         self.source_docname = source_docname
 
         if not self.ir_service_set:
-            self._set_service_details_to_ir_log("Get Payout by ID")
+            self._set_service_details_to_ir_log("Fetch Single Payout Details")
 
-        response = self.get(endpoint=payout_id)
+        response: dict | None = self.get(endpoint=id)
 
-        if not data:
+        if not data or not response:
             return response
 
         return response.get(data)
@@ -652,7 +652,7 @@ class RazorpayXLinkPayout(RazorpayXPayout):
 
     def get_by_id(
         self,
-        payout_link_id: str,
+        id: str,
         *,
         data: str | None = None,
         source_doctype: str | None = None,
@@ -661,7 +661,7 @@ class RazorpayXLinkPayout(RazorpayXPayout):
         """
         Fetch the details of a specific `Link Payout` by Id.
 
-        :param id: `Id` of fund account to fetch (Ex.`poutlk_jkHgLM02`).
+        :param id: `Id` of Payout Link to fetch (Ex.`poutlk_jkHgLM02`).
         :param data: Specific data to be fetched (Ex. `status`, `utr`, etc.).
         :param source_doctype: The source document type.
         :param source_docname: The source document name.
@@ -676,7 +676,7 @@ class RazorpayXLinkPayout(RazorpayXPayout):
         """
         self._set_service_details_to_ir_log("Fetch Single Payout Link Details")
         return super().get_by_id(
-            payout_link_id,
+            id,
             data=data,
             source_doctype=source_doctype,
             source_docname=source_docname,

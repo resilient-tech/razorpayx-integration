@@ -33,6 +33,7 @@ def get_fees_accounting_config(razorpayx_config: str) -> dict:
             razorpayx_config,
             [
                 "automate_fees_accounting",
+                "payouts_from",
                 "creditors_account",
                 "supplier",
                 "payable_account",
@@ -41,3 +42,13 @@ def get_fees_accounting_config(razorpayx_config: str) -> dict:
         )
         or frappe._dict()
     )
+
+
+def is_create_je_on_reversal_enabled(razorpayx_config: str) -> bool | int:
+    return frappe.db.get_value(
+        RAZORPAYX_CONFIG, razorpayx_config, "create_je_on_reversal"
+    )
+
+
+def get_payouts_made_from(razorpayx_config: str) -> str:
+    return frappe.db.get_value(RAZORPAYX_CONFIG, razorpayx_config, "payouts_from")
