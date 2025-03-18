@@ -37,7 +37,7 @@ frappe.query_reports["RazorpayX Payout Status"] = {
 			default: "This Month",
 			reqd: 1,
 			on_change: (report) => {
-				if (report.get_filter_value("time_span") === "Select Date Range") {
+				if (report.get_filter_value("date_time_span") === "Select Date Range") {
 					const date_range = report.get_filter("date_range");
 					date_range.df.reqd = 1;
 					date_range.set_required(1);
@@ -50,7 +50,7 @@ frappe.query_reports["RazorpayX Payout Status"] = {
 			fieldname: "date_range",
 			fieldtype: "DateRange",
 			label: __("Posting Date Range"),
-			depends_on: "eval: doc.time_span === 'Select Date Range'",
+			depends_on: "eval: doc.date_time_span === 'Select Date Range'",
 			default: [frappe.datetime.month_start(), frappe.datetime.now_date()],
 		},
 		{
