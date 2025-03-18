@@ -66,9 +66,6 @@ def get_data(filters: dict | None = None) -> list[dict]:
             PE.payment_authorized_by == filters.payout_made_by
         )
 
-    if filters.ignore_amended:
-        base_query = base_query.where(PE.amended_from.isnull())
-
     return base_query.run(as_dict=True)
 
 

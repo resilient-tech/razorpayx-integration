@@ -22,8 +22,3 @@ This report provides a quick overview of:
 **Example**:
 
 ![Payout Status Report](https://github.com/user-attachments/assets/2f47dfaa-e6d1-4dae-8203-fbe83b8f4fc7)
-
-## 💡 Tips
-
-- To exclude payouts initiated from **canceled Payment Entries**, check the **Ignore Amended** checkbox.
-  - This will remove duplication for same payout. Because for amended PE new payout is not allowed if original already processed via RazorpayX.

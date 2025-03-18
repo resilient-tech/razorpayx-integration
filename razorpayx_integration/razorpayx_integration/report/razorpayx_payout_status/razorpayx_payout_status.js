@@ -87,11 +87,6 @@ frappe.query_reports["RazorpayX Payout Status"] = {
 			fieldtype: "Link",
 			options: "User",
 		},
-		{
-			fieldname: "ignore_amended",
-			label: __("Ignore Amended"),
-			fieldtype: "Check",
-		},
 	],
 
 	onload: function (report) {
