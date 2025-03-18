@@ -21,4 +21,4 @@ This report provides a quick overview of:
 
 **Example**:
 
-![Payout Status Report](https://github.com/user-attachments/assets/2f47dfaa-e6d1-4dae-8203-fbe83b8f4fc7)
+![Payout Status Report](https://github.com/user-attachments/assets/3885bc79-771e-42a8-8ddf-aff6d2937dd7)
