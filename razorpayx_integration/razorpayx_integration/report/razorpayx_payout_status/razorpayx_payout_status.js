@@ -4,6 +4,8 @@
 const DOC_STATUS = { Draft: "grey", Submitted: "blue", Cancelled: "red" };
 
 const TIMESPANS = [
+	"Today",
+	"Yesterday",
 	"This Week",
 	"This Month",
 	"This Quarter",
