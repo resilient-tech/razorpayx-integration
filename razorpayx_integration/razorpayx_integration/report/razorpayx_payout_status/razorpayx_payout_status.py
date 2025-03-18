@@ -95,17 +95,17 @@ def get_columns() -> list[dict]:
             "width": 200,
         },
         {
-            "label": _("Posting Date"),
-            "fieldname": "posting_date",
-            "fieldtype": "Date",
-            "width": 150,
-        },
-        {
             "label": _("Company"),
             "fieldname": "company",
             "fieldtype": "Link",
             "options": "Company",
             "width": 180,
+        },
+        {
+            "label": _("Posting Date"),
+            "fieldname": "posting_date",
+            "fieldtype": "Date",
+            "width": 150,
         },
         {
             "label": _("Party Type"),
