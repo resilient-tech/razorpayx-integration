@@ -86,6 +86,12 @@ def get_columns() -> list[dict]:
             "width": 200,
         },
         {
+            "label": _("Posting Date"),
+            "fieldname": "posting_date",
+            "fieldtype": "Date",
+            "width": 150,
+        },
+        {
             "label": _("Company"),
             "fieldname": "company",
             "fieldtype": "Link",
@@ -93,10 +99,18 @@ def get_columns() -> list[dict]:
             "width": 180,
         },
         {
-            "label": _("Posting Date"),
-            "fieldname": "posting_date",
-            "fieldtype": "Date",
-            "width": 150,
+            "label": _("Party Type"),
+            "fieldname": "party_type",
+            "fieldtype": "Link",
+            "options": "Party Type",
+            "width": 120,
+        },
+        {
+            "label": _("Party"),
+            "fieldname": "party",
+            "fieldtype": "Dynamic Link",
+            "options": "party_type",
+            "width": 180,
         },
         {
             "label": _("Paid Amount"),
@@ -112,12 +126,6 @@ def get_columns() -> list[dict]:
             "width": 120,
         },
         {
-            "label": _("UTR"),
-            "fieldname": "utr",
-            "fieldtype": "Data",
-            "width": 200,
-        },
-        {
             "label": _("Payout Mode"),
             "fieldname": "payout_mode",
             "fieldtype": "Data",
@@ -126,6 +134,32 @@ def get_columns() -> list[dict]:
         {
             "label": _("Payout Description"),
             "fieldname": "payout_description",
+            "fieldtype": "Data",
+            "width": 200,
+        },
+        {
+            "label": _("Docstatus"),
+            "fieldname": "docstatus",
+            "fieldtype": "Data",
+            "width": 120,
+        },
+        {
+            "label": _("Payout Made By"),
+            "fieldname": "payout_made_by",
+            "fieldtype": "Link",
+            "options": "User",
+            "width": 200,
+        },
+        {
+            "label": _("RazorpayX Configuration"),
+            "fieldname": "razorpayx_config",
+            "fieldtype": "Link",
+            "options": "RazorpayX Configuration",
+            "width": 150,
+        },
+        {
+            "label": _("UTR"),
+            "fieldname": "utr",
             "fieldtype": "Data",
             "width": 200,
         },
@@ -141,25 +175,4 @@ def get_columns() -> list[dict]:
             "fieldtype": "Data",
             "width": 180,
         },
-        {
-            "label": _("RazorpayX Configuration"),
-            "fieldname": "razorpayx_config",
-            "fieldtype": "Link",
-            "options": "RazorpayX Configuration",
-            "width": 150,
-        },
-        {
-            "label": _("Payout Made By"),
-            "fieldname": "payout_made_by",
-            "fieldtype": "Link",
-            "options": "User",
-            "width": 200,
-        },
-        {
-            "label": _("Docstatus"),
-            "fieldname": "docstatus",
-            "fieldtype": "Data",
-            "width": 120,
-        },
-        # TODO: add column for payout which are initiated in the original PE for amended PEs?
     ]
