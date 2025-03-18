@@ -22,27 +22,36 @@ def get_data(filters: dict | None = None) -> list[dict]:
         frappe.qb.from_(PE)
         .select(
             PE.name.as_("payment_entry"),
-            PE.company,
             PE.posting_date,
-            PE.integration_docname.as_("razorpayx_config"),
-            PE.status.as_("docstatus"),
+            PE.company,
+            PE.party_type,
+            PE.party,
+            PE.paid_amount,
+            PE.razorpayx_payout_status.as_("payout_status"),
             PE.payment_transfer_method.as_("payout_mode"),
+            PE.razorpayx_payout_desc.as_("payout_description"),
+            PE.status.as_("docstatus"),
+            PE.payment_authorized_by.as_("payout_made_by"),
+            PE.integration_docname.as_("razorpayx_config"),
+            PE.reference_no.as_("utr"),
             PE.razorpayx_payout_id.as_("payout_id"),
             PE.razorpayx_payout_link_id.as_("payout_link_id"),
-            PE.razorpayx_payout_desc.as_("payout_description"),
-            PE.razorpayx_payout_status.as_("payout_status"),
-            PE.paid_amount,
-            PE.reference_no.as_("utr"),
-            PE.payment_authorized_by.as_("payout_made_by"),
         )
         .where(PE.company == filters.company)
         .where(PE.posting_date >= Date(from_date))
         .where(PE.posting_date <= Date(to_date))
         .where(PE.integration_doctype == RAZORPAYX_CONFIG)
         .where(PE.make_bank_online_payment == 1)
+        .orderby(PE.posting_date, order=frappe.qb.desc)
     )
 
     # update the query based on filters
+    if filters.party_type:
+        base_query = base_query.where(PE.party_type == filters.party_type)
+
+    if filters.party:
+        base_query = base_query.where(PE.party == filters.party)
+
     if filters.docstatus:
         base_query = base_query.where(PE.status.isin(filters.docstatus))
 
