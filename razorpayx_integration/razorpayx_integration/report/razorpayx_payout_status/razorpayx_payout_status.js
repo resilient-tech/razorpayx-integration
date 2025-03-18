@@ -54,6 +54,25 @@ frappe.query_reports["RazorpayX Payout Status"] = {
 			default: [frappe.datetime.month_start(), frappe.datetime.now_date()],
 		},
 		{
+			fieldname: "party_type",
+			label: __("Party Type"),
+			fieldtype: "Link",
+			options: "Party Type",
+			get_query: function () {
+				return {
+					filters: {
+						name: ["in", Object.keys(frappe.boot.party_account_types)],
+					},
+				};
+			},
+		},
+		{
+			fieldname: "party",
+			label: __("Party"),
+			fieldtype: "Dynamic Link",
+			options: "party_type",
+		},
+		{
 			fieldname: "docstatus",
 			label: __("Document Status"),
 			fieldtype: "MultiSelectList",
