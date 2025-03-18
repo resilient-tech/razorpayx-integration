@@ -3,10 +3,10 @@ frappe.provide("razorpayx");
 const RAZORPAYX_CONFIG = "RazorpayX Configuration";
 const DESCRIPTION_REGEX = /^[a-zA-Z0-9 ]{1,30}$/;
 const PAYOUT_STATUS = {
-	"Not Initiated": "cyan",
+	"Not Initiated": "grey",
 	Queued: "yellow",
 	Pending: "yellow",
-	Scheduled: "purple",
+	Scheduled: "yellow",
 	Processing: "blue",
 	Processed: "green",
 	Failed: "red",
