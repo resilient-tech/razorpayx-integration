@@ -579,19 +579,17 @@ class PayoutWebhook(RazorpayXWebhook):
             return
 
         try:
-            source = {
-                "source_doctype": "Integration Request",
-                "source_docname": self.integration_request,
-            }
-
-            payout_link = RazorpayXLinkPayout(self.config_name)
-            status = payout_link.get_by_id(link_id, data="status", **source)
-
-            if status == PAYOUT_LINK_STATUS.ISSUED.value:
-                payout_link.cancel(link_id, **source)
+            RazorpayXLinkPayout(self.config_name).cancel(
+                link_id,
+                source_doctype="Integration Request",
+                source_docname=self.integration_request,
+            )
 
         except Exception:
-            log_webhook_failure(self.integration_request, frappe.get_traceback())
+            log_webhook_failure(
+                self.integration_request,
+                f"Failed to cancel the Payout Link\n\n{frappe.get_traceback()}",
+            )
 
 
 class PayoutLinkWebhook(PayoutWebhook):
