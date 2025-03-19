@@ -289,6 +289,7 @@ async function show_make_payout_dialog(frm) {
 				fieldtype: "Data",
 				length: 30,
 				mandatory_depends_on: `eval: ${LINK_MODE}`,
+				default: frm.doc.razorpayx_payout_desc,
 			},
 		],
 		primary_action_label: __("{0} Pay", [frappe.utils.icon(payment_integration_utils.PAY_ICON)]),
