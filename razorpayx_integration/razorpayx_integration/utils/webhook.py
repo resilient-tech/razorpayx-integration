@@ -35,6 +35,7 @@ from razorpayx_integration.razorpayx_integration.constants.payouts import (
 from razorpayx_integration.razorpayx_integration.constants.webhooks import (
     EVENTS_TYPE,
     SUPPORTED_EVENTS,
+    SUPPORTED_TRANSACTION_TYPES,
 )
 from razorpayx_integration.razorpayx_integration.utils import (
     get_fees_accounting_config,
@@ -852,15 +853,14 @@ def webhook_listener():
     payload = frappe.local.form_dict
     payload.pop("cmd")
 
-    event = payload.get("event")
-    if is_unsupported_event(event):
+    if is_unsupported_event(payload):
         return
 
     ## Log the webhook request ##
     ir_log = {
         "request_id": frappe.get_request_header("X-Razorpay-Event-Id"),
         "status": "Completed",
-        "integration_request_service": f"RazorpayX - {event}",
+        "integration_request_service": f"RazorpayX - {payload.get('event')}",
         "request_headers": dict(frappe.request.headers),
         "data": payload,
         "is_remote_request": True,
@@ -896,8 +896,25 @@ def process_webhook(payload: dict, integration_request: str):
 
 
 ###### UTILITIES ######
-def is_unsupported_event(event: str | None) -> bool:
-    return bool(not event or event not in SUPPORTED_EVENTS)
+def is_unsupported_event(payload: dict) -> bool:
+    if payload.get("event") not in SUPPORTED_EVENTS:
+        return True
+
+    event_type = payload["event"].split(".")[0]
+
+    if event_type == EVENTS_TYPE.TRANSACTION.value:
+        transaction_type = (
+            payload.get("payload", {})
+            .get(event_type, {})
+            .get("entity", {})
+            .get("source", {})
+            .get("entity")
+        )
+
+        if transaction_type not in SUPPORTED_TRANSACTION_TYPES:
+            return True
+
+    return False
 
 
 def authenticate_webhook_request():

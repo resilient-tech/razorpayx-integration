@@ -58,6 +58,12 @@ class TRANSACTION_EVENT(BaseEnum):
     CREATED = "transaction.created"
 
 
+class TRANSACTION_TYPE(BaseEnum):
+    PAYOUT = "payout"
+    REVERSAL = "reversal"
+    BANK_TRANSFER = "bank_transfer"
+
+
 SUPPORTED_EVENTS = (
     ## PAYOUT ##
     PAYOUT_EVENT.PENDING.value,
@@ -74,3 +80,6 @@ SUPPORTED_EVENTS = (
     ## TRANSACTION ##
     TRANSACTION_EVENT.CREATED.value,
 )
+
+# payload > source > entity
+SUPPORTED_TRANSACTION_TYPES = (TRANSACTION_TYPE.REVERSAL.value,)
