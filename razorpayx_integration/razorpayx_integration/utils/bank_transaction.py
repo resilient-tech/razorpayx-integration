@@ -14,13 +14,10 @@ from razorpayx_integration.razorpayx_integration.apis.transaction import (
     RazorpayXTransaction,
 )
 from razorpayx_integration.razorpayx_integration.constants.payouts import PAYOUT_FROM
+from razorpayx_integration.razorpayx_integration.constants.webhooks import (
+    TRANSACTION_TYPE as ENTITY,
+)
 from razorpayx_integration.razorpayx_integration.utils import get_payouts_made_from
-
-
-class ENTITY(BaseEnum):
-    PAYOUT = "payout"
-    BANK_TRANSFER = "bank_transfer"
-    REVERSAL = "reversal"
 
 
 ######### PROCESSOR #########

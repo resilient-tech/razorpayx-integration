@@ -36,6 +36,7 @@ from razorpayx_integration.razorpayx_integration.constants.webhooks import (
     EVENTS_TYPE,
     SUPPORTED_EVENTS,
     SUPPORTED_TRANSACTION_TYPES,
+    TRANSACTION_TYPE,
 )
 from razorpayx_integration.razorpayx_integration.utils import (
     get_fees_accounting_config,
@@ -672,7 +673,7 @@ class TransactionWebhook(PayoutWebhook):
         self.status = self.transaction_source.get("status")
         self.notes = self.transaction_source.get("notes") or {}
 
-        if self.transaction_type == "reversal":
+        if self.transaction_type == TRANSACTION_TYPE.REVERSAL.value:
             self.reversal_id = self.transaction_source.get("id")
             self.id = self.transaction_source.get("payout_id")
             self.status = PAYOUT_STATUS.REVERSED.value
@@ -705,7 +706,7 @@ class TransactionWebhook(PayoutWebhook):
         """
         Process RazorpayX Payout Related Webhooks.
         """
-        if self.transaction_type != "reversal":
+        if self.transaction_type != TRANSACTION_TYPE.REVERSAL.value:
             return
 
         self.handle_payout_reversal()
