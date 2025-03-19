@@ -589,11 +589,7 @@ class PayoutWebhook(RazorpayXWebhook):
                 payout_link.cancel(link_id, **source)
 
         except Exception:
-            frappe.log_error(
-                title="RazorpayX Payout Link Cancellation Failed",
-                reference_doctype=source["source_doctype"],
-                reference_name=source["source_docname"],
-            )
+            log_webhook_failure(self.integration_request, frappe.get_traceback())
 
 
 class PayoutLinkWebhook(PayoutWebhook):
@@ -890,10 +886,13 @@ def process_webhook(payload: dict, integration_request: str):
 
     frappe.set_user("Administrator")
 
-    # Getting the webhook processor based on the event type.
-    event_type = payload["event"].split(".")[0]  # `event` must exist in the payload
-    processor = WEBHOOK_PROCESSORS_MAP[event_type](payload, integration_request)
-    processor.process_webhook()
+    try:
+        # Getting the webhook processor based on the event type.
+        event_type = payload["event"].split(".")[0]  # `event` must exist in the payload
+        processor = WEBHOOK_PROCESSORS_MAP[event_type](payload, integration_request)
+        processor.process_webhook()
+    except Exception:
+        log_webhook_failure(integration_request, frappe.get_traceback())
 
 
 ###### UTILITIES ######
@@ -1044,6 +1043,17 @@ def is_payout_link_failed(status: str) -> bool:
         PAYOUT_LINK_STATUS.EXPIRED.value,
         PAYOUT_LINK_STATUS.REJECTED.value,
     ]
+
+
+def log_webhook_failure(integration_request: str, error: str):
+    frappe.db.set_value(
+        "Integration Request",
+        integration_request,
+        {
+            "status": "Failed",
+            "error": error,
+        },
+    )
 
 
 # TODO: Handle Fees and Tax deduction at the end of the day
