@@ -316,6 +316,7 @@ async function show_make_payout_dialog(frm) {
 	dialog.show();
 }
 
+// TODO: require refactoring as per new workflow
 function make_payout(auth_id, docname, values) {
 	return frappe.call({
 		method: `${PE_BASE_PATH}.make_payout_with_razorpayx`,
