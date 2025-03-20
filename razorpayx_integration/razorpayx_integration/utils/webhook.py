@@ -35,6 +35,8 @@ from razorpayx_integration.razorpayx_integration.constants.payouts import (
 from razorpayx_integration.razorpayx_integration.constants.webhooks import (
     EVENTS_TYPE,
     SUPPORTED_EVENTS,
+    SUPPORTED_TRANSACTION_TYPES,
+    TRANSACTION_TYPE,
 )
 from razorpayx_integration.razorpayx_integration.utils import (
     get_fees_accounting_config,
@@ -577,22 +579,16 @@ class PayoutWebhook(RazorpayXWebhook):
             return
 
         try:
-            source = {
-                "source_doctype": "Integration Request",
-                "source_docname": self.integration_request,
-            }
-
-            payout_link = RazorpayXLinkPayout(self.config_name)
-            status = payout_link.get_by_id(link_id, data="status", **source)
-
-            if status == PAYOUT_LINK_STATUS.ISSUED.value:
-                payout_link.cancel(link_id, **source)
+            RazorpayXLinkPayout(self.config_name).cancel(
+                link_id,
+                source_doctype="Integration Request",
+                source_docname=self.integration_request,
+            )
 
         except Exception:
-            frappe.log_error(
-                title="RazorpayX Payout Link Cancellation Failed",
-                reference_doctype=source["source_doctype"],
-                reference_name=source["source_docname"],
+            log_webhook_failure(
+                self.integration_request,
+                f"Failed to cancel the Payout Link\n\n{frappe.get_traceback()}",
             )
 
 
@@ -675,7 +671,7 @@ class TransactionWebhook(PayoutWebhook):
         self.status = self.transaction_source.get("status")
         self.notes = self.transaction_source.get("notes") or {}
 
-        if self.transaction_type == "reversal":
+        if self.transaction_type == TRANSACTION_TYPE.REVERSAL.value:
             self.reversal_id = self.transaction_source.get("id")
             self.id = self.transaction_source.get("payout_id")
             self.status = PAYOUT_STATUS.REVERSED.value
@@ -708,7 +704,7 @@ class TransactionWebhook(PayoutWebhook):
         """
         Process RazorpayX Payout Related Webhooks.
         """
-        if self.transaction_type != "reversal":
+        if self.transaction_type != TRANSACTION_TYPE.REVERSAL.value:
             return
 
         self.handle_payout_reversal()
@@ -856,15 +852,14 @@ def webhook_listener():
     payload = frappe.local.form_dict
     payload.pop("cmd")
 
-    event = payload.get("event")
-    if is_unsupported_event(event):
+    if is_unsupported_event(payload):
         return
 
     ## Log the webhook request ##
     ir_log = {
         "request_id": frappe.get_request_header("X-Razorpay-Event-Id"),
         "status": "Completed",
-        "integration_request_service": f"RazorpayX - {event}",
+        "integration_request_service": f"RazorpayX - {payload.get('event')}",
         "request_headers": dict(frappe.request.headers),
         "data": payload,
         "is_remote_request": True,
@@ -890,15 +885,35 @@ def process_webhook(payload: dict, integration_request: str):
 
     frappe.set_user("Administrator")
 
-    # Getting the webhook processor based on the event type.
-    event_type = payload["event"].split(".")[0]  # `event` must exist in the payload
-    processor = WEBHOOK_PROCESSORS_MAP[event_type](payload, integration_request)
-    processor.process_webhook()
+    try:
+        # Getting the webhook processor based on the event type.
+        event_type = payload["event"].split(".")[0]  # `event` must exist in the payload
+        processor = WEBHOOK_PROCESSORS_MAP[event_type](payload, integration_request)
+        processor.process_webhook()
+    except Exception:
+        log_webhook_failure(integration_request, frappe.get_traceback())
 
 
 ###### UTILITIES ######
-def is_unsupported_event(event: str | None) -> bool:
-    return bool(not event or event not in SUPPORTED_EVENTS)
+def is_unsupported_event(payload: dict) -> bool:
+    if payload.get("event") not in SUPPORTED_EVENTS:
+        return True
+
+    event_type = payload["event"].split(".")[0]
+
+    if event_type == EVENTS_TYPE.TRANSACTION.value:
+        transaction_type = (
+            payload.get("payload", {})
+            .get(event_type, {})
+            .get("entity", {})
+            .get("source", {})
+            .get("entity")
+        )
+
+        if transaction_type not in SUPPORTED_TRANSACTION_TYPES:
+            return True
+
+    return False
 
 
 def authenticate_webhook_request():
@@ -1044,6 +1059,17 @@ def is_payout_link_failed(status: str) -> bool:
         PAYOUT_LINK_STATUS.EXPIRED.value,
         PAYOUT_LINK_STATUS.REJECTED.value,
     ]
+
+
+def log_webhook_failure(integration_request: str, error: str):
+    frappe.db.set_value(
+        "Integration Request",
+        integration_request,
+        {
+            "status": "Failed",
+            "error": error,
+        },
+    )
 
 
 # TODO: Handle Fees and Tax deduction at the end of the day
