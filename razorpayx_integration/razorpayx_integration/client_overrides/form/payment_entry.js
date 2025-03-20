@@ -227,6 +227,7 @@ async function show_make_payout_dialog(frm) {
 				fieldtype: "Link",
 				options: "Contact",
 				default: frm.doc.contact_person,
+				depends_on: `eval: ${frm.doc.party_type !== "Employee"}`,
 				mandatory_depends_on: `eval: ${LINK_MODE} && ${frm.doc.party_type !== "Employee"}`,
 				get_query: function () {
 					return {
