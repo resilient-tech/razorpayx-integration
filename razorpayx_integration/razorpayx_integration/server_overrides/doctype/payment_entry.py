@@ -7,6 +7,8 @@ from payment_integration_utils.payment_integration_utils.constants.payments impo
     TRANSFER_METHOD,
 )
 from payment_integration_utils.payment_integration_utils.server_overrides.doctype.payment_entry import (
+    set_party_bank_details,
+    set_party_contact_details,
     validate_transfer_methods,
 )
 from payment_integration_utils.payment_integration_utils.utils.auth import (
@@ -74,8 +76,6 @@ def before_submit(doc: PaymentEntry, method=None):
 
 
 def should_uncheck_make_bank_online_payment(doc: PaymentEntry) -> bool:
-    # TODO: should we use more generic flag than `initiated_by_payment_processor`? Because what if PE is submitted from API or other background process?
-    # Then `is_auto_pay_enabled` will not even be checked and payout will be made even if it is disabled.
     if not is_payout_via_razorpayx(doc):
         return False
 
@@ -180,18 +180,14 @@ def validate_payout_details(doc: PaymentEntry):
 
 
 ### APIs ###
-# TODO: Make API more easy to use and less error-prone
-# 1. Fetch bank account details from the `party_bank_account`
-# 2. Fetch contact details from the `contact_person` or set directly mobile and email
-# 3. If party is `Employee`, fetch contact details from the Employee's contact
-# 4. Also check `Contact Person` and `Party Bank Account` is associated with the `Party`
-# 6. Based on the `transfer_method`, set the fields automatically
 @frappe.whitelist()
 def make_payout_with_razorpayx(
     auth_id: str,
     docname: str,
     transfer_method: TRANSFER_METHODS = TRANSFER_METHOD.LINK.value,
-    **kwargs,
+    party_bank_account: str | None = None,
+    contact_person: str | None = None,
+    description: str | None = None,
 ):
     """
     Make RazorpayX Payout or Payout Link with Payment Entry.
@@ -199,7 +195,9 @@ def make_payout_with_razorpayx(
     :param auth_id: Authentication ID (after otp or password verification)
     :param docname: Payment Entry name
     :param transfer_method: Transfer method to make payout with (NEFT, RTGS, IMPS, UPI, Link)
-    :param kwargs: Payout Details
+    :param party_bank_account: Party's bank account to make payout (Required for NEFT, RTGS, IMPS, UPI)
+    :param contact_person: Contact person to make payout (Required for `Link` except Employee)
+    :param description: Payout description (Required for `Link`)
     """
     has_payment_permissions(docname, throw=True)
     doc = frappe.get_doc("Payment Entry", docname)
@@ -214,29 +212,32 @@ def make_payout_with_razorpayx(
 
         return
 
-    # Set the fields to make payout
-    doc.db_set(
-        {
-            "make_bank_online_payment": 1,
-            "payment_transfer_method": transfer_method,
-            # Party
-            "party_bank_account": kwargs.get("party_bank_account"),
-            "party_bank_account_no": kwargs.get("party_bank_account_no"),
-            "party_bank_ifsc": kwargs.get("party_bank_ifsc"),
-            "party_upi_id": kwargs.get("party_upi_id"),
-            "contact_person": kwargs.get("contact_person"),
-            "contact_mobile": kwargs.get("contact_mobile"),
-            "contact_email": kwargs.get("contact_email"),
-            # RazorpayX
-            "razorpayx_payout_desc": kwargs.get("razorpayx_payout_desc"),
-            # ERPNext
-            "reference_no": UTR_PLACEHOLDER,
-            "remarks": doc.remarks.replace(doc.reference_no, UTR_PLACEHOLDER, 1),
-        }
-    )
+    values = {
+        "make_bank_online_payment": 1,
+        "payment_transfer_method": transfer_method,
+        "reference_no": UTR_PLACEHOLDER,
+        "remarks": doc.remarks.replace(doc.reference_no, UTR_PLACEHOLDER, 1),
+    }
 
+    if party_bank_account:
+        values["party_bank_account"] = party_bank_account
+    if description:
+        values["razorpayx_payout_desc"] = description
+
+    if contact_person and doc.party_type != "Employee":
+        values["contact_person"] = contact_person
+
+    # set the fields to make payout
+    doc.db_set(values)
+
+    # set party details
+    set_party_contact_details(doc)
+    set_party_bank_details(doc)
+
+    # validations
     validate_transfer_methods(doc)
     validate_payout_details(doc)
+
     PayoutWithPaymentEntry(doc).make(auth_id)
 
 

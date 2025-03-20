@@ -227,6 +227,7 @@ async function show_make_payout_dialog(frm) {
 				fieldtype: "Link",
 				options: "Contact",
 				default: frm.doc.contact_person,
+				depends_on: `eval: ${frm.doc.party_type !== "Employee"}`,
 				mandatory_depends_on: `eval: ${LINK_MODE} && ${frm.doc.party_type !== "Employee"}`,
 				get_query: function () {
 					return {
@@ -245,7 +246,6 @@ async function show_make_payout_dialog(frm) {
 				label: "Email",
 				fieldtype: "Data",
 				options: "Email",
-				// depends_on: "eval: doc.contact_email",
 				read_only: 1,
 				default: frm.doc.contact_email,
 			},
@@ -303,7 +303,14 @@ async function show_make_payout_dialog(frm) {
 			dialog.hide();
 
 			payment_integration_utils.authenticate_payment_entries(frm.docname, async (auth_id) => {
-				await make_payout(auth_id, frm.docname, values);
+				await make_payout(
+					auth_id,
+					frm.docname,
+					values.payment_transfer_method,
+					values.party_bank_account,
+					values.contact_person,
+					values.razorpayx_payout_desc
+				);
 
 				frappe.show_alert({
 					message: __("Payout has been made successfully."),
@@ -316,14 +323,23 @@ async function show_make_payout_dialog(frm) {
 	dialog.show();
 }
 
-function make_payout(auth_id, docname, values) {
+function make_payout(
+	auth_id,
+	docname,
+	transfer_method,
+	party_bank_account,
+	contact_person,
+	razorpayx_payout_desc
+) {
 	return frappe.call({
 		method: `${PE_BASE_PATH}.make_payout_with_razorpayx`,
 		args: {
-			auth_id: auth_id,
-			docname: docname,
-			transfer_method: values.payment_transfer_method,
-			...values,
+			auth_id,
+			docname,
+			transfer_method,
+			party_bank_account,
+			contact_person,
+			razorpayx_payout_desc,
 		},
 		freeze: true,
 		freeze_message: __("Making Payout ..."),
