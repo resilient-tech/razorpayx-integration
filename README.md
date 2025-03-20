@@ -114,7 +114,8 @@ bench --site [site name] install-app razorpayx_integration
 1. [Connect ERPNext with RazorpayX](https://github.com/resilient-tech/razorpayx-integration/blob/version-15/docs/setup/2_connect_erpnext_with_razorpayx.md)
 2. [Make payout via RazorpayX within ERPNext](https://github.com/resilient-tech/razorpayx-integration/blob/version-15/docs/payout/3_make_payout.md)
 3. [Reconcile Bank Transactions via RazorpayX API](https://github.com/resilient-tech/razorpayx-integration/blob/version-15/docs/reconcile/1_sync_and_reconcile_transactions.md)
-4. [FAQs](https://github.com/resilient-tech/razorpayx-integration/blob/version-15/docs/FAQS.md)
+4. [Analyze Payout Status Report](https://github.com/resilient-tech/razorpayx-integration/blob/version-15/docs/report/1_payout_status_report.md)
+5. [FAQs](https://github.com/resilient-tech/razorpayx-integration/blob/version-15/docs/FAQS.md)
 
 - Read full documentation [here](https://github.com/resilient-tech/razorpayx-integration/blob/version-15/docs)
 

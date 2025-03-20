@@ -31,7 +31,7 @@ class PAYOUT_EVENT(BaseEnum):
     PROCESSED = "payout.processed"
     REVERSED = "payout.reversed"
     FAILED = "payout.failed"
-    UPDATED = "payout.updated"
+    UPDATED = "payout.updated"  # ! NOTE: currently not supported
     DOWNTIME_STARTED = "payout.downtime.started"  # ! NOTE: currently not supported
     DOWNTIME_RESOLVED = "payout.downtime.resolved"  # ! NOTE: currently not supported
 
@@ -67,7 +67,6 @@ SUPPORTED_EVENTS = (
     PAYOUT_EVENT.PROCESSED.value,
     PAYOUT_EVENT.REVERSED.value,
     PAYOUT_EVENT.FAILED.value,
-    PAYOUT_EVENT.UPDATED.value,
     ## PAYOUT LINK ##
     PAYOUT_LINK_EVENT.CANCELLED.value,
     PAYOUT_LINK_EVENT.REJECTED.value,

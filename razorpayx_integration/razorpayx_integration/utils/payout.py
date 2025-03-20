@@ -1,10 +1,14 @@
 import frappe
 from erpnext.accounts.doctype.payment_entry.payment_entry import PaymentEntry
 from frappe import _
+from frappe.utils import fmt_money, get_link_to_form, today
 from payment_integration_utils.payment_integration_utils.constants.payments import (
     TRANSFER_METHOD as PAYOUT_MODE,
 )
-from payment_integration_utils.payment_integration_utils.utils import is_already_paid
+from payment_integration_utils.payment_integration_utils.utils import (
+    is_already_paid,
+    paisa_to_rupees,
+)
 from payment_integration_utils.payment_integration_utils.utils.auth import (
     Authenticate2FA,
 )
@@ -15,9 +19,11 @@ from razorpayx_integration.razorpayx_integration.apis.payout import (
 )
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
     PAYOUT_CURRENCY,
+    PAYOUT_FROM,
     PAYOUT_STATUS,
 )
 from razorpayx_integration.razorpayx_integration.utils import (
+    get_fees_accounting_config,
     is_auto_cancel_payout_enabled,
     is_payout_via_razorpayx,
 )
@@ -137,6 +143,8 @@ class PayoutWithPaymentEntry:
         }
 
     def _update_after_making(self, response: dict | None = None):
+        notify = not frappe.flags.initiated_by_payment_processor
+
         user = (
             frappe.get_cached_value("User", "Administrator", "email")
             if frappe.session.user == "Administrator"
@@ -144,7 +152,7 @@ class PayoutWithPaymentEntry:
         )
 
         if user:
-            self.doc.db_set("payment_authorized_by", user, notify=True)
+            self.doc.db_set("payment_authorized_by", user, notify=notify)
 
         if not response:
             return
@@ -163,9 +171,13 @@ class PayoutWithPaymentEntry:
             values["razorpayx_payout_link_id"] = id
 
         if values:
-            self.doc.db_set(values, notify=True)
+            self.doc.db_set(values, notify=notify)
 
-        if (status := response.get("status")) and entity == "payout":
+        # updating status for better UX instead of waiting for webhook
+        if entity == "payout_link":
+            return
+
+        if status := response.get("status"):
             self.doc.update({"razorpayx_payout_status": status.title()}).save()
 
     #### Cancel Payout | Payout Link ####
