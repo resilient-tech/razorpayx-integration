@@ -8,6 +8,7 @@ from payment_integration_utils.payment_integration_utils.constants.payments impo
 )
 from payment_integration_utils.payment_integration_utils.server_overrides.doctype.payment_entry import (
     set_party_bank_details,
+    set_party_contact_details,
     validate_transfer_methods,
 )
 from payment_integration_utils.payment_integration_utils.utils.auth import (
@@ -226,10 +227,14 @@ def make_payout_with_razorpayx(
     if contact_person and doc.party_type != "Employee":
         values["contact_person"] = contact_person
 
-    # Set the fields to make payout
+    # set the fields to make payout
     doc.db_set(values)
 
+    # set party details
+    set_party_contact_details(doc)
     set_party_bank_details(doc)
+
+    # validations
     validate_transfer_methods(doc)
     validate_payout_details(doc)
 
