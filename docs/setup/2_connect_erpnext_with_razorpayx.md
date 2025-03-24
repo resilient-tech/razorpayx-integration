@@ -27,7 +27,7 @@ If you already have a bank account configured, you can skip this step.
 1. In your ERPNext site, search for `RazorpayX Configuration` in the search bar and open the list view.  
 2. Add a new configuration.  
 
-![RazorpayX Configuration Document](https://github.com/user-attachments/assets/f240a344-80e0-4c77-81e2-ef67a7c105f8)
+![RazorpayX Configuration Document](https://github.com/user-attachments/assets/7a64d65f-dc00-41cf-bd70-9daa7a587da0)
 
 ### Get API Credentials
 
@@ -41,7 +41,6 @@ If you already have a bank account configured, you can skip this step.
   - This is your **Business ID** provided by RazorpayX. [Get it from here](https://x.razorpay.com/settings/business).  
 
   ![Account ID](https://github.com/user-attachments/assets/d13001a2-a128-4d91-99ee-07ff08a4c56d)
-
 
 ### 🌐 Set Up Webhooks
 
@@ -86,7 +85,21 @@ Webhooks are used for real-time payout status updates.
 
 ### 🏦 Set Company Bank Account
 
-- Set the bank account that is associated with RazorpayX.  
+- Set the bank account that is associated with RazorpayX.
+
+- Set **Payouts From**
+
+  - Two options are available:  
+    1. **Current Account**  
+    2. **RazorpayX Lite**  
+
+  - **Current Account**:  
+    - If the **Current Account Number** is entered in the company's bank account details, the payout amount is deducted from the bank's current account.  
+
+  - **RazorpayX Lite**:  
+    - If the **Customer Identifier** is entered, the payout amount is deducted from the RazorpayX Lite account.  
+
+  - **Default Selection**: **Current Account** is selected by default.  
 
 ### 🤖 Configure Automation
 
@@ -108,4 +121,4 @@ Webhooks are used for real-time payout status updates.
 
 ---
 
-### Multiple configurations with different bank accounts for the same company associated with RazorpayX are allowed.
+### ⚙️ Multiple configurations with different bank accounts for the same company associated with RazorpayX are allowed!
