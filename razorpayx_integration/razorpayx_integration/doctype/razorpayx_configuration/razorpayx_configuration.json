@@ -198,7 +198,7 @@
    "fieldname": "payable_account",
    "fieldtype": "Link",
    "label": "Payable Account",
-   "mandatory_depends_on": "eval: doc.payouts_from === \"Current Account\"",
+   "mandatory_depends_on": "eval: doc.automate_fees_accounting && doc.payouts_from === \"Current Account\"",
    "options": "Account"
   },
   {
@@ -270,7 +270,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-03-24 09:42:33.363422",
+ "modified": "2025-03-24 10:10:36.579369",
  "modified_by": "Administrator",
  "module": "Razorpayx Integration",
  "name": "RazorpayX Configuration",
