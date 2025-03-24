@@ -11,7 +11,13 @@
 
 ![System Settings](https://github.com/user-attachments/assets/eef415a5-b130-456c-913d-efffa669c783)
 
-**Note**: A default **Outgoing Email Account** is required to send emails for authentication.  
+**Note**:  
+
+- A default **Outgoing Email Account** is required to send emails for authentication.  
+- The **Administrator** role **cannot** make payouts.  
+- If the **Administrator** impersonates another user, they will see the **Make Payout** | **Pay and Submit** button but **cannot authenticate** to complete the payout.  
+
+---
 
 ## 🔢 OTP Dialog Box
 
