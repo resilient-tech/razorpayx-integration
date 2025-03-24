@@ -1,6 +1,6 @@
 # 💰 Fees and Tax Accounting
 
-![Fees Accounting Fields](https://github.com/user-attachments/assets/1e9ef913-2034-41e7-94d7-8fea9658487b)
+![Fees Accounting Fields](https://github.com/user-attachments/assets/d37f1d10-9166-4d81-a119-7cd3caa9f2ac)
 
 For detailed information on charges and deductions, refer to RazorpayX's [Fees and Tax Documentation 🔗](https://razorpay.com/docs/x/manage-teams/billing/).
 
@@ -13,33 +13,17 @@ For detailed information on charges and deductions, refer to RazorpayX's [Fees a
   - For payouts from a **Current Account**, the JE is recorded when the payout is **Processed**.  
   - For payouts from **RazorpayX Lite**, the JE is recorded when the payout is in the **Processing** state.  
 
-### 2. **Payouts From**
-
-- Two options are available:  
-  1. **Current Account**  
-  2. **RazorpayX Lite**  
-
-- **Current Account**:  
-  - If the **Current Account Number** is entered in the company's bank account details, the payout amount is deducted from the bank's current account.  
-
-- **RazorpayX Lite**:  
-  - If the **Customer Identifier** is entered, the payout amount is deducted from the RazorpayX Lite account.  
-
-- **Default Selection**: **Current Account** is selected by default.  
-
-For more details, read the [Bank Account Setup Guide](https://github.com/resilient-tech/razorpayx-integration/blob/version-15/docs/setup/2_connect_erpnext_with_razorpayx.md#for-liveproduction-mode).
-
-### 3. **Creditors Account**
+### 2. **Creditors Account**
 
 - Used in Journal Entries to **debit the transaction fees**.  
 
 ![Creditors Account](https://github.com/user-attachments/assets/479d01e2-a704-44cc-896e-ccaaa24d3e6f)  
 
-### 4. **Supplier**
+### 3. **Supplier**
 
 - The **Party and Party Type (Supplier)** associated with the Creditors Account.  
 
-### 5. **Payable Account**
+### 4. **Payable Account**
 
 - Used in Journal Entries to **credit the transaction fees**.  
 - Only applicable when payouts are made from the **Current Account**.  
