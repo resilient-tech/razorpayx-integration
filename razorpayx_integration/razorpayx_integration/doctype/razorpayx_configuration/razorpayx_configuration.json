@@ -20,6 +20,7 @@
   "company_account",
   "company",
   "column_break_3gfbs",
+  "payouts_from",
   "bank",
   "ifsc_code",
   "account_number",
@@ -32,7 +33,6 @@
   "fees_section",
   "automate_fees_accounting",
   "column_break_rshi",
-  "payouts_from",
   "fees_accounting_section",
   "creditors_account",
   "payable_account",
@@ -198,7 +198,7 @@
    "fieldname": "payable_account",
    "fieldtype": "Link",
    "label": "Payable Account",
-   "mandatory_depends_on": "eval: doc.payouts_from === \"Current Account\"",
+   "mandatory_depends_on": "eval: doc.automate_fees_accounting && doc.payouts_from === \"Current Account\"",
    "options": "Account"
   },
   {
@@ -238,15 +238,15 @@
   },
   {
    "default": "Current Account",
-   "depends_on": "eval: doc.automate_fees_accounting",
-   "description": "See RazorpayX\n<strong>\n    <a href=\"https://razorpay.com/docs/x/manage-teams/billing/\">\n        Fees and Tax\n        <svg class=\"icon  icon-sm\" style=\"\">\n            <use class=\"\" href=\"#icon-link-url\"></use>\n        </svg>\n    </a>\n</strong> \nfor details on charges and deductions.",
+   "depends_on": "eval: doc.bank_account",
    "fieldname": "payouts_from",
    "fieldtype": "Select",
    "label": "Payouts from",
-   "mandatory_depends_on": "eval: doc.automate_fees_accounting",
+   "mandatory_depends_on": "eval: doc.bank_account",
    "options": "Current Account\nRazorpayX Lite"
   },
   {
+   "description": "Read RazorpayX\n<strong>\n    <a href=\"https://razorpay.com/docs/x/manage-teams/billing/\">\n        Fees and Tax\n        <svg class=\"icon  icon-sm\" style=\"\">\n            <use class=\"\" href=\"#icon-link-url\"></use>\n        </svg>\n    </a>\n</strong> \nfor details on charges and deductions.",
    "fieldname": "fees_section",
    "fieldtype": "Section Break",
    "label": "Fees and Tax"
@@ -270,7 +270,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-03-06 10:57:49.132509",
+ "modified": "2025-03-24 10:10:36.579369",
  "modified_by": "Administrator",
  "module": "Razorpayx Integration",
  "name": "RazorpayX Configuration",
