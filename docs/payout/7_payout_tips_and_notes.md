@@ -10,7 +10,7 @@
     - The status will show as `Not Initiated` or `Queued` until the payout is created.  
     - The payout is created when the party provides bank details via the link.  
     - Once the payout is initiated, the status updates based on webhook events.  
-    - If the payout is canceled or fails, the payout link will also be canceled.  
+    - If the payout is **Canceled**, **Failed**, **Rejected**, or **Reversed**, the integration system will attempt to cancel the **Payout Link**.  
 
 - **Party's Contact Details**:  
   - To create a Payout Link, the party's contact details (email or mobile) are mandatory.  
@@ -20,7 +20,7 @@
 ## 📝 General Notes
 
 - **Make Online Payment Checkbox**:  
-  - This checkbox appears after saving the Payment Entry (PE) for the first time if the integration is found via the Company's Bank Account and User have permissions.
+  - This checkbox appears after saving the Payment Entry (PE) for the first time if the integration is found via the Company's Bank Account and the user has the necessary permissions.  
 
 - **Reconfiguring RazorpayX**:  
   - If RazorpayX is configured after creating the PE, reselect the **Company Bank Account** and save the PE to set up the integration.  
@@ -31,10 +31,10 @@
   - In future updates, if the original PE's payout is **Failed/Reversed/Canceled**, the amended PE will allow creating a payout.  
 
 - **Payout or Payout Link Canceled/Failed**:  
-  - If a **Payout** or **Payout Link** is Canceled/Failed and the webhook event is captured, the Payment Entry will also be canceled.  
+  - If a **Payout** or **Payout Link** is **Canceled/Failed** and the webhook event is captured, the Payment Entry will also be canceled.  
 
 - **Payout Reversed**:  
-  - If a **Payout** is Reversed, only the payout status is updated, and the PE is not canceled.  
+  - If a **Payout** is **Reversed**, only the payout status is updated, and the PE is not canceled.  
   - Reversal Journal Entries (JE) for the Payment Entry and Fees Reversal JE will be created if configured.  
   - For more details on Reversal Accounting, read [here](https://github.com/resilient-tech/razorpayx-integration/blob/version-15/docs/accounting/2_payout_reversal.md).  
 
