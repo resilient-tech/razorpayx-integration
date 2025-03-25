@@ -111,6 +111,7 @@ jobs:
         env:
           BASE_BRANCH: ${{ env.BASE_BRANCH }}
           APP_NAME: ${{ env.APP_NAME }}
+          PR_BRANCH: ${{ github.head_ref }}
 
       - name: Run Tests
         run: cd ~/frappe-bench/ && bench --site test_site run-parallel-tests --app ${{ env.APP_NAME }} --with-coverage
