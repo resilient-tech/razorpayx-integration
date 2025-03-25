@@ -54,6 +54,9 @@ class RazorpayXConfiguration(Document):
                 title=_("API Credentials Are Missing"),
             )
 
+        if self.flags.skip_credentials_validation:
+            return
+
         if not (
             self.has_value_changed("key_id")
             or self.has_value_changed("key_secret")
