@@ -1,0 +1,75 @@
+from functools import partial
+
+import frappe
+from frappe.desk.page.setup_wizard.setup_wizard import setup_complete
+from frappe.test_runner import make_test_objects
+from frappe.utils import getdate
+
+
+def before_tests():
+    frappe.clear_cache()
+
+    if not frappe.db.a_row_exists("Company"):
+        year = getdate().year
+
+        setup_complete(
+            {
+                "currency": "INR",
+                "full_name": "Test User",
+                "company_name": "Acme Corporation",
+                "timezone": "Asia/Kolkata",
+                "company_abbr": "AC",
+                "country": "India",
+                "fy_start_date": f"{year}-01-01",
+                "fy_end_date": f"{year}-12-31",
+                "language": "English",
+                "company_tagline": "Testing",
+                "email": "test@example.com",
+                "password": "test",
+                "chart_of_accounts": "Standard",
+            }
+        )
+
+    create_test_records()
+    set_default_company_for_tests()
+    create_rpx_config()
+
+    frappe.db.commit()  # nosemgrep
+
+    frappe.flags.skip_test_records = True
+    frappe.enqueue = partial(frappe.enqueue, now=True)
+
+
+def create_test_records():
+    test_records = frappe.get_file_json(
+        frappe.get_app_path("razorpayx_integration", "tests", "test_records.json")
+    )
+
+    for doctype, data in test_records.items():
+        make_test_objects(doctype, data, commit=True)
+
+
+def set_default_company_for_tests():
+    global_defaults = frappe.get_single("Global Defaults")
+    global_defaults.default_company = "Globex Industries"
+    global_defaults.save()
+
+
+def create_rpx_config():
+    doc = frappe.new_doc("RazorpayX Configuration")
+    doc.update(
+        {
+            "key_id": "rzp_test_key_id",
+            "key_secret": "rzp_test_key_secret",
+            "webhook_secret": "razopayx@webhook",
+            "account_id": "Ll3I5BZswKcGCc",
+            "bank_account": "RPX - RBL",
+            "payouts_from": "RazorpayX Lite",
+            "auto_cancel_payout": 1,
+            "automate_fees_accounting": 0,
+            "create_je_on_reversal": 0,
+        }
+    )
+
+    doc.flags.skip_credentials_validation = True
+    doc.insert(ignore_permissions=True, ignore_links=True)
