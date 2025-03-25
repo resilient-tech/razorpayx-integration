@@ -54,8 +54,8 @@ sed -i 's/socketio:/# socketio:/g' Procfile
 sed -i 's/redis_socketio:/# redis_socketio:/g' Procfile
 
 bench get-app erpnext --branch "$BASE_BRANCH" --resolve-deps
-bench get-app https://github.com/resilient-tech/payment_integration_utils.git --branch "$BASE_BRANCH" --resolve-deps
-bench get-app https://github.com/resilient-tech/razorpayx-integration.git --branch "${github.head_ref}" --resolve-deps
+bench get-app https://github.com/resilient-tech/payment_integration_utils.git --branch "$BASE_BRANCH"
+bench get-app https://github.com/resilient-tech/razorpayx-integration.git --branch "${github.head_ref}"
 bench setup requirements --dev
 
 wait $wkpid
