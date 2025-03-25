@@ -72,4 +72,4 @@ def create_rpx_config():
     )
 
     doc.flags.skip_credentials_validation = True
-    doc.insert(ignore_permissions=True, ignore_links=True)
+    doc.save()
