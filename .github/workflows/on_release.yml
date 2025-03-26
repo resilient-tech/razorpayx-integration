@@ -27,8 +27,8 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.BOT_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.BOT_TOKEN }}
-          GIT_AUTHOR_NAME: "RazorpayX Integration Bot"
-          GIT_AUTHOR_EMAIL: "SET_EMAIL" # TODO
-          GIT_COMMITTER_NAME: "RazorpayX Integration Bot"
-          GIT_COMMITTER_EMAIL: "SET_EMAIl" # TODO
+          GIT_AUTHOR_NAME: "Resilient Tech Bot"
+          GIT_AUTHOR_EMAIL: "bot@resilient.tech"
+          GIT_COMMITTER_NAME: "Resilient Tech Bot"
+          GIT_COMMITTER_EMAIL: "bot@resilient.tech"
         run: npx semantic-release
