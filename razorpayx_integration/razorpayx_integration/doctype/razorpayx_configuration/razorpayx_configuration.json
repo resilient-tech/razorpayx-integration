@@ -225,6 +225,7 @@
    "fieldtype": "Section Break"
   },
   {
+   "depends_on": "eval: doc.bank_account",
    "fieldname": "accounting_tab",
    "fieldtype": "Tab Break",
    "label": "Accounting"
@@ -270,7 +271,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-03-24 10:10:36.579369",
+ "modified": "2025-03-26 09:41:53.146171",
  "modified_by": "Administrator",
  "module": "Razorpayx Integration",
  "name": "RazorpayX Configuration",
