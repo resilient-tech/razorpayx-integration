@@ -17,6 +17,7 @@ frappe.ui.form.on("RazorpayX Configuration", {
 			account_currency: "INR",
 			freeze_account: "No",
 			root_type: "Liability",
+			company: frm.doc.company,
 		};
 
 		frm.set_query("creditors_account", function () {
