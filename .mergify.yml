@@ -6,7 +6,7 @@ pull_request_rules:
           - author!=vorasmit
           - author!=mergify[bot]
           - author!=dependabot[bot]
-          # - author!= # TODO: Add RPX Bot
+          - author!=resilient-tech-bot
       - or:
           - base=version-15
     actions:
