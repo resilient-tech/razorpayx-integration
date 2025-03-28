@@ -228,6 +228,7 @@ async function show_make_payout_dialog(frm) {
 				options: "Contact",
 				default: frm.doc.contact_person,
 				mandatory_depends_on: `eval: ${LINK_MODE} && ${frm.doc.party_type !== "Employee"}`,
+				depends_on: `eval: ${frm.doc.party_type !== "Employee"}`,
 				get_query: function () {
 					return {
 						filters: {
@@ -245,7 +246,7 @@ async function show_make_payout_dialog(frm) {
 				label: "Email",
 				fieldtype: "Data",
 				options: "Email",
-				// depends_on: "eval: doc.contact_email",
+				depends_on: "eval: doc.contact_email",
 				read_only: 1,
 				default: frm.doc.contact_email,
 			},
