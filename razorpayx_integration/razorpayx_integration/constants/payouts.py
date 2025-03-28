@@ -3,6 +3,9 @@ from payment_integration_utils.payment_integration_utils.constants.enums import 
 ### REGEX ###
 DESCRIPTION_REGEX = r"^[a-zA-Z0-9\s]{1,30}$"
 
+### OTHERS ###
+STATUS_NOTIFICATION_METHOD = "send_rpx_payout_status_update"
+
 
 ### ENUMS ###
 class PAYOUT_FROM(BaseEnum):
