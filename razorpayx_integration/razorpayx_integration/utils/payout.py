@@ -18,6 +18,7 @@ from razorpayx_integration.razorpayx_integration.apis.payout import (
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
     PAYOUT_CURRENCY,
     PAYOUT_STATUS,
+    STATUS_NOTIFICATION_METHOD,
 )
 from razorpayx_integration.razorpayx_integration.utils import (
     is_auto_cancel_payout_enabled,
@@ -163,18 +164,19 @@ class PayoutWithPaymentEntry:
 
         if entity == "payout":
             values["razorpayx_payout_id"] = id
+
+            if status := response.get("status"):
+                values["razorpayx_payout_status"] = status.title()
+
         elif entity == "payout_link":
             values["razorpayx_payout_link_id"] = id
 
         if values:
             self.doc.db_set(values, notify=notify)
 
-        # updating status for better UX instead of waiting for webhook
-        if entity == "payout_link":
-            return
-
-        if status := response.get("status"):
-            self.doc.update({"razorpayx_payout_status": status.title()}).save()
+        # Note: status for Payout Link are not supported
+        if entity == "payout":
+            self.doc.run_notifications(STATUS_NOTIFICATION_METHOD)
 
     #### Cancel Payout | Payout Link ####
     def cancel(self, cancel_pe: bool = False):
