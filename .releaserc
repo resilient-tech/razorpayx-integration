@@ -1,0 +1,34 @@
+{
+  "branches": [
+    "version-15"
+  ],
+  "plugins": [
+    "@semantic-release/commit-analyzer",
+    {
+      "preset": "angular",
+      "releaseRules": [
+        {
+          "breaking": true,
+          "release": false
+        }
+      ]
+    },
+    "@semantic-release/release-notes-generator",
+    [
+      "@semantic-release/exec",
+      {
+        "prepareCmd": "sed -i -E 's/\"[0-9]+\\.[0-9]+\\.[0-9]+\"/\"${nextRelease.version}\"/' razorpayx_integration/__init__.py"
+      }
+    ],
+    [
+      "@semantic-release/git",
+      {
+        "assets": [
+          "razorpayx_integration/__init__.py"
+        ],
+        "message": "chore(release): Bumped to Version ${nextRelease.version}\n\n${nextRelease.notes}"
+      }
+    ],
+    "@semantic-release/github"
+  ]
+}
