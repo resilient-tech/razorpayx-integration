@@ -87,21 +87,21 @@ class PayoutWithPaymentEntry:
             frappe.throw(
                 title=_("Unauthorized Access"),
                 msg=_("Authentication ID is required to make payout."),
-                exc=frappe.AuthenticationError,
+                exc=frappe.PermissionError,
             )
 
         if not Authenticate2FA.is_authenticated(auth_id):
             frappe.throw(
                 title=_("Unauthorized Access"),
                 msg=_("You are not authorized to access this Payment Entry."),
-                exc=frappe.AuthenticationError,
+                exc=frappe.PermissionError,
             )
 
         if self.doc.name not in Authenticate2FA.get_payment_entries(auth_id):
             frappe.throw(
                 title=_("Unauthorized Access"),
                 msg=_("This Payment Entry is not authenticated for payment."),
-                exc=frappe.AuthenticationError,
+                exc=frappe.PermissionError,
             )
 
         return True
