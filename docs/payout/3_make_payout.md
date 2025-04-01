@@ -15,7 +15,7 @@
 
 2. Submit the Payment Entry to trigger the payout via `Pay and Submit`  
 
-https://github.com/user-attachments/assets/3f8679af-af6d-4edb-8ae1-a0a26576061d
+https://github.com/user-attachments/assets/15fca87c-eb1c-4173-b401-2fffa4e10888
 
 **Note**:
 
