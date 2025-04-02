@@ -14,7 +14,6 @@ from frappe import _
 from frappe.rate_limiter import rate_limit
 from frappe.utils import fmt_money, get_link_to_form, get_url_to_form, today
 from frappe.utils.password import get_decrypted_password
-from payment_integration_utils.payment_integration_utils.constants.enums import BaseEnum
 from payment_integration_utils.payment_integration_utils.utils import (
     get_str_datetime_from_epoch as get_epoch_date,
 )
