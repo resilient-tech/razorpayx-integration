@@ -1,13 +1,11 @@
 import frappe
 from erpnext.accounts.doctype.payment_entry.payment_entry import PaymentEntry
 from frappe import _
-from frappe.utils import fmt_money, get_link_to_form, today
 from payment_integration_utils.payment_integration_utils.constants.payments import (
     TRANSFER_METHOD as PAYOUT_MODE,
 )
 from payment_integration_utils.payment_integration_utils.utils import (
     is_already_paid,
-    paisa_to_rupees,
 )
 from payment_integration_utils.payment_integration_utils.utils.auth import (
     Authenticate2FA,
@@ -19,11 +17,10 @@ from razorpayx_integration.razorpayx_integration.apis.payout import (
 )
 from razorpayx_integration.razorpayx_integration.constants.payouts import (
     PAYOUT_CURRENCY,
-    PAYOUT_FROM,
     PAYOUT_STATUS,
+    STATUS_NOTIFICATION_METHOD,
 )
 from razorpayx_integration.razorpayx_integration.utils import (
-    get_fees_accounting_config,
     is_auto_cancel_payout_enabled,
     is_payout_via_razorpayx,
 )
@@ -90,21 +87,21 @@ class PayoutWithPaymentEntry:
             frappe.throw(
                 title=_("Unauthorized Access"),
                 msg=_("Authentication ID is required to make payout."),
-                exc=frappe.AuthenticationError,
+                exc=frappe.PermissionError,
             )
 
         if not Authenticate2FA.is_authenticated(auth_id):
             frappe.throw(
                 title=_("Unauthorized Access"),
                 msg=_("You are not authorized to access this Payment Entry."),
-                exc=frappe.AuthenticationError,
+                exc=frappe.PermissionError,
             )
 
         if self.doc.name not in Authenticate2FA.get_payment_entries(auth_id):
             frappe.throw(
                 title=_("Unauthorized Access"),
                 msg=_("This Payment Entry is not authenticated for payment."),
-                exc=frappe.AuthenticationError,
+                exc=frappe.PermissionError,
             )
 
         return True
@@ -167,18 +164,19 @@ class PayoutWithPaymentEntry:
 
         if entity == "payout":
             values["razorpayx_payout_id"] = id
+
+            if status := response.get("status"):
+                values["razorpayx_payout_status"] = status.title()
+
         elif entity == "payout_link":
             values["razorpayx_payout_link_id"] = id
 
         if values:
             self.doc.db_set(values, notify=notify)
 
-        # updating status for better UX instead of waiting for webhook
-        if entity == "payout_link":
-            return
-
-        if status := response.get("status"):
-            self.doc.update({"razorpayx_payout_status": status.title()}).save()
+        # Note: status for Payout Link are not supported
+        if entity == "payout":
+            self.doc.run_notifications(STATUS_NOTIFICATION_METHOD)
 
     #### Cancel Payout | Payout Link ####
     def cancel(self, cancel_pe: bool = False):

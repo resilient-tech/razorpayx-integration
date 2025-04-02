@@ -31,6 +31,7 @@ from razorpayx_integration.razorpayx_integration.constants.payouts import (
     PAYOUT_LINK_STATUS,
     PAYOUT_ORDERS,
     PAYOUT_STATUS,
+    STATUS_NOTIFICATION_METHOD,
 )
 from razorpayx_integration.razorpayx_integration.constants.webhooks import (
     EVENTS_TYPE,
@@ -383,18 +384,11 @@ class PayoutWebhook(RazorpayXWebhook):
         :param status: Payout Webhook Status.
         """
 
-        if not status or status not in PAYOUT_STATUS.values():
+        if not status or status == self.get_pe_rpx_status():
             return
 
-        if status == self.get_pe_rpx_status():
-            return
-
-        value = {"razorpayx_payout_status": status.title()}
-
-        if self.source_doc.docstatus == 2:
-            self.source_doc.db_set(value, notify=True)
-        else:
-            self.source_doc.update(value).save()
+        self.source_doc.db_set("razorpayx_payout_status", status.title(), notify=True)
+        self.source_doc.run_notifications(STATUS_NOTIFICATION_METHOD)
 
     def update_amended_pes(self, values: dict, status: str | None = None):
         """
