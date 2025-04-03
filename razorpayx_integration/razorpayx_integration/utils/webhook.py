@@ -690,7 +690,7 @@ class TransactionWebhook(PayoutWebhook):
         if not docnames:
             return
 
-        self.source_doc = frappe.get_doc(source_doctype, docnames[0], for_update=True)
+        self.source_doc = frappe.get_doc(source_doctype, docnames[0])
 
     ### APIs ###
     def process_webhook(self, *args, **kwargs):
