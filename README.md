@@ -47,6 +47,11 @@ We choose RazorpayX because:
 - [Payment Integration Utils](https://github.com/resilient-tech/payment_integration_utils)
 - [Payments Processor](https://github.com/resilient-tech/payments-processor) (optional: to automate workflows) 
 
+**Recommendations**
+
+- We recommend you to keep **ERPNext** version latest.
+- Before updating `RazorpayX Integration`, update `Payment Integration Utils` first.
+
 Choose one of the following methods to install RazorpayX Integration to your ERPNext site.
 
 <details>
