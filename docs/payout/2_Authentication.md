@@ -17,8 +17,6 @@
 - The **Administrator** role **cannot** make payouts.  
 - If the **Administrator** impersonates another user, they will see the **Make Payout** | **Pay and Submit** button but **cannot authenticate** to complete the payout.  
 
----
-
 ## 🔢 OTP Dialog Box
 
 ### First-Time OTP Generation
@@ -38,8 +36,6 @@
 ### After Scanning QR Code
 
 ![QR Code Page with Steps](https://github.com/user-attachments/assets/f69729e9-fb43-4a6e-adad-6e0320c64507)
-
----
 
 ## 🔄 Reset Payment OTP Secret
 
