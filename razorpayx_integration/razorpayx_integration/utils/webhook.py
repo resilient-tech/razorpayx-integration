@@ -2,7 +2,6 @@ import json
 from hmac import new as hmac
 
 import frappe
-import frappe.utils
 from erpnext.accounts.doctype.journal_entry.journal_entry import (
     JournalEntry,
     make_reverse_journal_entry,
